@@ -5,6 +5,7 @@ import subprocess
 import unittest
 from pathlib import Path
 
+from src.monthly_ranking_engine import build_monthly_ranking
 from src.scoring_engine import build_fundamentals_index
 from src.watchlist_engine import build_watchlist_ranked, score_index
 
@@ -49,6 +50,63 @@ class WatchlistEngineTests(unittest.TestCase):
         self.assertEqual(ranked[0]["fair_value_estimate"], 1234.56)
         self.assertEqual(ranked[0]["margin_of_safety_pct"], 12.5)
         self.assertEqual(ranked[0]["mandate_fit"], "Hoch (90.0/100)")
+        self.assertIn("Mandats-Fit", ranked[0]["mandate_fit_comment"])
+
+    def test_watchlist_and_monthly_ranking_block_missing_data_consistently(self) -> None:
+        watchlist_rows = [
+            {
+                "ticker": "AAA",
+                "company_name": "Alpha",
+                "sector": "Technology",
+                "country": "USA",
+                "asset_type": "STOCK",
+                "sleeve": "SINGLE_STOCK",
+                "mandate_fit": "90",
+                "thesis_summary": "Qualitativ stark",
+                "main_risks": "Daten fehlen",
+            }
+        ]
+        score_rows = [
+            {
+                "ticker": "AAA",
+                "company_name": "Alpha",
+                "sector": "Technology",
+                "country": "USA",
+                "asset_type": "STOCK",
+                "sleeve": "SINGLE_STOCK",
+                "business_score": "82",
+                "valuation_score": "68",
+                "buy_score": "76",
+                "fair_value_estimate": "120",
+                "margin_of_safety_pct": "10",
+                "valuation_comment": "Bewertungsinputs fehlen; Fair Value bleibt konservativ angesetzt.",
+                "mandate_fit_score": "90",
+                "classification": "BUY_CANDIDATE",
+                "data_quality_flag": "MISSING_DATA",
+                "has_hard_risk_flag": "false",
+                "held_in_portfolio": "false",
+            }
+        ]
+        ranked = build_watchlist_ranked(watchlist_rows, score_rows)
+        self.assertEqual(ranked[0]["status"], "REVIEW")
+
+        ranking, _ = build_monthly_ranking(
+            positions_rows=[
+                {
+                    "ticker": "EUR-CASH",
+                    "company_name": "Cash",
+                    "asset_type": "CASH",
+                    "sleeve": "CASH",
+                    "sector": "Cash",
+                    "market_value_eur": "5000",
+                }
+            ],
+            score_rows=score_rows,
+            watchlist_rows=ranked,
+        )
+        aaa_row = next(row for row in ranking if row["ticker"] == "AAA")
+        self.assertEqual(aaa_row["target_action"], "DO_NOT_BUY")
+        self.assertEqual(aaa_row["allocation_status"], "NOT_ELIGIBLE")
 
     def test_duplicate_score_tickers_raise_clear_error(self) -> None:
         with self.assertRaisesRegex(ValueError, "scores input contains duplicate tickers: AAA"):

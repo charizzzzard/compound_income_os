@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import math
+import re
 from typing import Any
 
 from src.common import (
@@ -14,15 +16,25 @@ from src.common import (
     to_float,
     write_csv_rows,
     require_unique_tickers,
+    safe_upper,
 )
 from src.portfolio_rules import aggregate_positions_by_ticker, compute_position_weights, compute_sector_weights, load_portfolio_rules
 from src.valuation_engine import compute_valuation_metrics
 
 DEFAULT_RULES_PATH = "configs/portfolio_rules.yaml"
 DEFAULT_SCORING_PATH = "configs/scoring_weights.yaml"
+BUY_SCORE_WEIGHT_KEYS = (
+    "business_score",
+    "valuation_score",
+    "expected_return_score",
+    "drawdown_opportunity_score",
+    "portfolio_fit_score",
+)
+ISIN_PATTERN = re.compile(r"^[A-Z]{2}[A-Z0-9]{9}[0-9]$")
 
 OUTPUT_FIELDS = [
     "ticker",
+    "isin",
     "company_name",
     "sector",
     "country",
@@ -50,21 +62,92 @@ OUTPUT_FIELDS = [
     "margin_of_safety_pct",
     "valuation_comment",
     "mandate_fit_score",
+    "mandate_fit",
     "thesis_summary",
     "main_risks",
     "data_quality_flag",
     "has_hard_risk_flag",
+    "purchase_readiness",
     "buy_score",
     "classification",
 ]
 
 
-def build_position_index(rows: list[dict[str, str]]) -> dict[str, dict[str, Any]]:
+def normalize_match_text(value: Any) -> str:
+    return re.sub(r"[^a-z0-9]", "", str(value or "").lower())
+
+
+def is_probable_isin(value: Any) -> bool:
+    return bool(ISIN_PATTERN.match(str(value or "").strip().upper()))
+
+
+def build_fundamentals_isin_index(rows: list[dict[str, str]]) -> dict[str, dict[str, str]]:
+    index: dict[str, dict[str, str]] = {}
+    duplicates: set[str] = set()
+    for row in rows:
+        isin = str(row.get("isin", "")).strip().upper()
+        if not isin:
+            continue
+        if isin in index:
+            duplicates.add(isin)
+        index[isin] = row
+    if duplicates:
+        duplicate_text = ", ".join(sorted(duplicates))
+        raise ValueError(f"fundamentals input contains duplicate ISIN values: {duplicate_text}")
+    return index
+
+
+def build_fundamentals_name_index(rows: list[dict[str, str]]) -> dict[str, dict[str, str]]:
+    index: dict[str, dict[str, str]] = {}
+    for row in rows:
+        name_key = normalize_match_text(row.get("company_name"))
+        if name_key:
+            index[name_key] = row
+    return index
+
+
+def find_unique_name_match(position_row: dict[str, Any], fundamentals_name_index: dict[str, dict[str, str]]) -> dict[str, str] | None:
+    position_name = normalize_match_text(position_row.get("company_name") or position_row.get("raw_name"))
+    if not position_name:
+        return None
+    matches = [
+        row for name_key, row in fundamentals_name_index.items()
+        if len(name_key) >= 4 and (name_key in position_name or position_name in name_key)
+    ]
+    return matches[0] if len(matches) == 1 else None
+
+
+def resolve_position_key(
+    row: dict[str, Any],
+    fundamentals_by_isin: dict[str, dict[str, str]],
+    fundamentals_by_name: dict[str, dict[str, str]],
+) -> str:
+    ticker = str(row.get("ticker", "")).strip()
+    isin = str(row.get("isin", "")).strip().upper()
+    if ticker and not is_probable_isin(ticker):
+        return ticker
+    if isin and isin in fundamentals_by_isin:
+        return str(fundamentals_by_isin[isin].get("ticker", "")).strip() or ticker or isin
+    name_match = find_unique_name_match(row, fundamentals_by_name)
+    if name_match:
+        return str(name_match.get("ticker", "")).strip() or ticker or isin
+    return ticker or isin
+
+
+def build_position_index(
+    rows: list[dict[str, str]],
+    fundamentals_by_isin: dict[str, dict[str, str]] | None = None,
+    fundamentals_by_name: dict[str, dict[str, str]] | None = None,
+) -> dict[str, dict[str, Any]]:
     index: dict[str, dict[str, Any]] = {}
+    isin_index = fundamentals_by_isin or {}
+    name_index = fundamentals_by_name or {}
     for row in aggregate_positions_by_ticker(rows):
-        ticker = str(row.get("ticker", "")).strip()
+        ticker = resolve_position_key(row, isin_index, name_index)
         if ticker and str(row.get("asset_type", "")).upper() != "CASH":
-            index[ticker] = row
+            current = dict(row)
+            current["ticker"] = ticker
+            index[ticker] = current
     return index
 
 
@@ -83,6 +166,7 @@ def build_missing_fundamentals_row(
     company_name = str(position_row.get("company_name", ticker))
     return {
         "ticker": ticker,
+        "isin": position_row.get("isin", ""),
         "company_name": company_name,
         "sector": position_row.get("sector", "Unknown"),
         "country": position_row.get("country", "Unknown"),
@@ -99,8 +183,8 @@ def build_missing_fundamentals_row(
         "drawdown_from_high_pct": 0.0,
         "has_hard_risk_flag": "false",
         "thesis_robustness": "REVIEW",
-        "thesis_summary": "Missing fundamentals for held position; manual review required.",
-        "main_risks": "Missing fundamentals / valuation inputs.",
+        "thesis_summary": "Fundamentaldaten fuer die gehaltene Position fehlen; manuelle Pruefung erforderlich.",
+        "main_risks": "Fundamentaldaten und Bewertungsinputs fehlen.",
         "data_quality_flag": "MISSING_DATA",
     }
 
@@ -147,22 +231,45 @@ def compute_drawdown_score(row: dict[str, Any]) -> float:
     return round2(score_linear(drawdown, 0.0, 50.0))
 
 
+def load_buy_score_weights(config: dict[str, Any] | None = None, scoring_path: str = DEFAULT_SCORING_PATH) -> dict[str, float]:
+    config = config or load_yaml_config(scoring_path)
+    raw_weights = config.get("buy_score_weights")
+    if not isinstance(raw_weights, dict):
+        raise ValueError("scoring config missing buy_score_weights mapping")
+
+    weights: dict[str, float] = {}
+    missing_keys = [key for key in BUY_SCORE_WEIGHT_KEYS if key not in raw_weights]
+    if missing_keys:
+        missing_text = ", ".join(sorted(missing_keys))
+        raise ValueError(f"buy_score_weights missing keys: {missing_text}")
+
+    for key in BUY_SCORE_WEIGHT_KEYS:
+        value = to_float(raw_weights.get(key), float("nan"))
+        if not math.isfinite(value) or value < 0.0:
+            raise ValueError(f"buy_score_weights contains invalid value for {key}: {raw_weights.get(key)!r}")
+        weights[key] = value
+
+    total_weight = sum(weights.values())
+    if not math.isclose(total_weight, 1.0, rel_tol=0.0, abs_tol=1e-6):
+        raise ValueError(f"buy_score_weights must sum to 1.0, got {round2(total_weight)}")
+    return weights
+
+
 def compute_buy_score(
     business_score: float,
     valuation_score: float,
     expected_return_score: float,
     drawdown_score: float,
     portfolio_fit_score: float,
+    scoring_config: dict[str, Any] | None = None,
 ) -> float:
+    weights = load_buy_score_weights(scoring_config)
     return round2(
-        0.55 * business_score
-        + 0.45
-        * (
-            0.40 * valuation_score
-            + 0.25 * expected_return_score
-            + 0.20 * drawdown_score
-            + 0.15 * portfolio_fit_score
-        )
+        (weights["business_score"] * business_score)
+        + (weights["valuation_score"] * valuation_score)
+        + (weights["expected_return_score"] * expected_return_score)
+        + (weights["drawdown_opportunity_score"] * drawdown_score)
+        + (weights["portfolio_fit_score"] * portfolio_fit_score)
     )
 
 
@@ -212,6 +319,75 @@ def classify_company(
     return "WATCHLIST"
 
 
+def evaluate_purchase_readiness(score_row: dict[str, Any], rules: dict[str, Any]) -> dict[str, Any]:
+    buy_rules = rules["buy_rules"]
+    business_score = to_float(score_row.get("business_score"))
+    valuation_score = to_float(score_row.get("valuation_score"))
+    buy_score = to_float(score_row.get("buy_score"))
+    classification = safe_upper(score_row.get("classification", "WATCHLIST"))
+    data_quality_flag = safe_upper(score_row.get("data_quality_flag", "OK")) or "OK"
+    hard_risk = to_bool(score_row.get("has_hard_risk_flag"))
+
+    business_ok = business_score >= to_float(buy_rules["min_business_score"])
+    valuation_ok = valuation_score >= to_float(buy_rules["min_valuation_score"])
+    buy_ok = buy_score >= to_float(buy_rules["min_buy_score"])
+    reject_business = business_score < to_float(buy_rules["reject_business_score_below"])
+    reject_valuation = valuation_score < to_float(buy_rules["reject_valuation_score_below"])
+    data_ok = data_quality_flag == "OK"
+    blocked_classification = classification in {"REJECT", "EXIT_REVIEW", "REDUCE"}
+    watchlist_window = business_ok and 45.0 <= valuation_score <= 59.99
+
+    if hard_risk or blocked_classification or reject_business or reject_valuation:
+        purchase_state = "BLOCKED"
+    elif not data_ok:
+        purchase_state = "REVIEW"
+    elif business_ok and valuation_ok and buy_ok:
+        purchase_state = "BUYABLE"
+    elif watchlist_window:
+        purchase_state = "TOO_EXPENSIVE"
+    else:
+        purchase_state = "REVIEW"
+
+    return {
+        "business_score": business_score,
+        "valuation_score": valuation_score,
+        "buy_score": buy_score,
+        "classification": classification,
+        "data_quality_flag": data_quality_flag,
+        "hard_risk": hard_risk,
+        "business_ok": business_ok,
+        "valuation_ok": valuation_ok,
+        "buy_ok": buy_ok,
+        "data_ok": data_ok,
+        "purchase_state": purchase_state,
+        "eligible_for_purchase": purchase_state == "BUYABLE",
+    }
+
+
+def summarize_mandate_fit(
+    sleeve: str,
+    mandate_fit_score: float,
+    data_quality_flag: str,
+) -> str:
+    if data_quality_flag != "OK":
+        return "REVIEW"
+    if sleeve == "CASH":
+        return "CASH_RESERVE"
+    if sleeve == "CORE_ETF":
+        return "CORE"
+    if sleeve == "DIVIDEND_QUALITY_ETF":
+        return "DG_QUALITY"
+    if sleeve == "NON_CORE":
+        return "NON_CORE"
+    if sleeve == "REVIEW":
+        return "REVIEW"
+    if mandate_fit_score >= 75.0:
+        return "MANDATE_FIT"
+    if mandate_fit_score >= 60.0:
+        return "WATCH"
+    return "LOW_FIT"
+
+
 def build_scores(
     positions_rows: list[dict[str, str]],
     fundamentals_rows: list[dict[str, str]],
@@ -221,9 +397,15 @@ def build_scores(
 ) -> list[dict[str, Any]]:
     scoring_config = load_yaml_config(scoring_path)
     rules = load_portfolio_rules(rules_path)
-    position_index = build_position_index(positions_rows)
     fundamentals_index = build_fundamentals_index(fundamentals_rows, fundamentals_source_name)
-    position_weights = compute_position_weights(positions_rows)
+    fundamentals_isin_index = build_fundamentals_isin_index(fundamentals_rows)
+    fundamentals_name_index = build_fundamentals_name_index(fundamentals_rows)
+    position_index = build_position_index(positions_rows, fundamentals_isin_index, fundamentals_name_index)
+    total_assets = sum(to_float(row.get("market_value_eur")) for row in positions_rows) or 1.0
+    position_weights = {
+        ticker: round2(to_float(row.get("market_value_eur")) / total_assets)
+        for ticker, row in position_index.items()
+    }
     sector_weights = compute_sector_weights(positions_rows)
     universe_tickers = sorted(set(position_index) | set(fundamentals_index))
 
@@ -254,13 +436,14 @@ def build_scores(
             expected_return_score,
             drawdown_score,
             portfolio_fit_score,
+            scoring_config,
         )
         has_hard_risk_flag = to_bool(row.get("has_hard_risk_flag"))
         thesis_robustness = str(row.get("thesis_robustness", "REVIEW")).strip().upper()
         data_quality_flag = str(valuation_metrics["data_quality_flag"]).upper()
         if ticker in position_index and ticker not in fundamentals_index:
             data_quality_flag = "MISSING_DATA"
-            valuation_metrics["valuation_comment"] = "Missing fundamentals for held position; manual review required."
+            valuation_metrics["valuation_comment"] = "Fundamentaldaten fuer die gehaltene Position fehlen; manuelle Pruefung erforderlich."
         classification = classify_company(
             business_score,
             valuation_score,
@@ -272,9 +455,22 @@ def build_scores(
             data_quality_flag,
             rules,
         )
+        mandate_fit_score = round2(to_float(row.get("mandate_fit_score"), 50.0))
+        purchase_readiness = evaluate_purchase_readiness(
+            {
+                "business_score": business_score,
+                "valuation_score": valuation_score,
+                "buy_score": buy_score,
+                "classification": classification,
+                "data_quality_flag": data_quality_flag,
+                "has_hard_risk_flag": has_hard_risk_flag,
+            },
+            rules,
+        )["purchase_state"]
         results.append(
             {
                 "ticker": ticker,
+                "isin": row.get("isin", held_position.get("isin", "") if held_position else ""),
                 "company_name": row.get("company_name", ticker),
                 "sector": row.get("sector", "Unknown"),
                 "country": row.get("country", "Unknown"),
@@ -301,11 +497,13 @@ def build_scores(
                 "fair_value_estimate": valuation_metrics["fair_value_estimate"],
                 "margin_of_safety_pct": valuation_metrics["margin_of_safety_pct"],
                 "valuation_comment": valuation_metrics["valuation_comment"],
-                "mandate_fit_score": round2(to_float(row.get("mandate_fit_score"), 50.0)),
+                "mandate_fit_score": mandate_fit_score,
+                "mandate_fit": summarize_mandate_fit(str(row.get("sleeve", "SINGLE_STOCK")).upper(), mandate_fit_score, data_quality_flag),
                 "thesis_summary": row.get("thesis_summary", ""),
                 "main_risks": row.get("main_risks", ""),
                 "data_quality_flag": data_quality_flag,
                 "has_hard_risk_flag": has_hard_risk_flag,
+                "purchase_readiness": purchase_readiness,
                 "buy_score": buy_score,
                 "classification": classification,
             }

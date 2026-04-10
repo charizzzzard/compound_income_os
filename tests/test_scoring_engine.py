@@ -2,7 +2,13 @@ from __future__ import annotations
 
 import unittest
 
-from src.scoring_engine import build_scores, classify_company, compute_business_score, compute_buy_score
+from src.scoring_engine import (
+    build_scores,
+    classify_company,
+    compute_business_score,
+    compute_buy_score,
+    evaluate_purchase_readiness,
+)
 from src.portfolio_rules import load_portfolio_rules
 from src.valuation_engine import compute_valuation_metrics
 
@@ -17,7 +23,14 @@ class ScoringEngineTests(unittest.TestCase):
                 "balance_sheet_score": 0.20,
                 "growth_quality_score": 0.15,
                 "capital_allocation_score": 0.15,
-            }
+            },
+            "buy_score_weights": {
+                "business_score": 0.55,
+                "valuation_score": 0.18,
+                "expected_return_score": 0.1125,
+                "drawdown_opportunity_score": 0.09,
+                "portfolio_fit_score": 0.0675,
+            },
         }
 
     def test_business_score_formula(self) -> None:
@@ -33,9 +46,26 @@ class ScoringEngineTests(unittest.TestCase):
         self.assertAlmostEqual(score, expected, places=2)
 
     def test_buy_score_formula(self) -> None:
-        score = compute_buy_score(80.0, 70.0, 60.0, 50.0, 40.0)
+        score = compute_buy_score(80.0, 70.0, 60.0, 50.0, 40.0, self.scoring_config)
         expected = 0.55 * 80.0 + 0.45 * (0.40 * 70.0 + 0.25 * 60.0 + 0.20 * 50.0 + 0.15 * 40.0)
         self.assertAlmostEqual(score, expected, places=2)
+
+    def test_buy_score_uses_config_weights(self) -> None:
+        config = {
+            "buy_score_weights": {
+                "business_score": 0.0,
+                "valuation_score": 1.0,
+                "expected_return_score": 0.0,
+                "drawdown_opportunity_score": 0.0,
+                "portfolio_fit_score": 0.0,
+            }
+        }
+        score = compute_buy_score(80.0, 70.0, 60.0, 50.0, 40.0, config)
+        self.assertEqual(score, 70.0)
+
+    def test_buy_score_invalid_config_raises_clear_error(self) -> None:
+        with self.assertRaisesRegex(ValueError, "buy_score_weights missing keys"):
+            compute_buy_score(80.0, 70.0, 60.0, 50.0, 40.0, {"buy_score_weights": {"business_score": 1.0}})
 
     def test_fair_value_score_formula(self) -> None:
         metrics = compute_valuation_metrics(
@@ -88,7 +118,22 @@ class ScoringEngineTests(unittest.TestCase):
         self.assertTrue(row["held_in_portfolio"])
         self.assertEqual(row["data_quality_flag"], "MISSING_DATA")
         self.assertEqual(row["classification"], "EXIT_REVIEW")
-        self.assertIn("Missing fundamentals", row["valuation_comment"])
+        self.assertIn("Fundamentaldaten", row["valuation_comment"])
+
+    def test_purchase_readiness_blocks_missing_data(self) -> None:
+        readiness = evaluate_purchase_readiness(
+            {
+                "business_score": "90",
+                "valuation_score": "80",
+                "buy_score": "85",
+                "classification": "BUY_CANDIDATE",
+                "data_quality_flag": "MISSING_DATA",
+                "has_hard_risk_flag": "false",
+            },
+            self.rules,
+        )
+        self.assertEqual(readiness["purchase_state"], "REVIEW")
+        self.assertFalse(readiness["eligible_for_purchase"])
 
 
 if __name__ == "__main__":

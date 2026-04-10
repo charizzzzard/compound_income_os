@@ -12,8 +12,26 @@ def load_portfolio_rules(path: str = DEFAULT_RULES_PATH) -> dict[str, Any]:
     return load_yaml_config(path)
 
 
+def normalize_sleeve_name(value: Any) -> str:
+    sleeve = safe_upper(value)
+    aliases = {
+        "DG_QUALITY_ETF": "DIVIDEND_QUALITY_ETF",
+        "DIVIDEND_QUALITY_ETF": "DIVIDEND_QUALITY_ETF",
+        "DIVIDEND_GROWTH_ETF": "DIVIDEND_QUALITY_ETF",
+        "QUALITY_ETF": "DIVIDEND_QUALITY_ETF",
+        "SINGLE_STOCK": "SINGLE_STOCK",
+        "STOCK": "SINGLE_STOCK",
+        "EQUITY": "SINGLE_STOCK",
+        "CORE_ETF": "CORE_ETF",
+        "CASH": "CASH",
+        "NON_CORE": "NON_CORE",
+        "REVIEW": "REVIEW",
+    }
+    return aliases.get(sleeve, sleeve)
+
+
 def classify_sleeve(row: dict[str, Any]) -> str:
-    sleeve = safe_upper(row.get("sleeve"))
+    sleeve = normalize_sleeve_name(row.get("sleeve"))
     asset_type = safe_upper(row.get("asset_type"))
     company_name = str(row.get("company_name", "")).lower()
     if sleeve:
@@ -24,7 +42,11 @@ def classify_sleeve(row: dict[str, Any]) -> str:
         if "quality" in company_name or "dividend" in company_name or "income" in company_name:
             return "DIVIDEND_QUALITY_ETF"
         return "CORE_ETF"
-    return "SINGLE_STOCK"
+    if asset_type in {"STOCK", "ADR"}:
+        return "SINGLE_STOCK"
+    if asset_type == "OTHER":
+        return "NON_CORE"
+    return "REVIEW"
 
 
 def compute_total_assets(rows: list[dict[str, Any]]) -> float:
@@ -87,7 +109,7 @@ def allocation_summary(rows: list[dict[str, Any]]) -> dict[str, float]:
     return {
         "core_etf_weight": round2(grouped["CORE_ETF"] / total_assets),
         "dividend_quality_etf_weight": round2(grouped["DIVIDEND_QUALITY_ETF"] / total_assets),
-        "single_stocks_weight": round2(grouped["SINGLE_STOCK"] / total_assets),
+        "single_stocks_weight": round2((grouped["SINGLE_STOCK"] + grouped["NON_CORE"] + grouped["REVIEW"]) / total_assets),
         "cash_weight": round2(grouped["CASH"] / total_assets),
     }
 

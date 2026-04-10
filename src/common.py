@@ -83,7 +83,7 @@ def normalize_number_text(text: str) -> str:
     if "," in cleaned:
         if cleaned.count(",") == 1:
             integer_part, fractional_part = cleaned.split(",", 1)
-            if fractional_part.isdigit() and len(fractional_part) <= 2:
+            if fractional_part.isdigit():
                 return f"{integer_part}.{fractional_part}"
         return cleaned.replace(",", "")
 

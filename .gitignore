@@ -14,3 +14,11 @@ tests/_tmp_rules.yaml
 # Generated artifacts
 data/processed/
 reports/
+
+# Private raw portfolio inputs
+data/raw/personal_*
+data/raw/private_*
+data/raw/*.pdf
+data/raw/*.jpg
+data/raw/*.jpeg
+data/raw/*.png

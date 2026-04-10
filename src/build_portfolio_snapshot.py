@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from src.common import ensure_parent_dir, format_eur, format_pct, read_csv_rows, require_columns, to_float
+from src.common import ensure_parent_dir, format_eur, format_pct, read_csv_rows, require_columns, to_float, write_csv_rows
 from src.portfolio_rules import (
     allocation_summary,
     compute_cash_value,
@@ -13,6 +13,7 @@ from src.portfolio_rules import (
     find_rule_violations,
     load_portfolio_rules,
 )
+from src.portfolio_review import HOLDINGS_ACTION_FIELDS, build_holdings_action_table
 
 
 def build_portfolio_snapshot_report(
@@ -20,6 +21,7 @@ def build_portfolio_snapshot_report(
     output_path: str,
     scores_rows: list[dict[str, str]] | None = None,
     rules_path: str = "configs/portfolio_rules.yaml",
+    holdings_output: str | None = None,
 ) -> Path:
     rules = load_portfolio_rules(rules_path)
     total_assets = compute_total_assets(positions_rows)
@@ -29,6 +31,9 @@ def build_portfolio_snapshot_report(
     allocation = allocation_summary(positions_rows)
     top10 = compute_top10_weights(positions_rows)
     violations = find_rule_violations(positions_rows, rules)
+    action_rows = build_holdings_action_table(positions_rows, scores_rows or [], rules_path) if scores_rows is not None else []
+    if holdings_output and action_rows:
+        write_csv_rows(holdings_output, HOLDINGS_ACTION_FIELDS, action_rows)
 
     mandate_notes = []
     if allocation["core_etf_weight"] < rules["target_core_etf_min"]:
@@ -49,6 +54,7 @@ def build_portfolio_snapshot_report(
         f"- Portfoliowert: {format_eur(portfolio_value)}",
         f"- Cash: {format_eur(cash_value)}",
         f"- Cash-Quote: {format_pct(cash_quote)}",
+        f"- Anzahl Positionen inkl. Cash: {len(positions_rows)}",
         f"- Benchmark-Referenz: {rules['benchmark_name']}",
         "",
         "## Positionen",
@@ -62,6 +68,22 @@ def build_portfolio_snapshot_report(
         lines.append(
             f"| {row['ticker']} | {row['company_name']} | {row['sleeve']} | {row['market_value_eur']} | {row['weight_total_assets_pct']}% |"
         )
+
+    strongest_positions = [row for row in sorted_rows if str(row.get("asset_type", "")).upper() != "CASH"][:5]
+    lines.extend(
+        [
+            "",
+            "## Staerkste Positionen",
+            "",
+        ]
+    )
+    if strongest_positions:
+        for row in strongest_positions:
+            lines.append(
+                f"- `{row['ticker']}`: {format_eur(to_float(row.get('market_value_eur')))} bei {row.get('weight_total_assets_pct')}% Gesamtgewicht"
+            )
+    else:
+        lines.append("- Keine investierten Titel vorhanden.")
 
     lines.extend(
         [
@@ -98,6 +120,70 @@ def build_portfolio_snapshot_report(
     for note in mandate_notes:
         lines.append(f"- {note}")
 
+    if action_rows:
+        action_groups = {
+            "ADD": [row for row in action_rows if row["portfolio_action"] == "ADD"],
+            "HOLD": [row for row in action_rows if row["portfolio_action"] == "HOLD"],
+            "WATCH": [row for row in action_rows if row["portfolio_action"] == "WATCH"],
+            "REDUCE": [row for row in action_rows if row["portfolio_action"] == "REDUCE"],
+            "EXIT_REVIEW": [row for row in action_rows if row["portfolio_action"] == "EXIT_REVIEW"],
+        }
+        mandate_ok_rows = [row for row in action_rows if row["portfolio_action"] in {"ADD", "HOLD"}]
+        review_rows = [
+            row for row in action_rows if str(row.get("data_quality_flag", "OK")).upper() != "OK" or str(row.get("review_flag")).lower() == "true"
+        ]
+        lines.extend(
+            [
+                "",
+                "## Operatives Bestandsrating",
+                "",
+                "- Regelbasis: ADD nur bei mandatkonformen, kaufbaren und nicht uebergewichteten Bestandspositionen.",
+                "- HOLD fuer mandatkonforme Titel ohne akuten Ausbau- oder Reduktionsbedarf.",
+                "- WATCH fuer haltbare Positionen ohne klare Kauf- oder Exit-Entscheidung.",
+                "- REDUCE bei Uebergewichtung oder klarer struktureller Ueberdehnung.",
+                "- EXIT_REVIEW bei schwachem Mandats-Fit, NON_CORE-Charakter oder kritischer Datenlage.",
+                "",
+                f"- Titel mit ACTION=ADD: {len(action_groups['ADD'])}",
+                f"- Titel mit ACTION=HOLD: {len(action_groups['HOLD'])}",
+                f"- Titel mit ACTION=WATCH: {len(action_groups['WATCH'])}",
+                f"- Titel mit ACTION=REDUCE: {len(action_groups['REDUCE'])}",
+                f"- Titel mit ACTION=EXIT_REVIEW: {len(action_groups['EXIT_REVIEW'])}",
+            ]
+        )
+
+        lines.extend(["", "## Mandatkonforme Titel", ""])
+        if mandate_ok_rows:
+            for row in mandate_ok_rows[:10]:
+                lines.append(
+                    f"- `{row['ticker']}`: ACTION={row['portfolio_action']} Mandats-Fit={row['mandate_fit']} Buy-Score={row['buy_score']}"
+                )
+        else:
+            lines.append("- Keine klar mandatkonformen Bestandspositionen identifiziert.")
+
+        for section_title, action_key in [
+            ("## Positionen mit ACTION=ADD", "ADD"),
+            ("## Positionen mit ACTION=REDUCE", "REDUCE"),
+            ("## Positionen mit ACTION=EXIT_REVIEW", "EXIT_REVIEW"),
+            ("## Positionen mit ACTION=WATCH", "WATCH"),
+        ]:
+            lines.extend(["", section_title, ""])
+            if action_groups[action_key]:
+                for row in action_groups[action_key]:
+                    lines.append(
+                        f"- `{row['ticker']}`: {row['portfolio_action_reason']} Gewicht={row['current_weight']}% Datenqualitaet={row['data_quality_flag']}"
+                    )
+            else:
+                lines.append(f"- Keine Positionen mit ACTION={action_key}.")
+
+        lines.extend(["", "## Datenluecken und Review-Faelle", ""])
+        if review_rows:
+            for row in review_rows:
+                lines.append(
+                    f"- `{row['ticker']}`: Datenqualitaet={row['data_quality_flag']} Review-Flag={row['review_flag']} Aktion={row['portfolio_action']}"
+                )
+        else:
+            lines.append("- Keine Positionen mit offenen MISSING_DATA/REVIEW-Faellen.")
+
     path = ensure_parent_dir(output_path)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return path
@@ -109,6 +195,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", required=True, help="Markdown output path.")
     parser.add_argument("--scores", help="Optional company scores CSV for mandate fit commentary.")
     parser.add_argument("--rules", default="configs/portfolio_rules.yaml", help="Portfolio rules config path.")
+    parser.add_argument("--holdings-output", help="Optional CSV output for holdings action table.")
     return parser.parse_args()
 
 
@@ -121,7 +208,7 @@ def main() -> None:
         ["ticker", "company_name", "sleeve", "market_value_eur", "weight_total_assets_pct"],
         f"positions CSV ({args.positions})",
     )
-    build_portfolio_snapshot_report(positions_rows, args.output, scores_rows, args.rules)
+    build_portfolio_snapshot_report(positions_rows, args.output, scores_rows, args.rules, args.holdings_output)
 
 
 if __name__ == "__main__":

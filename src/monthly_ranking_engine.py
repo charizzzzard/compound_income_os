@@ -12,8 +12,15 @@ from src.portfolio_rules import (
     compute_total_assets,
     load_portfolio_rules,
 )
+from src.scoring_engine import evaluate_purchase_readiness
 
 DEFAULT_RULES_PATH = "configs/portfolio_rules.yaml"
+PURCHASE_STATE_LABELS = {
+    "BUYABLE": "KAUFBAR",
+    "TOO_EXPENSIVE": "ZU_TEUER",
+    "REVIEW": "REVIEW",
+    "BLOCKED": "GEBLOCKT",
+}
 
 OUTPUT_FIELDS = [
     "rank",
@@ -43,11 +50,29 @@ def index_by_ticker(rows: list[dict[str, str]]) -> dict[str, dict[str, str]]:
 
 
 def positions_index_by_ticker(rows: list[dict[str, str]]) -> dict[str, dict[str, str]]:
-    return {
-        str(row.get("ticker", "")).strip(): row
-        for row in aggregate_positions_by_ticker(rows)
-        if str(row.get("ticker", "")).strip()
-    }
+    index: dict[str, dict[str, str]] = {}
+    for row in aggregate_positions_by_ticker(rows):
+        for key in {str(row.get("ticker", "")).strip(), str(row.get("isin", "")).strip().upper()}:
+            if key:
+                index[key] = row
+    return index
+
+
+def find_position_row(
+    positions_index: dict[str, dict[str, str]],
+    candidate: dict[str, str],
+    score_row: dict[str, str],
+) -> dict[str, str]:
+    keys = [
+        str(score_row.get("ticker", "")).strip(),
+        str(score_row.get("isin", "")).strip().upper(),
+        str(candidate.get("ticker", "")).strip(),
+        str(candidate.get("isin", "")).strip().upper(),
+    ]
+    for key in keys:
+        if key and key in positions_index:
+            return positions_index[key]
+    return {}
 
 
 def corridor_gap_bonus(sleeve: str, summary: dict[str, float], rules: dict[str, Any]) -> float:
@@ -107,7 +132,8 @@ def evaluate_candidate(
     company_name = str(candidate.get("company_name") or score_row.get("company_name") or ticker)
     sleeve = str(candidate.get("sleeve") or score_row.get("sleeve") or "SINGLE_STOCK").upper()
     sector = str(candidate.get("sector") or score_row.get("sector") or "Unknown")
-    current_value = to_float(positions_index.get(ticker, {}).get("market_value_eur"))
+    position_row = find_position_row(positions_index, candidate, score_row)
+    current_value = to_float(position_row.get("market_value_eur"))
     current_weight_pct = round2((current_value / total_assets) * 100.0) if total_assets else 0.0
     projected_total_assets = total_assets + budget
     sector_current_value = round2(sector_weights.get(sector, 0.0) * total_assets)
@@ -116,39 +142,37 @@ def evaluate_candidate(
     if sleeve in {"CORE_ETF", "DIVIDEND_QUALITY_ETF"} or sector == "ETF":
         sector_cap = budget
     allowed_amount = max(0.0, min(budget, position_cap, sector_cap))
-    classification = str(score_row.get("classification", "WATCHLIST")).upper()
-    watchlist_status = str(candidate.get("status", "")).upper()
     business_score = to_float(score_row.get("business_score"))
     valuation_score = to_float(score_row.get("valuation_score"))
     buy_score = to_float(score_row.get("buy_score"))
-    hard_risk = to_bool(score_row.get("has_hard_risk_flag"))
-    data_quality = str(score_row.get("data_quality_flag", "OK")).upper()
     corridor_bonus = corridor_gap_bonus(sleeve, summary, rules)
     priority_score = buy_score + corridor_bonus + max(0.0, to_float(score_row.get("margin_of_safety_pct")) * 0.15)
+    purchase_readiness = evaluate_purchase_readiness(score_row, rules)
 
-    business_ok = business_score >= to_float(rules["buy_rules"]["min_business_score"])
-    valuation_ok = valuation_score >= to_float(rules["buy_rules"]["min_valuation_score"])
-    buy_ok = buy_score >= to_float(rules["buy_rules"]["min_buy_score"])
+    business_ok = bool(purchase_readiness["business_ok"])
+    valuation_ok = bool(purchase_readiness["valuation_ok"])
+    buy_ok = bool(purchase_readiness["buy_ok"])
     position_cap_ok = allowed_amount >= to_float(rules["buy_rules"]["min_candidate_amount_eur"])
-    data_ok = data_quality == "OK"
-    status_ok = watchlist_status not in {"REJECT", "TOO_EXPENSIVE", "REVIEW"} or classification == "BUY_CANDIDATE"
-    eligible = all([business_ok, valuation_ok, buy_ok, position_cap_ok, data_ok, status_ok, not hard_risk])
+    data_ok = bool(purchase_readiness["data_ok"])
+    purchase_state = str(purchase_readiness["purchase_state"])
+    eligible = bool(purchase_readiness["eligible_for_purchase"]) and position_cap_ok
 
     target_action = "TOP_UP" if current_value > 0.0 else "BUY"
     if not eligible:
         target_action = "DO_NOT_BUY"
 
     rationale = (
-        f"business={round2(business_score)} valuation={round2(valuation_score)} buy={round2(buy_score)} "
-        f"corridor_bonus={round2(corridor_bonus)} sleeve={sleeve}"
+        f"Business={round2(business_score)} Bewertung={round2(valuation_score)} Buy-Score={round2(buy_score)} "
+        f"Korridorbonus={round2(corridor_bonus)} Portfolio-Sleeve={sleeve}"
     )
     constraint_checks = "; ".join(
         [
-            f"business_ok={'YES' if business_ok else 'NO'}",
-            f"valuation_ok={'YES' if valuation_ok else 'NO'}",
-            f"buy_score_ok={'YES' if buy_ok else 'NO'}",
-            f"position_cap_ok={'YES' if position_cap_ok else 'NO'}",
-            f"data_ok={'YES' if data_ok else 'NO'}",
+            f"kaufbarkeit={PURCHASE_STATE_LABELS.get(purchase_state, purchase_state)}",
+            f"business_score_ok={'JA' if business_ok else 'NEIN'}",
+            f"valuation_score_ok={'JA' if valuation_ok else 'NEIN'}",
+            f"buy_score_ok={'JA' if buy_ok else 'NEIN'}",
+            f"positionslimit_ok={'JA' if position_cap_ok else 'NEIN'}",
+            f"datenqualitaet_ok={'JA' if data_ok else 'NEIN'}",
             f"allowed_amount_eur={round2(allowed_amount)}",
         ]
     )
@@ -165,7 +189,7 @@ def evaluate_candidate(
         "valuation_comment": score_row.get("valuation_comment", ""),
         "mandate_fit_comment": candidate.get(
             "mandate_fit_comment",
-            f"Mandats-Fit {score_row.get('mandate_fit_score', 'n/a')} und Sleeve {sleeve}.",
+            f"Mandats-Fit {score_row.get('mandate_fit_score', 'n/a')} und Portfolio-Sleeve {sleeve}.",
         ),
         "_eligible": eligible,
         "_priority_score": priority_score,
@@ -281,7 +305,7 @@ def build_monthly_ranking(
                 0,
                 {
                     "ticker": "HOLD_CASH",
-                    "company_name": "Hold Cash",
+                    "company_name": "Cash halten",
                     "current_weight": round2(summary["cash_weight"] * 100.0),
                     "target_action": "HOLD_CASH",
                     "allocation_status": "SELECTED_THIS_MONTH",
@@ -299,7 +323,7 @@ def build_monthly_ranking(
             ranking_rows = [
                 {
                     "ticker": "HOLD_CASH",
-                    "company_name": "Hold Cash",
+                    "company_name": "Cash halten",
                     "current_weight": round2(summary["cash_weight"] * 100.0),
                     "target_action": "HOLD_CASH",
                     "allocation_status": "SELECTED_THIS_MONTH",
@@ -316,7 +340,7 @@ def build_monthly_ranking(
             ranking_rows = [
                 {
                     "ticker": "NO_ELIGIBLE_CANDIDATES",
-                    "company_name": "No Eligible Candidates",
+                    "company_name": "Keine kaufbaren Kandidaten",
                     "current_weight": round2(summary["cash_weight"] * 100.0),
                     "target_action": "NO_ACTION",
                     "allocation_status": "NOT_ELIGIBLE",

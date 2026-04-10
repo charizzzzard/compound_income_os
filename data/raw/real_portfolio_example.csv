@@ -1,0 +1,9 @@
+portfolio_date,source_name,instrument,symbol,isin,shares,current_value,purchase_price,current_price,currency,category,sector,country,position_type,comment,cash
+2026-04-10,manual_real_depot,BlackRock,BLK,US09247X1019,3,975,280,325,EUR,stock,Financials,USA,security,overweight core compounder,
+2026-04-10,manual_real_depot,Johnson & Johnson,JNJ,US4781601046,2,310,145,155,EUR,stock,Healthcare,USA,security,defensive quality holding,
+2026-04-10,manual_real_depot,Apple,AAPL,US0378331005,1,355,315,355,EUR,stock,Technology,USA,security,richly valued quality stock,
+2026-04-10,manual_real_depot,Vanguard FTSE All-World UCITS ETF,VWCE,IE00BK5BQT80,3,360,110,120,EUR,ETF,ETF,Global,security,core ETF anchor,
+2026-04-10,manual_real_depot,Fidelity Global Quality Income ETF,FUSD,IE00BYXVGX24,8,360,41,45,EUR,ETF,ETF,Global,security,dividend quality ETF sleeve,
+2026-04-10,manual_real_depot,"Workhorse GRP New DL-,001",WKHS,US98138J2069,1,89.65,500,89.65,EUR,stock,Industrials,USA,security,legacy residual position,
+2026-04-10,manual_real_depot,Legacy Spin-Off Certificate,,XS1234567890,1,75,200,75,EUR,certificate,,,other,non-core legacy instrument,
+2026-04-10,manual_real_depot,Cash Reserve,,,0,0,0,0,EUR,cash,Cash,Eurozone,cash,available cash,2500

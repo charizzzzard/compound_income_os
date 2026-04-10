@@ -65,6 +65,7 @@ class MonthlyDecisionReportTests(unittest.TestCase):
             )
             report = output_path.read_text(encoding="utf-8")
             self.assertIn("# Monatlicher Entscheidungsbericht", report)
+            self.assertIn("- Monatlicher Cash-Zufluss: 321.0 EUR", report)
             self.assertIn("## Vorschlag fuer die naechsten 321.0 EUR", report)
             self.assertIn("Kaufbar, aber nicht finanziert", report)
             self.assertIn("`EXIT1`", report)

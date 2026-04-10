@@ -135,6 +135,7 @@ class MonthlyRankingEngineTests(unittest.TestCase):
         self.assertEqual(ranking[1]["allocation_status"], "ELIGIBLE_NOT_FUNDED")
         self.assertEqual(ranking[1]["suggested_buy_amount_eur"], 0.0)
         self.assertEqual(ranking[1]["target_action"], "BUY")
+        self.assertIn("kaufbarkeit=KAUFBAR", ranking[0]["constraint_checks"])
 
     def test_allowed_amount_caps_suggested_buy_amount_for_top_up(self) -> None:
         positions = [
@@ -163,6 +164,35 @@ class MonthlyRankingEngineTests(unittest.TestCase):
         ranking, _ = build_monthly_ranking(positions, scores, [])
         self.assertEqual(ranking[0]["target_action"], "TOP_UP")
         self.assertEqual(ranking[0]["suggested_buy_amount_eur"], 127.2)
+
+    def test_isin_matched_pdf_holding_is_ranked_as_top_up(self) -> None:
+        positions = [
+            {"ticker": "DE000A1TEST1", "isin": "DE000A1TEST1", "company_name": "Example AG", "asset_type": "STOCK", "sleeve": "SINGLE_STOCK", "sector": "Tech", "market_value_eur": "100"},
+            {"ticker": "EUR-CASH", "company_name": "Cash", "asset_type": "CASH", "sleeve": "CASH", "sector": "Cash", "market_value_eur": "5000"},
+        ]
+        scores = [
+            {
+                "ticker": "QTEST",
+                "isin": "DE000A1TEST1",
+                "company_name": "Example AG",
+                "sector": "Tech",
+                "sleeve": "SINGLE_STOCK",
+                "held_in_portfolio": "true",
+                "business_score": "88",
+                "valuation_score": "72",
+                "buy_score": "80",
+                "margin_of_safety_pct": "10",
+                "classification": "HOLD",
+                "has_hard_risk_flag": "false",
+                "data_quality_flag": "OK",
+                "valuation_comment": "Attraktiv.",
+                "mandate_fit_score": "90",
+            }
+        ]
+        ranking, _ = build_monthly_ranking(positions, scores, [])
+        self.assertEqual(ranking[0]["ticker"], "QTEST")
+        self.assertEqual(ranking[0]["target_action"], "TOP_UP")
+        self.assertGreater(ranking[0]["current_weight"], 0.0)
 
     def test_hold_cash_respects_config_when_disabled(self) -> None:
         rules = load_portfolio_rules()

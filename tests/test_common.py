@@ -12,6 +12,7 @@ class CommonParsingTests(unittest.TestCase):
         self.assertEqual(to_float("1234,56"), 1234.56)
         self.assertEqual(to_float("1.234,56"), 1234.56)
         self.assertEqual(to_float("12%"), 12.0)
+        self.assertEqual(to_float("0,3453"), 0.3453)
 
 
 if __name__ == "__main__":

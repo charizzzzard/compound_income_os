@@ -120,13 +120,13 @@ def compute_valuation_metrics(
         data_quality_flag = "OK"
 
     if data_quality_flag == "MISSING_DATA":
-        valuation_comment = "Missing valuation inputs; fair value is conservative placeholder."
+        valuation_comment = "Bewertungsinputs fehlen; Fair Value bleibt konservativ angesetzt."
     elif margin_of_safety_pct >= 10:
-        valuation_comment = "Undervaluation indicated by hybrid fair value inputs."
+        valuation_comment = "Die hybride Fair-Value-Sicht signalisiert Unterbewertung."
     elif margin_of_safety_pct <= -10:
-        valuation_comment = "Trading above hybrid fair value range."
+        valuation_comment = "Der Kurs liegt ueber der hybriden Fair-Value-Spanne."
     else:
-        valuation_comment = "Close to estimated fair value."
+        valuation_comment = "Der Kurs liegt nahe am geschaetzten Fair Value."
 
     return {
         "historical_multiple_score": historical_multiple_score,

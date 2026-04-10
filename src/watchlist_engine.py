@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Any
 
 from src.common import ensure_parent_dir, load_yaml_config, read_csv_rows, require_columns, require_unique_tickers, round2, to_float, write_csv_rows
+from src.portfolio_rules import load_portfolio_rules
+from src.scoring_engine import DEFAULT_RULES_PATH, evaluate_purchase_readiness
 
 DEFAULT_WATCHLIST_CONFIG = "configs/watchlist.yaml"
 
@@ -35,21 +37,18 @@ def score_index(rows: list[dict[str, str]], source_name: str = "score input") ->
     return {str(row.get("ticker", "")).strip(): row for row in rows if str(row.get("ticker", "")).strip()}
 
 
-def determine_status(score_row: dict[str, str], watchlist_row: dict[str, str]) -> str:
-    business_score = to_float(score_row.get("business_score"))
-    valuation_score = to_float(score_row.get("valuation_score"))
-    buy_score = to_float(score_row.get("buy_score"))
+def determine_status(score_row: dict[str, str], watchlist_row: dict[str, str], rules: dict[str, Any]) -> str:
     sleeve = str(watchlist_row.get("sleeve") or score_row.get("sleeve") or "SINGLE_STOCK").upper()
-    data_quality_flag = str(score_row.get("data_quality_flag", "OK")).upper()
-    classification = str(score_row.get("classification", "WATCHLIST")).upper()
+    purchase_readiness = evaluate_purchase_readiness(score_row, rules)
+    purchase_state = str(purchase_readiness["purchase_state"])
 
-    if classification in {"REJECT", "EXIT_REVIEW"} or business_score < 65.0 or valuation_score < 40.0:
+    if purchase_state == "BLOCKED":
         return "REJECT"
-    if data_quality_flag in {"REVIEW", "MISSING_DATA"} and buy_score < 72.0:
+    if purchase_state == "REVIEW":
         return "REVIEW"
-    if business_score >= 75.0 and valuation_score < 60.0:
+    if purchase_state == "TOO_EXPENSIVE":
         return "TOO_EXPENSIVE"
-    if business_score >= 75.0 and valuation_score >= 60.0 and buy_score >= 72.0:
+    if purchase_state == "BUYABLE":
         if sleeve == "CORE_ETF":
             return "CORE_CANDIDATE"
         if sleeve == "DIVIDEND_QUALITY_ETF" or str(score_row.get("asset_type", "")).upper() == "ETF":
@@ -62,10 +61,12 @@ def build_watchlist_ranked(
     watchlist_rows: list[dict[str, str]],
     score_rows: list[dict[str, str]],
     config_path: str = DEFAULT_WATCHLIST_CONFIG,
+    rules_path: str = DEFAULT_RULES_PATH,
     score_source_name: str = "scores input",
     watchlist_source_name: str = "watchlist input",
 ) -> list[dict[str, Any]]:
     config = load_yaml_config(config_path)
+    rules = load_portfolio_rules(rules_path)
     require_unique_tickers(watchlist_rows, watchlist_source_name)
     scores = score_index(score_rows, score_source_name)
     status_priority = {status: index for index, status in enumerate(config["status_priority"])}
@@ -99,8 +100,12 @@ def build_watchlist_ranked(
             )
             continue
 
-        status = determine_status(score_row, row)
+        status = determine_status(score_row, row, rules)
         mandate_fit_score = round2(to_float(score_row.get("mandate_fit_score", row.get("mandate_fit", 0.0))))
+        fit_summary = str(row.get("thesis_summary") or score_row.get("thesis_summary") or "").strip()
+        mandate_fit_comment = f"Mandats-Fit {mandate_fit_score}/100."
+        if fit_summary:
+            mandate_fit_comment = f"{fit_summary}. {mandate_fit_comment}"
         ranked.append(
             {
                 "ticker": ticker,
@@ -117,7 +122,7 @@ def build_watchlist_ranked(
                 "margin_of_safety_pct": round2(to_float(score_row.get("margin_of_safety_pct"))),
                 "status": status,
                 "valuation_comment": score_row.get("valuation_comment", ""),
-                "mandate_fit_comment": f"{row.get('thesis_summary', score_row.get('thesis_summary', ''))}; mandate fit {mandate_fit_score}/100.",
+                "mandate_fit_comment": mandate_fit_comment,
                 "thesis_summary": row.get("thesis_summary") or score_row.get("thesis_summary", ""),
                 "main_risks": row.get("main_risks") or score_row.get("main_risks", ""),
                 "data_quality_flag": score_row.get("data_quality_flag", "OK"),
@@ -189,6 +194,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--scores", required=True, help="Company scores CSV.")
     parser.add_argument("--output", required=True, help="Ranked watchlist CSV.")
     parser.add_argument("--config", default=DEFAULT_WATCHLIST_CONFIG, help="Watchlist config path.")
+    parser.add_argument("--rules", default=DEFAULT_RULES_PATH, help="Portfolio rules config path.")
     parser.add_argument("--report-output", help="Optional Markdown watchlist report path.")
     return parser.parse_args()
 
@@ -207,6 +213,7 @@ def main() -> None:
         watchlist_rows,
         score_rows,
         args.config,
+        args.rules,
         f"scores CSV ({args.scores})",
         f"watchlist CSV ({args.input})",
     )
