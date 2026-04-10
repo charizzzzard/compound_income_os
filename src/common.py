@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -55,6 +56,15 @@ def require_columns(rows: list[dict[str, Any]], required_columns: Iterable[str],
         raise ValueError(f"{source_name} missing required columns: {missing_text}")
 
 
+def require_non_blank_fields(rows: list[dict[str, Any]], required_fields: Iterable[str], source_name: str) -> None:
+    fields = list(required_fields)
+    for index, row in enumerate(rows, start=2):
+        missing = [field for field in fields if not str(row.get(field, "")).strip()]
+        if missing:
+            missing_text = ", ".join(sorted(missing))
+            raise ValueError(f"{source_name} row {index} has blank required field(s): {missing_text}")
+
+
 def canonicalize_ticker(value: Any) -> str:
     ticker = str(value or "").strip().upper()
     if not ticker:
@@ -63,6 +73,7 @@ def canonicalize_ticker(value: Any) -> str:
 
 
 def require_unique_tickers(rows: list[dict[str, Any]], source_name: str) -> None:
+    require_non_blank_fields(rows, ["ticker"], source_name)
     duplicates: set[str] = set()
     seen: set[str] = set()
     for row in rows:
@@ -75,6 +86,35 @@ def require_unique_tickers(rows: list[dict[str, Any]], source_name: str) -> None
     if duplicates:
         duplicate_text = ", ".join(sorted(duplicates))
         raise ValueError(f"{source_name} contains duplicate tickers: {duplicate_text}")
+
+
+def validate_weight_block(
+    config: dict[str, Any],
+    block_name: str,
+    required_keys: Iterable[str],
+    tolerance: float = 1e-6,
+) -> dict[str, float]:
+    raw_weights = config.get(block_name)
+    if not isinstance(raw_weights, dict):
+        raise ValueError(f"scoring config missing {block_name} mapping")
+
+    keys = tuple(required_keys)
+    missing_keys = [key for key in keys if key not in raw_weights]
+    if missing_keys:
+        missing_text = ", ".join(sorted(missing_keys))
+        raise ValueError(f"{block_name} missing keys: {missing_text}")
+
+    weights: dict[str, float] = {}
+    for key in keys:
+        value = to_float(raw_weights.get(key), float("nan"))
+        if not math.isfinite(value) or value < 0.0:
+            raise ValueError(f"{block_name} contains invalid value for {key}: {raw_weights.get(key)!r}")
+        weights[key] = value
+
+    total_weight = sum(weights.values())
+    if not math.isclose(total_weight, 1.0, rel_tol=0.0, abs_tol=tolerance):
+        raise ValueError(f"{block_name} must sum to 1.0, got {round2(total_weight)}")
+    return weights
 
 
 def normalize_number_text(text: str) -> str:

@@ -119,6 +119,12 @@ class FundamentalsEngineTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing required raw fundamentals columns: roic"):
             enrich_fundamentals_rows([invalid], "raw", source_name="test raw fundamentals")
 
+    def test_fundamentals_blank_ticker_is_rejected(self) -> None:
+        invalid = {**RAW_ROW, "ticker": "   ", "isin": "US0000000001"}
+
+        with self.assertRaisesRegex(ValueError, "test raw fundamentals row 2 has blank required field\\(s\\): ticker"):
+            enrich_fundamentals_rows([invalid], "raw", source_name="test raw fundamentals")
+
     def test_component_weight_validation_rejects_bad_sums(self) -> None:
         rules_path = Path("tests") / "_tmp_bad_fundamentals_score_rules.yaml"
         rules = load_yaml_config("configs/fundamentals_score_rules.yaml")

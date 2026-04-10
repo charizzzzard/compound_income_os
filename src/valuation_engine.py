@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.common import clamp, load_yaml_config, mean, round2, to_float
+from src.common import clamp, load_yaml_config, mean, round2, to_float, validate_weight_block
 
 DEFAULT_SCORING_PATH = "configs/scoring_weights.yaml"
 
@@ -32,7 +32,11 @@ def compute_valuation_metrics(
     config_path: str = DEFAULT_SCORING_PATH,
 ) -> dict[str, Any]:
     config = load_yaml_config(config_path)
-    weights = config["fair_value_weights"]
+    weights = validate_weight_block(
+        config,
+        "fair_value_weights",
+        ("historical_multiple_score", "normalized_fcf_score", "dividend_yield_relative_score"),
+    )
     fallback_score = to_float(config["fallback_scores"]["valuation_component_missing"], 35.0)
 
     current_price = to_float(row.get("current_price_eur"))

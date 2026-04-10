@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.common import canonicalize_ticker, clamp, load_yaml_config, round2, safe_upper, to_float
+from src.common import canonicalize_ticker, clamp, load_yaml_config, require_non_blank_fields, round2, safe_upper, to_float
 
 DEFAULT_SCHEMA_PATH = "configs/fundamentals_schema.yaml"
 DEFAULT_SCORE_RULES_PATH = "configs/fundamentals_score_rules.yaml"
@@ -318,6 +318,8 @@ def enrich_fundamentals_rows(
     source_name: str = "fundamentals input",
 ) -> tuple[list[dict[str, Any]], str]:
     detected_format = detect_fundamentals_format(rows, fundamentals_format)
+    if rows:
+        require_non_blank_fields(rows, ["ticker"], source_name)
     rules = load_and_validate_score_rules(rules_path)
     if detected_format == "raw":
         schema = load_yaml_config(schema_path)

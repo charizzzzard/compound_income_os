@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import unittest
+from pathlib import Path
 
 from src.scoring_engine import (
     build_fundamentals_isin_index,
@@ -13,6 +15,7 @@ from src.scoring_engine import (
     evaluate_purchase_readiness,
     find_unique_name_match,
 )
+from src.common import load_yaml_config
 from src.portfolio_rules import load_portfolio_rules
 from src.valuation_engine import compute_valuation_metrics
 
@@ -71,6 +74,32 @@ class ScoringEngineTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "buy_score_weights missing keys"):
             compute_buy_score(80.0, 70.0, 60.0, 50.0, 40.0, {"buy_score_weights": {"business_score": 1.0}})
 
+    def test_business_score_weights_must_sum_to_one(self) -> None:
+        config = {
+            **self.scoring_config,
+            "business_score_weights": {
+                "quality_score": 0.50,
+                "dividend_score": 0.20,
+                "balance_sheet_score": 0.20,
+                "growth_quality_score": 0.15,
+                "capital_allocation_score": 0.15,
+            },
+        }
+        with self.assertRaisesRegex(ValueError, "business_score_weights must sum to 1.0, got 1.2"):
+            compute_business_score({"quality_score": 90}, config)
+
+    def test_fair_value_weights_must_sum_to_one(self) -> None:
+        config_path = Path("tests") / "_tmp_bad_scoring_weights.yaml"
+        config = load_yaml_config("configs/scoring_weights.yaml")
+        config["fair_value_weights"]["historical_multiple_score"] = 0.60
+        try:
+            config_path.write_text(json.dumps(config, indent=2), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "fair_value_weights must sum to 1.0, got 1.2"):
+                compute_valuation_metrics({"current_price_eur": 100}, str(config_path))
+        finally:
+            if config_path.exists():
+                config_path.unlink()
+
     def test_fair_value_score_formula(self) -> None:
         metrics = compute_valuation_metrics(
             {
@@ -123,6 +152,38 @@ class ScoringEngineTests(unittest.TestCase):
         self.assertEqual(row["data_quality_flag"], "MISSING_DATA")
         self.assertEqual(row["classification"], "EXIT_REVIEW")
         self.assertIn("Fundamentaldaten", row["valuation_comment"])
+
+    def test_blank_fundamentals_ticker_is_rejected_before_missing_data_fallback(self) -> None:
+        positions = [
+            {
+                "ticker": "AAPL",
+                "isin": "US0378331005",
+                "company_name": "Apple",
+                "asset_type": "STOCK",
+                "sleeve": "SINGLE_STOCK",
+                "sector": "Technology",
+                "market_value_eur": "100",
+            }
+        ]
+        fundamentals = [
+            {
+                "ticker": " ",
+                "isin": "US0378331005",
+                "company_name": "Apple",
+                "sector": "Technology",
+                "country": "USA",
+                "asset_type": "STOCK",
+                "sleeve": "SINGLE_STOCK",
+                "quality_score": "90",
+                "dividend_score": "60",
+                "balance_sheet_score": "90",
+                "growth_quality_score": "80",
+                "capital_allocation_score": "85",
+            }
+        ]
+
+        with self.assertRaisesRegex(ValueError, "fundamentals input row 2 has blank required field\\(s\\): ticker"):
+            build_scores(positions, fundamentals)
 
     def test_canonical_position_mapping_aggregates_instead_of_overwriting(self) -> None:
         positions = [

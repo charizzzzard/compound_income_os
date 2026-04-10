@@ -135,6 +135,24 @@ class WatchlistEngineTests(unittest.TestCase):
         self.assertNotEqual(ranked[0]["status"], "REVIEW")
         self.assertNotEqual(ranked[0]["data_quality_flag"], "MISSING_DATA")
 
+    def test_blank_watchlist_ticker_raises_clear_error(self) -> None:
+        with self.assertRaisesRegex(ValueError, "watchlist input row 2 has blank required field\\(s\\): ticker"):
+            build_watchlist_ranked(
+                [{"ticker": "   ", "company_name": "Blank"}],
+                [
+                    {
+                        "ticker": "AAA",
+                        "business_score": "80",
+                        "valuation_score": "65",
+                        "buy_score": "75",
+                        "fair_value_estimate": "100",
+                        "margin_of_safety_pct": "10",
+                        "data_quality_flag": "OK",
+                    }
+                ],
+                watchlist_source_name="watchlist input",
+            )
+
     def test_duplicate_watchlist_tickers_raise_clear_error(self) -> None:
         with self.assertRaisesRegex(ValueError, "watchlist input contains duplicate tickers: AAA"):
             build_watchlist_ranked(

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import math
 import re
 from typing import Any
 
@@ -11,6 +10,7 @@ from src.common import (
     load_yaml_config,
     read_csv_rows,
     require_columns,
+    require_non_blank_fields,
     round2,
     score_linear,
     to_bool,
@@ -18,6 +18,7 @@ from src.common import (
     write_csv_rows,
     require_unique_tickers,
     safe_upper,
+    validate_weight_block,
 )
 from src.fundamentals_engine import (
     ENRICHED_OUTPUT_FIELDS,
@@ -37,6 +38,13 @@ BUY_SCORE_WEIGHT_KEYS = (
     "expected_return_score",
     "drawdown_opportunity_score",
     "portfolio_fit_score",
+)
+BUSINESS_SCORE_WEIGHT_KEYS = (
+    "quality_score",
+    "dividend_score",
+    "balance_sheet_score",
+    "growth_quality_score",
+    "capital_allocation_score",
 )
 ISIN_PATTERN = re.compile(r"^[A-Z]{2}[A-Z0-9]{9}[0-9]$")
 
@@ -184,6 +192,16 @@ def build_fundamentals_index(rows: list[dict[str, str]], source_name: str = "fun
     }
 
 
+def validate_scoring_weights(config: dict[str, Any]) -> None:
+    validate_weight_block(config, "business_score_weights", BUSINESS_SCORE_WEIGHT_KEYS)
+    validate_weight_block(config, "buy_score_weights", BUY_SCORE_WEIGHT_KEYS)
+    validate_weight_block(
+        config,
+        "fair_value_weights",
+        ("historical_multiple_score", "normalized_fcf_score", "dividend_yield_relative_score"),
+    )
+
+
 def build_missing_fundamentals_row(
     position_row: dict[str, Any],
     scoring_config: dict[str, Any],
@@ -219,7 +237,7 @@ def build_missing_fundamentals_row(
 
 
 def compute_business_score(row: dict[str, Any], config: dict[str, Any]) -> float:
-    weights = config["business_score_weights"]
+    weights = validate_weight_block(config, "business_score_weights", BUSINESS_SCORE_WEIGHT_KEYS)
     return round2(
         (weights["quality_score"] * to_float(row.get("quality_score"), 40.0))
         + (weights["dividend_score"] * to_float(row.get("dividend_score"), 40.0))
@@ -262,26 +280,7 @@ def compute_drawdown_score(row: dict[str, Any]) -> float:
 
 def load_buy_score_weights(config: dict[str, Any] | None = None, scoring_path: str = DEFAULT_SCORING_PATH) -> dict[str, float]:
     config = config or load_yaml_config(scoring_path)
-    raw_weights = config.get("buy_score_weights")
-    if not isinstance(raw_weights, dict):
-        raise ValueError("scoring config missing buy_score_weights mapping")
-
-    weights: dict[str, float] = {}
-    missing_keys = [key for key in BUY_SCORE_WEIGHT_KEYS if key not in raw_weights]
-    if missing_keys:
-        missing_text = ", ".join(sorted(missing_keys))
-        raise ValueError(f"buy_score_weights missing keys: {missing_text}")
-
-    for key in BUY_SCORE_WEIGHT_KEYS:
-        value = to_float(raw_weights.get(key), float("nan"))
-        if not math.isfinite(value) or value < 0.0:
-            raise ValueError(f"buy_score_weights contains invalid value for {key}: {raw_weights.get(key)!r}")
-        weights[key] = value
-
-    total_weight = sum(weights.values())
-    if not math.isclose(total_weight, 1.0, rel_tol=0.0, abs_tol=1e-6):
-        raise ValueError(f"buy_score_weights must sum to 1.0, got {round2(total_weight)}")
-    return weights
+    return validate_weight_block(config, "buy_score_weights", BUY_SCORE_WEIGHT_KEYS)
 
 
 def compute_buy_score(
@@ -449,6 +448,7 @@ def build_scores_with_audit(
     fundamentals_score_rules_path: str = DEFAULT_FUNDAMENTALS_SCORE_RULES_PATH,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
     scoring_config = load_yaml_config(scoring_path)
+    validate_scoring_weights(scoring_config)
     rules = load_portfolio_rules(rules_path)
     enriched_fundamentals_rows, _ = enrich_fundamentals_rows(
         fundamentals_rows,
@@ -654,6 +654,7 @@ def main() -> None:
             ["ticker", "company_name", "sector", "country", "asset_type", "sleeve"],
             f"fundamentals CSV ({args.fundamentals})",
         )
+        require_non_blank_fields(fundamentals_rows, ["ticker"], f"fundamentals CSV ({args.fundamentals})")
     results, enriched_rows, audit_rows = build_scores_with_audit(
         positions_rows,
         fundamentals_rows,

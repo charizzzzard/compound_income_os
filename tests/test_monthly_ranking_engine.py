@@ -247,6 +247,14 @@ class MonthlyRankingEngineTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "scores input contains duplicate tickers: AAA"):
             build_monthly_ranking(positions, scores, [])
 
+    def test_blank_score_ticker_raises_clear_error_in_ranking(self) -> None:
+        positions = [
+            {"ticker": "EUR-CASH", "company_name": "Cash", "asset_type": "CASH", "sleeve": "CASH", "sector": "Cash", "market_value_eur": "5000"},
+        ]
+        scores = [{"ticker": "   ", "business_score": "80", "valuation_score": "65", "buy_score": "75", "classification": "BUY_CANDIDATE", "data_quality_flag": "OK"}]
+        with self.assertRaisesRegex(ValueError, "scores input row 2 has blank required field\\(s\\): ticker"):
+            build_monthly_ranking(positions, scores, [])
+
     def test_duplicate_watchlist_tickers_raise_clear_error_in_ranking(self) -> None:
         positions = [
             {"ticker": "EUR-CASH", "company_name": "Cash", "asset_type": "CASH", "sleeve": "CASH", "sector": "Cash", "market_value_eur": "5000"},
