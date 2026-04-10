@@ -7,6 +7,28 @@ from src.common import ensure_parent_dir, read_csv_rows, require_columns, round2
 from src.portfolio_rules import load_portfolio_rules
 
 
+def describe_allocation_status(row: dict[str, str]) -> str:
+    status = str(row.get("allocation_status", "")).upper()
+    if not status:
+        if str(row.get("target_action", "")).upper() == "HOLD_CASH":
+            status = "SELECTED_THIS_MONTH"
+        elif to_float(row.get("suggested_buy_amount_eur")) > 0.0 and str(row.get("target_action", "")).upper() not in {"DO_NOT_BUY", "NO_ACTION"}:
+            status = "SELECTED_THIS_MONTH"
+        elif str(row.get("target_action", "")).upper() in {"BUY", "TOP_UP"}:
+            status = "ELIGIBLE_NOT_FUNDED"
+        else:
+            status = "NOT_ELIGIBLE"
+
+    labels = {
+        "SELECTED_THIS_MONTH": "Diesen Monat ausgewaehlt",
+        "ELIGIBLE_NOT_FUNDED": "Kaufbar, aber nicht finanziert",
+        "NOT_ELIGIBLE": "Aktuell nicht kaufbar",
+    }
+    if str(row.get("target_action", "")).upper() == "HOLD_CASH":
+        return "Cash halten"
+    return labels.get(status, status)
+
+
 def build_monthly_decision_report(
     positions_rows: list[dict[str, str]],
     score_rows: list[dict[str, str]],
@@ -37,14 +59,14 @@ def build_monthly_decision_report(
             f"- allow_hold_cash_if_no_opportunity: {rules['allow_hold_cash_if_no_opportunity']}",
             "",
             "## Bestes Kauf-Ranking",
-        "",
-        "| Rank | Ticker | Aktion | Betrag EUR | Kommentar |",
-        "| --- | --- | --- | ---: | --- |",
+            "",
+        "| Rank | Ticker | Aktion | Status | Betrag EUR | Kommentar |",
+        "| --- | --- | --- | --- | ---: | --- |",
     ]
 
     for row in top_rows:
         lines.append(
-            f"| {row['rank']} | {row['ticker']} | {row['target_action']} | {row['suggested_buy_amount_eur']} | {row['rationale']} |"
+            f"| {row['rank']} | {row['ticker']} | {row['target_action']} | {describe_allocation_status(row)} | {row['suggested_buy_amount_eur']} | {row['rationale']} |"
         )
 
     lines.extend(
@@ -57,7 +79,7 @@ def build_monthly_decision_report(
     if top_pick:
         if str(top_pick.get("target_action")) == "HOLD_CASH":
             lines.append(
-                f"- HOLD CASH fuer {top_pick['suggested_buy_amount_eur']} EUR: {top_pick['rationale']}"
+                f"- Cash halten fuer {top_pick['suggested_buy_amount_eur']} EUR: {top_pick['rationale']}"
             )
         elif to_float(top_pick.get("suggested_buy_amount_eur")) <= 0.0:
             lines.append("- Kein kaufbarer Kandidat im aktuellen Lauf. Es wird kein Kauf vorgeschlagen.")
@@ -82,7 +104,7 @@ def build_monthly_decision_report(
     )
     for row in top_rows:
         lines.append(
-            f"- `{row['ticker']}`: {row['constraint_checks']}. {row['valuation_comment']} {row['mandate_fit_comment']}"
+            f"- `{row['ticker']}`: {describe_allocation_status(row)}. {row['constraint_checks']}. {row['valuation_comment']} {row['mandate_fit_comment']}"
         )
 
     lines.extend(
@@ -95,7 +117,7 @@ def build_monthly_decision_report(
     if review_rows:
         for row in review_rows[:10]:
             lines.append(
-                f"- `{row['ticker']}`: classification={row['classification']} data_quality={row['data_quality_flag']} risks={row['main_risks']}"
+                f"- `{row['ticker']}`: Klassifikation={row['classification']} Datenqualitaet={row['data_quality_flag']} Risiken={row['main_risks']}"
             )
     else:
         lines.append("- Keine offenen REVIEW-Faelle.")
@@ -110,7 +132,7 @@ def build_monthly_decision_report(
     if problematic:
         for row in problematic:
             lines.append(
-                f"- `{row['ticker']}`: ACTION={row['classification']} current_weight={row['current_weight_pct']}% risks={row['main_risks']}"
+                f"- `{row['ticker']}`: Aktion={row['classification']} aktuelles_Gewicht={row['current_weight_pct']}% Risiken={row['main_risks']}"
             )
     else:
         lines.append("- Keine Bestandspositionen mit ACTION=REDUCE oder EXIT_REVIEW.")

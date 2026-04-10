@@ -41,11 +41,23 @@ class MonthlyDecisionReportTests(unittest.TestCase):
                         "rank": "1",
                         "ticker": "VWCE",
                         "target_action": "BUY",
+                        "allocation_status": "SELECTED_THIS_MONTH",
                         "suggested_buy_amount_eur": "321.0",
                         "rationale": "test rationale",
                         "constraint_checks": "business_ok=YES",
                         "valuation_comment": "Attractive.",
                         "mandate_fit_comment": "Improves corridor.",
+                    },
+                    {
+                        "rank": "2",
+                        "ticker": "FUSD",
+                        "target_action": "BUY",
+                        "allocation_status": "ELIGIBLE_NOT_FUNDED",
+                        "suggested_buy_amount_eur": "0.0",
+                        "rationale": "fallback rationale",
+                        "constraint_checks": "business_ok=YES",
+                        "valuation_comment": "Attractive.",
+                        "mandate_fit_comment": "Also good.",
                     }
                 ],
                 output_path=str(output_path),
@@ -54,6 +66,7 @@ class MonthlyDecisionReportTests(unittest.TestCase):
             report = output_path.read_text(encoding="utf-8")
             self.assertIn("# Monatlicher Entscheidungsbericht", report)
             self.assertIn("## Vorschlag fuer die naechsten 321.0 EUR", report)
+            self.assertIn("Kaufbar, aber nicht finanziert", report)
             self.assertIn("`EXIT1`", report)
             self.assertNotIn("`WATCHOK`", report)
         finally:

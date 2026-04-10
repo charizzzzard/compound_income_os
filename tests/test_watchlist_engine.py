@@ -54,6 +54,14 @@ class WatchlistEngineTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "scores input contains duplicate tickers: AAA"):
             score_index([{"ticker": "AAA"}, {"ticker": "AAA"}], "scores input")
 
+    def test_duplicate_watchlist_tickers_raise_clear_error(self) -> None:
+        with self.assertRaisesRegex(ValueError, "watchlist input contains duplicate tickers: AAA"):
+            build_watchlist_ranked(
+                [{"ticker": "AAA"}, {"ticker": "AAA"}],
+                [{"ticker": "AAA", "business_score": "80", "valuation_score": "60", "buy_score": "75", "fair_value_estimate": "100", "margin_of_safety_pct": "10", "data_quality_flag": "OK"}],
+                watchlist_source_name="watchlist input",
+            )
+
     def test_duplicate_fundamental_tickers_raise_clear_error(self) -> None:
         with self.assertRaisesRegex(ValueError, "fundamentals input contains duplicate tickers: AAA"):
             build_fundamentals_index([{"ticker": "AAA"}, {"ticker": "AAA"}], "fundamentals input")

@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from typing import Any
 
-from src.common import read_csv_rows, require_columns, round2, to_bool, to_float, write_csv_rows
+from src.common import read_csv_rows, require_columns, require_unique_tickers, round2, to_bool, to_float, write_csv_rows
 from src.portfolio_rules import (
     aggregate_positions_by_ticker,
     allocation_summary,
@@ -21,6 +21,7 @@ OUTPUT_FIELDS = [
     "company_name",
     "current_weight",
     "target_action",
+    "allocation_status",
     "suggested_buy_amount_eur",
     "rationale",
     "constraint_checks",
@@ -157,13 +158,14 @@ def evaluate_candidate(
         "company_name": company_name,
         "current_weight": round2(current_weight_pct),
         "target_action": target_action,
+        "allocation_status": "ELIGIBLE" if eligible else "NOT_ELIGIBLE",
         "suggested_buy_amount_eur": round2(allowed_amount if eligible else 0.0),
         "rationale": rationale,
         "constraint_checks": constraint_checks,
         "valuation_comment": score_row.get("valuation_comment", ""),
         "mandate_fit_comment": candidate.get(
             "mandate_fit_comment",
-            f"Mandate fit score {score_row.get('mandate_fit_score', 'n/a')} and sleeve {sleeve}.",
+            f"Mandats-Fit {score_row.get('mandate_fit_score', 'n/a')} und Sleeve {sleeve}.",
         ),
         "_eligible": eligible,
         "_priority_score": priority_score,
@@ -185,7 +187,7 @@ def build_rebalance_proposals(
                 "company_name": "Portfolio Sleeve",
                 "action": "ADD_CORE_ETF",
                 "current_weight_pct": round2(summary["core_etf_weight"] * 100.0),
-                "reason": "Core ETF sleeve below target corridor.",
+                "reason": "Core-ETF-Quote liegt unter dem Zielkorridor.",
             }
         )
     if summary["cash_weight"] > to_float(rules["target_cash_max"]):
@@ -195,7 +197,7 @@ def build_rebalance_proposals(
                 "company_name": "Cash Reserve",
                 "action": "DEPLOY_CASH",
                 "current_weight_pct": round2(summary["cash_weight"] * 100.0),
-                "reason": "Cash above target corridor.",
+                "reason": "Cash liegt ueber dem Zielkorridor.",
             }
         )
 
@@ -221,8 +223,12 @@ def build_monthly_ranking(
     score_rows: list[dict[str, str]],
     watchlist_rows: list[dict[str, str]],
     rules_path: str = DEFAULT_RULES_PATH,
+    score_source_name: str = "scores input",
+    watchlist_source_name: str = "watchlist input",
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     rules = load_portfolio_rules(rules_path)
+    require_unique_tickers(score_rows, score_source_name)
+    require_unique_tickers(watchlist_rows, watchlist_source_name)
     positions_index = positions_index_by_ticker(positions_rows)
     scores_index = index_by_ticker(score_rows)
     candidates = build_candidate_rows(score_rows, watchlist_rows)
@@ -265,8 +271,11 @@ def build_monthly_ranking(
     if ranking_rows:
         selected = ranking_rows[0]
         if selected["_eligible"]:
+            selected["allocation_status"] = "SELECTED_THIS_MONTH"
             for row in ranking_rows[1:]:
                 row["suggested_buy_amount_eur"] = 0.0
+                if row["_eligible"]:
+                    row["allocation_status"] = "ELIGIBLE_NOT_FUNDED"
         elif hold_cash_allowed:
             ranking_rows.insert(
                 0,
@@ -275,11 +284,12 @@ def build_monthly_ranking(
                     "company_name": "Hold Cash",
                     "current_weight": round2(summary["cash_weight"] * 100.0),
                     "target_action": "HOLD_CASH",
+                    "allocation_status": "SELECTED_THIS_MONTH",
                     "suggested_buy_amount_eur": round2(available_budget),
-                    "rationale": "No candidate cleared thresholds or constraints; preserve optionality.",
+                    "rationale": "Kein Kandidat hat Schwellenwerte und Restriktionen erfuellt; Cash bleibt als Opportunitaetsreserve stehen.",
                     "constraint_checks": "portfolio_rule=hold_cash_allowed",
-                    "valuation_comment": "Cash retained until valuation and quality thresholds improve.",
-                    "mandate_fit_comment": "Allowed by configuration when no opportunity is attractive.",
+                    "valuation_comment": "Cash bleibt stehen, bis Bewertung und Qualitaet attraktiver sind.",
+                    "mandate_fit_comment": "Durch die Konfiguration erlaubt, wenn aktuell keine attraktive Opportunitaet vorliegt.",
                     "_eligible": True,
                     "_priority_score": 999.0,
                 },
@@ -292,11 +302,12 @@ def build_monthly_ranking(
                     "company_name": "Hold Cash",
                     "current_weight": round2(summary["cash_weight"] * 100.0),
                     "target_action": "HOLD_CASH",
+                    "allocation_status": "SELECTED_THIS_MONTH",
                     "suggested_buy_amount_eur": round2(available_budget),
-                    "rationale": "No ranked candidates available.",
+                    "rationale": "Keine gerankten Kandidaten verfuegbar.",
                     "constraint_checks": "portfolio_rule=hold_cash_allowed",
-                    "valuation_comment": "Cash retained until investable universe is ready.",
-                    "mandate_fit_comment": "Allowed by configuration when data is insufficient.",
+                    "valuation_comment": "Cash bleibt stehen, bis ein investierbares Universum vorliegt.",
+                    "mandate_fit_comment": "Durch die Konfiguration erlaubt, wenn die Datenlage noch nicht ausreicht.",
                     "_eligible": True,
                     "_priority_score": 999.0,
                 }
@@ -308,11 +319,12 @@ def build_monthly_ranking(
                     "company_name": "No Eligible Candidates",
                     "current_weight": round2(summary["cash_weight"] * 100.0),
                     "target_action": "NO_ACTION",
+                    "allocation_status": "NOT_ELIGIBLE",
                     "suggested_buy_amount_eur": 0.0,
-                    "rationale": "No ranked candidates available and hold-cash override is disabled.",
+                    "rationale": "Keine gerankten Kandidaten verfuegbar und synthetisches HOLD_CASH ist deaktiviert.",
                     "constraint_checks": "portfolio_rule=hold_cash_disallowed",
-                    "valuation_comment": "No buy is proposed because no candidate cleared the constraints.",
-                    "mandate_fit_comment": "Configuration disallows synthetic HOLD_CASH, but poor buys are still not forced.",
+                    "valuation_comment": "Es wird kein Kauf vorgeschlagen, weil kein Kandidat die Restriktionen erfuellt.",
+                    "mandate_fit_comment": "Die Konfiguration verbietet synthetisches HOLD_CASH, erzwingt aber weiterhin keinen schlechten Kauf.",
                     "_eligible": False,
                     "_priority_score": -999.0,
                 }
@@ -353,7 +365,14 @@ def main() -> None:
     )
     if watchlist_rows:
         require_columns(watchlist_rows, ["ticker"], f"watchlist CSV ({args.watchlist})")
-    ranking, rebalance = build_monthly_ranking(positions_rows, score_rows, watchlist_rows, args.rules)
+    ranking, rebalance = build_monthly_ranking(
+        positions_rows,
+        score_rows,
+        watchlist_rows,
+        args.rules,
+        f"scores CSV ({args.scores})",
+        f"watchlist CSV ({args.watchlist})",
+    )
     cleaned_ranking = [{key: row.get(key, "") for key in OUTPUT_FIELDS} for row in ranking]
     write_csv_rows(args.output, OUTPUT_FIELDS, cleaned_ranking)
     write_csv_rows(args.rebalance_output, REBALANCE_FIELDS, rebalance)

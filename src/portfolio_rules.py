@@ -159,9 +159,9 @@ def check_corridor_breaches(
         lower = to_float(config.get(min_key))
         upper = to_float(config.get(max_key))
         if current < lower:
-            breaches.append(f"{label} below corridor ({round2(current * 100)}% < {round2(lower * 100)}%)")
+            breaches.append(f"{label} unter Zielkorridor ({round2(current * 100)}% < {round2(lower * 100)}%)")
         if current > upper:
-            breaches.append(f"{label} above corridor ({round2(current * 100)}% > {round2(upper * 100)}%)")
+            breaches.append(f"{label} ueber Zielkorridor ({round2(current * 100)}% > {round2(upper * 100)}%)")
     return breaches
 
 
@@ -183,18 +183,18 @@ def find_rule_violations(
             continue
         if weight > max_position:
             violations.append(
-                f"{ticker} exceeds max single position ({round2(weight * 100)}% > {round2(max_position * 100)}%)"
+                f"{ticker} ueberschreitet maximale Einzelpositionsgroesse ({round2(weight * 100)}% > {round2(max_position * 100)}%)"
             )
 
     for sector, weight in sector_weights.items():
         if weight > max_sector:
             violations.append(
-                f"{sector} exceeds max sector weight ({round2(weight * 100)}% > {round2(max_sector * 100)}%)"
+                f"{sector} ueberschreitet maximales Sektorgewicht ({round2(weight * 100)}% > {round2(max_sector * 100)}%)"
             )
 
     top10_weight = compute_top10_weight(rows)
     if top10_weight > max_top10:
         violations.append(
-            f"Top 10 concentration exceeds limit ({round2(top10_weight * 100)}% > {round2(max_top10 * 100)}%)"
+            f"Top-10-Konzentration ueberschreitet Limit ({round2(top10_weight * 100)}% > {round2(max_top10 * 100)}%)"
         )
     return violations

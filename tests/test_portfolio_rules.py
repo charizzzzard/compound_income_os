@@ -27,15 +27,15 @@ class PortfolioRulesTests(unittest.TestCase):
         self.assertAlmostEqual(summary["core_etf_weight"], 0.2, places=2)
         self.assertAlmostEqual(summary["single_stocks_weight"], 0.7, places=2)
         violations = find_rule_violations(self.rows, self.rules)
-        self.assertTrue(any("Core ETF below corridor" in item for item in violations))
-        self.assertTrue(any("Single Stocks above corridor" in item for item in violations))
+        self.assertTrue(any("Core ETF unter Zielkorridor" in item for item in violations))
+        self.assertTrue(any("Single Stocks ueber Zielkorridor" in item for item in violations))
 
     def test_max_single_position_rule_is_detected(self) -> None:
         weights = compute_position_weights(self.rows)
         self.assertGreater(weights["STK1"], self.rules["max_single_position_weight"])
         violations = find_rule_violations(self.rows, self.rules)
-        self.assertTrue(any("STK1 exceeds max single position" in item for item in violations))
-        self.assertFalse(any("CASH exceeds max single position" in item for item in violations))
+        self.assertTrue(any("STK1 ueberschreitet maximale Einzelpositionsgroesse" in item for item in violations))
+        self.assertFalse(any("CASH ueberschreitet maximale Einzelpositionsgroesse" in item for item in violations))
 
     def test_duplicate_tickers_are_aggregated_for_rule_checks(self) -> None:
         rows = [
@@ -50,7 +50,7 @@ class PortfolioRulesTests(unittest.TestCase):
         weights = compute_position_weights(rows)
         self.assertAlmostEqual(weights["DUP"], 0.5, places=2)
         violations = find_rule_violations(rows, self.rules)
-        self.assertTrue(any("DUP exceeds max single position" in item for item in violations))
+        self.assertTrue(any("DUP ueberschreitet maximale Einzelpositionsgroesse" in item for item in violations))
 
     def test_top10_weight_reports_total_and_invested_views(self) -> None:
         rows = [

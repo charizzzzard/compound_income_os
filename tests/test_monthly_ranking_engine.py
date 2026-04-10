@@ -88,6 +88,54 @@ class MonthlyRankingEngineTests(unittest.TestCase):
             if path.exists():
                 path.unlink()
 
+    def test_zero_eur_rows_are_marked_as_eligible_not_funded(self) -> None:
+        positions = [
+            {"ticker": "EUR-CASH", "company_name": "Cash", "asset_type": "CASH", "sleeve": "CASH", "sector": "Cash", "market_value_eur": "5000"},
+        ]
+        scores = [
+            {
+                "ticker": "AAA",
+                "company_name": "Alpha",
+                "sector": "Tech",
+                "sleeve": "SINGLE_STOCK",
+                "held_in_portfolio": "false",
+                "business_score": "82",
+                "valuation_score": "65",
+                "buy_score": "76",
+                "margin_of_safety_pct": "10",
+                "classification": "BUY_CANDIDATE",
+                "has_hard_risk_flag": "false",
+                "data_quality_flag": "OK",
+                "valuation_comment": "Attractive.",
+                "mandate_fit_score": "90",
+            },
+            {
+                "ticker": "BBB",
+                "company_name": "Beta",
+                "sector": "Tech",
+                "sleeve": "SINGLE_STOCK",
+                "held_in_portfolio": "false",
+                "business_score": "81",
+                "valuation_score": "64",
+                "buy_score": "75",
+                "margin_of_safety_pct": "9",
+                "classification": "BUY_CANDIDATE",
+                "has_hard_risk_flag": "false",
+                "data_quality_flag": "OK",
+                "valuation_comment": "Attractive.",
+                "mandate_fit_score": "89",
+            },
+        ]
+        watchlist = [
+            {"ticker": "AAA", "company_name": "Alpha", "sector": "Tech", "sleeve": "SINGLE_STOCK", "status": "QUALITY_COMPOUNDER_CANDIDATE", "mandate_fit_comment": "Good fit."},
+            {"ticker": "BBB", "company_name": "Beta", "sector": "Tech", "sleeve": "SINGLE_STOCK", "status": "QUALITY_COMPOUNDER_CANDIDATE", "mandate_fit_comment": "Good fit."},
+        ]
+        ranking, _ = build_monthly_ranking(positions, scores, watchlist)
+        self.assertEqual(ranking[0]["allocation_status"], "SELECTED_THIS_MONTH")
+        self.assertEqual(ranking[1]["allocation_status"], "ELIGIBLE_NOT_FUNDED")
+        self.assertEqual(ranking[1]["suggested_buy_amount_eur"], 0.0)
+        self.assertEqual(ranking[1]["target_action"], "BUY")
+
     def test_allowed_amount_caps_suggested_buy_amount_for_top_up(self) -> None:
         positions = [
             {"ticker": "AAA", "company_name": "AAA", "asset_type": "STOCK", "sleeve": "SINGLE_STOCK", "sector": "Tech", "market_value_eur": "200"},
@@ -160,6 +208,33 @@ class MonthlyRankingEngineTests(unittest.TestCase):
         finally:
             if path.exists():
                 path.unlink()
+
+    def test_duplicate_score_tickers_raise_clear_error_in_ranking(self) -> None:
+        positions = [
+            {"ticker": "EUR-CASH", "company_name": "Cash", "asset_type": "CASH", "sleeve": "CASH", "sector": "Cash", "market_value_eur": "5000"},
+        ]
+        scores = [{"ticker": "AAA"}, {"ticker": "AAA"}]
+        with self.assertRaisesRegex(ValueError, "scores input contains duplicate tickers: AAA"):
+            build_monthly_ranking(positions, scores, [])
+
+    def test_duplicate_watchlist_tickers_raise_clear_error_in_ranking(self) -> None:
+        positions = [
+            {"ticker": "EUR-CASH", "company_name": "Cash", "asset_type": "CASH", "sleeve": "CASH", "sector": "Cash", "market_value_eur": "5000"},
+        ]
+        scores = [
+            {
+                "ticker": "AAA",
+                "business_score": "80",
+                "valuation_score": "65",
+                "buy_score": "75",
+                "classification": "BUY_CANDIDATE",
+                "data_quality_flag": "OK",
+                "has_hard_risk_flag": "false",
+            }
+        ]
+        watchlist = [{"ticker": "AAA"}, {"ticker": "AAA"}]
+        with self.assertRaisesRegex(ValueError, "watchlist input contains duplicate tickers: AAA"):
+            build_monthly_ranking(positions, scores, watchlist)
 
 
 if __name__ == "__main__":

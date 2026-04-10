@@ -63,8 +63,10 @@ def build_watchlist_ranked(
     score_rows: list[dict[str, str]],
     config_path: str = DEFAULT_WATCHLIST_CONFIG,
     score_source_name: str = "scores input",
+    watchlist_source_name: str = "watchlist input",
 ) -> list[dict[str, Any]]:
     config = load_yaml_config(config_path)
+    require_unique_tickers(watchlist_rows, watchlist_source_name)
     scores = score_index(score_rows, score_source_name)
     status_priority = {status: index for index, status in enumerate(config["status_priority"])}
     ranked: list[dict[str, Any]] = []
@@ -171,7 +173,7 @@ def build_watchlist_report(rows: list[dict[str, Any]], output_path: str) -> Path
     if review_rows:
         for row in review_rows:
             report_lines.append(
-                f"- `{row['ticker']}`: status={row['status']} data_quality={row['data_quality_flag']} risks={row['main_risks']}"
+                f"- `{row['ticker']}`: Status={row['status']} Datenqualitaet={row['data_quality_flag']} Risiken={row['main_risks']}"
             )
     else:
         report_lines.append("- Keine offenen Review-Faelle.")
@@ -201,7 +203,13 @@ def main() -> None:
         ["ticker", "business_score", "valuation_score", "buy_score", "fair_value_estimate", "margin_of_safety_pct", "data_quality_flag"],
         f"scores CSV ({args.scores})",
     )
-    ranked = build_watchlist_ranked(watchlist_rows, score_rows, args.config, f"scores CSV ({args.scores})")
+    ranked = build_watchlist_ranked(
+        watchlist_rows,
+        score_rows,
+        args.config,
+        f"scores CSV ({args.scores})",
+        f"watchlist CSV ({args.input})",
+    )
     write_csv_rows(args.output, OUTPUT_FIELDS, ranked)
     if args.report_output:
         build_watchlist_report(ranked, args.report_output)
