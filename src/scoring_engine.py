@@ -6,6 +6,7 @@ import re
 from typing import Any
 
 from src.common import (
+    canonicalize_ticker,
     clamp,
     load_yaml_config,
     read_csv_rows,
@@ -18,11 +19,18 @@ from src.common import (
     require_unique_tickers,
     safe_upper,
 )
+from src.fundamentals_engine import (
+    ENRICHED_OUTPUT_FIELDS,
+    SCORE_AUDIT_FIELDS,
+    build_score_audit_rows,
+    enrich_fundamentals_rows,
+)
 from src.portfolio_rules import aggregate_positions_by_ticker, compute_position_weights, compute_sector_weights, load_portfolio_rules
 from src.valuation_engine import compute_valuation_metrics
 
 DEFAULT_RULES_PATH = "configs/portfolio_rules.yaml"
 DEFAULT_SCORING_PATH = "configs/scoring_weights.yaml"
+DEFAULT_FUNDAMENTALS_SCORE_RULES_PATH = "configs/fundamentals_score_rules.yaml"
 BUY_SCORE_WEIGHT_KEYS = (
     "business_score",
     "valuation_score",
@@ -69,6 +77,17 @@ OUTPUT_FIELDS = [
     "has_hard_risk_flag",
     "purchase_readiness",
     "buy_score",
+    "business_score_contribution",
+    "valuation_score_contribution",
+    "expected_return_score_contribution",
+    "drawdown_score_contribution",
+    "portfolio_fit_score_contribution",
+    "pe_relative_ratio",
+    "ev_ebit_relative_ratio",
+    "fcf_yield_relative_ratio",
+    "normalized_fcf_gap",
+    "dividend_yield_relative_ratio",
+    "fundamentals_input_format",
     "classification",
 ]
 
@@ -123,15 +142,15 @@ def resolve_position_key(
     fundamentals_by_isin: dict[str, dict[str, str]],
     fundamentals_by_name: dict[str, list[dict[str, str]]],
 ) -> str:
-    ticker = str(row.get("ticker", "")).strip()
+    ticker = canonicalize_ticker(row.get("ticker", ""))
     isin = str(row.get("isin", "")).strip().upper()
     if ticker and not is_probable_isin(ticker):
         return ticker
     if isin and isin in fundamentals_by_isin:
-        return str(fundamentals_by_isin[isin].get("ticker", "")).strip() or ticker or isin
+        return canonicalize_ticker(fundamentals_by_isin[isin].get("ticker", "")) or ticker or isin
     name_match = find_unique_name_match(row, fundamentals_by_name)
     if name_match:
-        return str(name_match.get("ticker", "")).strip() or ticker or isin
+        return canonicalize_ticker(name_match.get("ticker", "")) or ticker or isin
     return ticker or isin
 
 
@@ -150,15 +169,19 @@ def build_position_index(
             current["ticker"] = ticker
             canonical_rows.append(current)
     return {
-        str(row.get("ticker", "")).strip(): row
+        canonicalize_ticker(row.get("ticker", "")): row
         for row in aggregate_positions_by_ticker(canonical_rows)
-        if str(row.get("ticker", "")).strip()
+        if canonicalize_ticker(row.get("ticker", ""))
     }
 
 
 def build_fundamentals_index(rows: list[dict[str, str]], source_name: str = "fundamentals input") -> dict[str, dict[str, str]]:
     require_unique_tickers(rows, source_name)
-    return {str(row.get("ticker", "")).strip(): row for row in rows if str(row.get("ticker", "")).strip()}
+    return {
+        canonicalize_ticker(row.get("ticker", "")): {**row, "ticker": canonicalize_ticker(row.get("ticker", ""))}
+        for row in rows
+        if canonicalize_ticker(row.get("ticker", ""))
+    }
 
 
 def build_missing_fundamentals_row(
@@ -167,7 +190,7 @@ def build_missing_fundamentals_row(
 ) -> dict[str, Any]:
     fallback_business = to_float(scoring_config["fallback_scores"]["business_component_missing"], 40.0)
     fallback_fit = to_float(scoring_config["fallback_scores"]["portfolio_fit_missing"], 50.0)
-    ticker = str(position_row.get("ticker", "")).strip()
+    ticker = canonicalize_ticker(position_row.get("ticker", ""))
     company_name = str(position_row.get("company_name", ticker))
     return {
         "ticker": ticker,
@@ -191,6 +214,7 @@ def build_missing_fundamentals_row(
         "thesis_summary": "Fundamentaldaten fuer die gehaltene Position fehlen; manuelle Pruefung erforderlich.",
         "main_risks": "Fundamentaldaten und Bewertungsinputs fehlen.",
         "data_quality_flag": "MISSING_DATA",
+        "fundamentals_input_format": "missing_fundamentals",
     }
 
 
@@ -268,14 +292,36 @@ def compute_buy_score(
     portfolio_fit_score: float,
     scoring_config: dict[str, Any] | None = None,
 ) -> float:
-    weights = load_buy_score_weights(scoring_config)
     return round2(
-        (weights["business_score"] * business_score)
-        + (weights["valuation_score"] * valuation_score)
-        + (weights["expected_return_score"] * expected_return_score)
-        + (weights["drawdown_opportunity_score"] * drawdown_score)
-        + (weights["portfolio_fit_score"] * portfolio_fit_score)
+        sum(
+            compute_buy_score_contributions(
+                business_score,
+                valuation_score,
+                expected_return_score,
+                drawdown_score,
+                portfolio_fit_score,
+                scoring_config,
+            ).values()
+        )
     )
+
+
+def compute_buy_score_contributions(
+    business_score: float,
+    valuation_score: float,
+    expected_return_score: float,
+    drawdown_score: float,
+    portfolio_fit_score: float,
+    scoring_config: dict[str, Any],
+) -> dict[str, float]:
+    weights = load_buy_score_weights(scoring_config)
+    return {
+        "business_score_contribution": round2(weights["business_score"] * business_score),
+        "valuation_score_contribution": round2(weights["valuation_score"] * valuation_score),
+        "expected_return_score_contribution": round2(weights["expected_return_score"] * expected_return_score),
+        "drawdown_score_contribution": round2(weights["drawdown_opportunity_score"] * drawdown_score),
+        "portfolio_fit_score_contribution": round2(weights["portfolio_fit_score"] * portfolio_fit_score),
+    }
 
 
 def classify_company(
@@ -393,15 +439,24 @@ def summarize_mandate_fit(
     return "LOW_FIT"
 
 
-def build_scores(
+def build_scores_with_audit(
     positions_rows: list[dict[str, str]],
     fundamentals_rows: list[dict[str, str]],
     rules_path: str = DEFAULT_RULES_PATH,
     scoring_path: str = DEFAULT_SCORING_PATH,
     fundamentals_source_name: str = "fundamentals input",
-) -> list[dict[str, Any]]:
+    fundamentals_format: str = "auto",
+    fundamentals_score_rules_path: str = DEFAULT_FUNDAMENTALS_SCORE_RULES_PATH,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
     scoring_config = load_yaml_config(scoring_path)
     rules = load_portfolio_rules(rules_path)
+    enriched_fundamentals_rows, _ = enrich_fundamentals_rows(
+        fundamentals_rows,
+        fundamentals_format,
+        fundamentals_score_rules_path,
+        source_name=fundamentals_source_name,
+    )
+    fundamentals_rows = enriched_fundamentals_rows
     fundamentals_index = build_fundamentals_index(fundamentals_rows, fundamentals_source_name)
     fundamentals_isin_index = build_fundamentals_isin_index(fundamentals_rows)
     fundamentals_name_index = build_fundamentals_name_index(fundamentals_rows)
@@ -436,6 +491,14 @@ def build_scores(
         drawdown_score = compute_drawdown_score(row)
         valuation_score = valuation_metrics["fair_value_score"]
         buy_score = compute_buy_score(
+            business_score,
+            valuation_score,
+            expected_return_score,
+            drawdown_score,
+            portfolio_fit_score,
+            scoring_config,
+        )
+        buy_score_contributions = compute_buy_score_contributions(
             business_score,
             valuation_score,
             expected_return_score,
@@ -510,6 +573,13 @@ def build_scores(
                 "has_hard_risk_flag": has_hard_risk_flag,
                 "purchase_readiness": purchase_readiness,
                 "buy_score": buy_score,
+                **buy_score_contributions,
+                "pe_relative_ratio": valuation_metrics["pe_relative_ratio"],
+                "ev_ebit_relative_ratio": valuation_metrics["ev_ebit_relative_ratio"],
+                "fcf_yield_relative_ratio": valuation_metrics["fcf_yield_relative_ratio"],
+                "normalized_fcf_gap": valuation_metrics["normalized_fcf_gap"],
+                "dividend_yield_relative_ratio": valuation_metrics["dividend_yield_relative_ratio"],
+                "fundamentals_input_format": row.get("fundamentals_input_format", "legacy"),
                 "classification": classification,
             }
         )
@@ -531,6 +601,27 @@ def build_scores(
             str(row["ticker"]),
         )
     )
+    return results, fundamentals_rows, build_score_audit_rows(results, fundamentals_rows)
+
+
+def build_scores(
+    positions_rows: list[dict[str, str]],
+    fundamentals_rows: list[dict[str, str]],
+    rules_path: str = DEFAULT_RULES_PATH,
+    scoring_path: str = DEFAULT_SCORING_PATH,
+    fundamentals_source_name: str = "fundamentals input",
+    fundamentals_format: str = "auto",
+    fundamentals_score_rules_path: str = DEFAULT_FUNDAMENTALS_SCORE_RULES_PATH,
+) -> list[dict[str, Any]]:
+    results, _, _ = build_scores_with_audit(
+        positions_rows,
+        fundamentals_rows,
+        rules_path,
+        scoring_path,
+        fundamentals_source_name,
+        fundamentals_format,
+        fundamentals_score_rules_path,
+    )
     return results
 
 
@@ -539,8 +630,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--positions", required=True, help="Normalized positions snapshot CSV.")
     parser.add_argument("--fundamentals", required=True, help="Fundamentals and valuation CSV.")
     parser.add_argument("--output", required=True, help="Output scores CSV.")
+    parser.add_argument("--audit-output", help="Optional transparent score audit CSV output.")
+    parser.add_argument("--enriched-output", help="Optional enriched fundamentals CSV output.")
+    parser.add_argument("--fundamentals-format", choices=["auto", "raw", "legacy"], default="auto", help="Fundamentals input format.")
     parser.add_argument("--rules", default=DEFAULT_RULES_PATH, help="Portfolio rules config path.")
     parser.add_argument("--scoring-config", default=DEFAULT_SCORING_PATH, help="Scoring config path.")
+    parser.add_argument("--fundamentals-score-rules", default=DEFAULT_FUNDAMENTALS_SCORE_RULES_PATH, help="Raw KPI scoring rules config path.")
     return parser.parse_args()
 
 
@@ -559,14 +654,20 @@ def main() -> None:
             ["ticker", "company_name", "sector", "country", "asset_type", "sleeve"],
             f"fundamentals CSV ({args.fundamentals})",
         )
-    results = build_scores(
+    results, enriched_rows, audit_rows = build_scores_with_audit(
         positions_rows,
         fundamentals_rows,
         args.rules,
         args.scoring_config,
         f"fundamentals CSV ({args.fundamentals})",
+        args.fundamentals_format,
+        args.fundamentals_score_rules,
     )
     write_csv_rows(args.output, OUTPUT_FIELDS, results)
+    if args.enriched_output:
+        write_csv_rows(args.enriched_output, ENRICHED_OUTPUT_FIELDS, enriched_rows)
+    if args.audit_output:
+        write_csv_rows(args.audit_output, SCORE_AUDIT_FIELDS, audit_rows)
 
 
 if __name__ == "__main__":

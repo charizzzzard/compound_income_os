@@ -36,6 +36,12 @@ Die zentrale Portfolio-Konfiguration liegt in [configs/portfolio_rules.yaml](con
 
 Der monatliche Cash-Zufluss ist dort ueber `monthly_new_cash_eur` konfigurierbar und wird von Ranking und Reports direkt genutzt.
 
+Die transparente Fundamentals-Schicht liegt in:
+
+- [configs/fundamentals_schema.yaml](configs/fundamentals_schema.yaml): erwartete Raw-KPI-Felder und Legacy-Score-Felder
+- [configs/fundamentals_score_rules.yaml](configs/fundamentals_score_rules.yaml): KPI-Score-Regeln und Teil-Score-Aggregation
+- [configs/scoring_weights.yaml](configs/scoring_weights.yaml): Aggregation zu Business Score, Valuation Score und Buy Score
+
 ## CLI-Entry-Points
 
 Fixture-/Sample-Pipeline:
@@ -47,6 +53,13 @@ python -m src.watchlist_engine --input data/raw/sample_watchlist.csv --scores da
 python -m src.monthly_ranking_engine --positions data/processed/positions_snapshot.csv --scores data/processed/company_scores.csv --watchlist data/processed/watchlist_ranked.csv --output data/processed/monthly_buy_ranking.csv
 python -m src.build_portfolio_snapshot --positions data/processed/positions_snapshot.csv --scores data/processed/company_scores.csv --output reports/sample/portfolio_snapshot.md
 python -m src.build_monthly_decision_report --positions data/processed/positions_snapshot.csv --scores data/processed/company_scores.csv --ranking data/processed/monthly_buy_ranking.csv --output reports/sample/monthly_decision_report.md
+```
+
+Transparenter Raw-Fundamentals-Lauf mit Audit-Outputs:
+
+```powershell
+python -m src.import_broker --input data/raw/sample_portfolio.csv --output data/processed/positions_snapshot.csv
+python -m src.scoring_engine --positions data/processed/positions_snapshot.csv --fundamentals data/raw/sample_fundamentals_raw.csv --fundamentals-format raw --output data/processed/company_scores.csv --enriched-output data/processed/fundamentals_enriched.csv --audit-output data/processed/score_audit.csv
 ```
 
 Optional erzeugt `src.watchlist_engine` auch direkt einen Markdown-Report:
@@ -86,6 +99,35 @@ Unvollstaendige oder problematische Bestandszeilen werden nicht glattgebuegelt:
 - fehlende oder unklare Identifier fuehren zu `REVIEW` oder `MISSING_DATA`
 - NON_CORE-/Legacy-Positionen bleiben sichtbar
 - fehlende Fundamentals werden spaeter im Scoring konservativ degradiert statt aufgefuellt
+
+## Fundamentals und Score-Audit
+
+Es gibt zwei unterstuetzte Fundamentals-Formate:
+
+- Legacy: `data/raw/sample_fundamentals.csv` enthaelt voraggregierte Teil-Scores wie `quality_score`, `dividend_score`, `balance_sheet_score`, `growth_quality_score` und `capital_allocation_score`.
+- Raw: `data/raw/sample_fundamentals_raw.csv` enthaelt Roh-KPIs wie `roic`, `roce`, Margen, Wachstumsraten, Verschuldung, Dividenden- und Bewertungskennzahlen. Die Teil-Scores werden daraus deterministisch abgeleitet.
+
+Bei `--fundamentals-format auto` bleibt ein Legacy-Input mit alten Bewertungsfeldern Legacy-kompatibel. Sobald Raw-Komponenten-KPIs wie `roic`, `roce`, Margen, Bilanz-, Wachstums- oder Kapitalallokationsfelder befuellt sind, wird der Datensatz als Raw behandelt und gegen `configs/fundamentals_schema.yaml` validiert.
+
+Phase 2A nutzt fuer Raw-Fundamentals diese Score-Ableitung:
+
+- `quality_score`: `roic`, `roce`, `gross_margin`, `operating_margin`, `fcf_margin`
+- `dividend_score`: `dividend_yield_current_pct`, `dividend_yield_hist_pct`, `dividend_cagr_5y`, `dividend_streak_years`, `payout_ratio_eps`, `payout_ratio_fcf`
+- `balance_sheet_score`: `net_debt_to_ebitda`, `interest_coverage`
+- `growth_quality_score`: `revenue_cagr_5y`, `eps_cagr_5y`, `fcf_per_share_cagr_5y`
+- `capital_allocation_score`: `share_count_cagr_5y`, `buyback_yield`
+
+Fehlende KPI-Werte werden nicht erfunden. Je nach Umfang der Luecken werden Fundamentals-Zeilen als `REVIEW` oder `MISSING_DATA` markiert und mit konservativen Fallback-Scores verarbeitet.
+
+Der Audit-Output `data/processed/score_audit.csv` zeigt pro Titel:
+
+- verwendete Raw-KPIs
+- abgeleitete Teil-Scores
+- Valuation-Zwischengroessen wie `pe_relative_ratio`, `ev_ebit_relative_ratio`, `fcf_yield_relative_ratio`, `normalized_fcf_gap`
+- Buy-Score-Komponenten wie `business_score_contribution`, `valuation_score_contribution`, `expected_return_score_contribution`, `drawdown_score_contribution`, `portfolio_fit_score_contribution`
+- Datenqualitaetsflags und fehlende KPI-Felder
+
+Benchmarking, Kosten-/Steuer-Tracking und Dashboard sind nicht Teil von Phase 2A.
 
 ## Persoenlicher Lauf
 

@@ -9,6 +9,8 @@ Dieses Repository ist ein lokales Portfolio-Research-System. Es darf keine Order
 - Nur read-only Datenadapter fuer Broker/API/Dokumente
 - Fehlende Daten nie erfinden
 - Bei unvollstaendigen Fundamentaldaten konservativ scoren und `REVIEW` oder `MISSING_DATA` setzen
+- Raw-Fundamentals-KPIs bevorzugen, Legacy-Teil-Scores aber kompatibel weiter unterstuetzen
+- Score-Audit-Artefakte muessen nachvollziehbar zeigen, welche KPI- und Score-Komponenten verwendet wurden
 - Monatlicher Cash-Zufluss ausschliesslich aus Konfiguration lesen
 - CSV- und Markdown-Artefakte deterministisch erzeugen
 

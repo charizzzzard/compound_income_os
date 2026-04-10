@@ -55,11 +55,18 @@ def require_columns(rows: list[dict[str, Any]], required_columns: Iterable[str],
         raise ValueError(f"{source_name} missing required columns: {missing_text}")
 
 
+def canonicalize_ticker(value: Any) -> str:
+    ticker = str(value or "").strip().upper()
+    if not ticker:
+        return ""
+    return ticker.replace(" ", "")
+
+
 def require_unique_tickers(rows: list[dict[str, Any]], source_name: str) -> None:
     duplicates: set[str] = set()
     seen: set[str] = set()
     for row in rows:
-        ticker = str(row.get("ticker", "")).strip()
+        ticker = canonicalize_ticker(row.get("ticker", ""))
         if not ticker:
             continue
         if ticker in seen:

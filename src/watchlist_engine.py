@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 from typing import Any
 
-from src.common import ensure_parent_dir, load_yaml_config, read_csv_rows, require_columns, require_unique_tickers, round2, to_float, write_csv_rows
+from src.common import canonicalize_ticker, ensure_parent_dir, load_yaml_config, read_csv_rows, require_columns, require_unique_tickers, round2, to_float, write_csv_rows
 from src.portfolio_rules import load_portfolio_rules
 from src.scoring_engine import DEFAULT_RULES_PATH, evaluate_purchase_readiness
 
@@ -34,7 +34,11 @@ OUTPUT_FIELDS = [
 
 def score_index(rows: list[dict[str, str]], source_name: str = "score input") -> dict[str, dict[str, str]]:
     require_unique_tickers(rows, source_name)
-    return {str(row.get("ticker", "")).strip(): row for row in rows if str(row.get("ticker", "")).strip()}
+    return {
+        canonicalize_ticker(row.get("ticker", "")): {**row, "ticker": canonicalize_ticker(row.get("ticker", ""))}
+        for row in rows
+        if canonicalize_ticker(row.get("ticker", ""))
+    }
 
 
 def determine_status(score_row: dict[str, str], watchlist_row: dict[str, str], rules: dict[str, Any]) -> str:
@@ -73,7 +77,7 @@ def build_watchlist_ranked(
     ranked: list[dict[str, Any]] = []
 
     for row in watchlist_rows:
-        ticker = str(row.get("ticker", "")).strip()
+        ticker = canonicalize_ticker(row.get("ticker", ""))
         score_row = scores.get(ticker)
         if not score_row:
             ranked.append(

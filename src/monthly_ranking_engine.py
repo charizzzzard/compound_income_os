@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from typing import Any
 
-from src.common import read_csv_rows, require_columns, require_unique_tickers, round2, to_bool, to_float, write_csv_rows
+from src.common import canonicalize_ticker, read_csv_rows, require_columns, require_unique_tickers, round2, to_bool, to_float, write_csv_rows
 from src.portfolio_rules import (
     aggregate_positions_by_ticker,
     allocation_summary,
@@ -46,13 +46,17 @@ REBALANCE_FIELDS = [
 
 
 def index_by_ticker(rows: list[dict[str, str]]) -> dict[str, dict[str, str]]:
-    return {str(row.get("ticker", "")).strip(): row for row in rows if str(row.get("ticker", "")).strip()}
+    return {
+        canonicalize_ticker(row.get("ticker", "")): {**row, "ticker": canonicalize_ticker(row.get("ticker", ""))}
+        for row in rows
+        if canonicalize_ticker(row.get("ticker", ""))
+    }
 
 
 def positions_index_by_ticker(rows: list[dict[str, str]]) -> dict[str, dict[str, str]]:
     index: dict[str, dict[str, str]] = {}
     for row in aggregate_positions_by_ticker(rows):
-        for key in {str(row.get("ticker", "")).strip(), str(row.get("isin", "")).strip().upper()}:
+        for key in {canonicalize_ticker(row.get("ticker", "")), str(row.get("isin", "")).strip().upper()}:
             if key:
                 index[key] = row
     return index
@@ -64,9 +68,9 @@ def find_position_row(
     score_row: dict[str, str],
 ) -> dict[str, str]:
     keys = [
-        str(score_row.get("ticker", "")).strip(),
+        canonicalize_ticker(score_row.get("ticker", "")),
         str(score_row.get("isin", "")).strip().upper(),
-        str(candidate.get("ticker", "")).strip(),
+        canonicalize_ticker(candidate.get("ticker", "")),
         str(candidate.get("isin", "")).strip().upper(),
     ]
     for key in keys:
@@ -106,15 +110,15 @@ def build_candidate_rows(
     used: set[str] = set()
 
     for row in watchlist_rows:
-        ticker = str(row.get("ticker", "")).strip()
+        ticker = canonicalize_ticker(row.get("ticker", ""))
         if ticker:
-            candidates.append(row)
+            candidates.append({**row, "ticker": ticker})
             used.add(ticker)
 
     for row in score_rows:
-        ticker = str(row.get("ticker", "")).strip()
+        ticker = canonicalize_ticker(row.get("ticker", ""))
         if ticker and ticker not in used and str(row.get("held_in_portfolio", "")).lower() == "true":
-            candidates.append(row)
+            candidates.append({**row, "ticker": ticker})
     return candidates
 
 
@@ -128,7 +132,7 @@ def evaluate_candidate(
     budget: float,
     total_assets: float,
 ) -> dict[str, Any]:
-    ticker = str(score_row.get("ticker") or candidate.get("ticker"))
+    ticker = canonicalize_ticker(score_row.get("ticker") or candidate.get("ticker"))
     company_name = str(candidate.get("company_name") or score_row.get("company_name") or ticker)
     sleeve = str(candidate.get("sleeve") or score_row.get("sleeve") or "SINGLE_STOCK").upper()
     sector = str(candidate.get("sector") or score_row.get("sector") or "Unknown")
@@ -268,7 +272,7 @@ def build_monthly_ranking(
 
     ranking_rows: list[dict[str, Any]] = []
     for candidate in candidates:
-        ticker = str(candidate.get("ticker", "")).strip()
+        ticker = canonicalize_ticker(candidate.get("ticker", ""))
         if not ticker or ticker not in scores_index:
             continue
         ranking_rows.append(

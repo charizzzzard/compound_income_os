@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any
 
-from src.common import load_yaml_config, round2, safe_upper, to_float
+from src.common import canonicalize_ticker, load_yaml_config, round2, safe_upper, to_float
 
 DEFAULT_RULES_PATH = "configs/portfolio_rules.yaml"
 
@@ -64,11 +64,12 @@ def aggregate_positions_by_ticker(rows: list[dict[str, Any]]) -> list[dict[str, 
     numeric_fields = {"quantity", "market_value_eur", "cost_basis_eur", "unrealized_pnl_eur"}
 
     for row in rows:
-        ticker = str(row.get("ticker", "")).strip()
+        ticker = canonicalize_ticker(row.get("ticker", ""))
         if not ticker:
             continue
         if ticker not in aggregated:
             aggregated[ticker] = dict(row)
+            aggregated[ticker]["ticker"] = ticker
             for field in numeric_fields:
                 if field in aggregated[ticker]:
                     aggregated[ticker][field] = round_position_numeric_field(field, aggregated[ticker].get(field))
@@ -124,7 +125,7 @@ def compute_position_weights(rows: list[dict[str, Any]]) -> dict[str, float]:
     total_assets = compute_total_assets(rows) or 1.0
     result: dict[str, float] = {}
     for row in aggregate_positions_by_ticker(rows):
-        ticker = str(row.get("ticker", "")).strip()
+        ticker = canonicalize_ticker(row.get("ticker", ""))
         if not ticker:
             continue
         result[ticker] = round2(to_float(row.get("market_value_eur")) / total_assets)
@@ -200,7 +201,7 @@ def find_rule_violations(
     config = rules or load_portfolio_rules()
     violations = list(check_corridor_breaches(rows, config))
     position_weights = compute_position_weights(rows)
-    row_index = {str(row.get("ticker", "")).strip(): row for row in aggregate_positions_by_ticker(rows)}
+    row_index = {canonicalize_ticker(row.get("ticker", "")): row for row in aggregate_positions_by_ticker(rows)}
     sector_weights = compute_sector_weights(rows)
     max_position = to_float(config.get("max_single_position_weight"))
     max_sector = to_float(config.get("max_sector_weight"))

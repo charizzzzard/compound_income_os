@@ -1,0 +1,62 @@
+{
+  "schema_version": "phase2a_fundamentals_score_rules_v1",
+  "score_bounds": {"min": 0.0, "max": 100.0},
+  "missing_kpi_score": 40.0,
+  "data_quality_thresholds": {
+    "review_missing_kpi_count": 1,
+    "missing_data_missing_kpi_count": 8
+  },
+  "kpi_score_rules": {
+    "roic": {"lower": 0.0, "upper": 25.0, "higher_is_better": true, "comment": "ROIC in Prozent; hoeher signalisiert bessere Kapitalrendite."},
+    "roce": {"lower": 0.0, "upper": 25.0, "higher_is_better": true, "comment": "ROCE in Prozent; hoeher ist besser."},
+    "gross_margin": {"lower": 20.0, "upper": 80.0, "higher_is_better": true, "comment": "Bruttomarge in Prozent; hoeher ist besser."},
+    "operating_margin": {"lower": 5.0, "upper": 40.0, "higher_is_better": true, "comment": "Operative Marge in Prozent; hoeher ist besser."},
+    "fcf_margin": {"lower": 0.0, "upper": 30.0, "higher_is_better": true, "comment": "FCF-Marge in Prozent; hoeher ist besser."},
+    "dividend_yield_current_pct": {"lower": 0.0, "upper": 5.0, "higher_is_better": true, "comment": "Aktuelle Dividendenrendite in Prozent; hoeher bis zur Obergrenze ist besser."},
+    "dividend_yield_hist_pct": {"lower": 0.0, "upper": 5.0, "higher_is_better": true, "comment": "Historische Dividendenrendite in Prozent; Plausibilitaetsanker."},
+    "dividend_cagr_5y": {"lower": 0.0, "upper": 12.0, "higher_is_better": true, "comment": "5J-Dividendenwachstum in Prozent; hoeher ist besser."},
+    "dividend_streak_years": {"lower": 0.0, "upper": 25.0, "higher_is_better": true, "comment": "Dauer der Dividendenhistorie; hoeher ist besser."},
+    "payout_ratio_eps": {"lower": 35.0, "upper": 100.0, "higher_is_better": false, "comment": "EPS-Ausschuettungsquote in Prozent; niedriger ist tragfaehiger."},
+    "payout_ratio_fcf": {"lower": 35.0, "upper": 100.0, "higher_is_better": false, "comment": "FCF-Ausschuettungsquote in Prozent; niedriger ist tragfaehiger."},
+    "net_debt_to_ebitda": {"lower": 0.0, "upper": 4.0, "higher_is_better": false, "comment": "Nettoverschuldung/EBITDA; niedriger ist besser."},
+    "interest_coverage": {"lower": 1.0, "upper": 15.0, "higher_is_better": true, "comment": "Zinsdeckung; hoeher ist besser."},
+    "revenue_cagr_5y": {"lower": 0.0, "upper": 15.0, "higher_is_better": true, "comment": "5J-Umsatzwachstum in Prozent; hoeher ist besser."},
+    "eps_cagr_5y": {"lower": 0.0, "upper": 15.0, "higher_is_better": true, "comment": "5J-EPS-Wachstum in Prozent; hoeher ist besser."},
+    "fcf_per_share_cagr_5y": {"lower": 0.0, "upper": 15.0, "higher_is_better": true, "comment": "5J-FCF/Aktie-Wachstum in Prozent; hoeher ist besser."},
+    "share_count_cagr_5y": {"lower": -3.0, "upper": 5.0, "higher_is_better": false, "comment": "5J-Aktienzahl-CAGR in Prozent; niedriger bzw. negativ ist besser."},
+    "buyback_yield": {"lower": 0.0, "upper": 5.0, "higher_is_better": true, "comment": "Rueckkaufrendite in Prozent; hoeher ist besser."}
+  },
+  "component_scores": {
+    "quality_score": {
+      "roic": 0.30,
+      "roce": 0.25,
+      "gross_margin": 0.15,
+      "operating_margin": 0.15,
+      "fcf_margin": 0.15
+    },
+    "dividend_score": {
+      "dividend_yield_current_pct": 0.15,
+      "dividend_yield_hist_pct": 0.10,
+      "dividend_cagr_5y": 0.20,
+      "dividend_streak_years": 0.20,
+      "payout_ratio_eps": 0.175,
+      "payout_ratio_fcf": 0.175
+    },
+    "balance_sheet_score": {
+      "net_debt_to_ebitda": 0.55,
+      "interest_coverage": 0.45
+    },
+    "growth_quality_score": {
+      "revenue_cagr_5y": 0.30,
+      "eps_cagr_5y": 0.35,
+      "fcf_per_share_cagr_5y": 0.35
+    },
+    "capital_allocation_score": {
+      "share_count_cagr_5y": 0.55,
+      "buyback_yield": 0.45
+    }
+  },
+  "business_score_aggregation": "configs/scoring_weights.yaml#business_score_weights",
+  "valuation_score_aggregation": "configs/scoring_weights.yaml#fair_value_weights",
+  "buy_score_aggregation": "configs/scoring_weights.yaml#buy_score_weights"
+}

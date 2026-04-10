@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.common import canonicalize_ticker
+
 
 def merge_company_records(*record_sets: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     merged: dict[str, dict[str, Any]] = {}
     for records in record_sets:
         for record in records:
-            ticker = str(record.get("ticker", "")).strip()
+            ticker = canonicalize_ticker(record.get("ticker", ""))
             if not ticker:
                 continue
             current = merged.setdefault(ticker, {})

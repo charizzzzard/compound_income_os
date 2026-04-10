@@ -4,7 +4,7 @@ import hashlib
 import re
 from typing import Any
 
-from src.common import round2, safe_upper, to_bool, to_float
+from src.common import canonicalize_ticker, round2, safe_upper, to_bool, to_float
 from src.portfolio_rules import classify_sleeve
 
 FIELD_ALIASES = {
@@ -39,10 +39,7 @@ def pick_value(row: dict[str, Any], aliases: list[str], default: str = "") -> st
 
 
 def normalize_ticker(value: str) -> str:
-    ticker = str(value or "").strip().upper()
-    if not ticker:
-        return ""
-    return ticker.replace(" ", "")
+    return canonicalize_ticker(value)
 
 
 def normalize_key_text(value: Any) -> str:

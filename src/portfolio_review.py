@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.common import round2, safe_upper, to_bool, to_float
+from src.common import canonicalize_ticker, round2, safe_upper, to_bool, to_float
 from src.portfolio_rules import aggregate_positions_by_ticker, classify_sleeve, load_portfolio_rules
 from src.scoring_engine import evaluate_purchase_readiness
 
@@ -29,9 +29,9 @@ HOLDINGS_ACTION_FIELDS = [
 
 def build_positions_index(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     return {
-        str(row.get("ticker", "")).strip(): row
+        canonicalize_ticker(row.get("ticker", "")): row
         for row in aggregate_positions_by_ticker(rows)
-        if str(row.get("ticker", "")).strip()
+        if canonicalize_ticker(row.get("ticker", ""))
     }
 
 
@@ -40,9 +40,13 @@ def build_scores_index(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     for row in rows:
         if not to_bool(row.get("held_in_portfolio", True)):
             continue
-        for key in {str(row.get("ticker", "")).strip(), str(row.get("isin", "")).strip().upper()}:
+        canonical_ticker = canonicalize_ticker(row.get("ticker", ""))
+        stored_row = {**row}
+        if canonical_ticker:
+            stored_row["ticker"] = canonical_ticker
+        for key in {canonical_ticker, str(row.get("isin", "")).strip().upper()}:
             if key:
-                index[key] = row
+                index[key] = stored_row
     return index
 
 

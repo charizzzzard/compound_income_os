@@ -112,6 +112,29 @@ class WatchlistEngineTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "scores input contains duplicate tickers: AAA"):
             score_index([{"ticker": "AAA"}, {"ticker": "AAA"}], "scores input")
 
+    def test_watchlist_lookup_uses_case_insensitive_ticker_identity(self) -> None:
+        ranked = build_watchlist_ranked(
+            [{"ticker": "aapl", "company_name": "Apple"}],
+            [
+                {
+                    "ticker": "AAPL",
+                    "company_name": "Apple",
+                    "business_score": "80",
+                    "valuation_score": "65",
+                    "buy_score": "75",
+                    "fair_value_estimate": "100",
+                    "margin_of_safety_pct": "10",
+                    "classification": "BUY_CANDIDATE",
+                    "data_quality_flag": "OK",
+                    "has_hard_risk_flag": "false",
+                }
+            ],
+        )
+
+        self.assertEqual(ranked[0]["ticker"], "AAPL")
+        self.assertNotEqual(ranked[0]["status"], "REVIEW")
+        self.assertNotEqual(ranked[0]["data_quality_flag"], "MISSING_DATA")
+
     def test_duplicate_watchlist_tickers_raise_clear_error(self) -> None:
         with self.assertRaisesRegex(ValueError, "watchlist input contains duplicate tickers: AAA"):
             build_watchlist_ranked(
@@ -122,7 +145,7 @@ class WatchlistEngineTests(unittest.TestCase):
 
     def test_duplicate_fundamental_tickers_raise_clear_error(self) -> None:
         with self.assertRaisesRegex(ValueError, "fundamentals input contains duplicate tickers: AAA"):
-            build_fundamentals_index([{"ticker": "AAA"}, {"ticker": "AAA"}], "fundamentals input")
+            build_fundamentals_index([{"ticker": "AAA"}, {"ticker": "aAa"}], "fundamentals input")
 
     def test_watchlist_cli_validates_required_columns(self) -> None:
         watchlist_path = Path("tests") / "_tmp_watchlist_missing_ticker.csv"

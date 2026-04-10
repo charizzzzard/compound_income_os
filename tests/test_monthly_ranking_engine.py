@@ -243,7 +243,7 @@ class MonthlyRankingEngineTests(unittest.TestCase):
         positions = [
             {"ticker": "EUR-CASH", "company_name": "Cash", "asset_type": "CASH", "sleeve": "CASH", "sector": "Cash", "market_value_eur": "5000"},
         ]
-        scores = [{"ticker": "AAA"}, {"ticker": "AAA"}]
+        scores = [{"ticker": "AAA"}, {"ticker": "aAa"}]
         with self.assertRaisesRegex(ValueError, "scores input contains duplicate tickers: AAA"):
             build_monthly_ranking(positions, scores, [])
 
@@ -262,7 +262,7 @@ class MonthlyRankingEngineTests(unittest.TestCase):
                 "has_hard_risk_flag": "false",
             }
         ]
-        watchlist = [{"ticker": "AAA"}, {"ticker": "AAA"}]
+        watchlist = [{"ticker": "AAA"}, {"ticker": "aAa"}]
         with self.assertRaisesRegex(ValueError, "watchlist input contains duplicate tickers: AAA"):
             build_monthly_ranking(positions, scores, watchlist)
 

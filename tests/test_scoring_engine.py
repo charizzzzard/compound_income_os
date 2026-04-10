@@ -201,6 +201,42 @@ class ScoringEngineTests(unittest.TestCase):
         self.assertTrue(apple["held_in_portfolio"])
         self.assertEqual(apple["position_market_value_eur"], 300.0)
 
+    def test_ticker_case_normalization_matches_position_and_fundamentals(self) -> None:
+        positions = [
+            {
+                "ticker": "AAPL",
+                "company_name": "Apple",
+                "asset_type": "STOCK",
+                "sleeve": "SINGLE_STOCK",
+                "sector": "Technology",
+                "country": "USA",
+                "market_value_eur": "100",
+            }
+        ]
+        fundamentals = [
+            {
+                "ticker": "aapl",
+                "company_name": "Apple",
+                "sector": "Technology",
+                "country": "USA",
+                "asset_type": "STOCK",
+                "sleeve": "SINGLE_STOCK",
+                "quality_score": "90",
+                "dividend_score": "60",
+                "balance_sheet_score": "90",
+                "growth_quality_score": "80",
+                "capital_allocation_score": "85",
+                "mandate_fit_score": "90",
+                "data_quality_flag": "OK",
+            }
+        ]
+
+        scores = build_scores(positions, fundamentals)
+
+        self.assertEqual([row["ticker"] for row in scores], ["AAPL"])
+        self.assertTrue(scores[0]["held_in_portfolio"])
+        self.assertEqual(scores[0]["fundamentals_input_format"], "legacy")
+
     def test_name_fallback_does_not_match_ambiguous_fundamental_names(self) -> None:
         fundamentals = [
             {"ticker": "AAA", "company_name": "Example Duplicate", "sector": "Tech", "country": "USA", "asset_type": "STOCK", "sleeve": "SINGLE_STOCK"},
