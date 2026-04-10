@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.common import canonicalize_ticker, round2, safe_upper, to_bool, to_float
+from src.common import canonicalize_ticker, require_unique_tickers, round2, safe_upper, to_bool, to_float
 from src.portfolio_rules import aggregate_positions_by_ticker, classify_sleeve, load_portfolio_rules
 from src.scoring_engine import evaluate_purchase_readiness
 
@@ -36,6 +36,7 @@ def build_positions_index(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any
 
 
 def build_scores_index(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    require_unique_tickers(rows, "holdings action scores input")
     index: dict[str, dict[str, Any]] = {}
     for row in rows:
         if not to_bool(row.get("held_in_portfolio", True)):
@@ -126,10 +127,10 @@ def classify_portfolio_action(
 
     if sleeve == "CASH":
         return "HOLD", "Liquiditaetsreserve bleibt als Cash-Puffer verfuegbar.", purchase_state
-    if classification == "REDUCE" or current_weight > reduce_threshold_pct:
-        return "REDUCE", "Position ist uebergewichtet oder klar ueberdehnt und sollte reduziert werden.", purchase_state
     if classification == "EXIT_REVIEW" or review_flag or mandate_fit in {"NON_CORE", "REVIEW", "LOW_FIT"}:
         return "EXIT_REVIEW", "Mandats-Fit, Datenlage oder Positionscharakter erfordern eine Exit-Pruefung.", purchase_state
+    if classification == "REDUCE" or current_weight > reduce_threshold_pct:
+        return "REDUCE", "Position ist uebergewichtet oder klar ueberdehnt und sollte reduziert werden.", purchase_state
     if purchase["eligible_for_purchase"] and not near_position_cap and mandate_fit in {"CORE", "DG_QUALITY", "MANDATE_FIT"}:
         return "ADD", "Mandatkonform, kaufbar und nicht uebergewichtet.", purchase_state
     if purchase_state in {"TOO_EXPENSIVE", "REVIEW"} or mandate_fit == "WATCH":

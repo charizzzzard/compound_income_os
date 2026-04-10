@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from src.common import ensure_parent_dir, format_eur, format_pct, read_csv_rows, require_columns, to_float, write_csv_rows
+from src.common import ensure_parent_dir, format_eur, format_pct, read_csv_rows, require_columns, require_unique_tickers, to_float, write_csv_rows
 from src.portfolio_rules import (
     allocation_summary,
     compute_cash_value,
@@ -208,6 +208,9 @@ def main() -> None:
         ["ticker", "company_name", "sleeve", "market_value_eur", "weight_total_assets_pct"],
         f"positions CSV ({args.positions})",
     )
+    if scores_rows:
+        require_columns(scores_rows, ["ticker"], f"scores CSV ({args.scores})")
+        require_unique_tickers(scores_rows, f"scores CSV ({args.scores})")
     build_portfolio_snapshot_report(positions_rows, args.output, scores_rows, args.rules, args.holdings_output)
 
 

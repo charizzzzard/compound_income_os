@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import csv
 import json
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -75,3 +77,50 @@ class MonthlyDecisionReportTests(unittest.TestCase):
                 rules_path.unlink()
             if output_path.exists():
                 output_path.unlink()
+
+    def test_cli_rejects_blank_ranking_ticker(self) -> None:
+        positions_path = Path("tests") / "_tmp_report_positions.csv"
+        scores_path = Path("tests") / "_tmp_report_scores.csv"
+        ranking_path = Path("tests") / "_tmp_report_ranking.csv"
+        output_path = Path("tests") / "_tmp_monthly_report_blank_ticker.md"
+        try:
+            with positions_path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=["ticker"])
+                writer.writeheader()
+                writer.writerow({"ticker": "AAPL"})
+            with scores_path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=["ticker", "classification", "data_quality_flag", "held_in_portfolio", "main_risks"])
+                writer.writeheader()
+                writer.writerow({"ticker": "AAPL", "classification": "HOLD", "data_quality_flag": "OK", "held_in_portfolio": "true", "main_risks": ""})
+            with ranking_path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=["rank", "ticker", "target_action", "suggested_buy_amount_eur", "rationale", "constraint_checks"])
+                writer.writeheader()
+                writer.writerow({"rank": "1", "ticker": "   ", "target_action": "BUY", "suggested_buy_amount_eur": "500", "rationale": "bad", "constraint_checks": "bad"})
+
+            result = subprocess.run(
+                [
+                    "python",
+                    "-m",
+                    "src.build_monthly_decision_report",
+                    "--positions",
+                    str(positions_path),
+                    "--scores",
+                    str(scores_path),
+                    "--ranking",
+                    str(ranking_path),
+                    "--output",
+                    str(output_path),
+                ],
+                cwd=Path.cwd(),
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("ranking CSV", f"{result.stdout}\n{result.stderr}")
+            self.assertIn("blank required field(s): ticker", f"{result.stdout}\n{result.stderr}")
+            self.assertFalse(output_path.exists())
+        finally:
+            for path in [positions_path, scores_path, ranking_path, output_path]:
+                if path.exists():
+                    path.unlink()

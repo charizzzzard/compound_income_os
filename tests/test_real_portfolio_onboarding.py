@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import csv
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -94,6 +96,47 @@ class RealPortfolioOnboardingTests(unittest.TestCase):
         self.assertEqual(actions["REDX"], "REDUCE")
         self.assertEqual(actions["EXITX"], "EXIT_REVIEW")
 
+    def test_portfolio_review_rejects_duplicate_score_tickers(self) -> None:
+        positions_rows = [
+            {"ticker": "AAPL", "company_name": "Apple", "asset_type": "STOCK", "sleeve": "SINGLE_STOCK", "market_value_eur": "100", "weight_total_assets_pct": "10.0", "review_flag": "false"},
+        ]
+        score_rows = [
+            {"ticker": "AAPL", "company_name": "Apple", "held_in_portfolio": "true", "current_weight_pct": "10.0", "business_score": "80", "valuation_score": "70", "buy_score": "75", "classification": "HOLD", "data_quality_flag": "OK"},
+            {"ticker": "aapl", "company_name": "Apple duplicate", "held_in_portfolio": "true", "current_weight_pct": "10.0", "business_score": "10", "valuation_score": "10", "buy_score": "10", "classification": "EXIT_REVIEW", "data_quality_flag": "MISSING_DATA"},
+        ]
+        with self.assertRaisesRegex(ValueError, "holdings action scores input contains duplicate tickers: AAPL"):
+            build_holdings_action_table(positions_rows, score_rows)
+
+    def test_portfolio_review_rejects_blank_score_ticker(self) -> None:
+        positions_rows = [
+            {"ticker": "AAPL", "company_name": "Apple", "asset_type": "STOCK", "sleeve": "SINGLE_STOCK", "market_value_eur": "100", "weight_total_assets_pct": "10.0", "review_flag": "false"},
+        ]
+        score_rows = [
+            {"ticker": "   ", "company_name": "Blank", "held_in_portfolio": "true", "current_weight_pct": "10.0", "business_score": "80", "valuation_score": "70", "buy_score": "75", "classification": "HOLD", "data_quality_flag": "OK"},
+        ]
+        with self.assertRaisesRegex(ValueError, "holdings action scores input row 2 has blank required field\\(s\\): ticker"):
+            build_holdings_action_table(positions_rows, score_rows)
+
+    def test_exit_review_priority_over_reduce_for_hard_review_case(self) -> None:
+        positions_rows = [
+            {"ticker": "RISKX", "company_name": "Risk Co", "asset_type": "STOCK", "sleeve": "SINGLE_STOCK", "market_value_eur": "1500", "weight_total_assets_pct": "15.0", "review_flag": "false"},
+        ]
+        score_rows = [
+            {"ticker": "RISKX", "company_name": "Risk Co", "held_in_portfolio": "true", "current_weight_pct": "15.0", "business_score": "20", "valuation_score": "20", "buy_score": "20", "mandate_fit_score": "10", "classification": "EXIT_REVIEW", "data_quality_flag": "MISSING_DATA", "has_hard_risk_flag": "true"},
+        ]
+        table = build_holdings_action_table(positions_rows, score_rows)
+        self.assertEqual(table[0]["portfolio_action"], "EXIT_REVIEW")
+
+    def test_normal_overweight_case_remains_reduce(self) -> None:
+        positions_rows = [
+            {"ticker": "REDX", "company_name": "Reduce Co", "asset_type": "STOCK", "sleeve": "SINGLE_STOCK", "market_value_eur": "1000", "weight_total_assets_pct": "10.0", "review_flag": "false"},
+        ]
+        score_rows = [
+            {"ticker": "REDX", "company_name": "Reduce Co", "held_in_portfolio": "true", "current_weight_pct": "10.0", "business_score": "88", "valuation_score": "65", "buy_score": "76", "mandate_fit_score": "90", "classification": "HOLD", "data_quality_flag": "OK", "has_hard_risk_flag": "false"},
+        ]
+        table = build_holdings_action_table(positions_rows, score_rows)
+        self.assertEqual(table[0]["portfolio_action"], "REDUCE")
+
     def test_real_review_report_and_action_csv_are_generated(self) -> None:
         positions_rows = [
             {"ticker": "VWCE", "company_name": "Core ETF", "asset_type": "ETF", "sleeve": "CORE_ETF", "market_value_eur": "360", "weight_total_assets_pct": "12.0", "review_flag": "false"},
@@ -125,6 +168,60 @@ class RealPortfolioOnboardingTests(unittest.TestCase):
                 report_path.unlink()
             if holdings_path.exists():
                 holdings_path.unlink()
+
+    def test_portfolio_snapshot_cli_rejects_duplicate_score_tickers(self) -> None:
+        positions_path = Path("tests") / "_tmp_snapshot_positions.csv"
+        scores_path = Path("tests") / "_tmp_snapshot_scores.csv"
+        output_path = Path("tests") / "_tmp_snapshot_report.md"
+        try:
+            with positions_path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(
+                    handle,
+                    fieldnames=["ticker", "company_name", "sleeve", "market_value_eur", "weight_total_assets_pct", "asset_type", "sector"],
+                )
+                writer.writeheader()
+                writer.writerow(
+                    {
+                        "ticker": "AAPL",
+                        "company_name": "Apple",
+                        "sleeve": "SINGLE_STOCK",
+                        "market_value_eur": "100",
+                        "weight_total_assets_pct": "10.0",
+                        "asset_type": "STOCK",
+                        "sector": "Technology",
+                    }
+                )
+            with scores_path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=["ticker"])
+                writer.writeheader()
+                writer.writerow({"ticker": "AAPL"})
+                writer.writerow({"ticker": "aapl"})
+
+            result = subprocess.run(
+                [
+                    "python",
+                    "-m",
+                    "src.build_portfolio_snapshot",
+                    "--positions",
+                    str(positions_path),
+                    "--scores",
+                    str(scores_path),
+                    "--output",
+                    str(output_path),
+                ],
+                cwd=Path.cwd(),
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("scores CSV", f"{result.stdout}\n{result.stderr}")
+            self.assertIn("duplicate tickers: AAPL", f"{result.stdout}\n{result.stderr}")
+            self.assertFalse(output_path.exists())
+        finally:
+            for path in [positions_path, scores_path, output_path]:
+                if path.exists():
+                    path.unlink()
 
 
 if __name__ == "__main__":

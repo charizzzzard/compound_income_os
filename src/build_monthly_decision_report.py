@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from src.common import ensure_parent_dir, read_csv_rows, require_columns, round2, to_float
+from src.common import ensure_parent_dir, read_csv_rows, require_columns, require_unique_tickers, round2, to_float
 from src.portfolio_rules import load_portfolio_rules
 
 
@@ -162,11 +162,13 @@ def main() -> None:
         ["ticker", "classification", "data_quality_flag", "held_in_portfolio", "main_risks"],
         f"scores CSV ({args.scores})",
     )
+    require_unique_tickers(score_rows, f"scores CSV ({args.scores})")
     require_columns(
         ranking_rows,
         ["rank", "ticker", "target_action", "suggested_buy_amount_eur", "rationale", "constraint_checks"],
         f"ranking CSV ({args.ranking})",
     )
+    require_unique_tickers(ranking_rows, f"ranking CSV ({args.ranking})")
     build_monthly_decision_report(positions_rows, score_rows, ranking_rows, args.output, args.rules)
 
 
