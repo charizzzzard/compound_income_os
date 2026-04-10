@@ -1,0 +1,21 @@
+{
+  "target_universe_name": "Dividend Growth + Quality Compounders",
+  "status_priority": [
+    "CORE_CANDIDATE",
+    "DG_CANDIDATE",
+    "QUALITY_COMPOUNDER_CANDIDATE",
+    "TOO_EXPENSIVE",
+    "REVIEW",
+    "REJECT"
+  ],
+  "ranking_sort": [
+    "status_priority",
+    "buy_score_desc",
+    "margin_of_safety_desc",
+    "business_score_desc"
+  ],
+  "review_requires_data_quality_flag": [
+    "REVIEW",
+    "MISSING_DATA"
+  ]
+}

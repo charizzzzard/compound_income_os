@@ -1,0 +1,27 @@
+{
+  "business_score_weights": {
+    "quality_score": 0.30,
+    "dividend_score": 0.20,
+    "balance_sheet_score": 0.20,
+    "growth_quality_score": 0.15,
+    "capital_allocation_score": 0.15
+  },
+  "buy_score_weights": {
+    "business_score": 0.55,
+    "valuation_score": 0.18,
+    "expected_return_score": 0.1125,
+    "drawdown_opportunity_score": 0.09,
+    "portfolio_fit_score": 0.0675
+  },
+  "fair_value_weights": {
+    "historical_multiple_score": 0.40,
+    "normalized_fcf_score": 0.40,
+    "dividend_yield_relative_score": 0.20
+  },
+  "fallback_scores": {
+    "business_component_missing": 40.0,
+    "valuation_component_missing": 35.0,
+    "expected_return_missing": 40.0,
+    "portfolio_fit_missing": 50.0
+  }
+}

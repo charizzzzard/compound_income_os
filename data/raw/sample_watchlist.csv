@@ -1,0 +1,9 @@
+ticker,company_name,sector,country,asset_type,sleeve,mandate_fit,thesis_summary,main_risks
+VWCE,Vanguard FTSE All-World UCITS ETF,ETF,Global,ETF,CORE_ETF,95,broad global core ETF improving corridor,market beta drawdowns
+FUSD,Fidelity Global Quality Income ETF,ETF,Global,ETF,DIVIDEND_QUALITY_ETF,90,quality income ETF for dividend growth sleeve,index methodology drift
+SPGI,S&P Global,Financials,USA,STOCK,SINGLE_STOCK,94,high quality data and ratings compounder,elevated valuation
+COST,Costco,Consumer Staples,USA,STOCK,SINGLE_STOCK,90,resilient membership model and pricing power,elevated multiple
+ADP,Automatic Data Processing,Industrials,USA,STOCK,SINGLE_STOCK,89,sticky payroll software with dividend growth,multiple risk
+UNP,Union Pacific,Industrials,USA,STOCK,SINGLE_STOCK,87,rail moat with disciplined capital allocation,cyclical freight volumes
+JNJ,Johnson & Johnson,Healthcare,USA,STOCK,SINGLE_STOCK,84,defensive dividend grower with strong balance sheet,litigation overhang
+NVO,Novo Nordisk,Healthcare,Denmark,STOCK,SINGLE_STOCK,86,obesity and diabetes leader with strong economics,glp1 competition and pricing

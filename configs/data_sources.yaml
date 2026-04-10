@@ -1,0 +1,34 @@
+{
+  "source_of_truth": "manual_csv",
+  "supported_inputs": [
+    {
+      "name": "manual_csv",
+      "enabled": true,
+      "stability": "stable_default",
+      "read_only": true
+    },
+    {
+      "name": "broker_export",
+      "enabled": true,
+      "stability": "stable_default",
+      "read_only": true
+    },
+    {
+      "name": "trade_republic_documents",
+      "enabled": false,
+      "stability": "optional_adapter",
+      "read_only": true
+    },
+    {
+      "name": "trade_republic_unofficial_api",
+      "enabled": false,
+      "stability": "experimental_read_only",
+      "read_only": true
+    }
+  ],
+  "adapter_guardrails": {
+    "allow_orders": false,
+    "allow_live_mutations": false,
+    "mark_missing_live_data_as_review": true
+  }
+}

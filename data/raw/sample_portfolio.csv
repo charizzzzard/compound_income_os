@@ -1,0 +1,19 @@
+source_type,ticker,company_name,asset_type,sleeve,sector,country,quantity,price_eur,market_value_eur,cost_basis_eur,currency,notes
+manual_csv,GOOGL,Alphabet A,STOCK,SINGLE_STOCK,Communication Services,USA,1,455,455,390,EUR,bootstrap sample holding
+manual_csv,JDEP,JDE Peet's,STOCK,SINGLE_STOCK,Consumer Staples,Netherlands,1,305,305,280,EUR,bootstrap sample holding
+manual_csv,ASML,ASML,STOCK,SINGLE_STOCK,Technology,Netherlands,1,475,475,420,EUR,bootstrap sample holding
+manual_csv,ADM,Archer Daniels Midland,STOCK,SINGLE_STOCK,Consumer Staples,USA,1,285,285,260,EUR,bootstrap sample holding
+manual_csv,V,Visa,STOCK,SINGLE_STOCK,Financials,USA,1,440,440,395,EUR,bootstrap sample holding
+manual_csv,MSFT,Microsoft,STOCK,SINGLE_STOCK,Technology,USA,1,465,465,390,EUR,bootstrap sample holding
+manual_csv,BRK.B,Berkshire Hathaway B,STOCK,SINGLE_STOCK,Financials,USA,1,360,360,320,EUR,bootstrap sample holding
+manual_csv,CRWD,CrowdStrike Holdings A,STOCK,SINGLE_STOCK,Technology,USA,1,300,300,260,EUR,bootstrap sample holding
+manual_csv,BLK,BlackRock,STOCK,SINGLE_STOCK,Financials,USA,1,325,325,280,EUR,bootstrap sample holding
+manual_csv,TSM,TSMC ADR,ADR,SINGLE_STOCK,Technology,Taiwan,1,360,360,310,EUR,bootstrap sample holding
+manual_csv,PLTR,Palantir Technologies,STOCK,SINGLE_STOCK,Technology,USA,1,250,250,210,EUR,bootstrap sample holding
+manual_csv,AAPL,Apple,STOCK,SINGLE_STOCK,Technology,USA,1,355,355,315,EUR,bootstrap sample holding
+manual_csv,SQ,Block,STOCK,SINGLE_STOCK,Financials,USA,1,220,220,260,EUR,bootstrap sample holding
+manual_csv,DIS,Walt Disney,STOCK,SINGLE_STOCK,Communication Services,USA,1,245,245,260,EUR,bootstrap sample holding
+manual_csv,ALFEN,Alfen,STOCK,SINGLE_STOCK,Industrials,Netherlands,1,190,190,280,EUR,bootstrap sample holding
+manual_csv,IWMO,MSCI World Momentum ETF,ETF,DIVIDEND_QUALITY_ETF,ETF,Global,2,105,210,240,EUR,small thematic ETF sleeve
+manual_csv,WKHS,"Workhorse GRP New DL-,001",STOCK,SINGLE_STOCK,Industrials,USA,1,89.65,89.65,500,EUR,problematic residual position
+manual_csv,EUR-CASH,Cash Reserve,CASH,CASH,Cash,Eurozone,7524.63,1,7524.63,7524.63,EUR,available cash reserve

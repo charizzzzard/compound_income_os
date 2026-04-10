@@ -1,0 +1,32 @@
+{
+  "benchmark_name": "MSCI World / FTSE All-World blended reference",
+  "target_core_etf_min": 0.45,
+  "target_core_etf_max": 0.60,
+  "target_dividend_quality_etf_min": 0.10,
+  "target_dividend_quality_etf_max": 0.25,
+  "target_single_stocks_min": 0.20,
+  "target_single_stocks_max": 0.35,
+  "target_cash_min": 0.05,
+  "target_cash_max": 0.15,
+  "max_single_position_weight": 0.08,
+  "max_top10_weight": 0.60,
+  "max_sector_weight": 0.25,
+  "monthly_new_cash_eur": 500.0,
+  "min_cash_reserve_eur": 1500.0,
+  "allow_hold_cash_if_no_opportunity": true,
+  "buy_rules": {
+    "min_business_score": 75.0,
+    "min_valuation_score": 60.0,
+    "min_buy_score": 72.0,
+    "reject_business_score_below": 65.0,
+    "reject_valuation_score_below": 40.0,
+    "min_candidate_amount_eur": 50.0
+  },
+  "sell_rules": {
+    "reduce_if_weight_above": 0.08,
+    "reduce_if_extreme_overvaluation_score_below": 35.0,
+    "exit_if_business_score_below": 60.0,
+    "exit_if_hard_risk_flag": true,
+    "allow_sell_for_rebalancing_only_when_clear_need": true
+  }
+}
