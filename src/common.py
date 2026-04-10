@@ -55,6 +55,21 @@ def require_columns(rows: list[dict[str, Any]], required_columns: Iterable[str],
         raise ValueError(f"{source_name} missing required columns: {missing_text}")
 
 
+def require_unique_tickers(rows: list[dict[str, Any]], source_name: str) -> None:
+    duplicates: set[str] = set()
+    seen: set[str] = set()
+    for row in rows:
+        ticker = str(row.get("ticker", "")).strip()
+        if not ticker:
+            continue
+        if ticker in seen:
+            duplicates.add(ticker)
+        seen.add(ticker)
+    if duplicates:
+        duplicate_text = ", ".join(sorted(duplicates))
+        raise ValueError(f"{source_name} contains duplicate tickers: {duplicate_text}")
+
+
 def normalize_number_text(text: str) -> str:
     cleaned = text.strip().replace(" ", "").replace("\u00a0", "")
     if not cleaned:

@@ -24,6 +24,11 @@ Das System fuehrt keine Orders aus. Es verarbeitet CSV-Inputs deterministisch zu
 - Fehlende Daten werden als `REVIEW` oder `MISSING_DATA` markiert
 - Keine Auto-Trades, keine Broker-Orderlogik, keine versteckte Cash-Hardcodes
 
+## Config-Format
+
+- Alle `configs/*.yaml` muessen JSON-kompatibles YAML enthalten.
+- Der Config-Loader nutzt bewusst `json.load()` aus der Python-Standardbibliothek und keinen externen YAML-Parser.
+
 ## Wichtige Konfiguration
 
 Die zentrale Portfolio-Konfiguration liegt in [configs/portfolio_rules.yaml](/C:/Users/sc_mprinsen/Documents/compound_income_os/configs/portfolio_rules.yaml).

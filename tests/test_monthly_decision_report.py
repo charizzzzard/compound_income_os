@@ -52,6 +52,7 @@ class MonthlyDecisionReportTests(unittest.TestCase):
                 rules_path=str(rules_path),
             )
             report = output_path.read_text(encoding="utf-8")
+            self.assertIn("# Monatlicher Entscheidungsbericht", report)
             self.assertIn("## Vorschlag fuer die naechsten 321.0 EUR", report)
             self.assertIn("`EXIT1`", report)
             self.assertNotIn("`WATCHOK`", report)

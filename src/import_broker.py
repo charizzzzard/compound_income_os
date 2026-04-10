@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 
-from src.common import read_csv_rows, round2, write_csv_rows
+from src.common import read_csv_rows, round2, to_float, write_csv_rows
 from src.normalize_positions import normalize_positions
 from src.portfolio_rules import compute_portfolio_value, compute_total_assets
 
@@ -33,7 +33,7 @@ def build_positions_snapshot(rows: list[dict[str, str]]) -> list[dict[str, objec
     portfolio_value = compute_portfolio_value(normalized) or 1.0
     snapshot: list[dict[str, object]] = []
     for row in normalized:
-        market_value = float(row["market_value_eur"])
+        market_value = to_float(row.get("market_value_eur"))
         is_cash = row["asset_type"] == "CASH"
         snapshot.append(
             {

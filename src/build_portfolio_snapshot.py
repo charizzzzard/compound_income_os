@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from src.common import ensure_parent_dir, format_eur, format_pct, read_csv_rows, require_columns
+from src.common import ensure_parent_dir, format_eur, format_pct, read_csv_rows, require_columns, to_float
 from src.portfolio_rules import (
     allocation_summary,
     compute_cash_value,
@@ -32,16 +32,16 @@ def build_portfolio_snapshot_report(
 
     mandate_notes = []
     if allocation["core_etf_weight"] < rules["target_core_etf_min"]:
-        mandate_notes.append("Core ETF sleeve is materially underweight.")
+        mandate_notes.append("Die Core-ETF-Quote ist materiell untergewichtet.")
     if allocation["cash_weight"] > rules["target_cash_max"]:
-        mandate_notes.append("Cash is above corridor and should only remain elevated if no attractive ideas exist.")
+        mandate_notes.append("Die Cash-Quote liegt ueber dem Zielkorridor und sollte nur bei fehlenden Opportunitaeten hoch bleiben.")
     if any(str(row.get("classification", "")).upper() in {"REDUCE", "EXIT_REVIEW"} for row in (scores_rows or [])):
-        mandate_notes.append("There are problematic legacy holdings requiring review.")
+        mandate_notes.append("Es gibt problematische Bestandspositionen mit Review-Bedarf.")
     if not mandate_notes:
-        mandate_notes.append("Current allocation broadly matches the mandate.")
+        mandate_notes.append("Die aktuelle Allokation passt im Wesentlichen zum Mandat.")
 
     lines = [
-        "# Portfolio Snapshot",
+        "# Portfolio-Ueberblick",
         "",
         "## Uebersicht",
         "",
@@ -57,7 +57,7 @@ def build_portfolio_snapshot_report(
         "| --- | --- | --- | ---: | ---: |",
     ]
 
-    sorted_rows = sorted(positions_rows, key=lambda row: float(row.get("market_value_eur", 0.0)), reverse=True)
+    sorted_rows = sorted(positions_rows, key=lambda row: to_float(row.get("market_value_eur")), reverse=True)
     for row in sorted_rows:
         lines.append(
             f"| {row['ticker']} | {row['company_name']} | {row['sleeve']} | {row['market_value_eur']} | {row['weight_total_assets_pct']}% |"

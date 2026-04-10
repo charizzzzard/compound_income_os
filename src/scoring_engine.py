@@ -13,6 +13,7 @@ from src.common import (
     to_bool,
     to_float,
     write_csv_rows,
+    require_unique_tickers,
 )
 from src.portfolio_rules import aggregate_positions_by_ticker, compute_position_weights, compute_sector_weights, load_portfolio_rules
 from src.valuation_engine import compute_valuation_metrics
@@ -67,7 +68,8 @@ def build_position_index(rows: list[dict[str, str]]) -> dict[str, dict[str, Any]
     return index
 
 
-def build_fundamentals_index(rows: list[dict[str, str]]) -> dict[str, dict[str, str]]:
+def build_fundamentals_index(rows: list[dict[str, str]], source_name: str = "fundamentals input") -> dict[str, dict[str, str]]:
+    require_unique_tickers(rows, source_name)
     return {str(row.get("ticker", "")).strip(): row for row in rows if str(row.get("ticker", "")).strip()}
 
 
@@ -215,11 +217,12 @@ def build_scores(
     fundamentals_rows: list[dict[str, str]],
     rules_path: str = DEFAULT_RULES_PATH,
     scoring_path: str = DEFAULT_SCORING_PATH,
+    fundamentals_source_name: str = "fundamentals input",
 ) -> list[dict[str, Any]]:
     scoring_config = load_yaml_config(scoring_path)
     rules = load_portfolio_rules(rules_path)
     position_index = build_position_index(positions_rows)
-    fundamentals_index = build_fundamentals_index(fundamentals_rows)
+    fundamentals_index = build_fundamentals_index(fundamentals_rows, fundamentals_source_name)
     position_weights = compute_position_weights(positions_rows)
     sector_weights = compute_sector_weights(positions_rows)
     universe_tickers = sorted(set(position_index) | set(fundamentals_index))
@@ -353,7 +356,13 @@ def main() -> None:
             ["ticker", "company_name", "sector", "country", "asset_type", "sleeve"],
             f"fundamentals CSV ({args.fundamentals})",
         )
-    results = build_scores(positions_rows, fundamentals_rows, args.rules, args.scoring_config)
+    results = build_scores(
+        positions_rows,
+        fundamentals_rows,
+        args.rules,
+        args.scoring_config,
+        f"fundamentals CSV ({args.fundamentals})",
+    )
     write_csv_rows(args.output, OUTPUT_FIELDS, results)
 
 

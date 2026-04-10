@@ -28,7 +28,7 @@ def build_monthly_decision_report(
     top_pick = ranking_rows[0] if ranking_rows else None
 
     lines = [
-        "# Monthly Decision Report",
+        "# Monatlicher Entscheidungsbericht",
         "",
         "## Konfiguration",
         "",
