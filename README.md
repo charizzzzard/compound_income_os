@@ -89,7 +89,7 @@ Unvollstaendige oder problematische Bestandszeilen werden nicht glattgebuegelt:
 
 ## Persoenlicher Lauf
 
-Der persoenliche Lauf kann entweder ueber einen manuellen CSV-Depotexport oder ueber offizielle textbasierte Trade-Republic-Dokumente erfolgen. Der PDF-Pfad nutzt lokal nur `Depotauszug.pdf` fuer Holdings und `Kontoauszug.pdf` fuer den Cash-Endsaldo.
+Der persoenliche Lauf kann entweder ueber einen manuellen CSV-Depotexport oder ueber offizielle textbasierte Trade-Republic-Dokumente erfolgen. Der PDF-Pfad nutzt lokal nur `data/raw/private/traderepublic/Depotauszug.pdf` fuer Holdings und `data/raw/private/traderepublic/Kontoauszug.pdf` fuer den Cash-Endsaldo.
 
 Empfohlener persoenlicher CSV-Lauf:
 
@@ -104,7 +104,7 @@ python -m src.build_portfolio_snapshot --positions data/processed/personal_posit
 Empfohlener persoenlicher Trade-Republic-PDF-Lauf:
 
 ```powershell
-python -m src.import_broker --input data/raw/Depotauszug.pdf --cash-input data/raw/Kontoauszug.pdf --output data/processed/personal_positions_snapshot.csv --mode tr_pdf --source-name trade_republic_official_docs
+python -m src.import_broker --input data/raw/private/traderepublic/Depotauszug.pdf --cash-input data/raw/private/traderepublic/Kontoauszug.pdf --output data/processed/personal_positions_snapshot.csv --mode tr_pdf --source-name trade_republic_official_docs
 python -m src.scoring_engine --positions data/processed/personal_positions_snapshot.csv --fundamentals data/raw/sample_fundamentals.csv --output data/processed/personal_company_scores.csv
 python -m src.watchlist_engine --input data/raw/sample_watchlist.csv --scores data/processed/personal_company_scores.csv --output data/processed/personal_watchlist_ranked.csv --report-output reports/sample/personal_watchlist_report.md
 python -m src.monthly_ranking_engine --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --watchlist data/processed/personal_watchlist_ranked.csv --output data/processed/personal_monthly_buy_ranking.csv --rebalance-output data/processed/personal_rebalance_proposals.csv
@@ -122,9 +122,11 @@ Interpretation der persoenlichen Outputs:
 Datenschutz:
 
 - Private Rohdaten sollten nicht committed werden.
-- Fuer persoenliche Dateien sind z. B. `data/raw/personal_depot.csv`, `data/raw/private_depot.csv`, `data/raw/Depotauszug.pdf` oder `data/raw/Kontoauszug.pdf` vorgesehen und via `.gitignore` ausgeschlossen.
+- Fuer persoenliche Dateien sind z. B. `data/raw/personal_depot.csv`, `data/raw/private_depot.csv` oder `data/raw/private/traderepublic/` vorgesehen und via `.gitignore` ausgeschlossen.
 - Der Trade-Republic-PDF-Pfad nutzt nur textbasierte lokale Extraktion; es wird keine OCR, API oder Umsatzhistorienmodellierung verwendet.
 - Wenn im privaten Export Fundamentals oder saubere Identifier fehlen, bleiben die betreffenden Positionen offen als `REVIEW` oder `MISSING_DATA` markiert.
+- ZIP- oder externe Exporte sollten nie aus dem vollen Arbeitsverzeichnis mit privaten Rohdaten erstellt werden. Fuer Teilen/Review nur Code und Sample-Daten exportieren oder private Rohdaten vorher entfernen.
+- Falls private Rohdaten bereits historisch committed wurden, reicht `.gitignore` nicht; dann muss die Git-Historie separat bereinigt werden.
 
 ## Testlauf
 

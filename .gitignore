@@ -16,9 +16,10 @@ data/processed/
 reports/
 
 # Private raw portfolio inputs
+data/raw/private/**
 data/raw/personal_*
 data/raw/private_*
-data/raw/*.pdf
-data/raw/*.jpg
-data/raw/*.jpeg
-data/raw/*.png
+
+# Personal generated artifacts
+data/processed/personal_*
+reports/*/personal_*
