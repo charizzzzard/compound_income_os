@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import re
 from typing import Any
 
 from src.common import round2, safe_upper, to_bool, to_float
@@ -41,6 +43,23 @@ def normalize_ticker(value: str) -> str:
     if not ticker:
         return ""
     return ticker.replace(" ", "")
+
+
+def normalize_key_text(value: Any) -> str:
+    text = str(value or "").strip().lower()
+    return re.sub(r"[^a-z0-9]+", "-", text).strip("-") or "blank"
+
+
+def build_unknown_position_key(row: dict[str, Any], source_name: str, raw_name: str, company_name: str) -> str:
+    raw_parts = [
+        f"{key}={str(value).strip()}"
+        for key, value in sorted(row.items())
+        if str(value or "").strip()
+    ]
+    material = "|".join(raw_parts) or "|".join([source_name, raw_name, company_name])
+    digest = hashlib.sha256(material.encode("utf-8")).hexdigest()[:12]
+    label = normalize_key_text(company_name or raw_name)
+    return f"UNKNOWN::{label}::{digest}"
 
 
 def normalize_asset_type(raw_asset_type: str, raw_position_type: str, company_name: str, ticker: str, cash_value: float) -> str:
@@ -146,7 +165,7 @@ def normalize_position_row(
     isin = str(normalized["isin"]).strip().upper()
     input_ticker = normalize_ticker(normalized["ticker"])
     ticker_found = bool(input_ticker)
-    ticker = input_ticker or isin or "UNKNOWN"
+    ticker = input_ticker or isin
     company_name = normalized["company_name"] or raw_name or ticker
     quantity = to_float(normalized["quantity"], 0.0)
     current_price = to_float(normalized["current_price"], 0.0)
@@ -165,11 +184,12 @@ def normalize_position_row(
     )
 
     if asset_type == "CASH":
-        ticker = ticker if ticker != "UNKNOWN" else f"{(normalized['currency'] or 'EUR').upper()}-CASH"
+        ticker = ticker or f"{(normalized['currency'] or 'EUR').upper()}-CASH"
         quantity = quantity or market_value_eur
         current_price = current_price or 1.0
         avg_cost = avg_cost or 1.0
     else:
+        ticker = ticker or build_unknown_position_key(row, normalized_source_name, raw_name, company_name)
         if market_value_eur == 0.0 and quantity > 0.0 and current_price > 0.0:
             market_value_eur = quantity * current_price
         if current_price == 0.0 and quantity > 0.0 and market_value_eur > 0.0:

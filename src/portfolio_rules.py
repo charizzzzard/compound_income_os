@@ -53,6 +53,12 @@ def compute_total_assets(rows: list[dict[str, Any]]) -> float:
     return round2(sum(to_float(row.get("market_value_eur")) for row in rows))
 
 
+def round_position_numeric_field(field: str, value: Any) -> float:
+    if field == "quantity":
+        return round(to_float(value), 6)
+    return round2(to_float(value))
+
+
 def aggregate_positions_by_ticker(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     aggregated: dict[str, dict[str, Any]] = {}
     numeric_fields = {"quantity", "market_value_eur", "cost_basis_eur", "unrealized_pnl_eur"}
@@ -65,13 +71,13 @@ def aggregate_positions_by_ticker(rows: list[dict[str, Any]]) -> list[dict[str, 
             aggregated[ticker] = dict(row)
             for field in numeric_fields:
                 if field in aggregated[ticker]:
-                    aggregated[ticker][field] = round2(to_float(aggregated[ticker].get(field)))
+                    aggregated[ticker][field] = round_position_numeric_field(field, aggregated[ticker].get(field))
             continue
 
         current = aggregated[ticker]
         for field in numeric_fields:
             if field in row or field in current:
-                current[field] = round2(to_float(current.get(field)) + to_float(row.get(field)))
+                current[field] = round_position_numeric_field(field, to_float(current.get(field)) + to_float(row.get(field)))
         for key, value in row.items():
             if key in numeric_fields:
                 continue

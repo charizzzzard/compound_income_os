@@ -97,22 +97,23 @@ def build_fundamentals_isin_index(rows: list[dict[str, str]]) -> dict[str, dict[
     return index
 
 
-def build_fundamentals_name_index(rows: list[dict[str, str]]) -> dict[str, dict[str, str]]:
-    index: dict[str, dict[str, str]] = {}
+def build_fundamentals_name_index(rows: list[dict[str, str]]) -> dict[str, list[dict[str, str]]]:
+    index: dict[str, list[dict[str, str]]] = {}
     for row in rows:
         name_key = normalize_match_text(row.get("company_name"))
         if name_key:
-            index[name_key] = row
+            index.setdefault(name_key, []).append(row)
     return index
 
 
-def find_unique_name_match(position_row: dict[str, Any], fundamentals_name_index: dict[str, dict[str, str]]) -> dict[str, str] | None:
+def find_unique_name_match(position_row: dict[str, Any], fundamentals_name_index: dict[str, list[dict[str, str]]]) -> dict[str, str] | None:
     position_name = normalize_match_text(position_row.get("company_name") or position_row.get("raw_name"))
     if not position_name:
         return None
     matches = [
-        row for name_key, row in fundamentals_name_index.items()
+        row for name_key, rows in fundamentals_name_index.items()
         if len(name_key) >= 4 and (name_key in position_name or position_name in name_key)
+        for row in rows
     ]
     return matches[0] if len(matches) == 1 else None
 
@@ -120,7 +121,7 @@ def find_unique_name_match(position_row: dict[str, Any], fundamentals_name_index
 def resolve_position_key(
     row: dict[str, Any],
     fundamentals_by_isin: dict[str, dict[str, str]],
-    fundamentals_by_name: dict[str, dict[str, str]],
+    fundamentals_by_name: dict[str, list[dict[str, str]]],
 ) -> str:
     ticker = str(row.get("ticker", "")).strip()
     isin = str(row.get("isin", "")).strip().upper()
@@ -137,18 +138,22 @@ def resolve_position_key(
 def build_position_index(
     rows: list[dict[str, str]],
     fundamentals_by_isin: dict[str, dict[str, str]] | None = None,
-    fundamentals_by_name: dict[str, dict[str, str]] | None = None,
+    fundamentals_by_name: dict[str, list[dict[str, str]]] | None = None,
 ) -> dict[str, dict[str, Any]]:
-    index: dict[str, dict[str, Any]] = {}
     isin_index = fundamentals_by_isin or {}
     name_index = fundamentals_by_name or {}
+    canonical_rows: list[dict[str, Any]] = []
     for row in aggregate_positions_by_ticker(rows):
         ticker = resolve_position_key(row, isin_index, name_index)
         if ticker and str(row.get("asset_type", "")).upper() != "CASH":
             current = dict(row)
             current["ticker"] = ticker
-            index[ticker] = current
-    return index
+            canonical_rows.append(current)
+    return {
+        str(row.get("ticker", "")).strip(): row
+        for row in aggregate_positions_by_ticker(canonical_rows)
+        if str(row.get("ticker", "")).strip()
+    }
 
 
 def build_fundamentals_index(rows: list[dict[str, str]], source_name: str = "fundamentals input") -> dict[str, dict[str, str]]:

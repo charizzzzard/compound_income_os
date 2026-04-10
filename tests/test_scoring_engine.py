@@ -3,11 +3,15 @@ from __future__ import annotations
 import unittest
 
 from src.scoring_engine import (
+    build_fundamentals_isin_index,
+    build_fundamentals_name_index,
+    build_position_index,
     build_scores,
     classify_company,
     compute_business_score,
     compute_buy_score,
     evaluate_purchase_readiness,
+    find_unique_name_match,
 )
 from src.portfolio_rules import load_portfolio_rules
 from src.valuation_engine import compute_valuation_metrics
@@ -119,6 +123,105 @@ class ScoringEngineTests(unittest.TestCase):
         self.assertEqual(row["data_quality_flag"], "MISSING_DATA")
         self.assertEqual(row["classification"], "EXIT_REVIEW")
         self.assertIn("Fundamentaldaten", row["valuation_comment"])
+
+    def test_canonical_position_mapping_aggregates_instead_of_overwriting(self) -> None:
+        positions = [
+            {
+                "ticker": "AAPL",
+                "isin": "US0378331005",
+                "company_name": "Apple",
+                "asset_type": "STOCK",
+                "sleeve": "SINGLE_STOCK",
+                "sector": "Technology",
+                "country": "USA",
+                "quantity": "1",
+                "market_value_eur": "100",
+                "cost_basis_eur": "80",
+                "price_eur": "100",
+            },
+            {
+                "ticker": "US0378331005",
+                "isin": "US0378331005",
+                "company_name": "Apple Inc.",
+                "asset_type": "STOCK",
+                "sleeve": "SINGLE_STOCK",
+                "sector": "Technology",
+                "country": "USA",
+                "quantity": "2",
+                "market_value_eur": "200",
+                "cost_basis_eur": "180",
+                "price_eur": "100",
+            },
+        ]
+        fundamentals = [
+            {
+                "ticker": "AAPL",
+                "isin": "US0378331005",
+                "company_name": "Apple",
+                "sector": "Technology",
+                "country": "USA",
+                "asset_type": "STOCK",
+                "sleeve": "SINGLE_STOCK",
+                "current_price_eur": "100",
+                "quality_score": "90",
+                "dividend_score": "60",
+                "balance_sheet_score": "90",
+                "growth_quality_score": "80",
+                "capital_allocation_score": "85",
+                "mandate_fit_score": "90",
+                "pe_current": "20",
+                "pe_hist": "22",
+                "ev_ebit_current": "16",
+                "ev_ebit_hist": "18",
+                "fcf_yield_current_pct": "5",
+                "fcf_yield_hist_pct": "4",
+                "normalized_fcf_yield_pct": "5",
+                "target_fcf_yield_pct": "4",
+                "dividend_yield_current_pct": "1",
+                "dividend_yield_hist_pct": "1",
+                "expected_return_pct": "10",
+                "drawdown_from_high_pct": "15",
+                "has_hard_risk_flag": "false",
+                "thesis_robustness": "ROBUST",
+                "data_quality_flag": "OK",
+            }
+        ]
+
+        position_index = build_position_index(
+            positions,
+            build_fundamentals_isin_index(fundamentals),
+            build_fundamentals_name_index(fundamentals),
+        )
+        self.assertEqual(position_index["AAPL"]["market_value_eur"], 300.0)
+        self.assertEqual(position_index["AAPL"]["cost_basis_eur"], 260.0)
+        self.assertEqual(position_index["AAPL"]["quantity"], 3.0)
+
+        scores = build_scores(positions, fundamentals)
+        apple = next(row for row in scores if row["ticker"] == "AAPL")
+        self.assertTrue(apple["held_in_portfolio"])
+        self.assertEqual(apple["position_market_value_eur"], 300.0)
+
+    def test_name_fallback_does_not_match_ambiguous_fundamental_names(self) -> None:
+        fundamentals = [
+            {"ticker": "AAA", "company_name": "Example Duplicate", "sector": "Tech", "country": "USA", "asset_type": "STOCK", "sleeve": "SINGLE_STOCK"},
+            {"ticker": "BBB", "company_name": "Example Duplicate", "sector": "Tech", "country": "USA", "asset_type": "STOCK", "sleeve": "SINGLE_STOCK"},
+        ]
+        position = {
+            "ticker": "DE000A1MISS0",
+            "isin": "DE000A1MISS0",
+            "company_name": "Example Duplicate Registered Shares",
+            "asset_type": "STOCK",
+            "sleeve": "SINGLE_STOCK",
+            "sector": "Unknown",
+            "market_value_eur": "100",
+        }
+        name_index = build_fundamentals_name_index(fundamentals)
+
+        self.assertIsNone(find_unique_name_match(position, name_index))
+        position_index = build_position_index([position], {}, name_index)
+        self.assertIn("DE000A1MISS0", position_index)
+        self.assertNotIn("AAA", position_index)
+        self.assertNotIn("BBB", position_index)
 
     def test_purchase_readiness_blocks_missing_data(self) -> None:
         readiness = evaluate_purchase_readiness(
