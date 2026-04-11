@@ -129,6 +129,60 @@ Der Audit-Output `data/processed/score_audit.csv` zeigt pro Titel:
 
 Benchmarking, Kosten-/Steuer-Tracking und Dashboard sind nicht Teil von Phase 2A.
 
+## Phase 2B Performance und Benchmark
+
+Phase 2B fuehrt eine lokale, deterministische Benchmark-/Performance-Schicht ein, ohne die bestehenden Phase-1/2A-Pfade umzubauen.
+
+Wichtige Abgrenzung:
+
+- Snapshot-Performance basiert direkt auf dem aktuellen `positions_snapshot.csv` und liefert nur aktuelle NAV-/Gewichtungs-KPIs.
+- Historische Performance wird nur berechnet, wenn eine explizite datierte Portfolio-Zeitreihe mit `date` und `portfolio_nav_eur` vorliegt.
+- Eine explizite Portfolio-Zeitreihe darf nicht nach dem Snapshot-Stichtag enden; spaetere Endpunkte werden hart abgewiesen.
+- `avg_cost`, `cost_basis_eur` und `unrealized_pnl_eur` ersetzen keine historische Performance-Zeitreihe.
+- Kosten, Steuern, FX-Konvertierung, TWR und IRR sind nicht Teil von Phase 2B.
+
+Verfuegbare Datenmodi:
+
+- `SNAPSHOT_ONLY`: nur ein belastbarer Portfolio-Zeitpunkt, keine Periodenrendite, keine Drawdown-/Volatilitaetsmetriken
+- `PARTIAL_HISTORY`: mindestens zwei explizite Portfolio-Zeitpunkte, einfacher Periodenvergleich moeglich
+- `FULL_HISTORY`: weitergehende Historienmetriken erst bei ausreichend expliziter Historie; Phase 2B markiert fehlende Tiefe ansonsten als `INSUFFICIENT_HISTORY`
+
+Methodenlabels:
+
+- `SNAPSHOT_COMPARISON`
+- `SIMPLE_PERIOD_RETURN`
+
+Benchmark-Konfiguration und CSV-Schema:
+
+- `configs/benchmark.yaml` ist JSON-kompatibles YAML und wird via `json.load()` gelesen.
+- Erwartete Kernspalten in der Benchmark-CSV: `date`, `benchmark_name`, `benchmark_symbol`, `close`
+- Optional: `adjusted_close`, `total_return_index`, `dividend`, `source_name`, `currency`
+- Return-Basis-Prioritaet: `total_return_index` > `adjusted_close` > `close`
+- Die global gewaehlte Return-Basis muss in allen Benchmark-Zeilen befuellt sein; leere Spaetzeilen werden hart abgewiesen statt still als `0.0` zu laufen.
+- Falls nur `close` vorhanden ist, wird die Benchmark weiter genutzt, aber mit dem Flag `APPROX_PRICE_ONLY_BENCHMARK`
+- Ohne FX-Layer wird bei Waehrungsabweichung explizit `CURRENCY_MISMATCH` gesetzt
+
+Neue Artefakte:
+
+- `data/processed/benchmark_timeseries_normalized.csv`
+- `data/processed/portfolio_timeseries.csv`
+- `data/processed/performance_summary.csv`
+- `data/processed/performance_comparison.csv`
+- `data/processed/performance_kpis.csv`
+- `reports/YYYY-MM-DD/performance_report.md`
+
+Snapshot-Only-Beispiel:
+
+```powershell
+python -m src.performance_engine --positions data/processed/personal_positions_snapshot.csv --benchmark data/raw/sample_benchmark_timeseries.csv --benchmark-config configs/benchmark.yaml --comparison-output data/processed/performance_comparison.csv --kpi-output data/processed/performance_kpis.csv --report-output reports/sample/performance_report.md
+```
+
+Optionaler Periodenvergleich mit expliziter NAV-Zeitreihe:
+
+```powershell
+python -m src.performance_engine --positions data/processed/personal_positions_snapshot.csv --portfolio-timeseries data/raw/portfolio_timeseries.csv --benchmark data/raw/sample_benchmark_timeseries.csv --benchmark-config configs/benchmark.yaml --comparison-output data/processed/performance_comparison.csv --kpi-output data/processed/performance_kpis.csv --report-output reports/sample/performance_report.md
+```
+
 ## Persoenlicher Lauf
 
 Der persoenliche Lauf kann entweder ueber einen manuellen CSV-Depotexport oder ueber offizielle textbasierte Trade-Republic-Dokumente erfolgen. Der PDF-Pfad nutzt lokal nur `data/raw/private/traderepublic/Depotauszug.pdf` fuer Holdings und `data/raw/private/traderepublic/Kontoauszug.pdf` fuer den Cash-Endsaldo.

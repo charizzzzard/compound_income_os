@@ -1,0 +1,5 @@
+date,benchmark_name,benchmark_symbol,currency,close,adjusted_close,total_return_index,dividend,source_name
+2026-01-31,MSCI World / FTSE All-World local sample reference,SAMPLE_WORLD_TR_EUR,EUR,100.00,100.00,100.00,0.00,local_csv_fixture
+2026-02-28,MSCI World / FTSE All-World local sample reference,SAMPLE_WORLD_TR_EUR,EUR,101.20,101.30,101.40,0.10,local_csv_fixture
+2026-03-31,MSCI World / FTSE All-World local sample reference,SAMPLE_WORLD_TR_EUR,EUR,99.50,99.70,99.90,0.10,local_csv_fixture
+2026-04-10,MSCI World / FTSE All-World local sample reference,SAMPLE_WORLD_TR_EUR,EUR,103.00,103.30,103.80,0.20,local_csv_fixture

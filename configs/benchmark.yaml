@@ -1,0 +1,19 @@
+{
+  "benchmark_name": "MSCI World / FTSE All-World local sample reference",
+  "benchmark_symbol": "SAMPLE_WORLD_TR_EUR",
+  "benchmark_currency": "EUR",
+  "portfolio_reference_currency": "EUR",
+  "frequency": "monthly",
+  "date_column": "date",
+  "close_column": "close",
+  "adjusted_close_column": "adjusted_close",
+  "total_return_index_column": "total_return_index",
+  "source_name": "local_csv_fixture",
+  "return_basis_priority": ["total_return_index", "adjusted_close", "close"],
+  "data_quality_policy": {
+    "price_only_flag": "APPROX_PRICE_ONLY_BENCHMARK",
+    "currency_mismatch_flag": "CURRENCY_MISMATCH",
+    "duplicate_date_policy": "raise_error",
+    "missing_required_field_policy": "raise_error"
+  }
+}
