@@ -1,0 +1,66 @@
+{
+  "default_broker": "MANUAL_LEDGER",
+  "default_currency": "EUR",
+  "required_columns": [
+    "event_date",
+    "broker",
+    "document_type",
+    "record_granularity",
+    "event_type",
+    "instrument_name",
+    "ticker",
+    "isin",
+    "currency",
+    "gross_amount",
+    "net_amount",
+    "fee_amount",
+    "tax_amount",
+    "withholding_tax_amount",
+    "quantity",
+    "price_per_unit",
+    "reference_id",
+    "source_name",
+    "verification_status",
+    "data_quality_flag",
+    "notes"
+  ],
+  "required_non_blank_fields": [
+    "event_date",
+    "broker",
+    "document_type",
+    "record_granularity",
+    "event_type",
+    "currency",
+    "source_name",
+    "verification_status"
+  ],
+  "allowed_record_granularity": [
+    "EVENT",
+    "DOCUMENT_SUMMARY",
+    "PERIOD_SUMMARY"
+  ],
+  "allowed_verification_status": [
+    "VERIFIED",
+    "PARTIAL",
+    "UNVERIFIED",
+    "REVIEW"
+  ],
+  "allowed_event_types": [
+    "BUY",
+    "SELL",
+    "DIVIDEND",
+    "TAX",
+    "WITHHOLDING_TAX",
+    "FEE",
+    "INTEREST",
+    "CASH_ADJUSTMENT",
+    "TRANSFER",
+    "DOCUMENT_SUMMARY",
+    "UNKNOWN_REVIEW"
+  ],
+  "realized_pnl_policy": {
+    "requires_explicit_evidence": true,
+    "not_available_marker": "NOT_AVAILABLE",
+    "insufficient_documentation_marker": "INSUFFICIENT_DOCUMENTATION"
+  }
+}
