@@ -1,0 +1,584 @@
+{
+  "availability_labels": {
+    "available": "AVAILABLE",
+    "partial": "PARTIAL",
+    "not_available": "NOT_AVAILABLE"
+  },
+  "block_status_rules": {
+    "all_available": "AVAILABLE",
+    "mixed": "PARTIAL",
+    "all_missing": "NOT_AVAILABLE"
+  },
+  "visibility_rules": {
+    "show_missing_metrics": true
+  },
+  "data_quality_rules": {
+    "unavailable_values": ["", "NOT_AVAILABLE", "INSUFFICIENT_INPUTS", "INSUFFICIENT_HISTORY"]
+  },
+  "alert_rules": {
+    "high_cash_weight_threshold_pct": 25.0,
+    "multiple_partial_blocks_threshold": 2
+  },
+  "groups": [
+    {"metric_group": "Portfolio / Struktur", "display_order": 1},
+    {"metric_group": "Score / Fundamentals", "display_order": 2},
+    {"metric_group": "Benchmark / Performance", "display_order": 3},
+    {"metric_group": "Kosten / Steuern", "display_order": 4},
+    {"metric_group": "Datenqualitaet / Methodik", "display_order": 5}
+  ],
+  "metrics": [
+    {
+      "metric_name": "total_assets",
+      "metric_group": "Portfolio / Struktur",
+      "display_label": "Total Assets",
+      "source_priority": [{"source_key": "positions", "lookup_type": "derived_metric", "field_name": "total_assets"}],
+      "unit": "EUR",
+      "description": "Gesamtwert aller Snapshot-Positionen inklusive Cash.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "portfolio_value",
+      "metric_group": "Portfolio / Struktur",
+      "display_label": "Portfolio Value",
+      "source_priority": [{"source_key": "positions", "lookup_type": "derived_metric", "field_name": "portfolio_value"}],
+      "unit": "EUR",
+      "description": "Marktwert aller investierten Nicht-Cash-Positionen.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "cash_value",
+      "metric_group": "Portfolio / Struktur",
+      "display_label": "Cash Value",
+      "source_priority": [{"source_key": "positions", "lookup_type": "derived_metric", "field_name": "cash_value"}],
+      "unit": "EUR",
+      "description": "Cash-Bestand aus dem Snapshot.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "cash_weight",
+      "metric_group": "Portfolio / Struktur",
+      "display_label": "Cash Weight",
+      "source_priority": [
+        {"source_key": "performance_kpis", "lookup_type": "metric_row", "metric_name": "current_cash_weight"},
+        {"source_key": "positions", "lookup_type": "derived_metric", "field_name": "cash_weight"}
+      ],
+      "unit": "PCT",
+      "description": "Cash-Anteil am Gesamtvermoegen.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "invested_assets",
+      "metric_group": "Portfolio / Struktur",
+      "display_label": "Invested Assets",
+      "source_priority": [
+        {"source_key": "performance_kpis", "lookup_type": "metric_row", "metric_name": "invested_assets_eur"},
+        {"source_key": "positions", "lookup_type": "derived_metric", "field_name": "invested_assets"}
+      ],
+      "unit": "EUR",
+      "description": "Investierte Assets exklusive Cash.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "number_of_positions",
+      "metric_group": "Portfolio / Struktur",
+      "display_label": "Number of Positions",
+      "source_priority": [{"source_key": "positions", "lookup_type": "derived_metric", "field_name": "number_of_positions"}],
+      "unit": "COUNT",
+      "description": "Anzahl nicht-Cash Snapshot-Positionen.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "top_5_weight",
+      "metric_group": "Portfolio / Struktur",
+      "display_label": "Top 5 Weight",
+      "source_priority": [{"source_key": "positions", "lookup_type": "derived_metric", "field_name": "top_5_weight"}],
+      "unit": "PCT",
+      "description": "Gewicht der groessten fuenf Nicht-Cash-Positionen.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "top_10_weight",
+      "metric_group": "Portfolio / Struktur",
+      "display_label": "Top 10 Weight",
+      "source_priority": [{"source_key": "positions", "lookup_type": "derived_metric", "field_name": "top_10_weight"}],
+      "unit": "PCT",
+      "description": "Gewicht der groessten zehn Nicht-Cash-Positionen.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "equity_weight",
+      "metric_group": "Portfolio / Struktur",
+      "display_label": "Equity Weight",
+      "source_priority": [
+        {"source_key": "performance_kpis", "lookup_type": "metric_row", "metric_name": "current_equity_weight"},
+        {"source_key": "positions", "lookup_type": "derived_metric", "field_name": "equity_weight"}
+      ],
+      "unit": "PCT",
+      "description": "Gewicht aller investierten Nicht-Cash-Positionen.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "core_etf_weight",
+      "metric_group": "Portfolio / Struktur",
+      "display_label": "Core ETF Weight",
+      "source_priority": [{"source_key": "positions", "lookup_type": "derived_metric", "field_name": "core_etf_weight"}],
+      "unit": "PCT",
+      "description": "Gewicht der CORE_ETF-Sleeve.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "dg_quality_etf_weight",
+      "metric_group": "Portfolio / Struktur",
+      "display_label": "DG Quality ETF Weight",
+      "source_priority": [{"source_key": "positions", "lookup_type": "derived_metric", "field_name": "dg_quality_etf_weight"}],
+      "unit": "PCT",
+      "description": "Gewicht der DIVIDEND_QUALITY_ETF-Sleeve.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "single_stock_weight",
+      "metric_group": "Portfolio / Struktur",
+      "display_label": "Single Stock Weight",
+      "source_priority": [{"source_key": "positions", "lookup_type": "derived_metric", "field_name": "single_stock_weight"}],
+      "unit": "PCT",
+      "description": "Gewicht der SINGLE_STOCK-Sleeve.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "non_core_weight",
+      "metric_group": "Portfolio / Struktur",
+      "display_label": "Non Core Weight",
+      "source_priority": [{"source_key": "positions", "lookup_type": "derived_metric", "field_name": "non_core_weight"}],
+      "unit": "PCT",
+      "description": "Gewicht aller Nicht-Core-Sleeves exklusive Cash.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+
+    {
+      "metric_name": "weighted_business_score",
+      "metric_group": "Score / Fundamentals",
+      "display_label": "Weighted Business Score",
+      "source_priority": [{"source_key": "scores", "lookup_type": "derived_metric", "field_name": "weighted_business_score"}],
+      "unit": "SCORE",
+      "description": "Gewichteter Business Score der gehaltenen Titel.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "weighted_valuation_score",
+      "metric_group": "Score / Fundamentals",
+      "display_label": "Weighted Valuation Score",
+      "source_priority": [{"source_key": "scores", "lookup_type": "derived_metric", "field_name": "weighted_valuation_score"}],
+      "unit": "SCORE",
+      "description": "Gewichteter Valuation Score der gehaltenen Titel.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "weighted_buy_score",
+      "metric_group": "Score / Fundamentals",
+      "display_label": "Weighted Buy Score",
+      "source_priority": [{"source_key": "scores", "lookup_type": "derived_metric", "field_name": "weighted_buy_score"}],
+      "unit": "SCORE",
+      "description": "Gewichteter Buy Score der gehaltenen Titel.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "add_count",
+      "metric_group": "Score / Fundamentals",
+      "display_label": "ADD Count",
+      "source_priority": [{"source_key": "holdings", "lookup_type": "derived_metric", "field_name": "add_count"}],
+      "unit": "COUNT",
+      "description": "Anzahl ADD-Aktionen in der Holdings-Tabelle.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "hold_count",
+      "metric_group": "Score / Fundamentals",
+      "display_label": "HOLD Count",
+      "source_priority": [{"source_key": "holdings", "lookup_type": "derived_metric", "field_name": "hold_count"}],
+      "unit": "COUNT",
+      "description": "Anzahl HOLD-Aktionen in der Holdings-Tabelle.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "watch_count",
+      "metric_group": "Score / Fundamentals",
+      "display_label": "WATCH Count",
+      "source_priority": [{"source_key": "holdings", "lookup_type": "derived_metric", "field_name": "watch_count"}],
+      "unit": "COUNT",
+      "description": "Anzahl WATCH-Aktionen in der Holdings-Tabelle.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "reduce_count",
+      "metric_group": "Score / Fundamentals",
+      "display_label": "REDUCE Count",
+      "source_priority": [{"source_key": "holdings", "lookup_type": "derived_metric", "field_name": "reduce_count"}],
+      "unit": "COUNT",
+      "description": "Anzahl REDUCE-Aktionen in der Holdings-Tabelle.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "exit_review_count",
+      "metric_group": "Score / Fundamentals",
+      "display_label": "EXIT REVIEW Count",
+      "source_priority": [{"source_key": "holdings", "lookup_type": "derived_metric", "field_name": "exit_review_count"}],
+      "unit": "COUNT",
+      "description": "Anzahl EXIT_REVIEW-Aktionen in der Holdings-Tabelle.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "review_count",
+      "metric_group": "Score / Fundamentals",
+      "display_label": "Review Count",
+      "source_priority": [
+        {"source_key": "positions", "lookup_type": "derived_metric", "field_name": "review_count"},
+        {"source_key": "holdings", "lookup_type": "derived_metric", "field_name": "review_count"}
+      ],
+      "unit": "COUNT",
+      "description": "Offene REVIEW-Faelle aus Snapshot oder Holdings-Tabelle.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "missing_data_count",
+      "metric_group": "Score / Fundamentals",
+      "display_label": "Missing Data Count",
+      "source_priority": [
+        {"source_key": "score_audit", "lookup_type": "derived_metric", "field_name": "missing_data_count"},
+        {"source_key": "scores", "lookup_type": "derived_metric", "field_name": "missing_data_count"}
+      ],
+      "unit": "COUNT",
+      "description": "Anzahl Titel mit MISSING_DATA, REVIEW oder expliziten Audit-Luecken.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+
+    {
+      "metric_name": "benchmark_name",
+      "metric_group": "Benchmark / Performance",
+      "display_label": "Benchmark Name",
+      "source_priority": [
+        {"source_key": "performance_summary", "lookup_type": "summary_field", "field_name": "benchmark_name"},
+        {"source_key": "performance_comparison", "lookup_type": "summary_field", "field_name": "benchmark_name"}
+      ],
+      "unit": "TEXT",
+      "description": "Benchmark-Name aus Phase 2B.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "performance_measurement_mode",
+      "metric_group": "Benchmark / Performance",
+      "display_label": "Performance Mode",
+      "source_priority": [
+        {"source_key": "performance_summary", "lookup_type": "summary_field", "field_name": "measurement_mode"},
+        {"source_key": "performance_comparison", "lookup_type": "summary_field", "field_name": "measurement_mode"}
+      ],
+      "unit": "TEXT",
+      "description": "Measurement Mode aus Phase 2B.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "portfolio_return_period",
+      "metric_group": "Benchmark / Performance",
+      "display_label": "Portfolio Return Period",
+      "source_priority": [
+        {"source_key": "performance_kpis", "lookup_type": "metric_row", "metric_name": "portfolio_return_period"},
+        {"source_key": "performance_comparison", "lookup_type": "summary_field", "field_name": "portfolio_return_period"}
+      ],
+      "unit": "PCT",
+      "description": "Periodenrendite des Portfolios aus Phase 2B.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "benchmark_return_period",
+      "metric_group": "Benchmark / Performance",
+      "display_label": "Benchmark Return Period",
+      "source_priority": [
+        {"source_key": "performance_kpis", "lookup_type": "metric_row", "metric_name": "benchmark_return_period"},
+        {"source_key": "performance_comparison", "lookup_type": "summary_field", "field_name": "benchmark_return_period"}
+      ],
+      "unit": "PCT",
+      "description": "Periodenrendite der Benchmark aus Phase 2B.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "active_return",
+      "metric_group": "Benchmark / Performance",
+      "display_label": "Active Return",
+      "source_priority": [
+        {"source_key": "performance_kpis", "lookup_type": "metric_row", "metric_name": "active_return"},
+        {"source_key": "performance_comparison", "lookup_type": "summary_field", "field_name": "active_return"}
+      ],
+      "unit": "PCT",
+      "description": "Aktive Rendite gegenueber der Benchmark.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "rolling_return_1m",
+      "metric_group": "Benchmark / Performance",
+      "display_label": "Rolling Return 1M",
+      "source_priority": [{"source_key": "performance_kpis", "lookup_type": "metric_row", "metric_name": "rolling_return_1m"}],
+      "unit": "PCT",
+      "description": "Rolling Return 1M, nur bei ausreichender Historie.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "rolling_return_3m",
+      "metric_group": "Benchmark / Performance",
+      "display_label": "Rolling Return 3M",
+      "source_priority": [{"source_key": "performance_kpis", "lookup_type": "metric_row", "metric_name": "rolling_return_3m"}],
+      "unit": "PCT",
+      "description": "Rolling Return 3M, nur bei ausreichender Historie.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "rolling_return_6m",
+      "metric_group": "Benchmark / Performance",
+      "display_label": "Rolling Return 6M",
+      "source_priority": [{"source_key": "performance_kpis", "lookup_type": "metric_row", "metric_name": "rolling_return_6m"}],
+      "unit": "PCT",
+      "description": "Rolling Return 6M, nur bei ausreichender Historie.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "rolling_return_12m",
+      "metric_group": "Benchmark / Performance",
+      "display_label": "Rolling Return 12M",
+      "source_priority": [{"source_key": "performance_kpis", "lookup_type": "metric_row", "metric_name": "rolling_return_12m"}],
+      "unit": "PCT",
+      "description": "Rolling Return 12M, nur bei ausreichender Historie.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "max_drawdown",
+      "metric_group": "Benchmark / Performance",
+      "display_label": "Max Drawdown",
+      "source_priority": [{"source_key": "performance_kpis", "lookup_type": "metric_row", "metric_name": "max_drawdown"}],
+      "unit": "PCT",
+      "description": "Maximaler Drawdown aus Phase 2B.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "volatility",
+      "metric_group": "Benchmark / Performance",
+      "display_label": "Volatility",
+      "source_priority": [{"source_key": "performance_kpis", "lookup_type": "metric_row", "metric_name": "volatility"}],
+      "unit": "PCT",
+      "description": "Volatilitaet aus Phase 2B.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+
+    {
+      "metric_name": "ledger_measurement_mode",
+      "metric_group": "Kosten / Steuern",
+      "display_label": "Ledger Mode",
+      "source_priority": [
+        {"source_key": "cost_tax_kpis", "lookup_type": "metric_row", "metric_name": "ledger_measurement_mode"},
+        {"source_key": "cost_tax_summary", "lookup_type": "summary_field", "field_name": "ledger_measurement_mode"}
+      ],
+      "unit": "TEXT",
+      "description": "Measurement Mode aus Phase 2C.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "total_fees",
+      "metric_group": "Kosten / Steuern",
+      "display_label": "Total Fees",
+      "source_priority": [
+        {"source_key": "cost_tax_kpis", "lookup_type": "metric_row", "metric_name": "total_fees"},
+        {"source_key": "cost_tax_summary", "lookup_type": "summary_field", "field_name": "total_fees"}
+      ],
+      "unit": "EUR",
+      "description": "Aggregierte Fees aus Phase 2C.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "total_taxes",
+      "metric_group": "Kosten / Steuern",
+      "display_label": "Total Taxes",
+      "source_priority": [
+        {"source_key": "cost_tax_kpis", "lookup_type": "metric_row", "metric_name": "total_taxes"},
+        {"source_key": "cost_tax_summary", "lookup_type": "summary_field", "field_name": "total_taxes"}
+      ],
+      "unit": "EUR",
+      "description": "Aggregierte Steuern aus Phase 2C.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "total_withholding_taxes",
+      "metric_group": "Kosten / Steuern",
+      "display_label": "Total Withholding Taxes",
+      "source_priority": [
+        {"source_key": "cost_tax_kpis", "lookup_type": "metric_row", "metric_name": "total_withholding_taxes"},
+        {"source_key": "cost_tax_summary", "lookup_type": "summary_field", "field_name": "total_withholding_taxes"}
+      ],
+      "unit": "EUR",
+      "description": "Aggregierte Quellensteuern aus Phase 2C.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "total_dividends_gross",
+      "metric_group": "Kosten / Steuern",
+      "display_label": "Total Dividends Gross",
+      "source_priority": [
+        {"source_key": "cost_tax_kpis", "lookup_type": "metric_row", "metric_name": "total_dividends_gross"},
+        {"source_key": "cost_tax_summary", "lookup_type": "summary_field", "field_name": "total_dividends_gross"}
+      ],
+      "unit": "EUR",
+      "description": "Bruttodividenden aus Phase 2C.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "total_dividends_net",
+      "metric_group": "Kosten / Steuern",
+      "display_label": "Total Dividends Net",
+      "source_priority": [
+        {"source_key": "cost_tax_kpis", "lookup_type": "metric_row", "metric_name": "total_dividends_net"},
+        {"source_key": "cost_tax_summary", "lookup_type": "summary_field", "field_name": "total_dividends_net"}
+      ],
+      "unit": "EUR",
+      "description": "Nettodividenden aus Phase 2C.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "total_realized_pnl_before_tax",
+      "metric_group": "Kosten / Steuern",
+      "display_label": "Realized PnL Before Tax",
+      "source_priority": [
+        {"source_key": "cost_tax_kpis", "lookup_type": "metric_row", "metric_name": "total_realized_pnl_before_tax"},
+        {"source_key": "cost_tax_summary", "lookup_type": "summary_field", "field_name": "total_realized_pnl_before_tax"}
+      ],
+      "unit": "EUR",
+      "description": "Realisierter PnL vor Steuern, nur bei expliziter Evidenz.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "total_realized_pnl_after_tax",
+      "metric_group": "Kosten / Steuern",
+      "display_label": "Realized PnL After Tax",
+      "source_priority": [
+        {"source_key": "cost_tax_summary", "lookup_type": "summary_field", "field_name": "total_realized_pnl_after_tax"},
+        {"source_key": "cost_tax_kpis", "lookup_type": "metric_row", "metric_name": "total_realized_pnl_after_tax_estimate_or_partial"}
+      ],
+      "unit": "EUR",
+      "description": "Realisierter PnL nach Steuern oder partielle Schaetzung aus Phase 2C.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "gross_to_net_dividend_gap",
+      "metric_group": "Kosten / Steuern",
+      "display_label": "Gross To Net Dividend Gap",
+      "source_priority": [{"source_key": "cost_tax_kpis", "lookup_type": "metric_row", "metric_name": "gross_to_net_dividend_gap"}],
+      "unit": "EUR",
+      "description": "Differenz zwischen Brutto- und Nettodividenden.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "fee_drag_estimate",
+      "metric_group": "Kosten / Steuern",
+      "display_label": "Fee Drag Estimate",
+      "source_priority": [{"source_key": "cost_tax_kpis", "lookup_type": "metric_row", "metric_name": "fee_drag_estimate"}],
+      "unit": "TEXT",
+      "description": "Nur ausweisen, wenn Phase 2C diese Kennzahl explizit bereitstellt.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "realized_tax_drag",
+      "metric_group": "Kosten / Steuern",
+      "display_label": "Realized Tax Drag",
+      "source_priority": [{"source_key": "cost_tax_kpis", "lookup_type": "metric_row", "metric_name": "realized_tax_drag"}],
+      "unit": "EUR",
+      "description": "Realisierter Steuerabzug aus Phase 2C.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+
+    {
+      "metric_name": "score_data_quality_flag",
+      "metric_group": "Datenqualitaet / Methodik",
+      "display_label": "Score Data Quality Flag",
+      "source_priority": [
+        {"source_key": "score_audit", "lookup_type": "derived_metric", "field_name": "score_data_quality_flag"},
+        {"source_key": "scores", "lookup_type": "derived_metric", "field_name": "score_data_quality_flag"}
+      ],
+      "unit": "TEXT",
+      "description": "Konsolidierte Datenqualitaet der Score-/Fundamentals-Quellen.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "performance_data_quality_flag",
+      "metric_group": "Datenqualitaet / Methodik",
+      "display_label": "Performance Data Quality Flag",
+      "source_priority": [
+        {"source_key": "performance_summary", "lookup_type": "summary_field", "field_name": "data_quality_flag"},
+        {"source_key": "performance_comparison", "lookup_type": "summary_field", "field_name": "data_quality_flag"}
+      ],
+      "unit": "TEXT",
+      "description": "Datenqualitaet des Phase-2B-Blocks.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "cost_tax_data_quality_flag",
+      "metric_group": "Datenqualitaet / Methodik",
+      "display_label": "Cost Tax Data Quality Flag",
+      "source_priority": [
+        {"source_key": "cost_tax_summary", "lookup_type": "summary_field", "field_name": "ledger_data_quality_flag"},
+        {"source_key": "cost_tax_kpis", "lookup_type": "metric_row", "metric_name": "ledger_data_quality_flag"}
+      ],
+      "unit": "TEXT",
+      "description": "Datenqualitaet des Phase-2C-Blocks.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "performance_source_date",
+      "metric_group": "Datenqualitaet / Methodik",
+      "display_label": "Performance Source Date",
+      "source_priority": [{"source_key": "dashboard", "lookup_type": "derived_metric", "field_name": "performance_source_date"}],
+      "unit": "DATE",
+      "description": "Effektiv verwendeter Performance-Quellstichtag im Dashboard.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "cost_tax_source_date",
+      "metric_group": "Datenqualitaet / Methodik",
+      "display_label": "Cost Tax Source Date",
+      "source_priority": [{"source_key": "dashboard", "lookup_type": "derived_metric", "field_name": "cost_tax_source_date"}],
+      "unit": "DATE",
+      "description": "Effektiv verwendeter Cost-/Tax-Quellstichtag im Dashboard.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "cross_source_data_quality_flag",
+      "metric_group": "Datenqualitaet / Methodik",
+      "display_label": "Cross Source Date Quality Flag",
+      "source_priority": [{"source_key": "dashboard", "lookup_type": "derived_metric", "field_name": "cross_source_data_quality_flag"}],
+      "unit": "TEXT",
+      "description": "Cross-Source-Stichtagsqualitaet relativ zum Snapshot-Stichtag.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "dashboard_data_quality_flag",
+      "metric_group": "Datenqualitaet / Methodik",
+      "display_label": "Dashboard Data Quality Flag",
+      "source_priority": [{"source_key": "dashboard", "lookup_type": "derived_metric", "field_name": "dashboard_data_quality_flag"}],
+      "unit": "TEXT",
+      "description": "Konsolidierte Datenqualitaet ueber die eingebundenen Dashboard-Quellen.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "methodology_notes_count",
+      "metric_group": "Datenqualitaet / Methodik",
+      "display_label": "Methodology Notes Count",
+      "source_priority": [{"source_key": "dashboard", "lookup_type": "derived_metric", "field_name": "methodology_notes_count"}],
+      "unit": "COUNT",
+      "description": "Anzahl eindeutiger Methodik-/Qualitaetshinweise im Dashboard.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "missing_block_count",
+      "metric_group": "Datenqualitaet / Methodik",
+      "display_label": "Missing Block Count",
+      "source_priority": [{"source_key": "dashboard", "lookup_type": "derived_metric", "field_name": "missing_block_count"}],
+      "unit": "COUNT",
+      "description": "Anzahl primaerer KPI-Bloecke mit Status NOT_AVAILABLE.",
+      "missing_policy": "NOT_AVAILABLE"
+    }
+  ]
+}
