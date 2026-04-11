@@ -21,6 +21,8 @@ NOT_AVAILABLE = "NOT_AVAILABLE"
 INSUFFICIENT_HISTORY = "INSUFFICIENT_HISTORY"
 UNKNOWN_OR_ZERO_ASSUMED = "UNKNOWN_OR_ZERO_ASSUMED"
 OK_FLAG = "OK"
+STALE_BENCHMARK = "STALE_BENCHMARK"
+BENCHMARK_STALENESS_THRESHOLD_DAYS = 2
 
 BENCHMARK_NORMALIZED_FIELDS = [
     "date",
@@ -48,6 +50,8 @@ PORTFOLIO_TIMESERIES_FIELDS = [
 
 PERFORMANCE_SUMMARY_FIELDS = [
     "as_of_date",
+    "benchmark_reference_end_date",
+    "benchmark_staleness_days",
     "measurement_mode",
     "method_used",
     "benchmark_name",
@@ -69,6 +73,8 @@ PERFORMANCE_COMPARISON_FIELDS = [
     "period_start",
     "period_end",
     "as_of_date",
+    "benchmark_reference_end_date",
+    "benchmark_staleness_days",
     "portfolio_nav_start_eur",
     "portfolio_nav_end_eur",
     "benchmark_reference_start",
@@ -286,6 +292,13 @@ def choose_benchmark_row_for_date(rows: list[dict[str, str]], target_date: date)
     return eligible[-1]
 
 
+def compute_benchmark_staleness(portfolio_as_of_date: date, benchmark_row: dict[str, str]) -> tuple[str, str, str]:
+    benchmark_end_date = parse_iso_date(benchmark_row.get("date"), "date")
+    staleness_days = max((portfolio_as_of_date - benchmark_end_date).days, 0)
+    stale_flag = STALE_BENCHMARK if staleness_days >= BENCHMARK_STALENESS_THRESHOLD_DAYS else OK_FLAG
+    return benchmark_end_date.isoformat(), str(staleness_days), stale_flag
+
+
 def build_portfolio_timeseries(
     positions_rows: list[dict[str, str]],
     explicit_timeseries_path: str | None,
@@ -372,7 +385,10 @@ def combine_quality_flags(*values: str) -> str:
             cleaned = flag.strip()
             if cleaned and cleaned not in flags:
                 flags.append(cleaned)
-    return "|".join(flags) if flags else OK_FLAG
+    non_ok_flags = [flag for flag in flags if flag != OK_FLAG]
+    if non_ok_flags:
+        return "|".join(non_ok_flags)
+    return OK_FLAG
 
 
 def build_comparison_row(
@@ -385,12 +401,21 @@ def build_comparison_row(
     latest_benchmark = choose_benchmark_row_for_date(normalized_benchmark_rows, last_point.date)
     if latest_benchmark is None:
         raise ValueError("benchmark timeseries does not contain a row on or before the portfolio as-of date.")
+    benchmark_reference_end_date, benchmark_staleness_days, stale_flag = compute_benchmark_staleness(last_point.date, latest_benchmark)
 
     if measurement_mode == SNAPSHOT_ONLY or len(points) < 2:
+        notes = "Only one explicit portfolio snapshot is available; no period return comparison is reported."
+        if stale_flag == STALE_BENCHMARK:
+            notes += (
+                f" Benchmark reference end date {benchmark_reference_end_date} is stale versus portfolio as-of "
+                f"{last_point.date.isoformat()} ({benchmark_staleness_days} days)."
+            )
         return {
             "period_start": "",
             "period_end": last_point.date.isoformat(),
             "as_of_date": last_point.date.isoformat(),
+            "benchmark_reference_end_date": benchmark_reference_end_date,
+            "benchmark_staleness_days": benchmark_staleness_days,
             "portfolio_nav_start_eur": "",
             "portfolio_nav_end_eur": str(last_point.portfolio_nav_eur),
             "benchmark_reference_start": "",
@@ -403,8 +428,8 @@ def build_comparison_row(
             "benchmark_name": latest_benchmark["benchmark_name"],
             "benchmark_return_basis_used": latest_benchmark["benchmark_return_basis_used"],
             "net_cash_flow_assumption": "",
-            "data_quality_flag": latest_benchmark["data_quality_flag"],
-            "notes": "Only one explicit portfolio snapshot is available; no period return comparison is reported.",
+            "data_quality_flag": combine_quality_flags(latest_benchmark["data_quality_flag"], stale_flag),
+            "notes": notes,
         }
 
     start_point = points[0]
@@ -422,10 +447,17 @@ def build_comparison_row(
     if any(point.net_external_cash_flow_eur for point in points):
         net_cash_assumption = "EXPLICIT_CASH_FLOW_COLUMN_PRESENT_BUT_NOT_USED_FOR_TWR"
         notes += " Explicit external cash flow fields are present, but Phase 2B still avoids TWR/IRR."
+    if stale_flag == STALE_BENCHMARK:
+        notes += (
+            f" Benchmark reference end date {benchmark_reference_end_date} is stale versus portfolio as-of "
+            f"{last_point.date.isoformat()} ({benchmark_staleness_days} days)."
+        )
     return {
         "period_start": start_point.date.isoformat(),
         "period_end": last_point.date.isoformat(),
         "as_of_date": last_point.date.isoformat(),
+        "benchmark_reference_end_date": benchmark_reference_end_date,
+        "benchmark_staleness_days": benchmark_staleness_days,
         "portfolio_nav_start_eur": str(start_point.portfolio_nav_eur),
         "portfolio_nav_end_eur": str(last_point.portfolio_nav_eur),
         "benchmark_reference_start": benchmark_start["benchmark_reference_value"],
@@ -438,7 +470,7 @@ def build_comparison_row(
         "benchmark_name": latest_benchmark["benchmark_name"],
         "benchmark_return_basis_used": latest_benchmark["benchmark_return_basis_used"],
         "net_cash_flow_assumption": net_cash_assumption,
-        "data_quality_flag": combine_quality_flags(benchmark_start["data_quality_flag"], latest_benchmark["data_quality_flag"]),
+        "data_quality_flag": combine_quality_flags(benchmark_start["data_quality_flag"], latest_benchmark["data_quality_flag"], stale_flag),
         "notes": notes,
     }
 
@@ -458,6 +490,8 @@ def build_summary_row(
     notes = "Phase 2B reports only snapshot KPIs plus simple period returns when explicit dated NAV points exist."
     return {
         "as_of_date": snapshot_point.date.isoformat(),
+        "benchmark_reference_end_date": comparison_row["benchmark_reference_end_date"],
+        "benchmark_staleness_days": comparison_row["benchmark_staleness_days"],
         "measurement_mode": measurement_mode,
         "method_used": method_used,
         "benchmark_name": benchmark_row["benchmark_name"],
@@ -491,6 +525,48 @@ def build_portfolio_timeseries_rows(points: list[PortfolioPoint]) -> list[dict[s
     ]
 
 
+def build_benchmark_quality_kpis(
+    comparison_row: dict[str, str],
+    measurement_mode: str,
+    method_used: str,
+) -> list[dict[str, str]]:
+    return [
+        {
+            "metric_name": "portfolio_as_of_date",
+            "metric_value": comparison_row["as_of_date"],
+            "metric_unit": "DATE",
+            "measurement_mode": measurement_mode,
+            "method_used": method_used,
+            "time_window": "",
+            "data_quality_flag": comparison_row["data_quality_flag"],
+            "notes": "Portfolio as-of date used for the benchmark alignment check.",
+        },
+        {
+            "metric_name": "benchmark_reference_end_date",
+            "metric_value": comparison_row["benchmark_reference_end_date"],
+            "metric_unit": "DATE",
+            "measurement_mode": measurement_mode,
+            "method_used": method_used,
+            "time_window": "",
+            "data_quality_flag": comparison_row["data_quality_flag"],
+            "notes": "Last benchmark date actually used for the portfolio comparison.",
+        },
+        {
+            "metric_name": "benchmark_staleness_days",
+            "metric_value": comparison_row["benchmark_staleness_days"],
+            "metric_unit": "DAYS",
+            "measurement_mode": measurement_mode,
+            "method_used": method_used,
+            "time_window": "",
+            "data_quality_flag": comparison_row["data_quality_flag"],
+            "notes": (
+                f"Difference in calendar days between portfolio as-of and benchmark reference end date. "
+                f"Flagged as {STALE_BENCHMARK} when >= {BENCHMARK_STALENESS_THRESHOLD_DAYS} days."
+            ),
+        },
+    ]
+
+
 def infer_method(measurement_mode: str) -> str:
     return SNAPSHOT_COMPARISON if measurement_mode == SNAPSHOT_ONLY else SIMPLE_PERIOD_RETURN
 
@@ -506,6 +582,8 @@ def build_report_text(summary_row: dict[str, str], comparison_row: dict[str, str
         f"- As-of Date: {summary_row['as_of_date']}",
         f"- Benchmark: {summary_row['benchmark_name']} ({summary_row['benchmark_symbol']})",
         f"- Benchmark Return Basis Used: {summary_row['benchmark_return_basis_used']}",
+        f"- Benchmark Reference End Date: {summary_row['benchmark_reference_end_date']}",
+        f"- Benchmark Staleness Days: {summary_row['benchmark_staleness_days']}",
         f"- Data Quality Flag: {summary_row['data_quality_flag']}",
         f"- Net Cash Flow Assumption: {summary_row['net_cash_flow_assumption'] or NOT_AVAILABLE}",
         "",
@@ -581,6 +659,7 @@ def run_performance_engine(
     comparison_row = build_comparison_row(normalized_mode, method_used, portfolio_points, normalized_benchmark_rows)
     summary_row = build_summary_row(snapshot_point, comparison_row, normalized_benchmark_rows, normalized_mode, method_used, portfolio_points)
     kpi_rows = compute_snapshot_kpis(snapshot_point, normalized_mode, method_used)
+    kpi_rows.extend(build_benchmark_quality_kpis(comparison_row, normalized_mode, method_used))
 
     outputs = {
         "normalized_benchmark_output": write_csv_rows(normalized_benchmark_output, BENCHMARK_NORMALIZED_FIELDS, normalized_benchmark_rows),

@@ -287,8 +287,105 @@ class PerformanceEngineTests(unittest.TestCase):
         self.assertEqual(summary_rows[0]["method_used"], SNAPSHOT_COMPARISON)
         self.assertEqual(comparison_rows[0]["portfolio_return_period"], NOT_AVAILABLE)
         self.assertEqual(comparison_rows[0]["active_return"], NOT_AVAILABLE)
+        self.assertEqual(comparison_rows[0]["benchmark_reference_end_date"], "2026-04-10")
+        self.assertEqual(comparison_rows[0]["benchmark_staleness_days"], "0")
         rolling_1m = next(row for row in kpi_rows if row["metric_name"] == "rolling_return_1m")
         self.assertEqual(rolling_1m["metric_value"], INSUFFICIENT_HISTORY)
+
+    def test_stale_benchmark_end_date_is_flagged(self) -> None:
+        positions_path = self._path("_tmp_positions_snapshot_stale.csv")
+        benchmark_path = self._path("_tmp_benchmark_stale.csv")
+        config_path = self._path("_tmp_benchmark_config_stale.yaml")
+        comparison_path = self._path("_tmp_performance_comparison_stale.csv")
+        summary_path = self._path("_tmp_performance_summary_stale.csv")
+        kpi_path = self._path("_tmp_performance_kpis_stale.csv")
+        report_path = self._path("_tmp_performance_report_stale.md")
+
+        self._build_positions_snapshot(positions_path, portfolio_date="2026-04-10")
+        self._build_benchmark_csv(
+            benchmark_path,
+            rows=[
+                {
+                    "date": "2026-01-31",
+                    "benchmark_name": "Unit Test Benchmark",
+                    "benchmark_symbol": "UTB",
+                    "currency": "EUR",
+                    "close": "100",
+                    "adjusted_close": "101",
+                    "total_return_index": "102",
+                    "dividend": "0.0",
+                    "source_name": "unit_fixture",
+                }
+            ],
+        )
+        self._build_benchmark_config(config_path)
+
+        run_performance_engine(
+            positions_path=str(positions_path),
+            benchmark_path=str(benchmark_path),
+            benchmark_config_path=str(config_path),
+            comparison_output=str(comparison_path),
+            kpi_output=str(kpi_path),
+            summary_output=str(summary_path),
+            report_output=str(report_path),
+        )
+
+        comparison_row = read_csv_rows(comparison_path)[0]
+        summary_row = read_csv_rows(summary_path)[0]
+        kpi_rows = read_csv_rows(kpi_path)
+        report_text = report_path.read_text(encoding="utf-8")
+        self.assertIn("STALE_BENCHMARK", comparison_row["data_quality_flag"])
+        self.assertIn("STALE_BENCHMARK", summary_row["data_quality_flag"])
+        self.assertEqual(comparison_row["benchmark_reference_end_date"], "2026-01-31")
+        self.assertEqual(comparison_row["benchmark_staleness_days"], "69")
+        staleness_kpi = next(row for row in kpi_rows if row["metric_name"] == "benchmark_staleness_days")
+        self.assertEqual(staleness_kpi["metric_value"], "69")
+        self.assertIn("Benchmark Reference End Date: 2026-01-31", report_text)
+
+    def test_fresh_benchmark_end_date_does_not_set_stale_flag(self) -> None:
+        positions_path = self._path("_tmp_positions_snapshot_fresh.csv")
+        benchmark_path = self._path("_tmp_benchmark_fresh.csv")
+        config_path = self._path("_tmp_benchmark_config_fresh.yaml")
+        comparison_path = self._path("_tmp_performance_comparison_fresh.csv")
+        summary_path = self._path("_tmp_performance_summary_fresh.csv")
+        kpi_path = self._path("_tmp_performance_kpis_fresh.csv")
+        report_path = self._path("_tmp_performance_report_fresh.md")
+
+        self._build_positions_snapshot(positions_path, portfolio_date="2026-04-10")
+        self._build_benchmark_csv(
+            benchmark_path,
+            rows=[
+                {
+                    "date": "2026-04-09",
+                    "benchmark_name": "Unit Test Benchmark",
+                    "benchmark_symbol": "UTB",
+                    "currency": "EUR",
+                    "close": "105",
+                    "adjusted_close": "106",
+                    "total_return_index": "108",
+                    "dividend": "0.0",
+                    "source_name": "unit_fixture",
+                }
+            ],
+        )
+        self._build_benchmark_config(config_path)
+
+        run_performance_engine(
+            positions_path=str(positions_path),
+            benchmark_path=str(benchmark_path),
+            benchmark_config_path=str(config_path),
+            comparison_output=str(comparison_path),
+            kpi_output=str(kpi_path),
+            summary_output=str(summary_path),
+            report_output=str(report_path),
+        )
+
+        comparison_row = read_csv_rows(comparison_path)[0]
+        summary_row = read_csv_rows(summary_path)[0]
+        self.assertNotIn("STALE_BENCHMARK", comparison_row["data_quality_flag"])
+        self.assertNotIn("STALE_BENCHMARK", summary_row["data_quality_flag"])
+        self.assertEqual(comparison_row["benchmark_reference_end_date"], "2026-04-09")
+        self.assertEqual(comparison_row["benchmark_staleness_days"], "1")
 
     def test_simple_period_comparison_with_explicit_timeseries(self) -> None:
         positions_path = self._path("_tmp_positions_snapshot_period.csv")
@@ -467,6 +564,49 @@ class PerformanceEngineTests(unittest.TestCase):
         normalized = normalize_benchmark_timeseries(rows, config)
         self.assertEqual(normalized[0]["benchmark_return_basis_used"], "close")
         self.assertIn("APPROX_PRICE_ONLY_BENCHMARK", normalized[0]["data_quality_flag"])
+
+    def test_price_only_and_stale_flags_are_combined(self) -> None:
+        positions_path = self._path("_tmp_positions_snapshot_price_stale.csv")
+        benchmark_path = self._path("_tmp_benchmark_price_stale.csv")
+        config_path = self._path("_tmp_benchmark_config_price_stale.yaml")
+        comparison_path = self._path("_tmp_performance_comparison_price_stale.csv")
+        kpi_path = self._path("_tmp_performance_kpis_price_stale.csv")
+        summary_path = self._path("_tmp_performance_summary_price_stale.csv")
+        report_path = self._path("_tmp_performance_report_price_stale.md")
+
+        self._build_positions_snapshot(positions_path, portfolio_date="2026-04-10")
+        self._build_benchmark_config(config_path)
+        self._build_benchmark_csv(
+            benchmark_path,
+            rows=[
+                {
+                    "date": "2026-01-31",
+                    "benchmark_name": "Unit Test Benchmark",
+                    "benchmark_symbol": "UTB",
+                    "currency": "EUR",
+                    "close": "100",
+                    "dividend": "0.0",
+                    "source_name": "unit_fixture",
+                }
+            ],
+            include_adjusted=False,
+            include_total_return=False,
+        )
+
+        run_performance_engine(
+            positions_path=str(positions_path),
+            benchmark_path=str(benchmark_path),
+            benchmark_config_path=str(config_path),
+            comparison_output=str(comparison_path),
+            kpi_output=str(kpi_path),
+            summary_output=str(summary_path),
+            report_output=str(report_path),
+        )
+
+        comparison_row = read_csv_rows(comparison_path)[0]
+        self.assertIn("APPROX_PRICE_ONLY_BENCHMARK", comparison_row["data_quality_flag"])
+        self.assertIn("STALE_BENCHMARK", comparison_row["data_quality_flag"])
+        self.assertEqual(comparison_row["benchmark_staleness_days"], "69")
 
     def test_missing_global_benchmark_basis_in_later_row_is_rejected(self) -> None:
         config_path = self._path("_tmp_benchmark_config_missing_basis.yaml")
