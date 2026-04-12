@@ -231,6 +231,165 @@ class FundamentalsMasterTests(unittest.TestCase):
                 if path.exists():
                     path.unlink()
 
+    def test_personal_master_cli_end_to_end_smoke_uses_personal_input(self) -> None:
+        positions_path = Path("tests") / "_tmp_personal_cli_smoke_positions.csv"
+        master_path = Path("tests") / "_tmp_personal_cli_smoke_master.csv"
+        scores_path = Path("tests") / "_tmp_personal_cli_smoke_scores.csv"
+        audit_path = Path("tests") / "_tmp_personal_cli_smoke_audit.csv"
+        coverage_path = Path("tests") / "_tmp_personal_cli_smoke_coverage.csv"
+        enriched_path = Path("tests") / "_tmp_personal_cli_smoke_enriched.csv"
+        report_path = Path("tests") / "_tmp_personal_cli_smoke_report.md"
+        paths = [
+            positions_path,
+            master_path,
+            scores_path,
+            audit_path,
+            coverage_path,
+            enriched_path,
+            report_path,
+        ]
+        smoke_position = position_row(ticker="SMK", isin="US0000000001", company_name="Smoke Compounder AG")
+        smoke_position.update({"sector": "Industrials", "country": "USA", "currency": "USD"})
+
+        try:
+            with positions_path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=list(smoke_position.keys()))
+                writer.writeheader()
+                writer.writerow(smoke_position)
+
+            seed_result = subprocess.run(
+                [
+                    "python",
+                    "-m",
+                    "src.fundamentals_master",
+                    "--positions",
+                    str(positions_path),
+                    "--init-master-output",
+                    str(master_path),
+                ],
+                cwd=Path.cwd(),
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(seed_result.returncode, 0, seed_result.stderr)
+            self.assertTrue(master_path.exists())
+            with master_path.open(encoding="utf-8") as handle:
+                seed_rows = list(csv.DictReader(handle))
+            self.assertEqual(len(seed_rows), 1)
+            self.assertEqual(seed_rows[0]["ticker"], "SMK")
+
+            enriched_master_row = master_row(
+                ticker=seed_rows[0]["ticker"],
+                isin=seed_rows[0]["isin"],
+                company_name=seed_rows[0]["company_name"],
+            )
+            enriched_master_row.update(
+                {
+                    "sector": seed_rows[0]["sector"] or "Industrials",
+                    "country": seed_rows[0]["country"] or "USA",
+                    "asset_type": seed_rows[0]["asset_type"],
+                    "sleeve": seed_rows[0]["sleeve"],
+                    "current_price_eur": seed_rows[0]["current_price_eur"] or "100",
+                    "source_name": "cli_smoke_personal_master",
+                    "notes": "CLI smoke fixture enriched from seed master.",
+                }
+            )
+            with master_path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=PERSONAL_MASTER_FIELDS)
+                writer.writeheader()
+                writer.writerow(enriched_master_row)
+
+            scoring_result = subprocess.run(
+                [
+                    "python",
+                    "-m",
+                    "src.scoring_engine",
+                    "--positions",
+                    str(positions_path),
+                    "--fundamentals",
+                    str(master_path),
+                    "--fundamentals-format",
+                    "personal",
+                    "--output",
+                    str(scores_path),
+                    "--audit-output",
+                    str(audit_path),
+                ],
+                cwd=Path.cwd(),
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(scoring_result.returncode, 0, scoring_result.stderr)
+            self.assertTrue(scores_path.exists())
+            self.assertTrue(audit_path.exists())
+            with audit_path.open(encoding="utf-8") as handle:
+                audit_rows = list(csv.DictReader(handle))
+            self.assertEqual(audit_rows[0]["fundamentals_input_format"], "personal")
+            self.assertEqual(audit_rows[0]["source_name"], "cli_smoke_personal_master")
+            self.assertNotIn("sample", audit_rows[0]["source_name"].lower())
+
+            coverage_result = subprocess.run(
+                [
+                    "python",
+                    "-m",
+                    "src.fundamentals_master",
+                    "--positions",
+                    str(positions_path),
+                    "--fundamentals",
+                    str(master_path),
+                    "--scores",
+                    str(scores_path),
+                    "--coverage-output",
+                    str(coverage_path),
+                    "--enriched-output",
+                    str(enriched_path),
+                    "--report-output",
+                    str(report_path),
+                ],
+                cwd=Path.cwd(),
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(coverage_result.returncode, 0, coverage_result.stderr)
+            self.assertTrue(coverage_path.exists())
+            self.assertTrue(enriched_path.exists())
+            self.assertTrue(report_path.exists())
+
+            with coverage_path.open(encoding="utf-8") as handle:
+                coverage_rows = list(csv.DictReader(handle))
+            self.assertEqual(coverage_rows[0]["match_status"], "COVERED")
+            self.assertEqual(coverage_rows[0]["match_method"], "ISIN")
+            for field in [
+                "match_status",
+                "match_method",
+                "missing_required_kpis",
+                "not_applicable_kpis",
+                "needs_research_flag",
+            ]:
+                self.assertIn(field, coverage_rows[0])
+            self.assertEqual(coverage_rows[0]["missing_required_kpis"], "")
+            self.assertEqual(coverage_rows[0]["needs_research_flag"], "False")
+
+            with enriched_path.open(encoding="utf-8") as handle:
+                enriched_rows = list(csv.DictReader(handle))
+            self.assertEqual(len(enriched_rows), 1)
+            self.assertEqual(enriched_rows[0]["matched_ticker"], "SMK")
+            self.assertEqual(enriched_rows[0]["fundamentals_input_format"], "personal")
+
+            report_text = report_path.read_text(encoding="utf-8")
+            self.assertIn("# Personal Fundamentals Coverage", report_text)
+            self.assertIn("## Summary Counts", report_text)
+            self.assertIn("## COVERED", report_text)
+            self.assertIn("## Research-Luecken", report_text)
+            self.assertIn("Fehlende Fundamentaldaten wurden nicht aufgefuellt und nicht geraten.", report_text)
+        finally:
+            for path in paths:
+                if path.exists():
+                    path.unlink()
+
     def test_scoring_cli_rejects_personal_master_missing_company_type_profile(self) -> None:
         fundamentals_path = Path("tests") / "_tmp_personal_missing_profile.csv"
         output_path = Path("tests") / "_tmp_personal_missing_profile_scores.csv"
