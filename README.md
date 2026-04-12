@@ -16,6 +16,17 @@ Das System fuehrt keine Orders aus. Es verarbeitet CSV-Inputs und lokale textbas
 - `src/`: Kernmodule und CLI-Entry-Points
 - `tests/`: `unittest`-basierte Kernlogik-Tests
 
+## Project governance / canonical docs
+
+`AGENTS.md` und `docs/` bilden die kanonische Alignment-Basis fuer kuenftige Codex-Arbeit. Governance-Dokumente muessen explizit unterscheiden zwischen getrackter HEAD-Repo-Realitaet, beobachtetem dirty/untracked local Worktree und geplantem Roadmap-Zustand.
+
+- [AGENTS.md](AGENTS.md): kurzer operativer Einstieg und Guardrails fuer Codex
+- [docs/PROJECT_CHARTER.md](docs/PROJECT_CHARTER.md): harte Projektcharta, Scope und Invarianten
+- [docs/CONTEXT_AND_ROADMAP.md](docs/CONTEXT_AND_ROADMAP.md): Ist-Zustand, lokale Worktree-Beobachtungen und Roadmap
+- [docs/MODULE_CONTRACTS.md](docs/MODULE_CONTRACTS.md): Modulvertraege, Inputs, Outputs und Drift-Risiken
+- [docs/CODEX_TASK_TEMPLATE.md](docs/CODEX_TASK_TEMPLATE.md): wiederverwendbares Task-Template
+- [docs/CODEX_TASKS/POST_ITERATION_QA.md](docs/CODEX_TASKS/POST_ITERATION_QA.md): standardisierter Post-Iteration-QA-/Bug-Hunt-Task
+
 ## Design-Prinzipien
 
 - Standardmaessig nur lokale CSV-Dateien und explizit angegebene lokale Dokumente
@@ -41,6 +52,7 @@ Die transparente Fundamentals-Schicht liegt in:
 - [configs/fundamentals_schema.yaml](configs/fundamentals_schema.yaml): erwartete Raw-KPI-Felder und Legacy-Score-Felder
 - [configs/fundamentals_score_rules.yaml](configs/fundamentals_score_rules.yaml): KPI-Score-Regeln und Teil-Score-Aggregation
 - [configs/scoring_weights.yaml](configs/scoring_weights.yaml): Aggregation zu Business Score, Valuation Score und Buy Score
+- [configs/fundamentals_metric_definitions.yaml](configs/fundamentals_metric_definitions.yaml): KPI-Definitionen, Profil-Anwendbarkeit und Missing-Handling fuer den Personal-Master
 
 ## CLI-Entry-Points
 
@@ -102,12 +114,13 @@ Unvollstaendige oder problematische Bestandszeilen werden nicht glattgebuegelt:
 
 ## Fundamentals und Score-Audit
 
-Es gibt zwei unterstuetzte Fundamentals-Formate:
+Es gibt drei unterstuetzte Fundamentals-Formate:
 
 - Legacy: `data/raw/sample_fundamentals.csv` enthaelt voraggregierte Teil-Scores wie `quality_score`, `dividend_score`, `balance_sheet_score`, `growth_quality_score` und `capital_allocation_score`.
 - Raw: `data/raw/sample_fundamentals_raw.csv` enthaelt Roh-KPIs wie `roic`, `roce`, Margen, Wachstumsraten, Verschuldung, Dividenden- und Bewertungskennzahlen. Die Teil-Scores werden daraus deterministisch abgeleitet.
+- Personal: `data/raw/personal_fundamentals_master.csv` ist die lokale Source of Truth fuer reale persoenliche Holdings. Diese Datei darf keine Sample-Werte still uebernehmen; nicht recherchierte KPIs bleiben leer und werden als Coverage-/Research-Luecken ausgewiesen.
 
-Bei `--fundamentals-format auto` bleibt ein Legacy-Input mit alten Bewertungsfeldern Legacy-kompatibel. Sobald Raw-Komponenten-KPIs wie `roic`, `roce`, Margen, Bilanz-, Wachstums- oder Kapitalallokationsfelder befuellt sind, wird der Datensatz als Raw behandelt und gegen `configs/fundamentals_schema.yaml` validiert.
+Bei `--fundamentals-format auto` bleibt ein Legacy-Input mit alten Bewertungsfeldern Legacy-kompatibel. Sobald Raw-Komponenten-KPIs wie `roic`, `roce`, Margen, Bilanz-, Wachstums- oder Kapitalallokationsfelder befuellt sind, wird der Datensatz als Raw behandelt und gegen `configs/fundamentals_schema.yaml` validiert. Wenn der Input `personal_fundamentals_master.csv` heisst oder `--fundamentals-format personal` gesetzt ist, wird der Personal-Master-Pfad genutzt.
 
 Phase 2A nutzt fuer Raw-Fundamentals diese Score-Ableitung:
 
@@ -118,6 +131,21 @@ Phase 2A nutzt fuer Raw-Fundamentals diese Score-Ableitung:
 - `capital_allocation_score`: `share_count_cagr_5y`, `buyback_yield`
 
 Fehlende KPI-Werte werden nicht erfunden. Je nach Umfang der Luecken werden Fundamentals-Zeilen als `REVIEW` oder `MISSING_DATA` markiert und mit konservativen Fallback-Scores verarbeitet.
+
+Der Personal-Master trennt Core-Fundamentals von Overlay-Feldern:
+
+- Core-Fundamentals sind Roh-KPIs wie `roic`, `roce`, `fcf_margin`, `net_debt_to_ebitda`, `interest_coverage`, `payout_ratio_fcf`, `share_count_cagr_5y`, `buyback_yield`, `normalized_fcf_yield_pct` und `target_fcf_yield_pct`.
+- Overlay-Felder tragen bewusst den Praefix `overlay_`, z. B. `overlay_thesis_robustness`, `overlay_has_hard_risk_flag`, `overlay_analyst_notes`, `overlay_manual_override_flag` und `overlay_manual_override_reason`.
+- `company_type_profile` ist verpflichtend im Master und unterstuetzt `STANDARD`, `FINANCIAL`, `REIT` und `OTHER`. Standard-KPIs werden nur fuer Profile als Pflichtluecke gezaehlt, fuer die sie laut `configs/fundamentals_metric_definitions.yaml` anwendbar sind.
+
+Das konservative Matching fuer persoenliche Holdings ist deterministisch:
+
+1. ISIN exact match
+2. Ticker exact match
+3. Normalisierter `company_name` exact match
+4. Sonst `NO_MATCH`
+
+Mehrdeutige Treffer werden nicht geraten, sondern als `REVIEW` mit `match_conflict_flag=True` ausgewiesen. Coverage-Kategorien sind `COVERED`, `PARTIAL`, `REVIEW` und `NO_MATCH`; echte Pflichtluecken erscheinen separat in `missing_required_kpis`, nicht anwendbare KPIs in `not_applicable_kpis`.
 
 Der Audit-Output `data/processed/score_audit.csv` zeigt pro Titel:
 
@@ -272,7 +300,9 @@ Empfohlener persoenlicher CSV-Lauf:
 
 ```powershell
 python -m src.import_broker --input data/raw/personal_depot.csv --output data/processed/personal_positions_snapshot.csv --mode real --source-name personal_depot
-python -m src.scoring_engine --positions data/processed/personal_positions_snapshot.csv --fundamentals data/raw/sample_fundamentals.csv --output data/processed/personal_company_scores.csv
+python -m src.fundamentals_master --positions data/processed/personal_positions_snapshot.csv --init-master-output data/raw/personal_fundamentals_master.csv
+python -m src.scoring_engine --positions data/processed/personal_positions_snapshot.csv --fundamentals data/raw/personal_fundamentals_master.csv --fundamentals-format personal --output data/processed/personal_company_scores.csv --audit-output data/processed/personal_score_audit.csv
+python -m src.fundamentals_master --positions data/processed/personal_positions_snapshot.csv --fundamentals data/raw/personal_fundamentals_master.csv --scores data/processed/personal_company_scores.csv --coverage-output data/processed/personal_fundamentals_coverage.csv --enriched-output data/processed/personal_fundamentals_enriched.csv --report-output reports/YYYY-MM-DD/personal_fundamentals_coverage_report.md
 python -m src.watchlist_engine --input data/raw/sample_watchlist.csv --scores data/processed/personal_company_scores.csv --output data/processed/personal_watchlist_ranked.csv --report-output reports/sample/personal_watchlist_report.md
 python -m src.monthly_ranking_engine --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --watchlist data/processed/personal_watchlist_ranked.csv --output data/processed/personal_monthly_buy_ranking.csv --rebalance-output data/processed/personal_rebalance_proposals.csv
 python -m src.build_portfolio_snapshot --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --holdings-output data/processed/personal_portfolio_holdings_action_table.csv --output reports/sample/personal_portfolio_review.md
@@ -282,7 +312,9 @@ Empfohlener persoenlicher Trade-Republic-PDF-Lauf:
 
 ```powershell
 python -m src.import_broker --input data/raw/private/traderepublic/Depotauszug.pdf --cash-input data/raw/private/traderepublic/Kontoauszug.pdf --output data/processed/personal_positions_snapshot.csv --mode tr_pdf --source-name trade_republic_official_docs
-python -m src.scoring_engine --positions data/processed/personal_positions_snapshot.csv --fundamentals data/raw/sample_fundamentals.csv --output data/processed/personal_company_scores.csv
+python -m src.fundamentals_master --positions data/processed/personal_positions_snapshot.csv --init-master-output data/raw/personal_fundamentals_master.csv
+python -m src.scoring_engine --positions data/processed/personal_positions_snapshot.csv --fundamentals data/raw/personal_fundamentals_master.csv --fundamentals-format personal --output data/processed/personal_company_scores.csv --audit-output data/processed/personal_score_audit.csv
+python -m src.fundamentals_master --positions data/processed/personal_positions_snapshot.csv --fundamentals data/raw/personal_fundamentals_master.csv --scores data/processed/personal_company_scores.csv --coverage-output data/processed/personal_fundamentals_coverage.csv --enriched-output data/processed/personal_fundamentals_enriched.csv --report-output reports/YYYY-MM-DD/personal_fundamentals_coverage_report.md
 python -m src.watchlist_engine --input data/raw/sample_watchlist.csv --scores data/processed/personal_company_scores.csv --output data/processed/personal_watchlist_ranked.csv --report-output reports/sample/personal_watchlist_report.md
 python -m src.monthly_ranking_engine --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --watchlist data/processed/personal_watchlist_ranked.csv --output data/processed/personal_monthly_buy_ranking.csv --rebalance-output data/processed/personal_rebalance_proposals.csv
 python -m src.build_portfolio_snapshot --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --holdings-output data/processed/personal_portfolio_holdings_action_table.csv --output reports/sample/personal_portfolio_review.md
@@ -291,7 +323,12 @@ python -m src.build_portfolio_snapshot --positions data/processed/personal_posit
 Interpretation der persoenlichen Outputs:
 
 - `personal_positions_snapshot.csv`: normalisierte Bestandsdaten aus dem privaten Depotexport
-- `personal_company_scores.csv`: Score- und Bewertungsdaten fuer die persoenlichen Holdings
+- `personal_fundamentals_master.csv`: lokale Source of Truth fuer persoenliche Fundamentals; initiale Seed-Zeilen aus dem Snapshot enthalten nur Identitaet und muessen manuell mit belegten KPIs ergaenzt werden
+- `personal_company_scores.csv`: Score- und Bewertungsdaten fuer die persoenlichen Holdings, bevorzugt aus dem Personal-Master statt aus Sample-Fundamentals
+- `personal_score_audit.csv`: nachvollziehbare KPI-/Teilscore-/Buy-Score-Auditspur mit `fundamentals_input_format`
+- `personal_fundamentals_coverage.csv`: Match- und Coverage-Status je Holding inklusive `missing_required_kpis`, `not_applicable_kpis` und `needs_research_flag`
+- `personal_fundamentals_enriched.csv`: gematchte Holdings mit Master-Roh-KPIs, bestehenden Teil-Scores und Source-Metadaten
+- `personal_fundamentals_coverage_report.md`: Markdown-Report mit COVERED/PARTIAL/REVIEW/NO_MATCH und Research-Luecken
 - `personal_portfolio_holdings_action_table.csv`: operative Holdings-Aktionen `ADD`, `HOLD`, `WATCH`, `REDUCE`, `EXIT_REVIEW`
 - `personal_monthly_buy_ranking.csv`: Kauf-Ranking fuer den konfigurierten Monatszufluss
 - `personal_portfolio_review.md`: deutscher Review-Report fuer das persoenliche Depot

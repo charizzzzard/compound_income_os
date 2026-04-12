@@ -4,6 +4,14 @@
 
 Dieses Repository ist ein lokales Portfolio-Research-System. Es darf keine Orders ausfuehren.
 
+## Kanonische Doku
+
+- [docs/PROJECT_CHARTER.md](docs/PROJECT_CHARTER.md): harte Projektcharta, Scope und Invarianten
+- [docs/CONTEXT_AND_ROADMAP.md](docs/CONTEXT_AND_ROADMAP.md): repo-gestuetzter Ist-Zustand, lokale Worktree-Beobachtungen und Roadmap
+- [docs/MODULE_CONTRACTS.md](docs/MODULE_CONTRACTS.md): Modulvertraege, Inputs, Outputs und Drift-Risiken
+- [docs/CODEX_TASK_TEMPLATE.md](docs/CODEX_TASK_TEMPLATE.md): wiederverwendbares Codex-Task-Template
+- [docs/CODEX_TASKS/POST_ITERATION_QA.md](docs/CODEX_TASKS/POST_ITERATION_QA.md): Pflicht-QA nach jedem Patch
+
 ## Guardrails
 
 - Nur read-only Datenadapter fuer Broker/API/Dokumente
@@ -11,8 +19,11 @@ Dieses Repository ist ein lokales Portfolio-Research-System. Es darf keine Order
 - Bei unvollstaendigen Fundamentaldaten konservativ scoren und `REVIEW` oder `MISSING_DATA` setzen
 - Raw-Fundamentals-KPIs bevorzugen, Legacy-Teil-Scores aber kompatibel weiter unterstuetzen
 - Score-Audit-Artefakte muessen nachvollziehbar zeigen, welche KPI- und Score-Komponenten verwendet wurden
+- Persoenliche Holdings duerfen nicht still auf Sample-Fundamentals basieren
 - Monatlicher Cash-Zufluss ausschliesslich aus Konfiguration lesen
 - CSV- und Markdown-Artefakte deterministisch erzeugen
+- Reports nur aus bereits verarbeiteten Artefakten bauen
+- Das Dashboard konsolidiert verarbeitete Artefakte und fuehrt keine neue Fachlogik ein
 
 ## Coding-Konventionen
 
@@ -21,6 +32,15 @@ Dieses Repository ist ein lokales Portfolio-Research-System. Es darf keine Order
 - Klare Trennung von Import, Normalisierung, Bewertung, Scoring, Ranking und Reporting
 - Scores immer auf `0..100` clampen
 - Reports nur aus bereits verarbeiteten Artefakten bauen
+
+## Arbeitsregeln fuer Codex
+
+- Vor Aenderungen echte Repo-Reality pruefen: Branch, HEAD, Worktree-Status, betroffene Dateien
+- Explizit unterscheiden zwischen getrackter HEAD-Realitaet, beobachtetem Dirty-/Untracked-Worktree und Roadmap
+- Keine Produktlogik unter Doku-/Governance-Aufgaben verstecken
+- Nach jedem Patch [docs/CODEX_TASKS/POST_ITERATION_QA.md](docs/CODEX_TASKS/POST_ITERATION_QA.md) als Pflicht-Check verwenden
+- Git-Disziplin pro Patch: keine unrelated Dirty-Files stagen, keine privaten Rohdaten, keine generierten Processed-/Report-Artefakte
+- Bei dirty Worktree nur committen, wenn die staged Diff klar isoliert und fachlich akzeptiert ist
 
 ## Datenfluesse
 

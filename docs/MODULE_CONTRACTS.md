@@ -1,0 +1,38 @@
+# Module Contracts
+
+## Status-Legende
+
+- `TRACKED_HEAD`: getrackte Repo-Realitaet aus aktuellem HEAD.
+- `LOCAL_WORKTREE_ONLY`: beobachtete lokale dirty/untracked Dateien; nicht als kanonische HEAD-Architektur behandeln.
+
+## Kernmodule
+
+| Modul | Status | Verantwortung | Typische Inputs | Typische Outputs | Invarianten / Tests |
+| --- | --- | --- | --- | --- | --- |
+| `src.common` | `TRACKED_HEAD` | Gemeinsame Pfad-, CSV-, Config-, Parsing-, Clamp- und Format-Helfer | Repo-relative Pfade, CSV, JSON-kompatible YAML-Dateien, numerische Texte | gelesene/geschriebene Rows, validierte Spalten, normalisierte Zahlen | Standardbibliothek, repo-portable Pfade, `tests/test_common.py` |
+| `src.import_broker` | `TRACKED_HEAD` | CLI-Schicht fuer Positionsimport | `--input`, optional `--cash-input`, `--mode sample|real|tr_pdf` | Positions-Snapshot CSV | read-only Adapter, keine Orders, `tests/test_import_normalization.py`, `tests/test_real_portfolio_onboarding.py` |
+| `src.normalize_positions` | `TRACKED_HEAD` | Flexible Broker-/CSV-Zeilen in internes Positionsschema normalisieren | Rohzeilen mit Alias-Spalten, Source-Name, Portfolio-Datum | Snapshot-Rows mit Ticker/ISIN/Asset-Type/Sleeve/Flags | Unklare Identifier bleiben `REVIEW` oder `MISSING_DATA`, Tests fuer Real-Onboarding |
+| `src.traderepublic_documents` | `TRACKED_HEAD` | Lokale textbasierte Trade-Republic-Dokumente read-only parsen | PDF-Pfade oder extrahierter Text fuer Depot/Konto | normalisierte Depot- und Cash-Rows | keine Broker-Schreibzugriffe, kein Orderpfad, `tests/test_traderepublic_documents.py` |
+| `src.fundamentals_engine` | `TRACKED_HEAD` | Raw-/Legacy-/Personal-Fundamentals erkennen, validieren, anreichern und auditierbar scoren | Fundamentals-CSV, `configs/fundamentals_schema.yaml`, `configs/fundamentals_score_rules.yaml` | angereicherte Fundamentals, Score-Audit-Rows | fehlende KPIs konservativ markieren, Legacy kompatibel halten, Personal-Master Pflichtspalten fail-fast validieren, `tests/test_fundamentals_engine.py`, `tests/test_fundamentals_master.py` |
+| `src.scoring_engine` | `TRACKED_HEAD` | Positionen und Fundamentals in Company Scores, Buy Scores und Audit verbinden | Positions-Snapshot, Fundamentals-CSV, Portfolio-/Scoring-/Fundamentals-Regeln | `company_scores.csv`, optional Audit und enriched CSV | Scores clampen, fehlende Fundamentals konservativ behandeln, persoenliche Runs nicht still auf Sample-Fundamentals zurueckfallen lassen, `tests/test_scoring_engine.py`, `tests/test_fundamentals_master.py` |
+| `src.fundamentals_master` | `TRACKED_HEAD` | Personal-Master validieren, Holdings konservativ matchen, KPI-Coverage und Research-Gaps berichten | Personal-Master-CSV, Positions-Snapshot, KPI-Definitions-Config, optional Scores | Coverage-CSV, enriched Personal-Fundamentals-CSV, Coverage-Report, Seed-Master | ISIN > Ticker > normalisierter Company-Name, keine fuzzy Matches, Profil-spezifische KPI-Anwendbarkeit, `tests/test_fundamentals_master.py` |
+| `src.valuation_engine` | `TRACKED_HEAD` | Relative Bewertungsmetriken und Fair-Value-Hilfen berechnen | Bewertungs-KPIs, Scoring-Gewichte | Bewertungskennzahlen fuer Scoring | Divisionen defensiv behandeln, Score-Inputs nicht erfinden |
+| `src.company_master` | `TRACKED_HEAD` | Company-Datensaetze aus mehreren Quellen zusammenfuehren | Record-Sets mit Ticker/Company-Daten | gemergter Ticker-Index | spaetere Quellen duerfen bestehende Identitaet nicht still verfremden |
+| `src.portfolio_rules` | `TRACKED_HEAD` | Portfolio-Regeln laden, Sleeves klassifizieren, Allokationen und Regelbrueche berechnen | Positions-Rows, `configs/portfolio_rules.yaml` | Allokationsmetriken, Regelverletzungen | monatlicher Cash aus Config, `tests/test_portfolio_rules.py` |
+| `src.portfolio_review` | `TRACKED_HEAD` | Holdings-Aktionstabelle aus Positionen, Scores und Regeln ableiten | Positions-Rows, Score-Rows, Portfolio-Regeln | Rows mit `ADD`, `HOLD`, `WATCH`, `REDUCE`, `EXIT_REVIEW` | fehlende Scores fuehren zu konservativen Aktionen, Tests im Real-Onboarding |
+| `src.watchlist_engine` | `TRACKED_HEAD` | Watchlist-Kandidaten gegen Scores und Regeln ranken | Watchlist-CSV, Scores, `configs/watchlist.yaml`, Portfolio-Regeln | `watchlist_ranked.csv`, optional Markdown-Report | doppelte/fehlende Ticker validieren, `tests/test_watchlist_engine.py` |
+| `src.monthly_ranking_engine` | `TRACKED_HEAD` | Monatskauf-Ranking und Rebalance-Vorschlaege bauen | Positionen, Scores, Watchlist, Portfolio-Regeln | `monthly_buy_ranking.csv`, `rebalance_proposals.csv` | Monatszufluss aus Config, Cash-Halten erlaubt wenn keine Opportunity, `tests/test_monthly_ranking_engine.py` |
+| `src.build_portfolio_snapshot` | `TRACKED_HEAD` | Portfolio-Snapshot-Markdown und optional Holdings-Tabelle bauen | Positions-Snapshot, optional Scores, Portfolio-Regeln | Markdown-Report, optional Holdings-CSV | Report aus processed Inputs, `tests/test_readme_and_reports.py`, `tests/test_real_portfolio_onboarding.py` |
+| `src.build_monthly_decision_report` | `TRACKED_HEAD` | Monatlichen Entscheidungsbericht bauen | Positionen, Scores, Monatsranking, Portfolio-Regeln | Markdown-Report | Report aus processed Inputs, `tests/test_monthly_decision_report.py` |
+| `src.performance_engine` | `TRACKED_HEAD` | Benchmark-/Performance-Artefakte mit Snapshot- oder Periodenmodus erzeugen | Positionen, Benchmark-Zeitreihe, optional Portfolio-Zeitreihe, `configs/benchmark.yaml` | normalized benchmark, portfolio timeseries, comparison, KPIs, summary, report | Snapshot ist keine vollstaendige Historie, Staleness/Approximation markieren, `tests/test_performance_engine.py` |
+| `src.cost_tax_engine` | `TRACKED_HEAD` | Kosten-/Steuerledger aus manuellen Ledgern oder lokalen Dokumenten normalisieren und berichten | Ledger-CSV, optional Dokumentinput, `configs/cost_tax_ledger.yaml` | normalized ledger, summary, KPIs, report | kein Full Ledger ohne Event-Evidenz, `INSUFFICIENT_DOCUMENTATION` sichtbar, `tests/test_cost_tax_engine.py` |
+| `src.dashboard_engine` | `TRACKED_HEAD` | Verarbeitete Artefakte in Dashboard-KPIs, Sections, Summary und Report konsolidieren | processed Positions/Scores/Holdings/Audit/Performance/Cost-Tax, `configs/dashboard_kpis.yaml` | `dashboard_kpis.csv`, `dashboard_sections.csv`, `dashboard_summary.csv`, Markdown-Report | Dashboard ist Konsolidierung, keine neue Fachlogik, `tests/test_dashboard_engine.py` |
+
+## Typische Drift-Risiken
+
+- README beschreibt CLI- oder Pfadvertraege, die nicht mehr zu realen Parsern oder Tests passen.
+- Config-Schema, Template und Code-Konstanten laufen auseinander.
+- Personal-Holdings fallen still auf Sample-Fundamentals zurueck.
+- Dashboard-Kennzahlen werden aus Rohdaten statt aus verarbeiteten Artefakten gebaut.
+- Snapshot-basierte Performance wird als vollstaendige Historie missverstanden.
+- Cost-/Tax-Summaries werden ohne Event-Evidenz als Full Ledger interpretiert.
