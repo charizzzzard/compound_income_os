@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from src.common import canonicalize_ticker, clamp, load_yaml_config, require_non_blank_fields, round2, safe_upper, to_float
+from src.fundamentals_master import validate_personal_fundamentals_master
 
 DEFAULT_SCHEMA_PATH = "configs/fundamentals_schema.yaml"
 DEFAULT_SCORE_RULES_PATH = "configs/fundamentals_score_rules.yaml"
@@ -237,6 +238,7 @@ def validate_personal_fundamentals_schema(
     if missing_columns:
         missing_text = ", ".join(sorted(missing_columns))
         raise ValueError(f"{source_name} missing required personal fundamentals columns: {missing_text}")
+    validate_personal_fundamentals_master(rows, source_name)
 
 
 def validate_raw_fundamentals_schema(

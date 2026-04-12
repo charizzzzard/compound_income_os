@@ -429,6 +429,42 @@ class FundamentalsMasterTests(unittest.TestCase):
                 if path.exists():
                     path.unlink()
 
+    def test_scoring_cli_rejects_personal_master_invalid_company_type_profile(self) -> None:
+        fundamentals_path = Path("tests") / "_tmp_personal_invalid_profile.csv"
+        output_path = Path("tests") / "_tmp_personal_invalid_profile_scores.csv"
+        try:
+            with fundamentals_path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=PERSONAL_MASTER_FIELDS)
+                writer.writeheader()
+                writer.writerow(master_row(ticker="GOOGL", isin="US02079K3059", company_name="Alphabet A", profile="BANK"))
+
+            result = subprocess.run(
+                [
+                    "python",
+                    "-m",
+                    "src.scoring_engine",
+                    "--positions",
+                    "data/raw/sample_portfolio.csv",
+                    "--fundamentals",
+                    str(fundamentals_path),
+                    "--fundamentals-format",
+                    "personal",
+                    "--output",
+                    str(output_path),
+                ],
+                cwd=Path.cwd(),
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("invalid company_type_profile", result.stderr)
+            self.assertFalse(output_path.exists())
+        finally:
+            for path in [fundamentals_path, output_path]:
+                if path.exists():
+                    path.unlink()
+
     def test_scoring_cli_accepts_valid_personal_master(self) -> None:
         fundamentals_path = Path("tests") / "_tmp_valid_personal_master.csv"
         output_path = Path("tests") / "_tmp_valid_personal_scores.csv"
