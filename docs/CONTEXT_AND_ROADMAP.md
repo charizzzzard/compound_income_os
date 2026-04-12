@@ -23,11 +23,9 @@ Getrackte Konfigurationen liegen unter `configs/` und decken Portfolio-Regeln, S
 
 Die getrackten Tests liegen unter `tests/test_*.py` und nutzen `unittest`. Sie pruefen unter anderem README-Portabilitaet, Import/Normalisierung, Scoring, Raw-/Legacy-/Personal-Fundamentals, Watchlist, Monatsranking, Reports, Performance, Cost/Tax, Dashboard und Trade-Republic-Dokumentparser.
 
-## LOCAL_WORKTREE_ONLY Beobachtungen
+## Dirty-/Untracked-Regel
 
-Vor der Governance-Integration war der lokale Worktree bereits dirty. Die zuvor lokalen Personal-Master-Dateien wurden fachlich akzeptiert und als kanonische Repo-Realitaet uebernommen.
-
-Neue lokale Dirty-/Untracked-Beobachtungen muessen weiterhin separat dokumentiert werden und duerfen nicht automatisch als kanonische Architektur gelten.
+`LOCAL_WORKTREE_ONLY` ist eine Arbeitskategorie fuer kuenftige Repo-Pruefungen, nicht der aktuelle Status des Personal-Masters. Dateien in diesem Zustand duerfen erst nach fachlicher Annahme und Tracking als kanonische Architektur beschrieben werden. Der Personal-Master ist nach seiner Uebernahme in `TRACKED_HEAD` oben als kanonischer Bestandteil dokumentiert.
 
 ## Reale Pipeline-Phasen
 
