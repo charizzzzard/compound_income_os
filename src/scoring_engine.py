@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import re
+from pathlib import Path
 from typing import Any
 
 from src.common import (
@@ -11,6 +12,7 @@ from src.common import (
     read_csv_rows,
     require_columns,
     require_non_blank_fields,
+    resolve_repo_path,
     round2,
     score_linear,
     to_bool,
@@ -32,6 +34,7 @@ from src.valuation_engine import compute_valuation_metrics
 DEFAULT_RULES_PATH = "configs/portfolio_rules.yaml"
 DEFAULT_SCORING_PATH = "configs/scoring_weights.yaml"
 DEFAULT_FUNDAMENTALS_SCORE_RULES_PATH = "configs/fundamentals_score_rules.yaml"
+DEFAULT_PERSONAL_FUNDAMENTALS_PATH = "data/raw/personal_fundamentals_master.csv"
 BUY_SCORE_WEIGHT_KEYS = (
     "business_score",
     "valuation_score",
@@ -55,6 +58,7 @@ OUTPUT_FIELDS = [
     "sector",
     "country",
     "asset_type",
+    "company_type_profile",
     "sleeve",
     "held_in_portfolio",
     "position_market_value_eur",
@@ -82,6 +86,8 @@ OUTPUT_FIELDS = [
     "thesis_summary",
     "main_risks",
     "data_quality_flag",
+    "source_name",
+    "source_as_of_date",
     "has_hard_risk_flag",
     "purchase_readiness",
     "buy_score",
@@ -137,11 +143,7 @@ def find_unique_name_match(position_row: dict[str, Any], fundamentals_name_index
     position_name = normalize_match_text(position_row.get("company_name") or position_row.get("raw_name"))
     if not position_name:
         return None
-    matches = [
-        row for name_key, rows in fundamentals_name_index.items()
-        if len(name_key) >= 4 and (name_key in position_name or position_name in name_key)
-        for row in rows
-    ]
+    matches = fundamentals_name_index.get(position_name, [])
     return matches[0] if len(matches) == 1 else None
 
 
@@ -152,10 +154,10 @@ def resolve_position_key(
 ) -> str:
     ticker = canonicalize_ticker(row.get("ticker", ""))
     isin = str(row.get("isin", "")).strip().upper()
-    if ticker and not is_probable_isin(ticker):
-        return ticker
     if isin and isin in fundamentals_by_isin:
         return canonicalize_ticker(fundamentals_by_isin[isin].get("ticker", "")) or ticker or isin
+    if ticker and not is_probable_isin(ticker):
+        return ticker
     name_match = find_unique_name_match(row, fundamentals_by_name)
     if name_match:
         return canonicalize_ticker(name_match.get("ticker", "")) or ticker or isin
@@ -217,6 +219,7 @@ def build_missing_fundamentals_row(
         "sector": position_row.get("sector", "Unknown"),
         "country": position_row.get("country", "Unknown"),
         "asset_type": position_row.get("asset_type", "STOCK"),
+        "company_type_profile": "OTHER",
         "sleeve": position_row.get("sleeve", "SINGLE_STOCK"),
         "current_price_eur": to_float(position_row.get("price_eur")),
         "quality_score": fallback_business,
@@ -232,6 +235,8 @@ def build_missing_fundamentals_row(
         "thesis_summary": "Fundamentaldaten fuer die gehaltene Position fehlen; manuelle Pruefung erforderlich.",
         "main_risks": "Fundamentaldaten und Bewertungsinputs fehlen.",
         "data_quality_flag": "MISSING_DATA",
+        "source_name": "",
+        "source_as_of_date": "",
         "fundamentals_input_format": "missing_fundamentals",
     }
 
@@ -543,6 +548,7 @@ def build_scores_with_audit(
                 "sector": row.get("sector", "Unknown"),
                 "country": row.get("country", "Unknown"),
                 "asset_type": row.get("asset_type", "STOCK"),
+                "company_type_profile": row.get("company_type_profile", ""),
                 "sleeve": row.get("sleeve", "SINGLE_STOCK"),
                 "held_in_portfolio": held_position is not None,
                 "position_market_value_eur": round2(to_float(held_position.get("market_value_eur")) if held_position else 0.0),
@@ -570,6 +576,8 @@ def build_scores_with_audit(
                 "thesis_summary": row.get("thesis_summary", ""),
                 "main_risks": row.get("main_risks", ""),
                 "data_quality_flag": data_quality_flag,
+                "source_name": row.get("source_name", ""),
+                "source_as_of_date": row.get("source_as_of_date", ""),
                 "has_hard_risk_flag": has_hard_risk_flag,
                 "purchase_readiness": purchase_readiness,
                 "buy_score": buy_score,
@@ -628,21 +636,49 @@ def build_scores(
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build company-level quality and valuation scores.")
     parser.add_argument("--positions", required=True, help="Normalized positions snapshot CSV.")
-    parser.add_argument("--fundamentals", required=True, help="Fundamentals and valuation CSV.")
+    parser.add_argument("--fundamentals", help="Fundamentals and valuation CSV. Personal runs default to data/raw/personal_fundamentals_master.csv when present.")
     parser.add_argument("--output", required=True, help="Output scores CSV.")
     parser.add_argument("--audit-output", help="Optional transparent score audit CSV output.")
     parser.add_argument("--enriched-output", help="Optional enriched fundamentals CSV output.")
-    parser.add_argument("--fundamentals-format", choices=["auto", "raw", "legacy"], default="auto", help="Fundamentals input format.")
+    parser.add_argument("--fundamentals-format", choices=["auto", "raw", "legacy", "personal"], default="auto", help="Fundamentals input format.")
     parser.add_argument("--rules", default=DEFAULT_RULES_PATH, help="Portfolio rules config path.")
     parser.add_argument("--scoring-config", default=DEFAULT_SCORING_PATH, help="Scoring config path.")
     parser.add_argument("--fundamentals-score-rules", default=DEFAULT_FUNDAMENTALS_SCORE_RULES_PATH, help="Raw KPI scoring rules config path.")
     return parser.parse_args()
 
 
+def is_personal_positions_path(path_value: str | Path) -> bool:
+    return "personal" in Path(path_value).name.lower()
+
+
+def resolve_fundamentals_cli_path(positions_path: str, fundamentals_path: str | None) -> str:
+    if fundamentals_path:
+        return fundamentals_path
+    if is_personal_positions_path(positions_path):
+        personal_path = resolve_repo_path(DEFAULT_PERSONAL_FUNDAMENTALS_PATH)
+        if personal_path.exists():
+            return DEFAULT_PERSONAL_FUNDAMENTALS_PATH
+        raise ValueError(
+            "personal positions require an explicit fundamentals file or data/raw/personal_fundamentals_master.csv; "
+            "no sample fundamentals fallback is used for personal runs."
+        )
+    raise ValueError("--fundamentals is required for non-personal scoring runs.")
+
+
+def resolve_fundamentals_cli_format(requested_format: str, fundamentals_path: str) -> str:
+    if requested_format != "auto":
+        return requested_format
+    if Path(fundamentals_path).name.lower() == "personal_fundamentals_master.csv":
+        return "personal"
+    return requested_format
+
+
 def main() -> None:
     args = parse_args()
+    fundamentals_path = resolve_fundamentals_cli_path(args.positions, args.fundamentals)
+    fundamentals_format = resolve_fundamentals_cli_format(args.fundamentals_format, fundamentals_path)
     positions_rows = read_csv_rows(args.positions)
-    fundamentals_rows = read_csv_rows(args.fundamentals)
+    fundamentals_rows = read_csv_rows(fundamentals_path)
     require_columns(
         positions_rows,
         ["ticker", "market_value_eur", "asset_type", "sleeve", "sector"],
@@ -652,16 +688,16 @@ def main() -> None:
         require_columns(
             fundamentals_rows,
             ["ticker", "company_name", "sector", "country", "asset_type", "sleeve"],
-            f"fundamentals CSV ({args.fundamentals})",
+            f"fundamentals CSV ({fundamentals_path})",
         )
-        require_non_blank_fields(fundamentals_rows, ["ticker"], f"fundamentals CSV ({args.fundamentals})")
+        require_non_blank_fields(fundamentals_rows, ["ticker"], f"fundamentals CSV ({fundamentals_path})")
     results, enriched_rows, audit_rows = build_scores_with_audit(
         positions_rows,
         fundamentals_rows,
         args.rules,
         args.scoring_config,
-        f"fundamentals CSV ({args.fundamentals})",
-        args.fundamentals_format,
+        f"fundamentals CSV ({fundamentals_path})",
+        fundamentals_format,
         args.fundamentals_score_rules,
     )
     write_csv_rows(args.output, OUTPUT_FIELDS, results)

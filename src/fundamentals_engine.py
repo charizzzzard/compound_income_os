@@ -76,13 +76,28 @@ PASSTHROUGH_FIELDS = [
     "country",
     "asset_type",
     "sleeve",
+    "company_type_profile",
+    "source_name",
+    "source_as_of_date",
+    "fiscal_period",
+    "fiscal_year",
+    "report_date",
+    "filing_date",
+    "market_price_date",
+    "calculation_version",
     "current_price_eur",
     "mandate_fit_score",
+    "overlay_has_hard_risk_flag",
+    "overlay_thesis_robustness",
+    "overlay_analyst_notes",
+    "overlay_manual_override_flag",
+    "overlay_manual_override_reason",
     "has_hard_risk_flag",
     "thesis_robustness",
     "thesis_summary",
     "main_risks",
     "data_quality_flag",
+    "notes",
 ]
 
 ENRICHED_OUTPUT_FIELDS = [
@@ -92,6 +107,7 @@ ENRICHED_OUTPUT_FIELDS = [
     "fundamentals_input_format",
     "missing_kpi_count",
     "missing_kpis",
+    "not_applicable_kpis",
     "quality_score_inputs",
     "dividend_score_inputs",
     "balance_sheet_score_inputs",
@@ -103,6 +119,9 @@ SCORE_AUDIT_FIELDS = [
     "ticker",
     "isin",
     "company_name",
+    "company_type_profile",
+    "source_name",
+    "source_as_of_date",
     "fundamentals_input_format",
     *RAW_KPI_FIELDS,
     *COMPONENT_SCORE_FIELDS,
@@ -130,6 +149,7 @@ SCORE_AUDIT_FIELDS = [
     "data_quality_flag",
     "missing_kpi_count",
     "missing_kpis",
+    "not_applicable_kpis",
     "quality_score_inputs",
     "dividend_score_inputs",
     "balance_sheet_score_inputs",
@@ -144,10 +164,18 @@ def has_value(row: dict[str, Any], field: str) -> bool:
 
 def detect_fundamentals_format(rows: list[dict[str, str]], requested_format: str = "auto") -> str:
     requested = requested_format.strip().lower()
-    if requested in {"raw", "legacy"}:
+    if requested in {"raw", "legacy", "personal"}:
         return requested
     if requested != "auto":
         raise ValueError(f"unknown fundamentals format: {requested_format}")
+    personal_columns = {
+        "company_type_profile",
+        "source_name",
+        "source_as_of_date",
+        "calculation_version",
+    }
+    if rows and personal_columns.issubset(set(rows[0].keys())):
+        return "personal"
     if any(any(has_value(row, field) for field in RAW_COMPONENT_KPI_FIELDS) for row in rows):
         return "raw"
     if any(any(has_value(row, field) for field in COMPONENT_SCORE_FIELDS) for row in rows):
@@ -188,6 +216,27 @@ def required_raw_columns(schema: dict[str, Any], rules: dict[str, Any]) -> list[
         }
     )
     return identity_fields + component_kpis
+
+
+def required_personal_master_columns(schema: dict[str, Any]) -> list[str]:
+    return list(schema.get("personal_master_required_columns", []))
+
+
+def validate_personal_fundamentals_schema(
+    rows: list[dict[str, str]],
+    schema: dict[str, Any],
+    source_name: str,
+) -> None:
+    if not rows:
+        return
+    required_columns = required_personal_master_columns(schema)
+    if not required_columns:
+        raise ValueError(f"{source_name} personal fundamentals schema is missing personal_master_required_columns")
+    available_columns = set(rows[0].keys())
+    missing_columns = [column for column in required_columns if column not in available_columns]
+    if missing_columns:
+        missing_text = ", ".join(sorted(missing_columns))
+        raise ValueError(f"{source_name} missing required personal fundamentals columns: {missing_text}")
 
 
 def validate_raw_fundamentals_schema(
@@ -272,23 +321,38 @@ def merge_data_quality(existing_flag: str, missing_kpi_count: int, rules: dict[s
     return "OK"
 
 
-def derive_raw_fundamental_row(row: dict[str, str], rules: dict[str, Any]) -> dict[str, Any]:
+def derive_raw_fundamental_row(row: dict[str, str], rules: dict[str, Any], input_format: str = "raw") -> dict[str, Any]:
     enriched: dict[str, Any] = {field: row.get(field, "") for field in PASSTHROUGH_FIELDS}
     enriched["ticker"] = canonicalize_ticker(row.get("ticker", ""))
-    enriched["fundamentals_input_format"] = "raw"
+    profile = safe_upper(enriched.get("company_type_profile"))
+    if input_format == "personal" and not profile:
+        profile = "OTHER"
+    enriched["company_type_profile"] = profile
+    enriched["has_hard_risk_flag"] = row.get("has_hard_risk_flag", row.get("overlay_has_hard_risk_flag", ""))
+    enriched["thesis_robustness"] = row.get("thesis_robustness", row.get("overlay_thesis_robustness", ""))
+    enriched["fundamentals_input_format"] = input_format
     for field in RAW_KPI_FIELDS:
         enriched[field] = row.get(field, "")
 
     missing_kpis: list[str] = []
-    for component in COMPONENT_SCORE_FIELDS:
-        component_score, details, missing = compute_component_score(row, component, rules)
-        enriched[component] = component_score
-        enriched[f"{component}_inputs"] = details
-        missing_kpis.extend(missing)
+    not_applicable_kpis: list[str] = []
+    if input_format == "personal" and profile and profile != "STANDARD":
+        missing_score = to_float(rules["missing_kpi_score"], 40.0)
+        not_applicable_kpis = list(RAW_COMPONENT_KPI_FIELDS)
+        for component in COMPONENT_SCORE_FIELDS:
+            enriched[component] = round2(missing_score)
+            enriched[f"{component}_inputs"] = f"company_type_profile={profile}|standard_component_kpis=NOT_APPLICABLE"
+    else:
+        for component in COMPONENT_SCORE_FIELDS:
+            component_score, details, missing = compute_component_score(row, component, rules)
+            enriched[component] = component_score
+            enriched[f"{component}_inputs"] = details
+            missing_kpis.extend(missing)
 
     unique_missing = sorted(set(missing_kpis))
     enriched["missing_kpi_count"] = len(unique_missing)
     enriched["missing_kpis"] = "; ".join(unique_missing)
+    enriched["not_applicable_kpis"] = "; ".join(sorted(set(not_applicable_kpis)))
     enriched["data_quality_flag"] = merge_data_quality(str(row.get("data_quality_flag", "OK")), len(unique_missing), rules)
     return enriched
 
@@ -304,6 +368,7 @@ def enrich_legacy_fundamental_row(row: dict[str, str]) -> dict[str, Any]:
     enriched["fundamentals_input_format"] = "legacy"
     enriched["missing_kpi_count"] = ""
     enriched["missing_kpis"] = ""
+    enriched["not_applicable_kpis"] = ""
     for key, value in row.items():
         if key not in enriched:
             enriched[key] = value
@@ -321,10 +386,12 @@ def enrich_fundamentals_rows(
     if rows:
         require_non_blank_fields(rows, ["ticker"], source_name)
     rules = load_and_validate_score_rules(rules_path)
-    if detected_format == "raw":
+    if detected_format in {"raw", "personal"}:
         schema = load_yaml_config(schema_path)
+        if detected_format == "personal":
+            validate_personal_fundamentals_schema(rows, schema, source_name)
         validate_raw_fundamentals_schema(rows, schema, rules, source_name)
-        return [derive_raw_fundamental_row(row, rules) for row in rows], detected_format
+        return [derive_raw_fundamental_row(row, rules, detected_format) for row in rows], detected_format
     return [enrich_legacy_fundamental_row(row) for row in rows], detected_format
 
 
@@ -350,6 +417,9 @@ def build_score_audit_rows(
                 "ticker": score_row.get("ticker", ""),
                 "isin": score_row.get("isin", source_row.get("isin", "")),
                 "company_name": score_row.get("company_name", source_row.get("company_name", "")),
+                "company_type_profile": score_row.get("company_type_profile", source_row.get("company_type_profile", "")),
+                "source_name": source_row.get("source_name", ""),
+                "source_as_of_date": source_row.get("source_as_of_date", ""),
                 "fundamentals_input_format": source_row.get("fundamentals_input_format", "missing_fundamentals"),
                 "quality_score": score_row.get("quality_score", ""),
                 "dividend_score": score_row.get("dividend_score", ""),
@@ -380,6 +450,7 @@ def build_score_audit_rows(
                 "data_quality_flag": score_row.get("data_quality_flag", source_row.get("data_quality_flag", "")),
                 "missing_kpi_count": source_row.get("missing_kpi_count", ""),
                 "missing_kpis": source_row.get("missing_kpis", ""),
+                "not_applicable_kpis": source_row.get("not_applicable_kpis", ""),
                 "quality_score_inputs": source_row.get("quality_score_inputs", ""),
                 "dividend_score_inputs": source_row.get("dividend_score_inputs", ""),
                 "balance_sheet_score_inputs": source_row.get("balance_sheet_score_inputs", ""),

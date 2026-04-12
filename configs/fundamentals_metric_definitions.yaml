@@ -1,0 +1,263 @@
+{
+  "schema_version": "phase2a1_fundamentals_metric_definitions_v1",
+  "company_type_profiles": ["STANDARD", "FINANCIAL", "REIT", "OTHER"],
+  "notes": [
+    "JSON-kompatibles YAML fuer stdlib-only json.load().",
+    "Core-KPIs werden fuer STANDARD-Unternehmen als primaere Raw-Fundamentals behandelt.",
+    "FINANCIAL, REIT und OTHER erhalten keine pauschale STANDARD-KPI-Pflicht; nicht passende KPIs werden als NOT_APPLICABLE ausgewiesen."
+  ],
+  "kpis": {
+    "revenue_cagr_5y": {
+      "formula": "5-year compound annual growth rate of revenue in percent.",
+      "validation": "numeric percent when present",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": ["STANDARD"],
+      "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "allowed when business cyclicality supports it; keep numeric and flag via analyst review when needed",
+      "coverage_required": true
+    },
+    "eps_cagr_5y": {
+      "formula": "5-year compound annual growth rate of diluted EPS in percent.",
+      "validation": "numeric percent when present",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": ["STANDARD"],
+      "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "allowed for cyclicality or turnarounds; conservative score downstream",
+      "coverage_required": true
+    },
+    "fcf_per_share_cagr_5y": {
+      "formula": "5-year compound annual growth rate of free cash flow per share in percent.",
+      "validation": "numeric percent when present",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": ["STANDARD"],
+      "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "allowed; conservative score downstream",
+      "coverage_required": true
+    },
+    "roic": {
+      "formula": "NOPAT divided by invested capital, percent.",
+      "validation": "numeric percent, typically -100..100",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": ["STANDARD"],
+      "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative values are valid but weak; do not replace",
+      "coverage_required": true
+    },
+    "roce": {
+      "formula": "EBIT divided by capital employed, percent.",
+      "validation": "numeric percent, typically -100..100",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": ["STANDARD"],
+      "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative values are valid but weak; do not replace",
+      "coverage_required": true
+    },
+    "gross_margin": {
+      "formula": "gross profit divided by revenue, percent.",
+      "validation": "numeric percent, usually -100..100",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": ["STANDARD"],
+      "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative values are valid for stressed businesses; do not replace",
+      "coverage_required": true
+    },
+    "operating_margin": {
+      "formula": "operating income divided by revenue, percent.",
+      "validation": "numeric percent, usually -100..100",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": ["STANDARD"],
+      "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative values are valid for loss-making companies; do not replace",
+      "coverage_required": true
+    },
+    "fcf_margin": {
+      "formula": "free cash flow divided by revenue, percent.",
+      "validation": "numeric percent, usually -100..100",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": ["STANDARD"],
+      "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative values are valid; conservative score downstream",
+      "coverage_required": true
+    },
+    "net_debt_to_ebitda": {
+      "formula": "net debt divided by EBITDA.",
+      "validation": "numeric multiple when present",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": ["STANDARD"],
+      "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative values may indicate net cash and are allowed",
+      "coverage_required": true
+    },
+    "interest_coverage": {
+      "formula": "EBIT or EBITDA divided by interest expense.",
+      "validation": "numeric multiple when present",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": ["STANDARD"],
+      "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative values are valid for loss-making issuers; do not replace",
+      "coverage_required": true
+    },
+    "dividend_yield_current_pct": {
+      "formula": "current annual dividend per share divided by current price, percent.",
+      "validation": "numeric percent >= 0 when present",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": [],
+      "missing_handling": "OPTIONAL_MISSING for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative values are invalid and require REVIEW",
+      "coverage_required": false
+    },
+    "dividend_yield_hist_pct": {
+      "formula": "historical average dividend yield, percent.",
+      "validation": "numeric percent >= 0 when present",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": [],
+      "missing_handling": "OPTIONAL_MISSING for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative values are invalid and require REVIEW",
+      "coverage_required": false
+    },
+    "dividend_cagr_5y": {
+      "formula": "5-year dividend per share CAGR in percent.",
+      "validation": "numeric percent when present",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": [],
+      "missing_handling": "OPTIONAL_MISSING for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative values are valid for dividend cuts",
+      "coverage_required": false
+    },
+    "dividend_streak_years": {
+      "formula": "number of consecutive years without dividend reduction.",
+      "validation": "numeric years >= 0 when present",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": [],
+      "missing_handling": "OPTIONAL_MISSING for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative values are invalid and require REVIEW",
+      "coverage_required": false
+    },
+    "payout_ratio_eps": {
+      "formula": "dividend per share divided by EPS, percent.",
+      "validation": "numeric percent when present",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": [],
+      "missing_handling": "OPTIONAL_MISSING for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative values can occur with negative EPS and require REVIEW",
+      "coverage_required": false
+    },
+    "payout_ratio_fcf": {
+      "formula": "dividend cash outflow divided by free cash flow, percent.",
+      "validation": "numeric percent when present",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": ["STANDARD"],
+      "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative values can occur with negative FCF and require REVIEW",
+      "coverage_required": true
+    },
+    "share_count_cagr_5y": {
+      "formula": "5-year diluted share count CAGR in percent.",
+      "validation": "numeric percent when present",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": ["STANDARD"],
+      "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative values are valid and may indicate buybacks",
+      "coverage_required": true
+    },
+    "buyback_yield": {
+      "formula": "net share repurchases divided by market capitalization, percent.",
+      "validation": "numeric percent when present",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": ["STANDARD"],
+      "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative values indicate net issuance and are allowed",
+      "coverage_required": true
+    },
+    "pe_current": {
+      "formula": "current share price divided by current or forward EPS.",
+      "validation": "numeric multiple > 0 when meaningful",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": [],
+      "missing_handling": "OPTIONAL_MISSING for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative PE is not used for valuation scoring; leave blank or flag REVIEW",
+      "coverage_required": false
+    },
+    "pe_hist": {
+      "formula": "historical average PE multiple.",
+      "validation": "numeric multiple > 0 when meaningful",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": [],
+      "missing_handling": "OPTIONAL_MISSING for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative PE is not used for valuation scoring; leave blank or flag REVIEW",
+      "coverage_required": false
+    },
+    "ev_ebit_current": {
+      "formula": "current enterprise value divided by EBIT.",
+      "validation": "numeric multiple > 0 when meaningful",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": [],
+      "missing_handling": "OPTIONAL_MISSING for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative values are not used for valuation scoring; leave blank or flag REVIEW",
+      "coverage_required": false
+    },
+    "ev_ebit_hist": {
+      "formula": "historical average enterprise value divided by EBIT.",
+      "validation": "numeric multiple > 0 when meaningful",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": [],
+      "missing_handling": "OPTIONAL_MISSING for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative values are not used for valuation scoring; leave blank or flag REVIEW",
+      "coverage_required": false
+    },
+    "fcf_yield_current_pct": {
+      "formula": "current free cash flow yield in percent.",
+      "validation": "numeric percent when present",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": [],
+      "missing_handling": "OPTIONAL_MISSING for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative values are valid but weak",
+      "coverage_required": false
+    },
+    "fcf_yield_hist_pct": {
+      "formula": "historical average free cash flow yield in percent.",
+      "validation": "numeric percent when present",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": [],
+      "missing_handling": "OPTIONAL_MISSING for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative values are valid but weak",
+      "coverage_required": false
+    },
+    "normalized_fcf_yield_pct": {
+      "formula": "normalized free cash flow yield in percent after cycle or one-off adjustments.",
+      "validation": "numeric percent when present",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": ["STANDARD"],
+      "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative values are valid but weak; do not replace",
+      "coverage_required": true
+    },
+    "target_fcf_yield_pct": {
+      "formula": "required or target free cash flow yield in percent for fair value anchoring.",
+      "validation": "numeric percent > 0 when present",
+      "applicable_profiles": ["STANDARD"],
+      "required_for_profiles": ["STANDARD"],
+      "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
+      "invalid_negative_handling": "negative or zero values are invalid for valuation and require REVIEW",
+      "coverage_required": true
+    },
+    "drawdown_from_high_pct": {
+      "formula": "percentage drawdown from a relevant recent or historical high.",
+      "validation": "numeric percent >= 0 when present",
+      "applicable_profiles": ["STANDARD", "FINANCIAL", "REIT", "OTHER"],
+      "required_for_profiles": [],
+      "missing_handling": "OPTIONAL_MISSING",
+      "invalid_negative_handling": "negative values are invalid and require REVIEW",
+      "coverage_required": false
+    },
+    "expected_return_pct": {
+      "formula": "optional analyst or model expected return estimate in percent.",
+      "validation": "numeric percent when present",
+      "applicable_profiles": ["STANDARD", "FINANCIAL", "REIT", "OTHER"],
+      "required_for_profiles": [],
+      "missing_handling": "OPTIONAL_MISSING",
+      "invalid_negative_handling": "negative values are valid but weak; do not replace",
+      "coverage_required": false
+    }
+  }
+}

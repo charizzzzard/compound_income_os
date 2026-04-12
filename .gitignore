@@ -18,6 +18,7 @@ reports/
 # Private raw portfolio inputs
 data/raw/private/**
 data/raw/personal_*
+!data/raw/personal_fundamentals_master_template.csv
 data/raw/private_*
 
 # Personal generated artifacts
