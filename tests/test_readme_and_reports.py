@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import csv
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -47,13 +49,186 @@ class ReadmeAndReportTests(unittest.TestCase):
             decision_report = decision_output.read_text(encoding="utf-8")
             self.assertIn("# Portfolio-Ueberblick", portfolio_report)
             self.assertIn("## Regelpruefung", portfolio_report)
+            self.assertNotIn("## Fundamentals-Abdeckung", portfolio_report)
             self.assertIn("# Monatlicher Entscheidungsbericht", decision_report)
             self.assertIn("## Offene REVIEW-Faelle", decision_report)
+            self.assertNotIn("## Offene Fundamentals-Research-Luecken", decision_report)
         finally:
             if portfolio_output.exists():
                 portfolio_output.unlink()
             if decision_output.exists():
                 decision_output.unlink()
+
+    def test_report_builders_include_fundamentals_coverage_when_provided(self) -> None:
+        portfolio_output = Path("tests") / "_tmp_portfolio_snapshot_coverage.md"
+        decision_output = Path("tests") / "_tmp_decision_report_coverage.md"
+        coverage_rows = [
+            {
+                "holding_name": "Covered Co",
+                "ticker": "COV",
+                "match_status": "COVERED",
+                "match_method": "ISIN",
+                "missing_required_kpis": "",
+                "needs_research_flag": "False",
+            },
+            {
+                "holding_name": "Partial Co",
+                "ticker": "PAR",
+                "match_status": "PARTIAL",
+                "match_method": "TICKER",
+                "missing_required_kpis": "roic; fcf_margin",
+                "needs_research_flag": "True",
+            },
+            {
+                "holding_name": "Review Co",
+                "ticker": "REV",
+                "match_status": "REVIEW",
+                "match_method": "NO_MATCH",
+                "missing_required_kpis": "",
+                "needs_research_flag": "True",
+            },
+            {
+                "holding_name": "No Match Co",
+                "ticker": "MISS",
+                "match_status": "NO_MATCH",
+                "match_method": "NO_MATCH",
+                "missing_required_kpis": "",
+                "needs_research_flag": "True",
+            },
+        ]
+        try:
+            build_portfolio_snapshot_report(
+                positions_rows=[
+                    {
+                        "ticker": "EUR-CASH",
+                        "company_name": "Cash",
+                        "sleeve": "CASH",
+                        "market_value_eur": "1000",
+                        "weight_total_assets_pct": "100.0",
+                        "asset_type": "CASH",
+                        "sector": "Cash",
+                    }
+                ],
+                output_path=str(portfolio_output),
+                scores_rows=[],
+                coverage_rows=coverage_rows,
+            )
+            build_monthly_decision_report(
+                positions_rows=[],
+                score_rows=[],
+                ranking_rows=[],
+                output_path=str(decision_output),
+                coverage_rows=coverage_rows,
+            )
+            portfolio_report = portfolio_output.read_text(encoding="utf-8")
+            decision_report = decision_output.read_text(encoding="utf-8")
+
+            self.assertIn("## Fundamentals-Abdeckung", portfolio_report)
+            self.assertIn("- COVERED: 1", portfolio_report)
+            self.assertIn("- PARTIAL: 1", portfolio_report)
+            self.assertIn("- REVIEW: 1", portfolio_report)
+            self.assertIn("- NO_MATCH: 1", portfolio_report)
+            self.assertIn("- Holdings mit Pflicht-KPI-Luecken: 1", portfolio_report)
+            self.assertIn("`PAR` Partial Co: status=PARTIAL method=TICKER missing_required=roic; fcf_margin", portfolio_report)
+            self.assertIn("`MISS` No Match Co: status=NO_MATCH method=NO_MATCH", portfolio_report)
+
+            self.assertIn("## Offene Fundamentals-Research-Luecken", decision_report)
+            self.assertIn("`PAR` Partial Co: status=PARTIAL method=TICKER missing_required=roic; fcf_margin", decision_report)
+            self.assertIn("`REV` Review Co: status=REVIEW method=NO_MATCH", decision_report)
+            self.assertLess(decision_report.index("`PAR`"), decision_report.index("`REV`"))
+        finally:
+            if portfolio_output.exists():
+                portfolio_output.unlink()
+            if decision_output.exists():
+                decision_output.unlink()
+
+    def test_report_clis_reject_incomplete_coverage_csv(self) -> None:
+        positions_path = Path("tests") / "_tmp_report_positions_coverage.csv"
+        scores_path = Path("tests") / "_tmp_report_scores_coverage.csv"
+        ranking_path = Path("tests") / "_tmp_report_ranking_coverage.csv"
+        coverage_path = Path("tests") / "_tmp_report_bad_coverage.csv"
+        portfolio_output = Path("tests") / "_tmp_portfolio_bad_coverage.md"
+        decision_output = Path("tests") / "_tmp_decision_bad_coverage.md"
+        try:
+            with positions_path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(
+                    handle,
+                    fieldnames=["ticker", "company_name", "sleeve", "market_value_eur", "weight_total_assets_pct", "asset_type", "sector"],
+                )
+                writer.writeheader()
+                writer.writerow(
+                    {
+                        "ticker": "AAPL",
+                        "company_name": "Apple",
+                        "sleeve": "SINGLE_STOCK",
+                        "market_value_eur": "100",
+                        "weight_total_assets_pct": "10.0",
+                        "asset_type": "STOCK",
+                        "sector": "Technology",
+                    }
+                )
+            with scores_path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=["ticker", "classification", "data_quality_flag", "held_in_portfolio", "main_risks"])
+                writer.writeheader()
+                writer.writerow({"ticker": "AAPL", "classification": "HOLD", "data_quality_flag": "OK", "held_in_portfolio": "true", "main_risks": ""})
+            with ranking_path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=["rank", "ticker", "target_action", "suggested_buy_amount_eur", "rationale", "constraint_checks"])
+                writer.writeheader()
+                writer.writerow({"rank": "1", "ticker": "AAPL", "target_action": "BUY", "suggested_buy_amount_eur": "100", "rationale": "ok", "constraint_checks": "ok"})
+            with coverage_path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=["holding_name", "ticker", "match_status", "match_method", "missing_required_kpis"])
+                writer.writeheader()
+                writer.writerow({"holding_name": "Apple", "ticker": "AAPL", "match_status": "COVERED", "match_method": "ISIN", "missing_required_kpis": ""})
+
+            portfolio_result = subprocess.run(
+                [
+                    "python",
+                    "-m",
+                    "src.build_portfolio_snapshot",
+                    "--positions",
+                    str(positions_path),
+                    "--coverage",
+                    str(coverage_path),
+                    "--output",
+                    str(portfolio_output),
+                ],
+                cwd=Path.cwd(),
+                capture_output=True,
+                text=True,
+            )
+            decision_result = subprocess.run(
+                [
+                    "python",
+                    "-m",
+                    "src.build_monthly_decision_report",
+                    "--positions",
+                    str(positions_path),
+                    "--scores",
+                    str(scores_path),
+                    "--ranking",
+                    str(ranking_path),
+                    "--coverage",
+                    str(coverage_path),
+                    "--output",
+                    str(decision_output),
+                ],
+                cwd=Path.cwd(),
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertNotEqual(portfolio_result.returncode, 0)
+            self.assertIn("coverage CSV", f"{portfolio_result.stdout}\n{portfolio_result.stderr}")
+            self.assertIn("needs_research_flag", f"{portfolio_result.stdout}\n{portfolio_result.stderr}")
+            self.assertFalse(portfolio_output.exists())
+            self.assertNotEqual(decision_result.returncode, 0)
+            self.assertIn("coverage CSV", f"{decision_result.stdout}\n{decision_result.stderr}")
+            self.assertIn("needs_research_flag", f"{decision_result.stdout}\n{decision_result.stderr}")
+            self.assertFalse(decision_output.exists())
+        finally:
+            for path in [positions_path, scores_path, ranking_path, coverage_path, portfolio_output, decision_output]:
+                if path.exists():
+                    path.unlink()
 
 
 if __name__ == "__main__":

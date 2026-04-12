@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from src.common import ensure_parent_dir, format_eur, format_pct, read_csv_rows, require_columns, require_unique_tickers, to_float, write_csv_rows
+from src.common import ensure_parent_dir, format_eur, format_pct, read_csv_rows, require_columns, require_unique_tickers, to_bool, to_float, write_csv_rows
 from src.portfolio_rules import (
     allocation_summary,
     compute_cash_value,
@@ -15,6 +15,28 @@ from src.portfolio_rules import (
 )
 from src.portfolio_review import HOLDINGS_ACTION_FIELDS, build_holdings_action_table
 
+COVERAGE_REQUIRED_COLUMNS = [
+    "holding_name",
+    "ticker",
+    "match_status",
+    "match_method",
+    "missing_required_kpis",
+    "needs_research_flag",
+]
+
+
+def coverage_status_counts(coverage_rows: list[dict[str, str]]) -> dict[str, int]:
+    counts = {"COVERED": 0, "PARTIAL": 0, "REVIEW": 0, "NO_MATCH": 0}
+    for row in coverage_rows:
+        status = str(row.get("match_status", "")).upper()
+        if status in counts:
+            counts[status] += 1
+    return counts
+
+
+def coverage_label(row: dict[str, str]) -> str:
+    return row.get("ticker") or row.get("matched_ticker") or row.get("isin") or row.get("holding_name") or "UNKNOWN"
+
 
 def build_portfolio_snapshot_report(
     positions_rows: list[dict[str, str]],
@@ -22,6 +44,7 @@ def build_portfolio_snapshot_report(
     scores_rows: list[dict[str, str]] | None = None,
     rules_path: str = "configs/portfolio_rules.yaml",
     holdings_output: str | None = None,
+    coverage_rows: list[dict[str, str]] | None = None,
 ) -> Path:
     rules = load_portfolio_rules(rules_path)
     total_assets = compute_total_assets(positions_rows)
@@ -184,6 +207,36 @@ def build_portfolio_snapshot_report(
         else:
             lines.append("- Keine Positionen mit offenen MISSING_DATA/REVIEW-Faellen.")
 
+    if coverage_rows is not None:
+        counts = coverage_status_counts(coverage_rows)
+        research_rows = [row for row in coverage_rows if to_bool(row.get("needs_research_flag"))]
+        missing_kpi_rows = [row for row in coverage_rows if str(row.get("missing_required_kpis", "")).strip()]
+        lines.extend(
+            [
+                "",
+                "## Fundamentals-Abdeckung",
+                "",
+                f"- COVERED: {counts['COVERED']}",
+                f"- PARTIAL: {counts['PARTIAL']}",
+                f"- REVIEW: {counts['REVIEW']}",
+                f"- NO_MATCH: {counts['NO_MATCH']}",
+                f"- Offene Research-Luecken: {len(research_rows)}",
+                f"- Holdings mit Pflicht-KPI-Luecken: {len(missing_kpi_rows)}",
+                "",
+                "## Fundamentals-Research-Luecken",
+                "",
+            ]
+        )
+        if research_rows:
+            for row in research_rows:
+                missing = str(row.get("missing_required_kpis", "")).strip() or "keine"
+                lines.append(
+                    f"- `{coverage_label(row)}` {row.get('holding_name', '')}: status={row.get('match_status')} "
+                    f"method={row.get('match_method')} missing_required={missing}"
+                )
+        else:
+            lines.append("- Keine offenen Fundamentals-Research-Luecken.")
+
     path = ensure_parent_dir(output_path)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return path
@@ -194,6 +247,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--positions", required=True, help="Positions snapshot CSV.")
     parser.add_argument("--output", required=True, help="Markdown output path.")
     parser.add_argument("--scores", help="Optional company scores CSV for mandate fit commentary.")
+    parser.add_argument("--coverage", help="Optional personal fundamentals coverage CSV.")
     parser.add_argument("--rules", default="configs/portfolio_rules.yaml", help="Portfolio rules config path.")
     parser.add_argument("--holdings-output", help="Optional CSV output for holdings action table.")
     return parser.parse_args()
@@ -203,6 +257,7 @@ def main() -> None:
     args = parse_args()
     positions_rows = read_csv_rows(args.positions)
     scores_rows = read_csv_rows(args.scores) if args.scores else None
+    coverage_rows = read_csv_rows(args.coverage) if args.coverage else None
     require_columns(
         positions_rows,
         ["ticker", "company_name", "sleeve", "market_value_eur", "weight_total_assets_pct"],
@@ -211,7 +266,9 @@ def main() -> None:
     if scores_rows:
         require_columns(scores_rows, ["ticker"], f"scores CSV ({args.scores})")
         require_unique_tickers(scores_rows, f"scores CSV ({args.scores})")
-    build_portfolio_snapshot_report(positions_rows, args.output, scores_rows, args.rules, args.holdings_output)
+    if coverage_rows is not None:
+        require_columns(coverage_rows, COVERAGE_REQUIRED_COLUMNS, f"coverage CSV ({args.coverage})")
+    build_portfolio_snapshot_report(positions_rows, args.output, scores_rows, args.rules, args.holdings_output, coverage_rows)
 
 
 if __name__ == "__main__":

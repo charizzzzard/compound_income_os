@@ -3,8 +3,39 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from src.common import ensure_parent_dir, read_csv_rows, require_columns, require_unique_tickers, round2, to_float
+from src.common import ensure_parent_dir, read_csv_rows, require_columns, require_unique_tickers, round2, to_bool, to_float
 from src.portfolio_rules import load_portfolio_rules
+
+COVERAGE_REQUIRED_COLUMNS = [
+    "holding_name",
+    "ticker",
+    "match_status",
+    "match_method",
+    "missing_required_kpis",
+    "needs_research_flag",
+]
+
+
+def coverage_label(row: dict[str, str]) -> str:
+    return row.get("ticker") or row.get("matched_ticker") or row.get("isin") or row.get("holding_name") or "UNKNOWN"
+
+
+def prioritized_coverage_gaps(coverage_rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    gap_rows = [
+        row for row in coverage_rows
+        if to_bool(row.get("needs_research_flag"))
+        or str(row.get("missing_required_kpis", "")).strip()
+        or str(row.get("match_status", "")).upper() in {"REVIEW", "NO_MATCH"}
+    ]
+    priority = {"REVIEW": 0, "NO_MATCH": 0, "PARTIAL": 1, "COVERED": 2}
+    return sorted(
+        gap_rows,
+        key=lambda row: (
+            0 if str(row.get("missing_required_kpis", "")).strip() else 1,
+            priority.get(str(row.get("match_status", "")).upper(), 9),
+            coverage_label(row),
+        ),
+    )
 
 
 def describe_allocation_status(row: dict[str, str]) -> str:
@@ -35,6 +66,7 @@ def build_monthly_decision_report(
     ranking_rows: list[dict[str, str]],
     output_path: str,
     rules_path: str = "configs/portfolio_rules.yaml",
+    coverage_rows: list[dict[str, str]] | None = None,
 ) -> Path:
     rules = load_portfolio_rules(rules_path)
     monthly_cash = to_float(rules["monthly_new_cash_eur"])
@@ -122,6 +154,25 @@ def build_monthly_decision_report(
     else:
         lines.append("- Keine offenen REVIEW-Faelle.")
 
+    if coverage_rows is not None:
+        coverage_gaps = prioritized_coverage_gaps(coverage_rows)
+        lines.extend(
+            [
+                "",
+                "## Offene Fundamentals-Research-Luecken",
+                "",
+            ]
+        )
+        if coverage_gaps:
+            for row in coverage_gaps:
+                missing = str(row.get("missing_required_kpis", "")).strip() or "keine"
+                lines.append(
+                    f"- `{coverage_label(row)}` {row.get('holding_name', '')}: status={row.get('match_status')} "
+                    f"method={row.get('match_method')} missing_required={missing}"
+                )
+        else:
+            lines.append("- Keine offenen Fundamentals-Research-Luecken aus Coverage.")
+
     lines.extend(
         [
             "",
@@ -148,6 +199,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--scores", required=True, help="Company scores CSV.")
     parser.add_argument("--ranking", required=True, help="Monthly ranking CSV.")
     parser.add_argument("--output", required=True, help="Markdown output path.")
+    parser.add_argument("--coverage", help="Optional personal fundamentals coverage CSV.")
     parser.add_argument("--rules", default="configs/portfolio_rules.yaml", help="Portfolio rules config path.")
     return parser.parse_args()
 
@@ -157,6 +209,7 @@ def main() -> None:
     positions_rows = read_csv_rows(args.positions)
     score_rows = read_csv_rows(args.scores)
     ranking_rows = read_csv_rows(args.ranking)
+    coverage_rows = read_csv_rows(args.coverage) if args.coverage else None
     require_columns(
         score_rows,
         ["ticker", "classification", "data_quality_flag", "held_in_portfolio", "main_risks"],
@@ -169,7 +222,9 @@ def main() -> None:
         f"ranking CSV ({args.ranking})",
     )
     require_unique_tickers(ranking_rows, f"ranking CSV ({args.ranking})")
-    build_monthly_decision_report(positions_rows, score_rows, ranking_rows, args.output, args.rules)
+    if coverage_rows is not None:
+        require_columns(coverage_rows, COVERAGE_REQUIRED_COLUMNS, f"coverage CSV ({args.coverage})")
+    build_monthly_decision_report(positions_rows, score_rows, ranking_rows, args.output, args.rules, coverage_rows)
 
 
 if __name__ == "__main__":
