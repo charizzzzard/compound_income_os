@@ -265,7 +265,7 @@ Phase 2D ist eine Konsolidierungs- und Reporting-Schicht. Sie baut keine neue Be
 Primaerquellen:
 
 - Portfolio / Struktur: `positions_snapshot.csv`
-- Score / Fundamentals: `company_scores.csv`, `portfolio_holdings_action_table.csv`, optional `score_audit.csv`
+- Score / Fundamentals: `company_scores.csv`, `portfolio_holdings_action_table.csv`, optional `score_audit.csv` und `personal_fundamentals_coverage.csv`
 - Benchmark / Performance: `performance_kpis.csv`, `performance_summary.csv`, optional `performance_comparison.csv`
 - Kosten / Steuern: `cost_tax_kpis.csv`, `cost_tax_summary.csv`
 
@@ -289,7 +289,7 @@ Neue Artefakte:
 Sample-CLI:
 
 ```powershell
-python -m src.dashboard_engine --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --holdings data/processed/personal_portfolio_holdings_action_table.csv --score-audit data/processed/personal_score_audit.csv --performance-kpis data/processed/performance_kpis.csv --performance-summary data/processed/performance_summary.csv --performance-comparison data/processed/performance_comparison.csv --cost-tax-kpis data/processed/cost_tax_kpis.csv --cost-tax-summary data/processed/cost_tax_summary.csv --config configs/dashboard_kpis.yaml --kpi-output data/processed/dashboard_kpis.csv --sections-output data/processed/dashboard_sections.csv --summary-output data/processed/dashboard_summary.csv --report-output reports/sample/dashboard_report.md
+python -m src.dashboard_engine --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --holdings data/processed/personal_portfolio_holdings_action_table.csv --score-audit data/processed/personal_score_audit.csv --coverage data/processed/personal_fundamentals_coverage.csv --performance-kpis data/processed/performance_kpis.csv --performance-summary data/processed/performance_summary.csv --performance-comparison data/processed/performance_comparison.csv --cost-tax-kpis data/processed/cost_tax_kpis.csv --cost-tax-summary data/processed/cost_tax_summary.csv --config configs/dashboard_kpis.yaml --kpi-output data/processed/dashboard_kpis.csv --sections-output data/processed/dashboard_sections.csv --summary-output data/processed/dashboard_summary.csv --report-output reports/sample/dashboard_report.md
 ```
 
 ## Persoenlicher Lauf

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 from collections import Counter
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -23,6 +24,7 @@ DEFAULT_POSITIONS_PATH = "data/processed/personal_positions_snapshot.csv"
 DEFAULT_SCORES_PATH = "data/processed/personal_company_scores.csv"
 DEFAULT_HOLDINGS_PATH = "data/processed/personal_portfolio_holdings_action_table.csv"
 DEFAULT_SCORE_AUDIT_PATH = "data/processed/personal_score_audit.csv"
+DEFAULT_COVERAGE_PATH = ""
 DEFAULT_PERFORMANCE_KPIS_PATH = "data/processed/performance_kpis.csv"
 DEFAULT_PERFORMANCE_SUMMARY_PATH = "data/processed/performance_summary.csv"
 DEFAULT_PERFORMANCE_COMPARISON_PATH = "data/processed/performance_comparison.csv"
@@ -81,6 +83,14 @@ PRIMARY_GROUPS = [
     "Kosten / Steuern",
 ]
 
+COVERAGE_REQUIRED_COLUMNS = [
+    "match_status",
+    "match_method",
+    "missing_required_kpis",
+    "not_applicable_kpis",
+    "needs_research_flag",
+]
+
 DASHBOARD_DERIVED_METRICS = {
     "performance_source_date",
     "cost_tax_source_date",
@@ -134,6 +144,22 @@ def load_optional_source(source_key: str, path_value: str) -> SourceTable:
     return SourceTable(source_key=source_key, path_value=path_value, rows=read_csv_rows(path_value), exists=True)
 
 
+def load_optional_coverage_source(source_key: str, path_value: str) -> SourceTable:
+    if not path_value:
+        return SourceTable(source_key=source_key, path_value="", rows=[], exists=False)
+    resolved = resolve_repo_path(path_value)
+    if not resolved.exists():
+        return SourceTable(source_key=source_key, path_value=path_value, rows=[], exists=False)
+    with resolved.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        fieldnames = reader.fieldnames or []
+        missing = [column for column in COVERAGE_REQUIRED_COLUMNS if column not in fieldnames]
+        if missing:
+            missing_text = ", ".join(sorted(missing))
+            raise ValueError(f"coverage CSV ({path_value}) missing required columns: {missing_text}")
+        return SourceTable(source_key=source_key, path_value=path_value, rows=list(reader), exists=True)
+
+
 def parse_iso_date(value: Any) -> date | None:
     text = str(value or "").strip()
     if not text:
@@ -173,7 +199,7 @@ def build_metric_index(rows: list[dict[str, str]], source_name: str) -> dict[str
 
 def source_measurement_mode(source_key: str, row: dict[str, str] | None = None) -> str:
     current = row or {}
-    if source_key in {"positions", "scores", "holdings", "score_audit"}:
+    if source_key in {"positions", "scores", "holdings", "score_audit", "coverage"}:
         return SNAPSHOT_ONLY
     if source_key in {"performance_kpis", "performance_summary", "performance_comparison", "cost_tax_kpis"}:
         return str(current.get("measurement_mode", "")).strip()
@@ -394,6 +420,32 @@ def derive_score_audit_metrics(source: SourceTable) -> dict[str, dict[str, str]]
             "data_quality_flag": quality_flag,
             "notes": "Combined score_audit data_quality_flag values.",
         },
+    }
+
+
+def derive_coverage_metrics(source: SourceTable) -> dict[str, dict[str, str]]:
+    if not source.exists:
+        return {}
+    counts = Counter(str(row.get("match_status", "")).strip().upper() for row in source.rows)
+    quality_flag = combine_quality_flags(*(row.get("data_quality_flag", "") for row in source.rows), default=OK_FLAG)
+
+    def metric(value: int, notes: str) -> dict[str, str]:
+        return {
+            "value": str(value),
+            "measurement_mode": SNAPSHOT_ONLY,
+            "data_quality_flag": quality_flag,
+            "notes": notes,
+        }
+
+    research_needed_count = count_true_flags(source.rows, "needs_research_flag")
+    missing_required_count = sum(1 for row in source.rows if str(row.get("missing_required_kpis", "")).strip())
+    return {
+        "fundamentals_covered_count": metric(counts.get("COVERED", 0), "Derived from coverage match_status=COVERED."),
+        "fundamentals_partial_count": metric(counts.get("PARTIAL", 0), "Derived from coverage match_status=PARTIAL."),
+        "fundamentals_review_count": metric(counts.get("REVIEW", 0), "Derived from coverage match_status=REVIEW."),
+        "fundamentals_no_match_count": metric(counts.get("NO_MATCH", 0), "Derived from coverage match_status=NO_MATCH."),
+        "fundamentals_research_needed_count": metric(research_needed_count, "Derived from coverage needs_research_flag=True."),
+        "fundamentals_missing_required_count": metric(missing_required_count, "Derived from non-empty coverage missing_required_kpis."),
     }
 
 
@@ -620,6 +672,14 @@ def resolve_metric_from_priority(
         availability_status=NOT_AVAILABLE,
         notes=missing_note,
     )
+
+
+def skip_missing_optional_coverage_metric(spec: dict[str, Any], sources: dict[str, SourceTable]) -> bool:
+    priorities = list(spec.get("source_priority", []))
+    if not priorities:
+        return False
+    source_keys = {str(priority.get("source_key", "")).strip() for priority in priorities}
+    return source_keys == {"coverage"} and not sources["coverage"].exists
 
 
 def build_group_statuses(metric_rows: list[dict[str, str]], config: dict[str, Any]) -> dict[str, str]:
@@ -867,6 +927,7 @@ def run_dashboard_engine(
     scores_path: str = DEFAULT_SCORES_PATH,
     holdings_path: str = DEFAULT_HOLDINGS_PATH,
     score_audit_path: str = DEFAULT_SCORE_AUDIT_PATH,
+    coverage_path: str = DEFAULT_COVERAGE_PATH,
     performance_kpis_path: str = DEFAULT_PERFORMANCE_KPIS_PATH,
     performance_summary_path: str = DEFAULT_PERFORMANCE_SUMMARY_PATH,
     performance_comparison_path: str = DEFAULT_PERFORMANCE_COMPARISON_PATH,
@@ -886,6 +947,7 @@ def run_dashboard_engine(
         "scores": load_optional_source("scores", scores_path),
         "holdings": load_optional_source("holdings", holdings_path),
         "score_audit": load_optional_source("score_audit", score_audit_path),
+        "coverage": load_optional_coverage_source("coverage", coverage_path),
         "performance_kpis": load_optional_source("performance_kpis", performance_kpis_path),
         "performance_summary": load_optional_source("performance_summary", performance_summary_path),
         "performance_comparison": load_optional_source("performance_comparison", performance_comparison_path),
@@ -902,12 +964,15 @@ def run_dashboard_engine(
         "scores": derive_scores_metrics(sources["scores"]),
         "holdings": derive_holdings_metrics(sources["holdings"]),
         "score_audit": derive_score_audit_metrics(sources["score_audit"]),
+        "coverage": derive_coverage_metrics(sources["coverage"]),
         "dashboard": {},
     }
 
     metric_rows: list[dict[str, str]] = []
     deferred_specs: list[dict[str, Any]] = []
     for spec in config["metrics"]:
+        if skip_missing_optional_coverage_metric(spec, sources):
+            continue
         if str(spec["metric_name"]) in DASHBOARD_DERIVED_METRICS:
             deferred_specs.append(spec)
             continue
@@ -948,6 +1013,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--scores", default=DEFAULT_SCORES_PATH, help="Company scores CSV.")
     parser.add_argument("--holdings", default=DEFAULT_HOLDINGS_PATH, help="Holdings action table CSV.")
     parser.add_argument("--score-audit", default=DEFAULT_SCORE_AUDIT_PATH, help="Score audit CSV.")
+    parser.add_argument("--coverage", default=DEFAULT_COVERAGE_PATH, help="Optional personal fundamentals coverage CSV.")
     parser.add_argument("--performance-kpis", default=DEFAULT_PERFORMANCE_KPIS_PATH, help="Performance KPI CSV.")
     parser.add_argument("--performance-summary", default=DEFAULT_PERFORMANCE_SUMMARY_PATH, help="Performance summary CSV.")
     parser.add_argument("--performance-comparison", default=DEFAULT_PERFORMANCE_COMPARISON_PATH, help="Performance comparison CSV.")
@@ -968,6 +1034,7 @@ def main() -> None:
         scores_path=args.scores,
         holdings_path=args.holdings,
         score_audit_path=args.score_audit,
+        coverage_path=args.coverage,
         performance_kpis_path=args.performance_kpis,
         performance_summary_path=args.performance_summary,
         performance_comparison_path=args.performance_comparison,

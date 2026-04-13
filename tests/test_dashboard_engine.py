@@ -7,6 +7,7 @@ from pathlib import Path
 
 from src.common import read_csv_rows
 from src.dashboard_engine import NOT_AVAILABLE, PARTIAL, STALE_COST_TAX_SOURCE, STALE_PERFORMANCE_SOURCE, run_dashboard_engine
+from src.fundamentals_master import COVERAGE_OUTPUT_FIELDS
 
 
 class DashboardEngineTests(unittest.TestCase):
@@ -149,6 +150,14 @@ class DashboardEngineTests(unittest.TestCase):
                 {"ticker": "WATCH", "data_quality_flag": "MISSING_DATA", "missing_kpi_count": "2"},
             ],
         )
+
+    def _write_coverage(self, path: Path, rows: list[dict[str, object]]) -> None:
+        normalized_rows = []
+        for row in rows:
+            normalized = {field: "" for field in COVERAGE_OUTPUT_FIELDS}
+            normalized.update(row)
+            normalized_rows.append(normalized)
+        self._write_csv(path, COVERAGE_OUTPUT_FIELDS, normalized_rows)
 
     def _write_holdings(self, path: Path) -> None:
         self._write_csv(
@@ -437,7 +446,94 @@ class DashboardEngineTests(unittest.TestCase):
         )
         metric_index = {row["metric_name"]: row for row in result["metric_rows"]}
         self.assertEqual(metric_index["weighted_buy_score"]["metric_value"], NOT_AVAILABLE)
+        self.assertNotIn("fundamentals_covered_count", metric_index)
         self.assertEqual(result["group_statuses"]["Kosten / Steuern"], NOT_AVAILABLE)
+
+    def test_coverage_metrics_are_derived_from_optional_coverage_source(self) -> None:
+        paths = self._build_full_source_set()
+        coverage_path = self._path("_tmp_dashboard_coverage.csv")
+        self._write_coverage(
+            coverage_path,
+            [
+                {"ticker": "CORE", "match_status": "COVERED", "match_method": "TICKER", "needs_research_flag": "False"},
+                {"ticker": "QUAL", "match_status": "PARTIAL", "match_method": "ISIN", "needs_research_flag": "True", "missing_required_kpis": "roic|fcf_margin"},
+                {"ticker": "MSFT", "match_status": "REVIEW", "match_method": "COMPANY_NAME", "needs_research_flag": "True"},
+                {"ticker": "NOPE", "match_status": "NO_MATCH", "match_method": "NO_MATCH", "needs_research_flag": "True", "missing_required_kpis": "normalized_fcf_yield_pct"},
+            ],
+        )
+        result = run_dashboard_engine(
+            positions_path=paths["positions"],
+            scores_path=paths["scores"],
+            holdings_path=paths["holdings"],
+            score_audit_path=paths["score_audit"],
+            coverage_path=str(coverage_path),
+            performance_kpis_path=paths["performance_kpis"],
+            performance_summary_path=paths["performance_summary"],
+            performance_comparison_path=paths["performance_comparison"],
+            cost_tax_kpis_path=paths["cost_tax_kpis"],
+            cost_tax_summary_path=paths["cost_tax_summary"],
+            kpi_output=str(self._path("_tmp_dashboard_coverage_kpis.csv")),
+            sections_output=str(self._path("_tmp_dashboard_coverage_sections.csv")),
+            summary_output=str(self._path("_tmp_dashboard_coverage_summary.csv")),
+            report_output=str(self._path("_tmp_dashboard_coverage_report.md")),
+        )
+        metric_index = {row["metric_name"]: row for row in result["metric_rows"]}
+        self.assertEqual(metric_index["fundamentals_covered_count"]["metric_value"], "1")
+        self.assertEqual(metric_index["fundamentals_partial_count"]["metric_value"], "1")
+        self.assertEqual(metric_index["fundamentals_review_count"]["metric_value"], "1")
+        self.assertEqual(metric_index["fundamentals_no_match_count"]["metric_value"], "1")
+        self.assertEqual(metric_index["fundamentals_research_needed_count"]["metric_value"], "3")
+        self.assertEqual(metric_index["fundamentals_missing_required_count"]["metric_value"], "2")
+        self.assertEqual(metric_index["fundamentals_covered_count"]["source_file"], str(coverage_path))
+
+    def test_header_only_coverage_produces_zero_coverage_counts(self) -> None:
+        paths = self._build_full_source_set()
+        coverage_path = self._path("_tmp_dashboard_header_only_coverage.csv")
+        self._write_coverage(coverage_path, [])
+        result = run_dashboard_engine(
+            positions_path=paths["positions"],
+            scores_path=paths["scores"],
+            holdings_path=paths["holdings"],
+            score_audit_path=paths["score_audit"],
+            coverage_path=str(coverage_path),
+            performance_kpis_path=paths["performance_kpis"],
+            performance_summary_path=paths["performance_summary"],
+            performance_comparison_path=paths["performance_comparison"],
+            cost_tax_kpis_path=paths["cost_tax_kpis"],
+            cost_tax_summary_path=paths["cost_tax_summary"],
+            kpi_output=str(self._path("_tmp_dashboard_header_only_kpis.csv")),
+            sections_output=str(self._path("_tmp_dashboard_header_only_sections.csv")),
+            summary_output=str(self._path("_tmp_dashboard_header_only_summary.csv")),
+            report_output=str(self._path("_tmp_dashboard_header_only_report.md")),
+        )
+        metric_index = {row["metric_name"]: row for row in result["metric_rows"]}
+        for metric_name in [
+            "fundamentals_covered_count",
+            "fundamentals_partial_count",
+            "fundamentals_review_count",
+            "fundamentals_no_match_count",
+            "fundamentals_research_needed_count",
+            "fundamentals_missing_required_count",
+        ]:
+            self.assertEqual(metric_index[metric_name]["metric_value"], "0")
+
+    def test_incomplete_coverage_header_is_rejected(self) -> None:
+        paths = self._build_full_source_set()
+        coverage_path = self._path("_tmp_dashboard_incomplete_coverage.csv")
+        self._write_csv(coverage_path, ["match_status", "needs_research_flag"], [{"match_status": "COVERED", "needs_research_flag": "False"}])
+        with self.assertRaisesRegex(ValueError, "coverage CSV .* missing required columns: .*missing_required_kpis"):
+            run_dashboard_engine(
+                positions_path=paths["positions"],
+                scores_path=paths["scores"],
+                holdings_path=paths["holdings"],
+                score_audit_path=paths["score_audit"],
+                coverage_path=str(coverage_path),
+                performance_kpis_path=paths["performance_kpis"],
+                performance_summary_path=paths["performance_summary"],
+                performance_comparison_path=paths["performance_comparison"],
+                cost_tax_kpis_path=paths["cost_tax_kpis"],
+                cost_tax_summary_path=paths["cost_tax_summary"],
+            )
 
     def test_mixed_sources_produce_partial_block(self) -> None:
         paths = self._build_full_source_set()
@@ -661,6 +757,11 @@ class DashboardEngineTests(unittest.TestCase):
 
     def test_dashboard_artifacts_are_generated(self) -> None:
         paths = self._build_full_source_set()
+        coverage_path = self._path("_tmp_dashboard_cli_coverage.csv")
+        self._write_coverage(
+            coverage_path,
+            [{"ticker": "CORE", "match_status": "COVERED", "match_method": "TICKER", "needs_research_flag": "False"}],
+        )
         kpi_output = self._path("_tmp_dashboard_cli_kpis.csv")
         sections_output = self._path("_tmp_dashboard_cli_sections.csv")
         summary_output = self._path("_tmp_dashboard_cli_summary.csv")
@@ -678,6 +779,8 @@ class DashboardEngineTests(unittest.TestCase):
                 paths["holdings"],
                 "--score-audit",
                 paths["score_audit"],
+                "--coverage",
+                str(coverage_path),
                 "--performance-kpis",
                 paths["performance_kpis"],
                 "--performance-summary",
@@ -705,6 +808,8 @@ class DashboardEngineTests(unittest.TestCase):
         self.assertTrue(report_output.exists())
         self.assertTrue(read_csv_rows(kpi_output))
         self.assertEqual(read_csv_rows(summary_output)[0]["snapshot_date"], "2026-04-10")
+        metric_index = {row["metric_name"]: row for row in read_csv_rows(kpi_output)}
+        self.assertEqual(metric_index["fundamentals_covered_count"]["metric_value"], "1")
         self.assertIn("# KPI-Dashboard", report_output.read_text(encoding="utf-8"))
 
 

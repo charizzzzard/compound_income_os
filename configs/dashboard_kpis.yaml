@@ -250,6 +250,60 @@
       "description": "Anzahl Titel mit MISSING_DATA, REVIEW oder expliziten Audit-Luecken.",
       "missing_policy": "NOT_AVAILABLE"
     },
+    {
+      "metric_name": "fundamentals_covered_count",
+      "metric_group": "Score / Fundamentals",
+      "display_label": "Fundamentals COVERED Count",
+      "source_priority": [{"source_key": "coverage", "lookup_type": "derived_metric", "field_name": "fundamentals_covered_count"}],
+      "unit": "COUNT",
+      "description": "Anzahl Coverage-Zeilen mit match_status=COVERED.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "fundamentals_partial_count",
+      "metric_group": "Score / Fundamentals",
+      "display_label": "Fundamentals PARTIAL Count",
+      "source_priority": [{"source_key": "coverage", "lookup_type": "derived_metric", "field_name": "fundamentals_partial_count"}],
+      "unit": "COUNT",
+      "description": "Anzahl Coverage-Zeilen mit match_status=PARTIAL.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "fundamentals_review_count",
+      "metric_group": "Score / Fundamentals",
+      "display_label": "Fundamentals REVIEW Count",
+      "source_priority": [{"source_key": "coverage", "lookup_type": "derived_metric", "field_name": "fundamentals_review_count"}],
+      "unit": "COUNT",
+      "description": "Anzahl Coverage-Zeilen mit match_status=REVIEW.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "fundamentals_no_match_count",
+      "metric_group": "Score / Fundamentals",
+      "display_label": "Fundamentals NO_MATCH Count",
+      "source_priority": [{"source_key": "coverage", "lookup_type": "derived_metric", "field_name": "fundamentals_no_match_count"}],
+      "unit": "COUNT",
+      "description": "Anzahl Coverage-Zeilen mit match_status=NO_MATCH.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "fundamentals_research_needed_count",
+      "metric_group": "Score / Fundamentals",
+      "display_label": "Fundamentals Research Needed Count",
+      "source_priority": [{"source_key": "coverage", "lookup_type": "derived_metric", "field_name": "fundamentals_research_needed_count"}],
+      "unit": "COUNT",
+      "description": "Anzahl Coverage-Zeilen mit needs_research_flag=True.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
+    {
+      "metric_name": "fundamentals_missing_required_count",
+      "metric_group": "Score / Fundamentals",
+      "display_label": "Fundamentals Missing Required Count",
+      "source_priority": [{"source_key": "coverage", "lookup_type": "derived_metric", "field_name": "fundamentals_missing_required_count"}],
+      "unit": "COUNT",
+      "description": "Anzahl Coverage-Zeilen mit nichtleerem missing_required_kpis.",
+      "missing_policy": "NOT_AVAILABLE"
+    },
 
     {
       "metric_name": "benchmark_name",
