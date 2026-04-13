@@ -147,6 +147,22 @@ Das konservative Matching fuer persoenliche Holdings ist deterministisch:
 
 Mehrdeutige Treffer werden nicht geraten, sondern als `REVIEW` mit `match_conflict_flag=True` ausgewiesen. Coverage-Kategorien sind `COVERED`, `PARTIAL`, `REVIEW` und `NO_MATCH`; echte Pflichtluecken erscheinen separat in `missing_required_kpis`, nicht anwendbare KPIs in `not_applicable_kpis`.
 
+## Fundamentals Evidence / Research Backlog
+
+`src.fundamentals_evidence_engine` ergaenzt den Personal-Master um eine explizite, lokale Evidence-Schicht. Der manuelle Input `data/raw/personal_fundamentals_evidence.csv` wird validiert, normalisiert und zu `data/processed/personal_fundamentals_evidence_registry.csv`, `data/processed/personal_fundamentals_research_backlog.csv`, optionaler Summary und einem Evidence-Report verarbeitet.
+
+```powershell
+python -m src.fundamentals_evidence_engine --fundamentals-master data/raw/personal_fundamentals_master.csv --evidence-input data/raw/personal_fundamentals_evidence.csv --metric-definitions configs/fundamentals_metric_definitions.yaml --registry-output data/processed/personal_fundamentals_evidence_registry.csv --backlog-output data/processed/personal_fundamentals_research_backlog.csv --summary-output data/processed/personal_fundamentals_evidence_summary.csv --report-output reports/YYYY-MM-DD/personal_fundamentals_evidence_report.md --template-output data/raw/personal_fundamentals_evidence_template.csv
+```
+
+Leitplanken:
+
+- Die Evidence-Schicht nutzt dieselbe `company_type_profile`-/Required-KPI-Methodik wie `src.fundamentals_master`.
+- `kpi_name` muss exakt einem kanonischen KPI aus `configs/fundamentals_metric_definitions.yaml` entsprechen; es gibt keine KPI-Aliase oder fuzzy Matches.
+- Holding-Zuordnung erfolgt nur ueber exakte Ticker-/ISIN-Identitaet gegen den Personal-Master.
+- `reported_value` bleibt Evidence-Metadatum und befuellt weder automatisch den Personal-Master noch Scores.
+- Es gibt keine PDF-/Web-/API-Extraktion, keine automatische Rueckschreibung und keine Scoring-Aenderung.
+
 Der Audit-Output `data/processed/score_audit.csv` zeigt pro Titel:
 
 - verwendete Raw-KPIs
@@ -391,7 +407,9 @@ Hinweise:
 
 - `scoring` bleibt eine eigenstaendige Stage und wird nicht in `fundamentals_seed` oder `coverage` versteckt.
 - `fundamentals_seed` erzeugt nur Identity-Seed-Zeilen und erfindet keine KPI-Werte. Ein vorhandener Personal-Master wird nur mit `--overwrite-fundamentals-master` ersetzt.
+- `fundamentals_evidence` erzeugt nur Evidence-Registry, Research-Backlog, Summary und Evidence-Report; diese Stage schreibt nicht in den Personal-Master zurueck.
 - Multi-Benchmark-Stages behalten die expliziten Symbolauswahl-Regeln aus `src.multi_benchmark_performance_engine`; bei mehreren Symbolen gibt es keine stille Auswahl.
+- `history` und `performance` brauchen einen datierten Snapshot. Bei `--import-mode sample` sollte deshalb `--portfolio-date` explizit gesetzt werden.
 - Die Einzel-CLIs unten bleiben weiterhin gueltig und sind die fachlichen Modulvertraege.
 
 ## Persoenlicher Lauf
@@ -433,6 +451,8 @@ Interpretation der persoenlichen Outputs:
 - `personal_fundamentals_coverage.csv`: Match- und Coverage-Status je Holding inklusive `missing_required_kpis`, `not_applicable_kpis` und `needs_research_flag`
 - `personal_fundamentals_enriched.csv`: gematchte Holdings mit Master-Roh-KPIs, bestehenden Teil-Scores und Source-Metadaten
 - `personal_fundamentals_coverage_report.md`: Markdown-Report mit COVERED/PARTIAL/REVIEW/NO_MATCH und Research-Luecken
+- `personal_fundamentals_evidence_registry.csv`: normalisierte lokale Evidence-Zeilen je Holding/KPI/Quelle
+- `personal_fundamentals_research_backlog.csv`: operative Evidence-Luecken je Holding auf Basis der kanonischen Required-KPI-Methodik
 - `personal_portfolio_holdings_action_table.csv`: operative Holdings-Aktionen `ADD`, `HOLD`, `WATCH`, `REDUCE`, `EXIT_REVIEW`; bei uebergebener Coverage werden offene Fundamentals-Luecken konservativ als Guardrail sichtbar
 - `personal_monthly_buy_ranking.csv`: Kauf-Ranking fuer den konfigurierten Monatszufluss; bei uebergebener Coverage werden bestehende Holdings mit offenen Fundamentals-Luecken nicht fuer frisches Kapital empfohlen
 - `personal_monthly_decision_report.md`: monatlicher Entscheidungsreport mit optional eingeblendeten Fundamentals-Research-Luecken

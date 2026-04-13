@@ -13,7 +13,7 @@ Das getrackte Repo enthaelt `AGENTS.md`, `README.md`, `configs/`, `data/`, `repo
 Getrackte Kernmodule sind:
 
 - `src.import_broker`, `src.normalize_positions` und `src.traderepublic_documents` fuer read-only Import und Normalisierung lokaler Depot-/Dokumentdaten
-- `src.scoring_engine`, `src.fundamentals_engine`, `src.fundamentals_master`, `src.valuation_engine` und `src.company_master` fuer Score-, Fundamentals-, Personal-Master- und Bewertungslogik
+- `src.scoring_engine`, `src.fundamentals_engine`, `src.fundamentals_master`, `src.fundamentals_evidence_engine`, `src.valuation_engine` und `src.company_master` fuer Score-, Fundamentals-, Personal-Master-, Evidence-/Research-Backlog- und Bewertungslogik
 - `src.portfolio_rules`, `src.portfolio_review`, `src.watchlist_engine` und `src.monthly_ranking_engine` fuer Portfolio-Regeln, Holdings-Aktionen, Watchlist und Monatsranking
 - `src.build_portfolio_snapshot` und `src.build_monthly_decision_report` fuer Markdown-Reports aus verarbeiteten Artefakten
 - `src.performance_engine`, `src.benchmark_history_engine`, `src.multi_benchmark_performance_engine`, `src.portfolio_history_engine`, `src.cost_tax_engine`, `src.cost_tax_archive_engine` und `src.dashboard_engine` fuer Performance-/Benchmark-, Benchmark-Archiv-, Multi-Benchmark-, Portfolio-Historien-, Cost-/Tax-Archiv-, Cost-/Tax- und Dashboard-Artefakte
@@ -32,7 +32,7 @@ Die getrackten Tests liegen unter `tests/test_*.py` und nutzen `unittest`. Sie p
 
 1. Import: `src.import_broker` normalisiert lokale CSV- oder textbasierte Dokumentinputs in Positions-Snapshots.
 2. Scoring: `src.scoring_engine` verbindet Positionen mit Fundamentals und erzeugt Company Scores, optional Score-Audit und angereicherte Fundamentals.
-3. Personal-Master: `src.fundamentals_master` validiert lokale Personal-Fundamentals, matched Holdings konservativ und erzeugt Coverage-/Research-Gap-Artefakte.
+3. Personal-Master/Evidence: `src.fundamentals_master` validiert lokale Personal-Fundamentals, matched Holdings konservativ und erzeugt Coverage-/Research-Gap-Artefakte; `src.fundamentals_evidence_engine` validiert explizite lokale KPI-Evidence und erzeugt Registry-/Research-Backlog-Artefakte ohne Rueckschreibung in den Master.
 4. Watchlist: `src.watchlist_engine` kombiniert Watchlist-Kandidaten mit Scores.
 5. Monatsranking: `src.monthly_ranking_engine` erzeugt Monatsranking und Rebalance-Vorschlaege aus Positionen, Scores, Watchlist und Portfolio-Regeln.
 6. Reports: `src.build_portfolio_snapshot` und `src.build_monthly_decision_report` erzeugen Markdown aus verarbeiteten Artefakten.

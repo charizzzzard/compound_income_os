@@ -8,6 +8,7 @@ from pathlib import Path
 
 from src.benchmark_history_engine import BENCHMARK_ARCHIVE_FIELDS, BENCHMARK_REGISTRY_FIELDS
 from src.common import read_csv_rows
+from src.fundamentals_evidence_engine import EVIDENCE_INPUT_FIELDS
 from src.personal_run_engine import PersonalRunOptions, run_personal_run_engine
 
 
@@ -106,6 +107,9 @@ class PersonalRunEngineTests(unittest.TestCase):
             ],
         )
 
+    def _write_empty_evidence(self, path: Path) -> None:
+        self._write_csv(path, EVIDENCE_INPUT_FIELDS, [])
+
     def _archive_row(self, symbol: str, point_date: str, value: str, name: str | None = None) -> dict[str, str]:
         row = {field: "" for field in BENCHMARK_ARCHIVE_FIELDS}
         row.update(
@@ -170,6 +174,12 @@ class PersonalRunEngineTests(unittest.TestCase):
             coverage_output=str(self._path(f"_tmp_{prefix}_coverage.csv")),
             fundamentals_enriched_output=str(self._path(f"_tmp_{prefix}_enriched.csv")),
             fundamentals_coverage_report_output=str(self._path(f"_tmp_{prefix}_coverage_report.md")),
+            fundamentals_evidence_input=str(self._path(f"_tmp_{prefix}_evidence_input.csv")),
+            fundamentals_evidence_registry_output=str(self._path(f"_tmp_{prefix}_evidence_registry.csv")),
+            fundamentals_research_backlog_output=str(self._path(f"_tmp_{prefix}_research_backlog.csv")),
+            fundamentals_evidence_summary_output=str(self._path(f"_tmp_{prefix}_evidence_summary.csv")),
+            fundamentals_evidence_template_output=str(self._path(f"_tmp_{prefix}_evidence_template.csv")),
+            fundamentals_evidence_report_output=str(self._path(f"_tmp_{prefix}_evidence_report.md")),
             watchlist_output=str(self._path(f"_tmp_{prefix}_watchlist_ranked.csv")),
             watchlist_report_output=str(self._path(f"_tmp_{prefix}_watchlist_report.md")),
             monthly_ranking_output=str(self._path(f"_tmp_{prefix}_monthly_ranking.csv")),
@@ -243,6 +253,20 @@ class PersonalRunEngineTests(unittest.TestCase):
         statuses = {row["stage_name"]: row["status"] for row in manifest_on_disk["stage_results"]}
         self.assertEqual(statuses["cost_tax"], "NOT_REQUESTED")
         self.assertEqual(statuses["scoring"], "SUCCESS")
+
+    def test_fundamentals_evidence_stage_updates_manifest_and_artifacts(self) -> None:
+        options = self._core_options("evidence_stage", ["import", "fundamentals_seed", "fundamentals_evidence"])
+        self._write_empty_evidence(Path(options.fundamentals_evidence_input))
+
+        manifest = run_personal_run_engine(options)
+
+        artifact_rows = read_csv_rows(options.artifacts_output)
+        statuses = {row["stage_name"]: row["status"] for row in manifest["stage_results"]}
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(statuses["fundamentals_evidence"], "SUCCESS")
+        self.assertTrue(Path(options.fundamentals_evidence_registry_output).exists())
+        self.assertTrue(Path(options.fundamentals_research_backlog_output).exists())
+        self.assertIn("fundamentals_evidence", {row["stage_name"] for row in artifact_rows if row["produced"] == "True"})
 
     def test_history_and_performance_run_uses_existing_single_benchmark_method(self) -> None:
         options = self._core_options("history_perf", ["import", "history", "performance"])

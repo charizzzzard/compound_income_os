@@ -29,6 +29,14 @@ from src.fundamentals_master import (
     validate_personal_fundamentals_master,
     write_coverage_report,
 )
+from src.fundamentals_evidence_engine import (
+    DEFAULT_BACKLOG_OUTPUT,
+    DEFAULT_EVIDENCE_INPUT_PATH,
+    DEFAULT_EVIDENCE_TEMPLATE_PATH,
+    DEFAULT_REGISTRY_OUTPUT,
+    DEFAULT_SUMMARY_OUTPUT as DEFAULT_EVIDENCE_SUMMARY_OUTPUT,
+    run_fundamentals_evidence_engine,
+)
 from src.multi_benchmark_performance_engine import run_multi_benchmark_performance_engine
 from src.performance_engine import run_performance_engine
 from src.portfolio_history_engine import run_portfolio_history_engine
@@ -44,6 +52,7 @@ STAGE_ORDER = [
     "fundamentals_seed",
     "scoring",
     "coverage",
+    "fundamentals_evidence",
     "watchlist",
     "monthly",
     "portfolio_review",
@@ -64,6 +73,11 @@ DEFAULT_PATHS = {
     "score_audit_output": "data/processed/personal_score_audit.csv",
     "coverage_output": "data/processed/personal_fundamentals_coverage.csv",
     "fundamentals_enriched_output": "data/processed/personal_fundamentals_enriched.csv",
+    "fundamentals_evidence_input": DEFAULT_EVIDENCE_INPUT_PATH,
+    "fundamentals_evidence_registry_output": DEFAULT_REGISTRY_OUTPUT,
+    "fundamentals_research_backlog_output": DEFAULT_BACKLOG_OUTPUT,
+    "fundamentals_evidence_summary_output": DEFAULT_EVIDENCE_SUMMARY_OUTPUT,
+    "fundamentals_evidence_template_output": DEFAULT_EVIDENCE_TEMPLATE_PATH,
     "watchlist_output": "data/processed/personal_watchlist_ranked.csv",
     "watchlist_report_output": "reports/sample/personal_watchlist_report.md",
     "monthly_ranking_output": "data/processed/personal_monthly_buy_ranking.csv",
@@ -140,6 +154,12 @@ class PersonalRunOptions:
     coverage_output: str = DEFAULT_PATHS["coverage_output"]
     fundamentals_enriched_output: str = DEFAULT_PATHS["fundamentals_enriched_output"]
     fundamentals_coverage_report_output: str | None = None
+    fundamentals_evidence_input: str = DEFAULT_PATHS["fundamentals_evidence_input"]
+    fundamentals_evidence_registry_output: str = DEFAULT_PATHS["fundamentals_evidence_registry_output"]
+    fundamentals_research_backlog_output: str = DEFAULT_PATHS["fundamentals_research_backlog_output"]
+    fundamentals_evidence_summary_output: str = DEFAULT_PATHS["fundamentals_evidence_summary_output"]
+    fundamentals_evidence_template_output: str = DEFAULT_PATHS["fundamentals_evidence_template_output"]
+    fundamentals_evidence_report_output: str | None = None
     watchlist_input: str | None = None
     watchlist_output: str = DEFAULT_PATHS["watchlist_output"]
     watchlist_report_output: str = DEFAULT_PATHS["watchlist_report_output"]
@@ -191,6 +211,8 @@ class PersonalRunOptions:
         self.cost_tax_documents = [str(path).strip() for path in (self.cost_tax_documents or []) if str(path).strip()]
         if self.fundamentals_coverage_report_output is None:
             self.fundamentals_coverage_report_output = default_dated_report_path("personal_fundamentals_coverage_report.md")
+        if self.fundamentals_evidence_report_output is None:
+            self.fundamentals_evidence_report_output = default_dated_report_path("personal_fundamentals_evidence_report.md")
         if self.portfolio_history_report_output is None:
             self.portfolio_history_report_output = default_dated_report_path("portfolio_history_report.md")
         if self.benchmark_history_report_output is None:
@@ -266,6 +288,7 @@ def input_snapshot(options: PersonalRunOptions) -> dict[str, Any]:
         "portfolio_date": options.portfolio_date or "",
         "positions_output": options.positions_output,
         "fundamentals_master": options.fundamentals_master,
+        "fundamentals_evidence_input": options.fundamentals_evidence_input,
         "watchlist_input": options.watchlist_input or "",
         "benchmark_input": options.benchmark_input or "",
         "benchmark_config": options.benchmark_config,
@@ -382,6 +405,30 @@ def run_coverage_stage(options: PersonalRunOptions) -> StageResult:
         },
         warnings=warnings,
         notes="Personal fundamentals coverage and research gaps generated from the local master.",
+    )
+
+
+def run_fundamentals_evidence_stage(options: PersonalRunOptions) -> StageResult:
+    stage = "fundamentals_evidence"
+    fundamentals_path = require_existing_path(options.fundamentals_master, "personal fundamentals master", stage)
+    evidence_path = require_existing_path(options.fundamentals_evidence_input, "personal fundamentals evidence input", stage)
+    outputs = run_fundamentals_evidence_engine(
+        fundamentals_master_path=fundamentals_path,
+        evidence_input_path=evidence_path,
+        metric_definitions_path=options.metric_definitions,
+        registry_output=options.fundamentals_evidence_registry_output,
+        backlog_output=options.fundamentals_research_backlog_output,
+        summary_output=options.fundamentals_evidence_summary_output,
+        report_output=options.fundamentals_evidence_report_output,
+        template_output=options.fundamentals_evidence_template_output,
+    )
+    return stage_result(
+        stage,
+        SUCCESS,
+        ["fundamentals_master", "fundamentals_evidence_input"],
+        used_inputs={"fundamentals_master": fundamentals_path, "fundamentals_evidence_input": evidence_path},
+        produced_outputs={role: str(path) for role, path in outputs.items()},
+        notes="Personal fundamentals evidence registry and research backlog generated; master and scores were not modified.",
     )
 
 
@@ -699,6 +746,7 @@ STAGE_RUNNERS: dict[str, Callable[[PersonalRunOptions], StageResult]] = {
     "fundamentals_seed": run_fundamentals_seed_stage,
     "scoring": run_scoring_stage,
     "coverage": run_coverage_stage,
+    "fundamentals_evidence": run_fundamentals_evidence_stage,
     "watchlist": run_watchlist_stage,
     "monthly": run_monthly_stage,
     "portfolio_review": run_portfolio_review_stage,
@@ -970,6 +1018,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--coverage-output", default=DEFAULT_PATHS["coverage_output"], help="Personal fundamentals coverage output.")
     parser.add_argument("--fundamentals-enriched-output", default=DEFAULT_PATHS["fundamentals_enriched_output"], help="Personal enriched fundamentals output.")
     parser.add_argument("--fundamentals-coverage-report-output", help="Personal fundamentals coverage markdown report output.")
+    parser.add_argument("--fundamentals-evidence-input", default=DEFAULT_PATHS["fundamentals_evidence_input"], help="Manual personal fundamentals evidence input.")
+    parser.add_argument("--fundamentals-evidence-registry-output", default=DEFAULT_PATHS["fundamentals_evidence_registry_output"], help="Personal fundamentals evidence registry output.")
+    parser.add_argument("--fundamentals-research-backlog-output", default=DEFAULT_PATHS["fundamentals_research_backlog_output"], help="Personal fundamentals research backlog output.")
+    parser.add_argument("--fundamentals-evidence-summary-output", default=DEFAULT_PATHS["fundamentals_evidence_summary_output"], help="Personal fundamentals evidence summary output.")
+    parser.add_argument("--fundamentals-evidence-template-output", default=DEFAULT_PATHS["fundamentals_evidence_template_output"], help="Personal fundamentals evidence template output.")
+    parser.add_argument("--fundamentals-evidence-report-output", help="Personal fundamentals evidence markdown report output.")
     parser.add_argument("--watchlist-input", help="Watchlist CSV input.")
     parser.add_argument("--watchlist-output", default=DEFAULT_PATHS["watchlist_output"], help="Ranked personal watchlist output.")
     parser.add_argument("--watchlist-report-output", default=DEFAULT_PATHS["watchlist_report_output"], help="Watchlist markdown report output.")
@@ -1035,6 +1089,12 @@ def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
         coverage_output=args.coverage_output,
         fundamentals_enriched_output=args.fundamentals_enriched_output,
         fundamentals_coverage_report_output=args.fundamentals_coverage_report_output,
+        fundamentals_evidence_input=args.fundamentals_evidence_input,
+        fundamentals_evidence_registry_output=args.fundamentals_evidence_registry_output,
+        fundamentals_research_backlog_output=args.fundamentals_research_backlog_output,
+        fundamentals_evidence_summary_output=args.fundamentals_evidence_summary_output,
+        fundamentals_evidence_template_output=args.fundamentals_evidence_template_output,
+        fundamentals_evidence_report_output=args.fundamentals_evidence_report_output,
         watchlist_input=args.watchlist_input,
         watchlist_output=args.watchlist_output,
         watchlist_report_output=args.watchlist_report_output,
