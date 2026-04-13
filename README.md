@@ -212,17 +212,38 @@ Benchmark-Konfiguration und CSV-Schema:
 - Ohne FX-Layer wird bei Waehrungsabweichung explizit `CURRENCY_MISMATCH` gesetzt
 - Wenn der letzte verwendbare Benchmark-Punkt gegenueber dem Portfolio-as-of um mindestens 2 Kalendertage hinterherhaengt, wird der Lauf nicht hart abgebrochen, aber explizit als `STALE_BENCHMARK` markiert.
 
+Persistentes Benchmark-Archiv:
+
+- `src.benchmark_history_engine` normalisiert explizite lokale Benchmark-Zeitreihen mit der bestehenden Benchmark-Normalisierung aus `src.performance_engine`.
+- Das Archiv `data/processed/benchmark_timeseries_archive.csv` kann mehrere Benchmark-Symbole halten.
+- Die starke Archiv-Identitaet ist `benchmark_symbol` + `date`. Identische normalisierte Zeilen sind idempotent; dieselbe Identitaet mit abweichenden Werten wird hart abgewiesen.
+- Symbolweite Metadaten wie `benchmark_name`, `currency` und `benchmark_return_basis_used` duerfen pro Symbol nicht still driften.
+- `data/processed/benchmark_registry.csv` fasst pro Symbol `first_date`, `last_date`, `points_count`, Return-Basis, Source und Datenqualitaet zusammen.
+- `data/processed/benchmark_timeseries_normalized.csv` bleibt fuer `src.performance_engine` eine explizit ausgewaehlte Einzelreihe im bestehenden `BENCHMARK_NORMALIZED_FIELDS`-Format. Bei mehreren Symbolen ist `--benchmark-symbol` Pflicht.
+- Es gibt keine externe API, keine FX-Schicht, keine Interpolation und keine Auffuellung fehlender Benchmark-Punkte.
+
 Neue Artefakte:
 
+- `data/processed/benchmark_timeseries_archive.csv`
+- `data/processed/benchmark_registry.csv`
 - `data/processed/benchmark_timeseries_normalized.csv`
+- optional `data/processed/benchmark_archive_summary.csv`
 - `data/processed/portfolio_snapshot_archive.csv`
 - `data/processed/portfolio_timeseries.csv`
 - `data/processed/portfolio_history_summary.csv`
 - `data/processed/performance_summary.csv`
 - `data/processed/performance_comparison.csv`
 - `data/processed/performance_kpis.csv`
+- optional `reports/YYYY-MM-DD/benchmark_history_report.md`
 - `reports/YYYY-MM-DD/portfolio_history_report.md`
 - `reports/YYYY-MM-DD/performance_report.md`
+
+Benchmark-Archiv bauen und Performance mit der ausgewaehlten Reihe ausfuehren:
+
+```powershell
+python -m src.benchmark_history_engine --benchmark-input data/raw/sample_benchmark_timeseries.csv --benchmark-config configs/benchmark.yaml --archive data/processed/benchmark_timeseries_archive.csv --archive-output data/processed/benchmark_timeseries_archive.csv --normalized-output data/processed/benchmark_timeseries_normalized.csv --registry-output data/processed/benchmark_registry.csv --archive-summary-output data/processed/benchmark_archive_summary.csv --report-output reports/YYYY-MM-DD/benchmark_history_report.md --benchmark-symbol SAMPLE_WORLD_TR_EUR
+python -m src.performance_engine --positions data/processed/personal_positions_snapshot.csv --portfolio-timeseries data/processed/portfolio_timeseries.csv --benchmark data/processed/benchmark_timeseries_normalized.csv --benchmark-config configs/benchmark.yaml --comparison-output data/processed/performance_comparison.csv --kpi-output data/processed/performance_kpis.csv --report-output reports/sample/performance_report.md
+```
 
 Snapshot-Only-Beispiel:
 
