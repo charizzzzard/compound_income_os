@@ -1,14 +1,67 @@
 from __future__ import annotations
 
+import csv
+import subprocess
 import unittest
 from pathlib import Path
 import json
 
+from src.common import read_csv_rows
+from src.fundamentals_master import COVERAGE_OUTPUT_FIELDS
 from src.monthly_ranking_engine import build_monthly_ranking
 from src.portfolio_rules import load_portfolio_rules
 
 
 class MonthlyRankingEngineTests(unittest.TestCase):
+    def write_csv(self, path: Path, fieldnames: list[str], rows: list[dict[str, object]]) -> None:
+        with path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fieldnames)
+            writer.writeheader()
+            for row in rows:
+                writer.writerow(row)
+
+    def eligible_holding_fixture(self) -> tuple[list[dict[str, str]], list[dict[str, str]], list[dict[str, str]]]:
+        positions = [
+            {"ticker": "AAA", "company_name": "AAA", "asset_type": "STOCK", "sleeve": "SINGLE_STOCK", "sector": "Tech", "market_value_eur": "200"},
+            {"ticker": "BBB", "company_name": "BBB", "asset_type": "STOCK", "sleeve": "SINGLE_STOCK", "sector": "Health", "market_value_eur": "200"},
+            {"ticker": "EUR-CASH", "company_name": "Cash", "asset_type": "CASH", "sleeve": "CASH", "sector": "Cash", "market_value_eur": "5000"},
+        ]
+        scores = [
+            {
+                "ticker": "AAA",
+                "company_name": "AAA",
+                "sector": "Tech",
+                "sleeve": "SINGLE_STOCK",
+                "held_in_portfolio": "true",
+                "business_score": "85",
+                "valuation_score": "70",
+                "buy_score": "80",
+                "margin_of_safety_pct": "10",
+                "classification": "HOLD",
+                "has_hard_risk_flag": "false",
+                "data_quality_flag": "OK",
+                "valuation_comment": "Attractive.",
+                "mandate_fit_score": "90",
+            },
+            {
+                "ticker": "BBB",
+                "company_name": "BBB",
+                "sector": "Health",
+                "sleeve": "SINGLE_STOCK",
+                "held_in_portfolio": "true",
+                "business_score": "84",
+                "valuation_score": "70",
+                "buy_score": "79",
+                "margin_of_safety_pct": "10",
+                "classification": "HOLD",
+                "has_hard_risk_flag": "false",
+                "data_quality_flag": "OK",
+                "valuation_comment": "Attractive.",
+                "mandate_fit_score": "90",
+            },
+        ]
+        return positions, scores, []
+
     def test_hold_cash_logic_when_no_candidate_is_buyable(self) -> None:
         positions = [
             {"ticker": "EUR-CASH", "company_name": "Cash", "asset_type": "CASH", "sleeve": "CASH", "sector": "Cash", "market_value_eur": "2000"},
@@ -164,6 +217,127 @@ class MonthlyRankingEngineTests(unittest.TestCase):
         ranking, _ = build_monthly_ranking(positions, scores, [])
         self.assertEqual(ranking[0]["target_action"], "TOP_UP")
         self.assertEqual(ranking[0]["suggested_buy_amount_eur"], 127.2)
+
+    def test_coverage_review_and_no_match_block_existing_holdings_for_top_up(self) -> None:
+        positions, scores, watchlist = self.eligible_holding_fixture()
+        coverage = [
+            {"ticker": "AAA", "match_status": "REVIEW", "match_method": "COMPANY_NAME", "missing_required_kpis": "", "needs_research_flag": "False"},
+            {"ticker": "BBB", "match_status": "NO_MATCH", "match_method": "NO_MATCH", "missing_required_kpis": "", "needs_research_flag": "True"},
+        ]
+        ranking, _ = build_monthly_ranking(positions, scores, watchlist, coverage_rows=coverage)
+        indexed = {row["ticker"]: row for row in ranking}
+        self.assertEqual(indexed["AAA"]["target_action"], "DO_NOT_BUY")
+        self.assertEqual(indexed["AAA"]["allocation_status"], "NOT_ELIGIBLE")
+        self.assertEqual(indexed["AAA"]["suggested_buy_amount_eur"], 0.0)
+        self.assertIn("fundamentals_coverage_guardrail=AKTIV", indexed["AAA"]["constraint_checks"])
+        self.assertIn("status=REVIEW", indexed["AAA"]["constraint_checks"])
+        self.assertEqual(indexed["BBB"]["target_action"], "DO_NOT_BUY")
+        self.assertEqual(indexed["BBB"]["suggested_buy_amount_eur"], 0.0)
+        self.assertIn("status=NO_MATCH", indexed["BBB"]["constraint_checks"])
+
+    def test_coverage_research_flag_and_missing_required_block_existing_holding_for_top_up(self) -> None:
+        positions, scores, watchlist = self.eligible_holding_fixture()
+        coverage = [
+            {"ticker": "AAA", "match_status": "COVERED", "match_method": "ISIN", "missing_required_kpis": "", "needs_research_flag": "True"},
+            {"ticker": "BBB", "match_status": "COVERED", "match_method": "ISIN", "missing_required_kpis": "roic|fcf_margin", "needs_research_flag": "False"},
+        ]
+        ranking, _ = build_monthly_ranking(positions, scores, watchlist, coverage_rows=coverage)
+        indexed = {row["ticker"]: row for row in ranking}
+        self.assertEqual(indexed["AAA"]["target_action"], "DO_NOT_BUY")
+        self.assertEqual(indexed["AAA"]["allocation_status"], "NOT_ELIGIBLE")
+        self.assertEqual(indexed["AAA"]["suggested_buy_amount_eur"], 0.0)
+        self.assertIn("needs_research=True", indexed["AAA"]["constraint_checks"])
+        self.assertEqual(indexed["BBB"]["target_action"], "DO_NOT_BUY")
+        self.assertEqual(indexed["BBB"]["allocation_status"], "NOT_ELIGIBLE")
+        self.assertEqual(indexed["BBB"]["suggested_buy_amount_eur"], 0.0)
+        self.assertIn("missing_required=roic|fcf_margin", indexed["BBB"]["constraint_checks"])
+
+    def test_coverage_guardrail_does_not_block_external_watchlist_candidate(self) -> None:
+        positions = [
+            {"ticker": "EUR-CASH", "company_name": "Cash", "asset_type": "CASH", "sleeve": "CASH", "sector": "Cash", "market_value_eur": "5000"},
+        ]
+        scores = [
+            {
+                "ticker": "AAA",
+                "company_name": "Alpha",
+                "sector": "Tech",
+                "sleeve": "SINGLE_STOCK",
+                "held_in_portfolio": "false",
+                "business_score": "85",
+                "valuation_score": "70",
+                "buy_score": "80",
+                "margin_of_safety_pct": "10",
+                "classification": "BUY_CANDIDATE",
+                "has_hard_risk_flag": "false",
+                "data_quality_flag": "OK",
+                "valuation_comment": "Attractive.",
+                "mandate_fit_score": "90",
+            }
+        ]
+        watchlist = [{"ticker": "AAA", "company_name": "Alpha", "sector": "Tech", "sleeve": "SINGLE_STOCK", "status": "QUALITY_COMPOUNDER_CANDIDATE", "mandate_fit_comment": "Good fit."}]
+        coverage = [{"ticker": "AAA", "match_status": "NO_MATCH", "match_method": "NO_MATCH", "missing_required_kpis": "", "needs_research_flag": "True"}]
+        ranking, _ = build_monthly_ranking(positions, scores, watchlist, coverage_rows=coverage)
+        self.assertEqual(ranking[0]["ticker"], "AAA")
+        self.assertEqual(ranking[0]["target_action"], "BUY")
+        self.assertEqual(ranking[0]["allocation_status"], "SELECTED_THIS_MONTH")
+        self.assertNotIn("fundamentals_coverage_guardrail", ranking[0]["constraint_checks"])
+
+    def test_header_only_coverage_file_is_accepted_and_leaves_ranking_unchanged(self) -> None:
+        positions, scores, watchlist = self.eligible_holding_fixture()
+        coverage_path = Path("tests") / "_tmp_monthly_header_only_coverage.csv"
+        try:
+            self.write_csv(coverage_path, COVERAGE_OUTPUT_FIELDS, [])
+            baseline, _ = build_monthly_ranking(positions, scores, watchlist)
+            result = subprocess.run(
+                [
+                    "python",
+                    "-m",
+                    "src.monthly_ranking_engine",
+                    "--positions",
+                    str(self.write_fixture_csv("positions", positions)),
+                    "--scores",
+                    str(self.write_fixture_csv("scores", scores)),
+                    "--watchlist",
+                    str(self.write_fixture_csv("watchlist", watchlist, fieldnames=["ticker"])),
+                    "--coverage",
+                    str(coverage_path),
+                    "--output",
+                    str(Path("tests") / "_tmp_monthly_header_only_ranking.csv"),
+                    "--rebalance-output",
+                    str(Path("tests") / "_tmp_monthly_header_only_rebalance.csv"),
+                ],
+                cwd=Path.cwd(),
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            output_rows = read_csv_rows(Path("tests") / "_tmp_monthly_header_only_ranking.csv")
+            self.assertEqual(output_rows[0]["ticker"], baseline[0]["ticker"])
+            self.assertEqual(output_rows[0]["target_action"], baseline[0]["target_action"])
+        finally:
+            for path in [
+                coverage_path,
+                Path("tests") / "_tmp_monthly_positions.csv",
+                Path("tests") / "_tmp_monthly_scores.csv",
+                Path("tests") / "_tmp_monthly_watchlist.csv",
+                Path("tests") / "_tmp_monthly_header_only_ranking.csv",
+                Path("tests") / "_tmp_monthly_header_only_rebalance.csv",
+            ]:
+                if path.exists():
+                    path.unlink()
+
+    def write_fixture_csv(self, kind: str, rows: list[dict[str, str]], fieldnames: list[str] | None = None) -> Path:
+        path = Path("tests") / f"_tmp_monthly_{kind}.csv"
+        if fieldnames is None:
+            fieldnames = list(rows[0].keys()) if rows else ["ticker"]
+        self.write_csv(path, fieldnames, rows)
+        return path
+
+    def test_incomplete_coverage_rows_are_rejected(self) -> None:
+        positions, scores, watchlist = self.eligible_holding_fixture()
+        bad_coverage = [{"ticker": "AAA", "match_status": "REVIEW", "needs_research_flag": "True"}]
+        with self.assertRaisesRegex(ValueError, "coverage input missing required columns: .*match_method"):
+            build_monthly_ranking(positions, scores, watchlist, coverage_rows=bad_coverage)
 
     def test_isin_matched_pdf_holding_is_ranked_as_top_up(self) -> None:
         positions = [

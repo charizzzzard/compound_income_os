@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import argparse
+import csv
 from typing import Any
 
-from src.common import canonicalize_ticker, read_csv_rows, require_columns, require_unique_tickers, round2, to_bool, to_float, write_csv_rows
+from src.common import canonicalize_ticker, read_csv_rows, require_columns, require_unique_tickers, resolve_repo_path, round2, safe_upper, to_bool, to_float, write_csv_rows
 from src.portfolio_rules import (
     aggregate_positions_by_ticker,
     allocation_summary,
@@ -15,6 +16,13 @@ from src.portfolio_rules import (
 from src.scoring_engine import evaluate_purchase_readiness
 
 DEFAULT_RULES_PATH = "configs/portfolio_rules.yaml"
+COVERAGE_REQUIRED_COLUMNS = [
+    "ticker",
+    "match_status",
+    "match_method",
+    "missing_required_kpis",
+    "needs_research_flag",
+]
 PURCHASE_STATE_LABELS = {
     "BUYABLE": "KAUFBAR",
     "TOO_EXPENSIVE": "ZU_TEUER",
@@ -60,6 +68,80 @@ def positions_index_by_ticker(rows: list[dict[str, str]]) -> dict[str, dict[str,
             if key:
                 index[key] = row
     return index
+
+
+def coverage_identity_keys(row: dict[str, Any]) -> list[str]:
+    keys: list[str] = []
+    for field_name in ("ticker", "matched_ticker"):
+        ticker = canonicalize_ticker(row.get(field_name, ""))
+        if ticker:
+            keys.append(ticker)
+    for field_name in ("isin", "matched_isin"):
+        isin = str(row.get(field_name, "")).strip().upper()
+        if isin:
+            keys.append(isin)
+    return list(dict.fromkeys(keys))
+
+
+def build_coverage_index(rows: list[dict[str, Any]] | None, source_name: str = "coverage input") -> dict[str, dict[str, Any]]:
+    if not rows:
+        return {}
+    require_columns(rows, COVERAGE_REQUIRED_COLUMNS, source_name)
+    index: dict[str, dict[str, Any]] = {}
+    duplicates: set[str] = set()
+    for row in rows:
+        for key in coverage_identity_keys(row):
+            if key in index and index[key] is not row:
+                duplicates.add(key)
+                continue
+            index[key] = row
+    if duplicates:
+        duplicate_text = ", ".join(sorted(duplicates))
+        raise ValueError(f"{source_name} contains duplicate identifiers: {duplicate_text}")
+    return index
+
+
+def find_coverage_row(
+    position_row: dict[str, str],
+    candidate: dict[str, str],
+    score_row: dict[str, str],
+    coverage_index: dict[str, dict[str, Any]],
+) -> dict[str, Any] | None:
+    lookup_keys: list[str] = []
+    for row in (score_row, candidate, position_row):
+        ticker = canonicalize_ticker(row.get("ticker", ""))
+        isin = str(row.get("isin", "")).strip().upper()
+        if ticker:
+            lookup_keys.append(ticker)
+        if isin:
+            lookup_keys.append(isin)
+    for key in dict.fromkeys(lookup_keys):
+        if key in coverage_index:
+            return coverage_index[key]
+    return None
+
+
+def coverage_guardrail_applies(coverage_row: dict[str, Any] | None) -> bool:
+    if not coverage_row:
+        return False
+    status = safe_upper(coverage_row.get("match_status"))
+    return (
+        status in {"REVIEW", "NO_MATCH"}
+        or to_bool(coverage_row.get("needs_research_flag"))
+        or bool(str(coverage_row.get("missing_required_kpis", "")).strip())
+    )
+
+
+def read_coverage_rows(path_value: str) -> list[dict[str, str]]:
+    path = resolve_repo_path(path_value)
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        fieldnames = reader.fieldnames or []
+        missing = [column for column in COVERAGE_REQUIRED_COLUMNS if column not in fieldnames]
+        if missing:
+            missing_text = ", ".join(sorted(missing))
+            raise ValueError(f"coverage CSV ({path_value}) missing required columns: {missing_text}")
+        return list(reader)
 
 
 def find_position_row(
@@ -131,6 +213,7 @@ def evaluate_candidate(
     rules: dict[str, Any],
     budget: float,
     total_assets: float,
+    coverage_index: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     ticker = canonicalize_ticker(score_row.get("ticker") or candidate.get("ticker"))
     company_name = str(candidate.get("company_name") or score_row.get("company_name") or ticker)
@@ -160,6 +243,10 @@ def evaluate_candidate(
     data_ok = bool(purchase_readiness["data_ok"])
     purchase_state = str(purchase_readiness["purchase_state"])
     eligible = bool(purchase_readiness["eligible_for_purchase"]) and position_cap_ok
+    coverage_row = find_coverage_row(position_row, candidate, score_row, coverage_index or {}) if current_value > 0.0 else None
+    coverage_blocked = coverage_guardrail_applies(coverage_row)
+    if coverage_blocked:
+        eligible = False
 
     target_action = "TOP_UP" if current_value > 0.0 else "BUY"
     if not eligible:
@@ -180,6 +267,18 @@ def evaluate_candidate(
             f"allowed_amount_eur={round2(allowed_amount)}",
         ]
     )
+    if coverage_blocked:
+        assert coverage_row is not None
+        status = safe_upper(coverage_row.get("match_status")) or "UNKNOWN"
+        method = safe_upper(coverage_row.get("match_method")) or "UNKNOWN"
+        missing_required = str(coverage_row.get("missing_required_kpis", "")).strip() or "keine"
+        needs_research = to_bool(coverage_row.get("needs_research_flag"))
+        constraint_checks = (
+            f"{constraint_checks}; fundamentals_coverage_guardrail=AKTIV "
+            f"status={status} method={method} missing_required={missing_required} "
+            f"needs_research={needs_research}"
+        )
+        rationale = f"{rationale} Fundamentals-Coverage-Guardrail blockiert frisches Kapital fuer bestehende Holding."
 
     return {
         "ticker": ticker,
@@ -253,12 +352,15 @@ def build_monthly_ranking(
     rules_path: str = DEFAULT_RULES_PATH,
     score_source_name: str = "scores input",
     watchlist_source_name: str = "watchlist input",
+    coverage_rows: list[dict[str, Any]] | None = None,
+    coverage_source_name: str = "coverage input",
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     rules = load_portfolio_rules(rules_path)
     require_unique_tickers(score_rows, score_source_name)
     require_unique_tickers(watchlist_rows, watchlist_source_name)
     positions_index = positions_index_by_ticker(positions_rows)
     scores_index = index_by_ticker(score_rows)
+    coverage_index = build_coverage_index(coverage_rows, coverage_source_name)
     candidates = build_candidate_rows(score_rows, watchlist_rows)
     total_assets = compute_total_assets(positions_rows)
     current_cash = compute_cash_value(positions_rows)
@@ -285,6 +387,7 @@ def build_monthly_ranking(
                 rules,
                 available_budget,
                 total_assets,
+                coverage_index,
             )
         )
 
@@ -371,6 +474,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--scores", required=True, help="Company scores CSV.")
     parser.add_argument("--watchlist", required=True, help="Ranked watchlist CSV.")
     parser.add_argument("--output", required=True, help="Monthly ranking CSV output.")
+    parser.add_argument("--coverage", help="Optional personal fundamentals coverage CSV.")
     parser.add_argument("--rebalance-output", default="data/processed/rebalance_proposals.csv", help="Rebalance CSV output.")
     parser.add_argument("--rules", default=DEFAULT_RULES_PATH, help="Portfolio rules config path.")
     return parser.parse_args()
@@ -381,6 +485,7 @@ def main() -> None:
     positions_rows = read_csv_rows(args.positions)
     score_rows = read_csv_rows(args.scores)
     watchlist_rows = read_csv_rows(args.watchlist)
+    coverage_rows = read_coverage_rows(args.coverage) if args.coverage else None
     require_columns(
         positions_rows,
         ["ticker", "market_value_eur", "asset_type", "sleeve", "sector"],
@@ -400,6 +505,8 @@ def main() -> None:
         args.rules,
         f"scores CSV ({args.scores})",
         f"watchlist CSV ({args.watchlist})",
+        coverage_rows,
+        f"coverage CSV ({args.coverage})",
     )
     cleaned_ranking = [{key: row.get(key, "") for key in OUTPUT_FIELDS} for row in ranking]
     write_csv_rows(args.output, OUTPUT_FIELDS, cleaned_ranking)
