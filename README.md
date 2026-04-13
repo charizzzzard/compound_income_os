@@ -169,6 +169,20 @@ Wichtige Abgrenzung:
 - `avg_cost`, `cost_basis_eur` und `unrealized_pnl_eur` ersetzen keine historische Performance-Zeitreihe.
 - Kosten, Steuern, FX-Konvertierung, TWR und IRR sind nicht Teil von Phase 2B.
 
+Historisches Snapshot-Archiv:
+
+- `src.portfolio_history_engine` baut aus expliziten Positions-Snapshots ein persistentes `data/processed/portfolio_snapshot_archive.csv`.
+- Daraus wird eine normalisierte `data/processed/portfolio_timeseries.csv` im Format von `src.performance_engine` erzeugt.
+- Pro Datum wird nur ein Archivpunkt akzeptiert. Ein identischer Wiederholungslauf ist idempotent; abweichende Werte fuer ein bereits archiviertes Datum werden hart abgewiesen.
+- Es werden keine Zwischenpunkte, externen Cashflows, TWR/IRR-Werte oder nicht belegte Historie rekonstruiert.
+
+Snapshot historisieren und anschliessend Performance ausfuehren:
+
+```powershell
+python -m src.portfolio_history_engine --positions data/processed/personal_positions_snapshot.csv --archive data/processed/portfolio_snapshot_archive.csv --archive-output data/processed/portfolio_snapshot_archive.csv --timeseries-output data/processed/portfolio_timeseries.csv --summary-output data/processed/portfolio_history_summary.csv --report-output reports/YYYY-MM-DD/portfolio_history_report.md
+python -m src.performance_engine --positions data/processed/personal_positions_snapshot.csv --portfolio-timeseries data/processed/portfolio_timeseries.csv --benchmark data/raw/sample_benchmark_timeseries.csv --benchmark-config configs/benchmark.yaml --comparison-output data/processed/performance_comparison.csv --kpi-output data/processed/performance_kpis.csv --report-output reports/sample/performance_report.md
+```
+
 Verfuegbare Datenmodi:
 
 - `SNAPSHOT_ONLY`: nur ein belastbarer Portfolio-Zeitpunkt, keine Periodenrendite, keine Drawdown-/Volatilitaetsmetriken
@@ -194,10 +208,13 @@ Benchmark-Konfiguration und CSV-Schema:
 Neue Artefakte:
 
 - `data/processed/benchmark_timeseries_normalized.csv`
+- `data/processed/portfolio_snapshot_archive.csv`
 - `data/processed/portfolio_timeseries.csv`
+- `data/processed/portfolio_history_summary.csv`
 - `data/processed/performance_summary.csv`
 - `data/processed/performance_comparison.csv`
 - `data/processed/performance_kpis.csv`
+- `reports/YYYY-MM-DD/portfolio_history_report.md`
 - `reports/YYYY-MM-DD/performance_report.md`
 
 Snapshot-Only-Beispiel:
