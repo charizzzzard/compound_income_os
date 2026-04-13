@@ -371,6 +371,29 @@ Sample-CLI:
 python -m src.dashboard_engine --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --holdings data/processed/personal_portfolio_holdings_action_table.csv --score-audit data/processed/personal_score_audit.csv --coverage data/processed/personal_fundamentals_coverage.csv --performance-kpis data/processed/performance_kpis.csv --performance-summary data/processed/performance_summary.csv --performance-comparison data/processed/performance_comparison.csv --cost-tax-kpis data/processed/cost_tax_kpis.csv --cost-tax-summary data/processed/cost_tax_summary.csv --config configs/dashboard_kpis.yaml --kpi-output data/processed/dashboard_kpis.csv --sections-output data/processed/dashboard_sections.csv --summary-output data/processed/dashboard_summary.csv --report-output reports/sample/dashboard_report.md
 ```
 
+## Persoenlicher Run-Orchestrator
+
+`src.personal_run_engine` koordiniert ausgewaehlte persoenliche Stages ueber die bestehenden kanonischen Engines. Er fuehrt keine neue Scoring-, Matching-, Performance-, Benchmark-, Tax- oder Dashboard-Fachlogik ein. Jede Stage muss explizit mit `--stage` angefordert werden; es gibt keinen stillen Komplettlauf.
+
+Neue Run-Artefakte:
+
+- `data/processed/personal_run_manifest.json`: Run-Status, ausgewaehlte und tatsaechlich ausgefuehrte Stages, Inputs, Outputs, Stage-Ergebnisse, Warnings, Measurement Modes und Datenqualitaetsflags
+- `data/processed/personal_run_artifacts.csv`: kompakter Artefaktindex je Stage
+- `reports/YYYY-MM-DD/personal_run_report.md`: knapper operativer Run-Ueberblick
+
+Core-Orchestrator-Beispiel:
+
+```powershell
+python -m src.personal_run_engine --stage import --stage fundamentals_seed --stage scoring --stage coverage --stage watchlist --stage monthly --stage portfolio_review --positions-raw-input data/raw/personal_depot.csv --import-mode real --source-name personal_depot --fundamentals-master data/raw/personal_fundamentals_master.csv --watchlist-input data/raw/sample_watchlist.csv --manifest-output data/processed/personal_run_manifest.json --artifacts-output data/processed/personal_run_artifacts.csv --report-output reports/YYYY-MM-DD/personal_run_report.md
+```
+
+Hinweise:
+
+- `scoring` bleibt eine eigenstaendige Stage und wird nicht in `fundamentals_seed` oder `coverage` versteckt.
+- `fundamentals_seed` erzeugt nur Identity-Seed-Zeilen und erfindet keine KPI-Werte. Ein vorhandener Personal-Master wird nur mit `--overwrite-fundamentals-master` ersetzt.
+- Multi-Benchmark-Stages behalten die expliziten Symbolauswahl-Regeln aus `src.multi_benchmark_performance_engine`; bei mehreren Symbolen gibt es keine stille Auswahl.
+- Die Einzel-CLIs unten bleiben weiterhin gueltig und sind die fachlichen Modulvertraege.
+
 ## Persoenlicher Lauf
 
 Der persoenliche Lauf kann entweder ueber einen manuellen CSV-Depotexport oder ueber offizielle textbasierte Trade-Republic-Dokumente erfolgen. Der PDF-Pfad nutzt lokal nur `data/raw/private/traderepublic/Depotauszug.pdf` fuer Holdings und `data/raw/private/traderepublic/Kontoauszug.pdf` fuer den Cash-Endsaldo.
