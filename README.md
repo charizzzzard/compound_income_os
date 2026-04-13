@@ -271,15 +271,31 @@ Methodische Leitplanken:
 
 Neue Artefakte:
 
+- `data/processed/cost_tax_ledger_archive.csv`
 - `data/processed/cost_tax_ledger_normalized.csv`
 - `data/processed/cost_tax_summary.csv`
 - `data/processed/cost_tax_kpis.csv`
+- optional `data/processed/cost_tax_archive_summary.csv`
 - `reports/YYYY-MM-DD/cost_tax_report.md`
+
+Persistenter Archivpfad:
+
+- `src.cost_tax_archive_engine` fuehrt manuelle Ledger-Zeilen und unterstuetzte Dokumentinputs erst nach Normalisierung in einem persistenten Archiv zusammen.
+- Die starke Archiv-Identitaet ist `broker`, `reference_id`, `record_granularity`, `event_type`, `event_date`, `ticker`, `isin`, `document_period_start` und `document_period_end`.
+- Identische normalisierte Zeilen mit derselben Identitaet sind idempotent. Dieselbe Identitaet mit abweichenden fachlichen Feldwerten wird hart abgewiesen; es gibt kein `last write wins`.
+- Summary, KPI und Report werden anschliessend weiter ueber die bestehende Cost-/Tax-Logik aus dem finalen Archiv abgeleitet.
+- Das Archiv rekonstruiert keine Lot-, FIFO-, Average-Cost- oder Steuerhistorie und nutzt keine Snapshot-Felder wie `avg_cost`, `cost_basis_eur` oder `unrealized_pnl_eur` als Ersatzledger.
 
 Sample-CLI:
 
 ```powershell
 python -m src.cost_tax_engine --ledger data/raw/sample_cost_tax_ledger.csv --summary-output data/processed/cost_tax_summary.csv --kpi-output data/processed/cost_tax_kpis.csv --report-output reports/sample/cost_tax_report.md
+```
+
+Persistenter Archivlauf:
+
+```powershell
+python -m src.cost_tax_archive_engine --ledger data/raw/personal_cost_tax_ledger.csv --document-input data/raw/private/traderepublic/Steuerbericht_2024.pdf --archive data/processed/cost_tax_ledger_archive.csv --archive-output data/processed/cost_tax_ledger_archive.csv --normalized-ledger-output data/processed/cost_tax_ledger_normalized.csv --summary-output data/processed/cost_tax_summary.csv --kpi-output data/processed/cost_tax_kpis.csv --report-output reports/YYYY-MM-DD/cost_tax_report.md --archive-summary-output data/processed/cost_tax_archive_summary.csv
 ```
 
 ## Phase 2D KPI-Dashboard
