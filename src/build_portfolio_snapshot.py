@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import argparse
+import csv
 from pathlib import Path
 
-from src.common import ensure_parent_dir, format_eur, format_pct, read_csv_rows, require_columns, require_unique_tickers, to_bool, to_float, write_csv_rows
+from src.common import ensure_parent_dir, format_eur, format_pct, read_csv_rows, require_columns, require_unique_tickers, resolve_repo_path, to_bool, to_float, write_csv_rows
 from src.portfolio_rules import (
     allocation_summary,
     compute_cash_value,
@@ -36,6 +37,18 @@ def coverage_status_counts(coverage_rows: list[dict[str, str]]) -> dict[str, int
 
 def coverage_label(row: dict[str, str]) -> str:
     return row.get("ticker") or row.get("matched_ticker") or row.get("isin") or row.get("holding_name") or "UNKNOWN"
+
+
+def read_coverage_rows(path_value: str) -> list[dict[str, str]]:
+    path = resolve_repo_path(path_value)
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        fieldnames = reader.fieldnames or []
+        missing = [column for column in COVERAGE_REQUIRED_COLUMNS if column not in fieldnames]
+        if missing:
+            missing_text = ", ".join(sorted(missing))
+            raise ValueError(f"coverage CSV ({path_value}) missing required columns: {missing_text}")
+        return list(reader)
 
 
 def build_portfolio_snapshot_report(
@@ -220,7 +233,7 @@ def build_portfolio_snapshot_report(
                 f"- PARTIAL: {counts['PARTIAL']}",
                 f"- REVIEW: {counts['REVIEW']}",
                 f"- NO_MATCH: {counts['NO_MATCH']}",
-                f"- Offene Research-Luecken: {len(research_rows)}",
+                f"- Holdings mit Fundamentals-Research-Bedarf: {len(research_rows)}",
                 f"- Holdings mit Pflicht-KPI-Luecken: {len(missing_kpi_rows)}",
                 "",
                 "## Fundamentals-Research-Luecken",
@@ -257,7 +270,7 @@ def main() -> None:
     args = parse_args()
     positions_rows = read_csv_rows(args.positions)
     scores_rows = read_csv_rows(args.scores) if args.scores else None
-    coverage_rows = read_csv_rows(args.coverage) if args.coverage else None
+    coverage_rows = read_coverage_rows(args.coverage) if args.coverage else None
     require_columns(
         positions_rows,
         ["ticker", "company_name", "sleeve", "market_value_eur", "weight_total_assets_pct"],
@@ -266,8 +279,6 @@ def main() -> None:
     if scores_rows:
         require_columns(scores_rows, ["ticker"], f"scores CSV ({args.scores})")
         require_unique_tickers(scores_rows, f"scores CSV ({args.scores})")
-    if coverage_rows is not None:
-        require_columns(coverage_rows, COVERAGE_REQUIRED_COLUMNS, f"coverage CSV ({args.coverage})")
     build_portfolio_snapshot_report(positions_rows, args.output, scores_rows, args.rules, args.holdings_output, coverage_rows)
 
 

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import argparse
+import csv
 from pathlib import Path
 
-from src.common import ensure_parent_dir, read_csv_rows, require_columns, require_unique_tickers, round2, to_bool, to_float
+from src.common import ensure_parent_dir, read_csv_rows, require_columns, require_unique_tickers, resolve_repo_path, round2, to_bool, to_float
 from src.portfolio_rules import load_portfolio_rules
 
 COVERAGE_REQUIRED_COLUMNS = [
@@ -18,6 +19,18 @@ COVERAGE_REQUIRED_COLUMNS = [
 
 def coverage_label(row: dict[str, str]) -> str:
     return row.get("ticker") or row.get("matched_ticker") or row.get("isin") or row.get("holding_name") or "UNKNOWN"
+
+
+def read_coverage_rows(path_value: str) -> list[dict[str, str]]:
+    path = resolve_repo_path(path_value)
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        fieldnames = reader.fieldnames or []
+        missing = [column for column in COVERAGE_REQUIRED_COLUMNS if column not in fieldnames]
+        if missing:
+            missing_text = ", ".join(sorted(missing))
+            raise ValueError(f"coverage CSV ({path_value}) missing required columns: {missing_text}")
+        return list(reader)
 
 
 def prioritized_coverage_gaps(coverage_rows: list[dict[str, str]]) -> list[dict[str, str]]:
@@ -209,7 +222,7 @@ def main() -> None:
     positions_rows = read_csv_rows(args.positions)
     score_rows = read_csv_rows(args.scores)
     ranking_rows = read_csv_rows(args.ranking)
-    coverage_rows = read_csv_rows(args.coverage) if args.coverage else None
+    coverage_rows = read_coverage_rows(args.coverage) if args.coverage else None
     require_columns(
         score_rows,
         ["ticker", "classification", "data_quality_flag", "held_in_portfolio", "main_risks"],
@@ -222,8 +235,6 @@ def main() -> None:
         f"ranking CSV ({args.ranking})",
     )
     require_unique_tickers(ranking_rows, f"ranking CSV ({args.ranking})")
-    if coverage_rows is not None:
-        require_columns(coverage_rows, COVERAGE_REQUIRED_COLUMNS, f"coverage CSV ({args.coverage})")
     build_monthly_decision_report(positions_rows, score_rows, ranking_rows, args.output, args.rules, coverage_rows)
 
 

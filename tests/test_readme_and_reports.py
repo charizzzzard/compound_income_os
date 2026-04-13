@@ -7,6 +7,7 @@ from pathlib import Path
 
 from src.build_monthly_decision_report import build_monthly_decision_report
 from src.build_portfolio_snapshot import build_portfolio_snapshot_report
+from src.fundamentals_master import COVERAGE_OUTPUT_FIELDS
 
 
 class ReadmeAndReportTests(unittest.TestCase):
@@ -141,6 +142,123 @@ class ReadmeAndReportTests(unittest.TestCase):
                 portfolio_output.unlink()
             if decision_output.exists():
                 decision_output.unlink()
+
+    def test_report_clis_accept_header_only_coverage_csv(self) -> None:
+        positions_path = Path("tests") / "_tmp_report_positions_empty_coverage.csv"
+        scores_path = Path("tests") / "_tmp_report_scores_empty_coverage.csv"
+        ranking_path = Path("tests") / "_tmp_report_ranking_empty_coverage.csv"
+        coverage_path = Path("tests") / "_tmp_report_empty_coverage.csv"
+        portfolio_output = Path("tests") / "_tmp_portfolio_empty_coverage.md"
+        decision_output = Path("tests") / "_tmp_decision_empty_coverage.md"
+        try:
+            with positions_path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(
+                    handle,
+                    fieldnames=["ticker", "company_name", "sleeve", "market_value_eur", "weight_total_assets_pct", "asset_type", "sector"],
+                )
+                writer.writeheader()
+                writer.writerow(
+                    {
+                        "ticker": "EUR-CASH",
+                        "company_name": "Cash",
+                        "sleeve": "CASH",
+                        "market_value_eur": "100",
+                        "weight_total_assets_pct": "100.0",
+                        "asset_type": "CASH",
+                        "sector": "Cash",
+                    }
+                )
+            with scores_path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=["ticker", "classification", "data_quality_flag", "held_in_portfolio", "main_risks"])
+                writer.writeheader()
+                writer.writerow({"ticker": "EUR-CASH", "classification": "HOLD", "data_quality_flag": "OK", "held_in_portfolio": "true", "main_risks": ""})
+            with ranking_path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(
+                    handle,
+                    fieldnames=[
+                        "rank",
+                        "ticker",
+                        "target_action",
+                        "suggested_buy_amount_eur",
+                        "rationale",
+                        "constraint_checks",
+                        "valuation_comment",
+                        "mandate_fit_comment",
+                    ],
+                )
+                writer.writeheader()
+                writer.writerow(
+                    {
+                        "rank": "1",
+                        "ticker": "EUR-CASH",
+                        "target_action": "HOLD_CASH",
+                        "suggested_buy_amount_eur": "0",
+                        "rationale": "cash only",
+                        "constraint_checks": "no_candidate",
+                        "valuation_comment": "cash",
+                        "mandate_fit_comment": "cash",
+                    }
+                )
+            with coverage_path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=COVERAGE_OUTPUT_FIELDS)
+                writer.writeheader()
+
+            portfolio_result = subprocess.run(
+                [
+                    "python",
+                    "-m",
+                    "src.build_portfolio_snapshot",
+                    "--positions",
+                    str(positions_path),
+                    "--coverage",
+                    str(coverage_path),
+                    "--output",
+                    str(portfolio_output),
+                ],
+                cwd=Path.cwd(),
+                capture_output=True,
+                text=True,
+            )
+            decision_result = subprocess.run(
+                [
+                    "python",
+                    "-m",
+                    "src.build_monthly_decision_report",
+                    "--positions",
+                    str(positions_path),
+                    "--scores",
+                    str(scores_path),
+                    "--ranking",
+                    str(ranking_path),
+                    "--coverage",
+                    str(coverage_path),
+                    "--output",
+                    str(decision_output),
+                ],
+                cwd=Path.cwd(),
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(portfolio_result.returncode, 0, portfolio_result.stderr)
+            self.assertEqual(decision_result.returncode, 0, decision_result.stderr)
+            portfolio_report = portfolio_output.read_text(encoding="utf-8")
+            decision_report = decision_output.read_text(encoding="utf-8")
+            self.assertIn("## Fundamentals-Abdeckung", portfolio_report)
+            self.assertIn("- COVERED: 0", portfolio_report)
+            self.assertIn("- PARTIAL: 0", portfolio_report)
+            self.assertIn("- REVIEW: 0", portfolio_report)
+            self.assertIn("- NO_MATCH: 0", portfolio_report)
+            self.assertIn("- Holdings mit Fundamentals-Research-Bedarf: 0", portfolio_report)
+            self.assertIn("- Holdings mit Pflicht-KPI-Luecken: 0", portfolio_report)
+            self.assertIn("## Fundamentals-Research-Luecken", portfolio_report)
+            self.assertIn("- Keine offenen Fundamentals-Research-Luecken.", portfolio_report)
+            self.assertIn("## Offene Fundamentals-Research-Luecken", decision_report)
+            self.assertIn("- Keine offenen Fundamentals-Research-Luecken aus Coverage.", decision_report)
+        finally:
+            for path in [positions_path, scores_path, ranking_path, coverage_path, portfolio_output, decision_output]:
+                if path.exists():
+                    path.unlink()
 
     def test_report_clis_reject_incomplete_coverage_csv(self) -> None:
         positions_path = Path("tests") / "_tmp_report_positions_coverage.csv"
