@@ -21,6 +21,8 @@ data/raw/personal_*
 !data/raw/personal_fundamentals_master_template.csv
 !data/raw/personal_fundamentals_evidence.csv
 !data/raw/personal_fundamentals_evidence_template.csv
+!data/raw/personal_fundamentals_overlay.csv
+!data/raw/personal_fundamentals_overlay_template.csv
 data/raw/private_*
 
 # Personal generated artifacts

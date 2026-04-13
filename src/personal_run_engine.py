@@ -37,6 +37,14 @@ from src.fundamentals_evidence_engine import (
     DEFAULT_SUMMARY_OUTPUT as DEFAULT_EVIDENCE_SUMMARY_OUTPUT,
     run_fundamentals_evidence_engine,
 )
+from src.fundamentals_overlay_engine import (
+    DEFAULT_APPLIED_MASTER_OUTPUT,
+    DEFAULT_OVERLAY_INPUT_PATH,
+    DEFAULT_OVERLAY_REGISTRY_OUTPUT,
+    DEFAULT_OVERLAY_SUMMARY_OUTPUT,
+    DEFAULT_OVERLAY_TEMPLATE_PATH,
+    run_fundamentals_overlay_engine,
+)
 from src.multi_benchmark_performance_engine import run_multi_benchmark_performance_engine
 from src.performance_engine import run_performance_engine
 from src.portfolio_history_engine import run_portfolio_history_engine
@@ -53,6 +61,7 @@ STAGE_ORDER = [
     "scoring",
     "coverage",
     "fundamentals_evidence",
+    "fundamentals_overlay",
     "watchlist",
     "monthly",
     "portfolio_review",
@@ -78,6 +87,11 @@ DEFAULT_PATHS = {
     "fundamentals_research_backlog_output": DEFAULT_BACKLOG_OUTPUT,
     "fundamentals_evidence_summary_output": DEFAULT_EVIDENCE_SUMMARY_OUTPUT,
     "fundamentals_evidence_template_output": DEFAULT_EVIDENCE_TEMPLATE_PATH,
+    "fundamentals_overlay_input": DEFAULT_OVERLAY_INPUT_PATH,
+    "fundamentals_overlay_registry_output": DEFAULT_OVERLAY_REGISTRY_OUTPUT,
+    "fundamentals_applied_master_output": DEFAULT_APPLIED_MASTER_OUTPUT,
+    "fundamentals_overlay_summary_output": DEFAULT_OVERLAY_SUMMARY_OUTPUT,
+    "fundamentals_overlay_template_output": DEFAULT_OVERLAY_TEMPLATE_PATH,
     "watchlist_output": "data/processed/personal_watchlist_ranked.csv",
     "watchlist_report_output": "reports/sample/personal_watchlist_report.md",
     "monthly_ranking_output": "data/processed/personal_monthly_buy_ranking.csv",
@@ -160,6 +174,12 @@ class PersonalRunOptions:
     fundamentals_evidence_summary_output: str = DEFAULT_PATHS["fundamentals_evidence_summary_output"]
     fundamentals_evidence_template_output: str = DEFAULT_PATHS["fundamentals_evidence_template_output"]
     fundamentals_evidence_report_output: str | None = None
+    fundamentals_overlay_input: str = DEFAULT_PATHS["fundamentals_overlay_input"]
+    fundamentals_overlay_registry_output: str = DEFAULT_PATHS["fundamentals_overlay_registry_output"]
+    fundamentals_applied_master_output: str = DEFAULT_PATHS["fundamentals_applied_master_output"]
+    fundamentals_overlay_summary_output: str = DEFAULT_PATHS["fundamentals_overlay_summary_output"]
+    fundamentals_overlay_template_output: str = DEFAULT_PATHS["fundamentals_overlay_template_output"]
+    fundamentals_overlay_report_output: str | None = None
     watchlist_input: str | None = None
     watchlist_output: str = DEFAULT_PATHS["watchlist_output"]
     watchlist_report_output: str = DEFAULT_PATHS["watchlist_report_output"]
@@ -213,6 +233,8 @@ class PersonalRunOptions:
             self.fundamentals_coverage_report_output = default_dated_report_path("personal_fundamentals_coverage_report.md")
         if self.fundamentals_evidence_report_output is None:
             self.fundamentals_evidence_report_output = default_dated_report_path("personal_fundamentals_evidence_report.md")
+        if self.fundamentals_overlay_report_output is None:
+            self.fundamentals_overlay_report_output = default_dated_report_path("personal_fundamentals_overlay_report.md")
         if self.portfolio_history_report_output is None:
             self.portfolio_history_report_output = default_dated_report_path("portfolio_history_report.md")
         if self.benchmark_history_report_output is None:
@@ -289,6 +311,7 @@ def input_snapshot(options: PersonalRunOptions) -> dict[str, Any]:
         "positions_output": options.positions_output,
         "fundamentals_master": options.fundamentals_master,
         "fundamentals_evidence_input": options.fundamentals_evidence_input,
+        "fundamentals_overlay_input": options.fundamentals_overlay_input,
         "watchlist_input": options.watchlist_input or "",
         "benchmark_input": options.benchmark_input or "",
         "benchmark_config": options.benchmark_config,
@@ -429,6 +452,29 @@ def run_fundamentals_evidence_stage(options: PersonalRunOptions) -> StageResult:
         used_inputs={"fundamentals_master": fundamentals_path, "fundamentals_evidence_input": evidence_path},
         produced_outputs={role: str(path) for role, path in outputs.items()},
         notes="Personal fundamentals evidence registry and research backlog generated; master and scores were not modified.",
+    )
+
+
+def run_fundamentals_overlay_stage(options: PersonalRunOptions) -> StageResult:
+    stage = "fundamentals_overlay"
+    fundamentals_path = require_existing_path(options.fundamentals_master, "personal fundamentals master", stage)
+    overlay_path = require_existing_path(options.fundamentals_overlay_input, "personal fundamentals overlay input", stage)
+    outputs = run_fundamentals_overlay_engine(
+        fundamentals_master_path=fundamentals_path,
+        overlay_input_path=overlay_path,
+        registry_output=options.fundamentals_overlay_registry_output,
+        applied_master_output=options.fundamentals_applied_master_output,
+        summary_output=options.fundamentals_overlay_summary_output,
+        report_output=options.fundamentals_overlay_report_output,
+        template_output=options.fundamentals_overlay_template_output,
+    )
+    return stage_result(
+        stage,
+        SUCCESS,
+        ["fundamentals_master", "fundamentals_overlay_input"],
+        used_inputs={"fundamentals_master": fundamentals_path, "fundamentals_overlay_input": overlay_path},
+        produced_outputs={role: str(path) for role, path in outputs.items()},
+        notes="Personal fundamentals overlay registry and applied master projection generated; original master and scores were not modified.",
     )
 
 
@@ -747,6 +793,7 @@ STAGE_RUNNERS: dict[str, Callable[[PersonalRunOptions], StageResult]] = {
     "scoring": run_scoring_stage,
     "coverage": run_coverage_stage,
     "fundamentals_evidence": run_fundamentals_evidence_stage,
+    "fundamentals_overlay": run_fundamentals_overlay_stage,
     "watchlist": run_watchlist_stage,
     "monthly": run_monthly_stage,
     "portfolio_review": run_portfolio_review_stage,
@@ -1024,6 +1071,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--fundamentals-evidence-summary-output", default=DEFAULT_PATHS["fundamentals_evidence_summary_output"], help="Personal fundamentals evidence summary output.")
     parser.add_argument("--fundamentals-evidence-template-output", default=DEFAULT_PATHS["fundamentals_evidence_template_output"], help="Personal fundamentals evidence template output.")
     parser.add_argument("--fundamentals-evidence-report-output", help="Personal fundamentals evidence markdown report output.")
+    parser.add_argument("--fundamentals-overlay-input", default=DEFAULT_PATHS["fundamentals_overlay_input"], help="Manual personal fundamentals overlay input.")
+    parser.add_argument("--fundamentals-overlay-registry-output", default=DEFAULT_PATHS["fundamentals_overlay_registry_output"], help="Personal fundamentals overlay registry output.")
+    parser.add_argument("--fundamentals-applied-master-output", default=DEFAULT_PATHS["fundamentals_applied_master_output"], help="Applied personal fundamentals master output.")
+    parser.add_argument("--fundamentals-overlay-summary-output", default=DEFAULT_PATHS["fundamentals_overlay_summary_output"], help="Personal fundamentals overlay summary output.")
+    parser.add_argument("--fundamentals-overlay-template-output", default=DEFAULT_PATHS["fundamentals_overlay_template_output"], help="Personal fundamentals overlay template output.")
+    parser.add_argument("--fundamentals-overlay-report-output", help="Personal fundamentals overlay markdown report output.")
     parser.add_argument("--watchlist-input", help="Watchlist CSV input.")
     parser.add_argument("--watchlist-output", default=DEFAULT_PATHS["watchlist_output"], help="Ranked personal watchlist output.")
     parser.add_argument("--watchlist-report-output", default=DEFAULT_PATHS["watchlist_report_output"], help="Watchlist markdown report output.")
@@ -1095,6 +1148,12 @@ def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
         fundamentals_evidence_summary_output=args.fundamentals_evidence_summary_output,
         fundamentals_evidence_template_output=args.fundamentals_evidence_template_output,
         fundamentals_evidence_report_output=args.fundamentals_evidence_report_output,
+        fundamentals_overlay_input=args.fundamentals_overlay_input,
+        fundamentals_overlay_registry_output=args.fundamentals_overlay_registry_output,
+        fundamentals_applied_master_output=args.fundamentals_applied_master_output,
+        fundamentals_overlay_summary_output=args.fundamentals_overlay_summary_output,
+        fundamentals_overlay_template_output=args.fundamentals_overlay_template_output,
+        fundamentals_overlay_report_output=args.fundamentals_overlay_report_output,
         watchlist_input=args.watchlist_input,
         watchlist_output=args.watchlist_output,
         watchlist_report_output=args.watchlist_report_output,
