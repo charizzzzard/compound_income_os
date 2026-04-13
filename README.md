@@ -176,6 +176,13 @@ Historisches Snapshot-Archiv:
 - Pro Datum wird nur ein Archivpunkt akzeptiert. Ein identischer Wiederholungslauf ist idempotent; abweichende Werte fuer ein bereits archiviertes Datum werden hart abgewiesen.
 - Es werden keine Zwischenpunkte, externen Cashflows, TWR/IRR-Werte oder nicht belegte Historie rekonstruiert.
 
+Explizite Historien-KPIs:
+
+- `rolling_return_1m`, `rolling_return_3m`, `rolling_return_6m` und `rolling_return_12m` werden nur berechnet, wenn ein expliziter NAV-Startpunkt innerhalb von `+/- 7` Kalendertagen um den nominalen Fensterstart liegt.
+- `max_drawdown` nutzt nur explizite NAV-Peak-/Trough-Punkte.
+- `volatility` ist eine unannualisierte Sample-Standardabweichung expliziter aufeinanderfolgender Punkt-Returns.
+- Ohne passend tiefe oder passend datierte Historie bleiben diese KPIs `INSUFFICIENT_HISTORY`.
+
 Snapshot historisieren und anschliessend Performance ausfuehren:
 
 ```powershell

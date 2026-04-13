@@ -10,9 +10,11 @@ from src.performance_engine import (
     INSUFFICIENT_HISTORY,
     NOT_AVAILABLE,
     PARTIAL_HISTORY,
+    PORTFOLIO_TIMESERIES_FIELDS,
     SIMPLE_PERIOD_RETURN,
     SNAPSHOT_COMPARISON,
     SNAPSHOT_ONLY,
+    FULL_HISTORY,
     normalize_benchmark_timeseries,
     run_performance_engine,
 )
@@ -89,6 +91,49 @@ class PerformanceEngineTests(unittest.TestCase):
             ],
         )
 
+    def _build_positions_snapshot_with_nav(
+        self,
+        path: Path,
+        portfolio_date: str,
+        portfolio_value: str,
+        cash_value: str = "0",
+    ) -> None:
+        self._write_csv(
+            path,
+            [
+                "portfolio_date",
+                "source_name",
+                "ticker",
+                "company_name",
+                "asset_type",
+                "sleeve",
+                "market_value_eur",
+                "weight_total_assets_pct",
+            ],
+            [
+                {
+                    "portfolio_date": portfolio_date,
+                    "source_name": "unit_test_positions",
+                    "ticker": "MSFT",
+                    "company_name": "Microsoft",
+                    "asset_type": "STOCK",
+                    "sleeve": "SINGLE_STOCK",
+                    "market_value_eur": portfolio_value,
+                    "weight_total_assets_pct": "100.0",
+                },
+                {
+                    "portfolio_date": portfolio_date,
+                    "source_name": "unit_test_positions",
+                    "ticker": "EUR-CASH",
+                    "company_name": "Cash",
+                    "asset_type": "CASH",
+                    "sleeve": "CASH",
+                    "market_value_eur": cash_value,
+                    "weight_total_assets_pct": "0.0",
+                },
+            ],
+        )
+
     def _build_benchmark_csv(
         self,
         path: Path,
@@ -135,6 +180,19 @@ class PerformanceEngineTests(unittest.TestCase):
                 current.pop("total_return_index", None)
             normalized_rows.append(current)
         self._write_csv(path, fieldnames, normalized_rows)
+
+    def _benchmark_row(self, point_date: str, value: str) -> dict[str, object]:
+        return {
+            "date": point_date,
+            "benchmark_name": "Unit Test Benchmark",
+            "benchmark_symbol": "UTB",
+            "currency": "EUR",
+            "close": value,
+            "adjusted_close": value,
+            "total_return_index": value,
+            "dividend": "0.0",
+            "source_name": "unit_fixture",
+        }
 
     def _build_benchmark_config(self, path: Path, benchmark_currency: str = "EUR") -> None:
         self._write_json_yaml(
@@ -185,6 +243,24 @@ class PerformanceEngineTests(unittest.TestCase):
             ],
         )
 
+    def _build_portfolio_timeseries_points(self, path: Path, points: list[tuple[str, str]]) -> None:
+        self._write_csv(
+            path,
+            PORTFOLIO_TIMESERIES_FIELDS,
+            [
+                {
+                    "date": point_date,
+                    "portfolio_nav_eur": nav,
+                    "portfolio_value_eur": nav,
+                    "cash_value_eur": "0",
+                    "net_external_cash_flow_eur": "",
+                    "source_name": "explicit_unit_nav",
+                    "notes": "explicit unit test NAV point",
+                }
+                for point_date, nav in points
+            ],
+        )
+
     def _build_future_portfolio_timeseries(self, path: Path) -> None:
         self._write_csv(
             path,
@@ -208,6 +284,9 @@ class PerformanceEngineTests(unittest.TestCase):
                 },
             ],
         )
+
+    def _metric_index(self, path: Path) -> dict[str, dict[str, str]]:
+        return {row["metric_name"]: row for row in read_csv_rows(path)}
 
     def test_benchmark_normalization_uses_priority_basis(self) -> None:
         config = load_yaml_config("configs/benchmark.yaml")
@@ -417,6 +496,197 @@ class PerformanceEngineTests(unittest.TestCase):
         self.assertEqual(comparison_rows[0]["period_start"], "2026-01-31")
         self.assertEqual(comparison_rows[0]["period_end"], "2026-04-10")
 
+    def test_partial_history_computes_only_supported_historical_kpis(self) -> None:
+        positions_path = self._path("_tmp_positions_snapshot_partial_history_kpis.csv")
+        benchmark_path = self._path("_tmp_benchmark_partial_history_kpis.csv")
+        config_path = self._path("_tmp_benchmark_config_partial_history_kpis.yaml")
+        portfolio_timeseries_path = self._path("_tmp_portfolio_timeseries_partial_history_kpis.csv")
+        comparison_path = self._path("_tmp_performance_comparison_partial_history_kpis.csv")
+        kpi_path = self._path("_tmp_performance_kpis_partial_history_kpis.csv")
+        report_path = self._path("_tmp_performance_report_partial_history_kpis.md")
+
+        self._build_positions_snapshot_with_nav(positions_path, "2026-04-30", portfolio_value="990")
+        self._build_benchmark_csv(
+            benchmark_path,
+            rows=[self._benchmark_row("2026-01-31", "100"), self._benchmark_row("2026-04-30", "105")],
+        )
+        self._build_benchmark_config(config_path)
+        self._build_portfolio_timeseries_points(
+            portfolio_timeseries_path,
+            [("2026-01-31", "1000"), ("2026-03-31", "900")],
+        )
+
+        run_performance_engine(
+            positions_path=str(positions_path),
+            benchmark_path=str(benchmark_path),
+            benchmark_config_path=str(config_path),
+            portfolio_timeseries_path=str(portfolio_timeseries_path),
+            comparison_output=str(comparison_path),
+            kpi_output=str(kpi_path),
+            report_output=str(report_path),
+        )
+
+        kpis = self._metric_index(kpi_path)
+        self.assertEqual(kpis["rolling_return_1m"]["metric_value"], "10.0")
+        self.assertEqual(kpis["rolling_return_1m"]["metric_unit"], "PCT")
+        self.assertIn("nominal start 2026-03-30", kpis["rolling_return_1m"]["notes"])
+        self.assertEqual(kpis["rolling_return_3m"]["metric_value"], "-1.0")
+        self.assertEqual(kpis["rolling_return_6m"]["metric_value"], INSUFFICIENT_HISTORY)
+        self.assertEqual(kpis["rolling_return_12m"]["metric_value"], INSUFFICIENT_HISTORY)
+        self.assertEqual(kpis["max_drawdown"]["metric_value"], "-10.0")
+        self.assertEqual(kpis["volatility"]["metric_value"], "14.14")
+        self.assertIn("Unannualized sample standard deviation", kpis["volatility"]["notes"])
+
+    def test_full_history_computes_all_rolling_windows(self) -> None:
+        positions_path = self._path("_tmp_positions_snapshot_full_history_kpis.csv")
+        benchmark_path = self._path("_tmp_benchmark_full_history_kpis.csv")
+        config_path = self._path("_tmp_benchmark_config_full_history_kpis.yaml")
+        portfolio_timeseries_path = self._path("_tmp_portfolio_timeseries_full_history_kpis.csv")
+        comparison_path = self._path("_tmp_performance_comparison_full_history_kpis.csv")
+        summary_path = self._path("_tmp_performance_summary_full_history_kpis.csv")
+        kpi_path = self._path("_tmp_performance_kpis_full_history_kpis.csv")
+        report_path = self._path("_tmp_performance_report_full_history_kpis.md")
+
+        self._build_positions_snapshot_with_nav(positions_path, "2026-12-31", portfolio_value="1240")
+        self._build_benchmark_csv(
+            benchmark_path,
+            rows=[self._benchmark_row("2025-12-31", "100"), self._benchmark_row("2026-12-31", "124")],
+        )
+        self._build_benchmark_config(config_path)
+        self._build_portfolio_timeseries_points(
+            portfolio_timeseries_path,
+            [
+                ("2025-12-31", "1000"),
+                ("2026-01-31", "1010"),
+                ("2026-02-28", "1020"),
+                ("2026-03-31", "1030"),
+                ("2026-04-30", "1040"),
+                ("2026-05-31", "1050"),
+                ("2026-06-30", "1060"),
+                ("2026-07-31", "1070"),
+                ("2026-08-31", "1080"),
+                ("2026-09-30", "1090"),
+                ("2026-10-31", "1100"),
+                ("2026-11-30", "1110"),
+            ],
+        )
+
+        run_performance_engine(
+            positions_path=str(positions_path),
+            benchmark_path=str(benchmark_path),
+            benchmark_config_path=str(config_path),
+            portfolio_timeseries_path=str(portfolio_timeseries_path),
+            comparison_output=str(comparison_path),
+            kpi_output=str(kpi_path),
+            summary_output=str(summary_path),
+            report_output=str(report_path),
+        )
+
+        summary_row = read_csv_rows(summary_path)[0]
+        kpis = self._metric_index(kpi_path)
+        self.assertEqual(summary_row["measurement_mode"], FULL_HISTORY)
+        self.assertEqual(summary_row["portfolio_timeseries_points"], "13")
+        self.assertEqual(kpis["rolling_return_1m"]["metric_value"], "11.71")
+        self.assertEqual(kpis["rolling_return_3m"]["metric_value"], "13.76")
+        self.assertEqual(kpis["rolling_return_6m"]["metric_value"], "16.98")
+        self.assertEqual(kpis["rolling_return_12m"]["metric_value"], "24.0")
+        self.assertNotEqual(kpis["volatility"]["metric_value"], INSUFFICIENT_HISTORY)
+
+    def test_max_drawdown_uses_explicit_nav_peaks_and_troughs(self) -> None:
+        positions_path = self._path("_tmp_positions_snapshot_drawdown.csv")
+        benchmark_path = self._path("_tmp_benchmark_drawdown.csv")
+        config_path = self._path("_tmp_benchmark_config_drawdown.yaml")
+        portfolio_timeseries_path = self._path("_tmp_portfolio_timeseries_drawdown.csv")
+        comparison_path = self._path("_tmp_performance_comparison_drawdown.csv")
+        kpi_path = self._path("_tmp_performance_kpis_drawdown.csv")
+        report_path = self._path("_tmp_performance_report_drawdown.md")
+
+        self._build_positions_snapshot_with_nav(positions_path, "2026-04-30", portfolio_value="1100")
+        self._build_benchmark_csv(
+            benchmark_path,
+            rows=[self._benchmark_row("2026-01-31", "100"), self._benchmark_row("2026-04-30", "105")],
+        )
+        self._build_benchmark_config(config_path)
+        self._build_portfolio_timeseries_points(
+            portfolio_timeseries_path,
+            [("2026-01-31", "1000"), ("2026-02-28", "1200"), ("2026-03-31", "900")],
+        )
+
+        run_performance_engine(
+            positions_path=str(positions_path),
+            benchmark_path=str(benchmark_path),
+            benchmark_config_path=str(config_path),
+            portfolio_timeseries_path=str(portfolio_timeseries_path),
+            comparison_output=str(comparison_path),
+            kpi_output=str(kpi_path),
+            report_output=str(report_path),
+        )
+
+        self.assertEqual(self._metric_index(kpi_path)["max_drawdown"]["metric_value"], "-25.0")
+
+    def test_volatility_requires_at_least_two_explicit_point_returns(self) -> None:
+        positions_path = self._path("_tmp_positions_snapshot_volatility_insufficient.csv")
+        benchmark_path = self._path("_tmp_benchmark_volatility_insufficient.csv")
+        config_path = self._path("_tmp_benchmark_config_volatility_insufficient.yaml")
+        portfolio_timeseries_path = self._path("_tmp_portfolio_timeseries_volatility_insufficient.csv")
+        comparison_path = self._path("_tmp_performance_comparison_volatility_insufficient.csv")
+        kpi_path = self._path("_tmp_performance_kpis_volatility_insufficient.csv")
+        report_path = self._path("_tmp_performance_report_volatility_insufficient.md")
+
+        self._build_positions_snapshot_with_nav(positions_path, "2026-02-28", portfolio_value="1100")
+        self._build_benchmark_csv(
+            benchmark_path,
+            rows=[self._benchmark_row("2026-01-31", "100"), self._benchmark_row("2026-02-28", "105")],
+        )
+        self._build_benchmark_config(config_path)
+        self._build_portfolio_timeseries_points(portfolio_timeseries_path, [("2026-01-31", "1000")])
+
+        run_performance_engine(
+            positions_path=str(positions_path),
+            benchmark_path=str(benchmark_path),
+            benchmark_config_path=str(config_path),
+            portfolio_timeseries_path=str(portfolio_timeseries_path),
+            comparison_output=str(comparison_path),
+            kpi_output=str(kpi_path),
+            report_output=str(report_path),
+        )
+
+        volatility = self._metric_index(kpi_path)["volatility"]
+        self.assertEqual(volatility["metric_value"], INSUFFICIENT_HISTORY)
+        self.assertEqual(volatility["metric_unit"], "PCT")
+        self.assertIn("at least two explicit consecutive point-return observations", volatility["notes"])
+
+    def test_rolling_window_outside_tolerance_stays_insufficient(self) -> None:
+        positions_path = self._path("_tmp_positions_snapshot_rolling_tolerance.csv")
+        benchmark_path = self._path("_tmp_benchmark_rolling_tolerance.csv")
+        config_path = self._path("_tmp_benchmark_config_rolling_tolerance.yaml")
+        portfolio_timeseries_path = self._path("_tmp_portfolio_timeseries_rolling_tolerance.csv")
+        comparison_path = self._path("_tmp_performance_comparison_rolling_tolerance.csv")
+        kpi_path = self._path("_tmp_performance_kpis_rolling_tolerance.csv")
+        report_path = self._path("_tmp_performance_report_rolling_tolerance.md")
+
+        self._build_positions_snapshot_with_nav(positions_path, "2026-04-30", portfolio_value="1100")
+        self._build_benchmark_csv(
+            benchmark_path,
+            rows=[self._benchmark_row("2026-02-15", "100"), self._benchmark_row("2026-04-30", "105")],
+        )
+        self._build_benchmark_config(config_path)
+        self._build_portfolio_timeseries_points(portfolio_timeseries_path, [("2026-02-15", "1000")])
+
+        run_performance_engine(
+            positions_path=str(positions_path),
+            benchmark_path=str(benchmark_path),
+            benchmark_config_path=str(config_path),
+            portfolio_timeseries_path=str(portfolio_timeseries_path),
+            comparison_output=str(comparison_path),
+            kpi_output=str(kpi_path),
+            report_output=str(report_path),
+        )
+
+        rolling_1m = self._metric_index(kpi_path)["rolling_return_1m"]
+        self.assertEqual(rolling_1m["metric_value"], INSUFFICIENT_HISTORY)
+        self.assertIn("within +/- 7 days of nominal 1M start 2026-03-30", rolling_1m["notes"])
+
     def test_future_portfolio_timeseries_date_is_rejected(self) -> None:
         positions_path = self._path("_tmp_positions_snapshot_future_ts.csv")
         benchmark_path = self._path("_tmp_benchmark_future_ts.csv")
@@ -553,6 +823,8 @@ class PerformanceEngineTests(unittest.TestCase):
         report_text = report_path.read_text(encoding="utf-8")
         self.assertIn("Kein belastbarer Renditevergleich moeglich", report_text)
         self.assertIn("TIME_WEIGHTED_RETURN", report_text)
+        self.assertIn("werden nur aus ausreichend passenden expliziten NAV-Punkten berechnet", report_text)
+        self.assertNotIn("bleiben `INSUFFICIENT_HISTORY`, solange keine ausreichende explizite Historie vorliegt", report_text)
 
     def test_price_only_benchmark_sets_quality_flag(self) -> None:
         config_path = self._path("_tmp_benchmark_config_price_only.yaml")

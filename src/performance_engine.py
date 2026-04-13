@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import calendar
 import math
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -23,6 +24,14 @@ UNKNOWN_OR_ZERO_ASSUMED = "UNKNOWN_OR_ZERO_ASSUMED"
 OK_FLAG = "OK"
 STALE_BENCHMARK = "STALE_BENCHMARK"
 BENCHMARK_STALENESS_THRESHOLD_DAYS = 2
+ROLLING_WINDOW_TOLERANCE_DAYS = 7
+ROLLING_RETURN_WINDOWS = {
+    "rolling_return_1m": 1,
+    "rolling_return_3m": 3,
+    "rolling_return_6m": 6,
+    "rolling_return_12m": 12,
+}
+MIN_VOLATILITY_RETURN_OBSERVATIONS = 2
 
 BENCHMARK_NORMALIZED_FIELDS = [
     "date",
@@ -329,6 +338,154 @@ def pct_return(start_value: float, end_value: float) -> float | None:
     return round2(((end_value / start_value) - 1.0) * 100.0)
 
 
+def subtract_calendar_months(anchor: date, months: int) -> date:
+    month_index = (anchor.year * 12 + anchor.month - 1) - months
+    year = month_index // 12
+    month = month_index % 12 + 1
+    day = min(anchor.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
+
+
+def find_window_start_point(
+    points: list[PortfolioPoint],
+    end_point: PortfolioPoint,
+    months: int,
+    tolerance_days: int = ROLLING_WINDOW_TOLERANCE_DAYS,
+) -> tuple[date, PortfolioPoint | None, int | None]:
+    target_start = subtract_calendar_months(end_point.date, months)
+    candidates: list[tuple[int, date, PortfolioPoint]] = []
+    for point in points:
+        if point.date >= end_point.date:
+            continue
+        distance_days = abs((point.date - target_start).days)
+        if distance_days <= tolerance_days:
+            candidates.append((distance_days, point.date, point))
+    if not candidates:
+        return target_start, None, None
+    distance_days, _, start_point = sorted(candidates, key=lambda item: (item[0], item[1]))[0]
+    return target_start, start_point, distance_days
+
+
+def historical_kpi_row(
+    metric_name: str,
+    metric_value: str,
+    metric_unit: str,
+    measurement_mode: str,
+    method_used: str,
+    time_window: str,
+    data_quality_flag: str,
+    notes: str,
+) -> dict[str, str]:
+    return {
+        "metric_name": metric_name,
+        "metric_value": metric_value,
+        "metric_unit": metric_unit,
+        "measurement_mode": measurement_mode,
+        "method_used": method_used,
+        "time_window": time_window,
+        "data_quality_flag": data_quality_flag,
+        "notes": notes,
+    }
+
+
+def insufficient_history_kpi(
+    metric_name: str,
+    measurement_mode: str,
+    method_used: str,
+    time_window: str,
+    notes: str,
+) -> dict[str, str]:
+    return historical_kpi_row(
+        metric_name=metric_name,
+        metric_value=INSUFFICIENT_HISTORY,
+        metric_unit="PCT",
+        measurement_mode=measurement_mode,
+        method_used=method_used,
+        time_window=time_window,
+        data_quality_flag=INSUFFICIENT_HISTORY,
+        notes=notes,
+    )
+
+
+def compute_rolling_return_kpi(
+    metric_name: str,
+    months: int,
+    points: list[PortfolioPoint],
+    measurement_mode: str,
+    method_used: str,
+) -> dict[str, str]:
+    end_point = points[-1]
+    time_window = f"{months}M"
+    target_start, start_point, distance_days = find_window_start_point(points, end_point, months)
+    if start_point is None:
+        return insufficient_history_kpi(
+            metric_name,
+            measurement_mode,
+            method_used,
+            time_window,
+            (
+                f"No explicit NAV point within +/- {ROLLING_WINDOW_TOLERANCE_DAYS} days of nominal "
+                f"{time_window} start {target_start.isoformat()}; no interpolation used."
+            ),
+        )
+    rolling_return = pct_return(start_point.portfolio_nav_eur, end_point.portfolio_nav_eur)
+    if rolling_return is None:
+        return insufficient_history_kpi(
+            metric_name,
+            measurement_mode,
+            method_used,
+            time_window,
+            f"Explicit {time_window} start point {start_point.date.isoformat()} has non-positive NAV; return not computed.",
+        )
+    return historical_kpi_row(
+        metric_name=metric_name,
+        metric_value=str(rolling_return),
+        metric_unit="PCT",
+        measurement_mode=measurement_mode,
+        method_used=method_used,
+        time_window=time_window,
+        data_quality_flag=OK_FLAG,
+        notes=(
+            f"Computed from explicit NAV point {start_point.date.isoformat()} to {end_point.date.isoformat()} "
+            f"(nominal start {target_start.isoformat()}, distance {distance_days} days, tolerance +/- "
+            f"{ROLLING_WINDOW_TOLERANCE_DAYS} days). No interpolation or cashflow reconstruction."
+        ),
+    )
+
+
+def compute_max_drawdown_value(points: list[PortfolioPoint]) -> float | None:
+    if len(points) < 2:
+        return None
+    peak = points[0].portfolio_nav_eur
+    if peak <= 0.0:
+        return None
+    max_drawdown = 0.0
+    for point in points[1:]:
+        if point.portfolio_nav_eur > peak:
+            peak = point.portfolio_nav_eur
+        if peak <= 0.0:
+            return None
+        drawdown = ((point.portfolio_nav_eur / peak) - 1.0) * 100.0
+        max_drawdown = min(max_drawdown, drawdown)
+    return round2(max_drawdown)
+
+
+def consecutive_point_returns(points: list[PortfolioPoint]) -> list[float] | None:
+    returns: list[float] = []
+    for previous, current in zip(points, points[1:]):
+        point_return = pct_return(previous.portfolio_nav_eur, current.portfolio_nav_eur)
+        if point_return is None:
+            return None
+        returns.append(point_return)
+    return returns
+
+
+def sample_standard_deviation(values: list[float]) -> float:
+    mean_value = sum(values) / len(values)
+    variance = sum((value - mean_value) ** 2 for value in values) / (len(values) - 1)
+    return round2(math.sqrt(variance))
+
+
 def compute_snapshot_kpis(snapshot_point: PortfolioPoint, measurement_mode: str, method_used: str) -> list[dict[str, str]]:
     nav = snapshot_point.portfolio_nav_eur
     cash_weight = round2((snapshot_point.cash_value_eur / nav) * 100.0) if nav else 0.0
@@ -341,15 +498,7 @@ def compute_snapshot_kpis(snapshot_point: PortfolioPoint, measurement_mode: str,
         ("current_cash_weight", cash_weight, "PCT", "", OK_FLAG, "Cash divided by portfolio NAV."),
         ("current_equity_weight", equity_weight, "PCT", "", OK_FLAG, "Invested non-cash assets divided by portfolio NAV."),
     ]
-    unavailable_metrics = [
-        "rolling_return_1m",
-        "rolling_return_3m",
-        "rolling_return_6m",
-        "rolling_return_12m",
-        "max_drawdown",
-        "volatility",
-    ]
-    rows = [
+    return [
         {
             "metric_name": name,
             "metric_value": str(round2(value)),
@@ -362,18 +511,68 @@ def compute_snapshot_kpis(snapshot_point: PortfolioPoint, measurement_mode: str,
         }
         for name, value, unit, window, flag, notes in metrics
     ]
-    for metric_name in unavailable_metrics:
+
+
+def compute_historical_kpis(points: list[PortfolioPoint], measurement_mode: str, method_used: str) -> list[dict[str, str]]:
+    rows = [
+        compute_rolling_return_kpi(metric_name, months, points, measurement_mode, method_used)
+        for metric_name, months in ROLLING_RETURN_WINDOWS.items()
+    ]
+
+    drawdown = compute_max_drawdown_value(points)
+    if drawdown is None:
         rows.append(
-            {
-                "metric_name": metric_name,
-                "metric_value": INSUFFICIENT_HISTORY,
-                "metric_unit": "",
-                "measurement_mode": measurement_mode,
-                "method_used": method_used,
-                "time_window": metric_name.replace("rolling_return_", "").upper(),
-                "data_quality_flag": INSUFFICIENT_HISTORY,
-                "notes": "Requires explicit fuller portfolio history; not derived in Phase 2B.",
-            }
+            insufficient_history_kpi(
+                "max_drawdown",
+                measurement_mode,
+                method_used,
+                "EXPLICIT_POINTS",
+                "Max drawdown requires at least two explicit positive NAV points; no interpolation used.",
+            )
+        )
+    else:
+        rows.append(
+            historical_kpi_row(
+                metric_name="max_drawdown",
+                metric_value=str(drawdown),
+                metric_unit="PCT",
+                measurement_mode=measurement_mode,
+                method_used=method_used,
+                time_window="EXPLICIT_POINTS",
+                data_quality_flag=OK_FLAG,
+                notes="Peak-to-trough drawdown computed only from explicit portfolio NAV points; no daily interpolation.",
+            )
+        )
+
+    point_returns = consecutive_point_returns(points)
+    if point_returns is None or len(point_returns) < MIN_VOLATILITY_RETURN_OBSERVATIONS:
+        rows.append(
+            insufficient_history_kpi(
+                "volatility",
+                measurement_mode,
+                method_used,
+                "POINT_RETURNS",
+                (
+                    "Volatility requires at least two explicit consecutive point-return observations; "
+                    "no daily-return or annualization assumption used."
+                ),
+            )
+        )
+    else:
+        rows.append(
+            historical_kpi_row(
+                metric_name="volatility",
+                metric_value=str(sample_standard_deviation(point_returns)),
+                metric_unit="PCT",
+                measurement_mode=measurement_mode,
+                method_used=method_used,
+                time_window="POINT_RETURNS",
+                data_quality_flag=OK_FLAG,
+                notes=(
+                    "Unannualized sample standard deviation of explicit consecutive portfolio NAV point returns. "
+                    "No daily-return, frequency, or cashflow reconstruction assumption used."
+                ),
+            )
         )
     return rows
 
@@ -487,7 +686,7 @@ def build_summary_row(
     nav = snapshot_point.portfolio_nav_eur
     cash_weight = round2((snapshot_point.cash_value_eur / nav) * 100.0) if nav else 0.0
     equity_weight = round2((snapshot_point.portfolio_value_eur / nav) * 100.0) if nav else 0.0
-    notes = "Phase 2B reports only snapshot KPIs plus simple period returns when explicit dated NAV points exist."
+    notes = "Phase 2B reports snapshot KPIs, simple period returns, and explicit-history KPIs when dated NAV points are sufficient."
     return {
         "as_of_date": snapshot_point.date.isoformat(),
         "benchmark_reference_end_date": comparison_row["benchmark_reference_end_date"],
@@ -618,7 +817,7 @@ def build_report_text(summary_row: dict[str, str], comparison_row: dict[str, str
             "- Phase 2B berechnet bewusst kein TIME_WEIGHTED_RETURN und kein MONEY_WEIGHTED_RETURN ohne sauberen externen Cashflow-Ledger.",
             "- `monthly_new_cash_eur` aus der Konfiguration wird nicht als realisierter historischer Cashflow unterstellt.",
             "- `avg_cost`, `cost_basis_eur` und `unrealized_pnl_eur` ersetzen keine explizite historische Performance-Zeitreihe.",
-            "- Rolling Returns, Max Drawdown und Volatilitaet bleiben `INSUFFICIENT_HISTORY`, solange keine ausreichende explizite Historie vorliegt.",
+            "- Rolling Returns, Max Drawdown und Volatilitaet werden nur aus ausreichend passenden expliziten NAV-Punkten berechnet; sonst bleiben sie `INSUFFICIENT_HISTORY`.",
             "",
             "## KPI Detail",
             "",
@@ -659,6 +858,7 @@ def run_performance_engine(
     comparison_row = build_comparison_row(normalized_mode, method_used, portfolio_points, normalized_benchmark_rows)
     summary_row = build_summary_row(snapshot_point, comparison_row, normalized_benchmark_rows, normalized_mode, method_used, portfolio_points)
     kpi_rows = compute_snapshot_kpis(snapshot_point, normalized_mode, method_used)
+    kpi_rows.extend(compute_historical_kpis(portfolio_points, normalized_mode, method_used))
     kpi_rows.extend(build_benchmark_quality_kpis(comparison_row, normalized_mode, method_used))
 
     outputs = {
