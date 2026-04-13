@@ -67,7 +67,11 @@ def build_portfolio_snapshot_report(
     allocation = allocation_summary(positions_rows)
     top10 = compute_top10_weights(positions_rows)
     violations = find_rule_violations(positions_rows, rules)
-    action_rows = build_holdings_action_table(positions_rows, scores_rows or [], rules_path) if scores_rows is not None else []
+    action_rows = (
+        build_holdings_action_table(positions_rows, scores_rows or [], rules_path=rules_path, coverage_rows=coverage_rows)
+        if scores_rows is not None
+        else []
+    )
     if holdings_output and action_rows:
         write_csv_rows(holdings_output, HOLDINGS_ACTION_FIELDS, action_rows)
 

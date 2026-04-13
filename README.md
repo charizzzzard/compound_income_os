@@ -331,7 +331,7 @@ Interpretation der persoenlichen Outputs:
 - `personal_fundamentals_coverage.csv`: Match- und Coverage-Status je Holding inklusive `missing_required_kpis`, `not_applicable_kpis` und `needs_research_flag`
 - `personal_fundamentals_enriched.csv`: gematchte Holdings mit Master-Roh-KPIs, bestehenden Teil-Scores und Source-Metadaten
 - `personal_fundamentals_coverage_report.md`: Markdown-Report mit COVERED/PARTIAL/REVIEW/NO_MATCH und Research-Luecken
-- `personal_portfolio_holdings_action_table.csv`: operative Holdings-Aktionen `ADD`, `HOLD`, `WATCH`, `REDUCE`, `EXIT_REVIEW`
+- `personal_portfolio_holdings_action_table.csv`: operative Holdings-Aktionen `ADD`, `HOLD`, `WATCH`, `REDUCE`, `EXIT_REVIEW`; bei uebergebener Coverage werden offene Fundamentals-Luecken konservativ als Guardrail sichtbar
 - `personal_monthly_buy_ranking.csv`: Kauf-Ranking fuer den konfigurierten Monatszufluss
 - `personal_monthly_decision_report.md`: monatlicher Entscheidungsreport mit optional eingeblendeten Fundamentals-Research-Luecken
 - `personal_portfolio_review.md`: deutscher Review-Report fuer das persoenliche Depot
