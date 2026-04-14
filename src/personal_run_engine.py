@@ -15,8 +15,8 @@ from src.benchmark_history_engine import run_benchmark_history_engine
 from src.build_monthly_decision_report import build_monthly_decision_report, read_coverage_rows as read_report_coverage_rows
 from src.build_portfolio_snapshot import build_portfolio_snapshot_report, read_coverage_rows as read_snapshot_coverage_rows
 from src.common import ensure_parent_dir, read_csv_rows, require_columns, require_non_blank_fields, resolve_repo_path, write_csv_rows
-from src.cost_tax_archive_engine import run_cost_tax_archive_engine
-from src.dashboard_engine import run_dashboard_engine
+from src.cost_tax_archive_engine import DEFAULT_CONFIG_PATH as DEFAULT_COST_TAX_CONFIG_PATH, run_cost_tax_archive_engine
+from src.dashboard_engine import DEFAULT_CONFIG_PATH as DEFAULT_DASHBOARD_CONFIG_PATH, run_dashboard_engine
 from src.fundamentals_master import (
     COVERAGE_OUTPUT_FIELDS,
     DEFAULT_METRIC_DEFINITIONS_PATH,
@@ -46,6 +46,7 @@ from src.fundamentals_overlay_engine import (
     DEFAULT_OVERLAY_INPUT_PATH,
     DEFAULT_OVERLAY_REGISTRY_OUTPUT,
     DEFAULT_OVERLAY_REVIEW_BACKLOG_OUTPUT,
+    DEFAULT_SCHEMA_PATH as DEFAULT_OVERLAY_SCHEMA_PATH,
     DEFAULT_OVERLAY_SUMMARY_OUTPUT,
     DEFAULT_OVERLAY_TEMPLATE_PATH,
     run_fundamentals_overlay_engine,
@@ -53,6 +54,7 @@ from src.fundamentals_overlay_engine import (
 from src.multi_benchmark_performance_engine import run_multi_benchmark_performance_engine
 from src.performance_engine import run_performance_engine
 from src.portfolio_history_engine import run_portfolio_history_engine
+from src.portfolio_review import DEFAULT_RULES_PATH as DEFAULT_PORTFOLIO_REVIEW_RULES_PATH
 from src.traderepublic_documents import load_trade_republic_pdf_rows
 
 SUCCESS = "SUCCESS"
@@ -419,6 +421,9 @@ def run_scoring_stage(options: PersonalRunOptions) -> StageResult:
     positions_path = require_existing_path(options.positions_output, "positions snapshot", stage)
     fundamentals_path, fundamentals_source_mode, fundamentals_required_input = resolve_fundamentals_source(options, stage, require_path_for_base=True)
     assert fundamentals_path is not None
+    rules_path = scoring_engine.DEFAULT_RULES_PATH
+    scoring_path = scoring_engine.DEFAULT_SCORING_PATH
+    fundamentals_score_rules_path = scoring_engine.DEFAULT_FUNDAMENTALS_SCORE_RULES_PATH
     positions_rows = read_csv_rows(positions_path)
     fundamentals_rows = read_csv_rows(fundamentals_path)
     require_columns(positions_rows, ["ticker", "market_value_eur", "asset_type", "sleeve", "sector"], f"positions CSV ({positions_path})")
@@ -431,8 +436,11 @@ def run_scoring_stage(options: PersonalRunOptions) -> StageResult:
     results, _enriched_rows, audit_rows = scoring_engine.build_scores_with_audit(
         positions_rows,
         fundamentals_rows,
+        rules_path=rules_path,
+        scoring_path=scoring_path,
         fundamentals_source_name=f"fundamentals CSV ({fundamentals_path})",
         fundamentals_format="personal",
+        fundamentals_score_rules_path=fundamentals_score_rules_path,
     )
     write_csv_rows(options.scores_output, scoring_engine.OUTPUT_FIELDS, results)
     write_csv_rows(options.score_audit_output, scoring_engine.SCORE_AUDIT_FIELDS, audit_rows)
@@ -440,7 +448,14 @@ def run_scoring_stage(options: PersonalRunOptions) -> StageResult:
         stage,
         SUCCESS,
         ["positions_output", fundamentals_required_input or "fundamentals_master"],
-        used_inputs={"positions_output": positions_path, "fundamentals_master": fundamentals_path, "fundamentals_source_mode": fundamentals_source_mode},
+        used_inputs={
+            "positions_output": positions_path,
+            "fundamentals_master": fundamentals_path,
+            "portfolio_rules": rules_path,
+            "scoring_config": scoring_path,
+            "fundamentals_score_rules": fundamentals_score_rules_path,
+            "fundamentals_source_mode": fundamentals_source_mode,
+        },
         produced_outputs={"company_scores": options.scores_output, "score_audit": options.score_audit_output},
         notes=f"Scores generated with fundamentals_format=personal; fundamentals_source_mode={fundamentals_source_mode}; no sample fundamentals fallback used.",
     )
@@ -452,10 +467,11 @@ def run_coverage_stage(options: PersonalRunOptions) -> StageResult:
     fundamentals_path, fundamentals_source_mode, fundamentals_required_input = resolve_fundamentals_source(options, stage, require_path_for_base=True)
     assert fundamentals_path is not None
     scores_path = require_existing_path(options.scores_output, "personal company scores", stage)
+    metric_definitions_path = options.metric_definitions
     positions_rows = read_csv_rows(positions_path)
     fundamentals_rows = read_csv_rows(fundamentals_path)
     warnings = validate_personal_fundamentals_master(fundamentals_rows, f"personal fundamentals master ({fundamentals_path})")
-    definitions = load_metric_definitions(options.metric_definitions)
+    definitions = load_metric_definitions(metric_definitions_path)
     coverage_rows = build_fundamentals_coverage(positions_rows, fundamentals_rows, definitions)
     write_csv_rows(options.coverage_output, COVERAGE_OUTPUT_FIELDS, coverage_rows)
     research_priority_rows = build_research_priority_rows(positions_rows, coverage_rows)
@@ -471,6 +487,7 @@ def run_coverage_stage(options: PersonalRunOptions) -> StageResult:
         used_inputs={
             "positions_output": positions_path,
             "fundamentals_master": fundamentals_path,
+            "metric_definitions": metric_definitions_path,
             "fundamentals_source_mode": fundamentals_source_mode,
             "scores_output": scores_path,
         },
@@ -489,10 +506,11 @@ def run_fundamentals_evidence_stage(options: PersonalRunOptions) -> StageResult:
     stage = "fundamentals_evidence"
     fundamentals_path = require_existing_path(options.fundamentals_master, "personal fundamentals master", stage)
     evidence_path = require_existing_path(options.fundamentals_evidence_input, "personal fundamentals evidence input", stage)
+    metric_definitions_path = options.metric_definitions
     outputs = run_fundamentals_evidence_engine(
         fundamentals_master_path=fundamentals_path,
         evidence_input_path=evidence_path,
-        metric_definitions_path=options.metric_definitions,
+        metric_definitions_path=metric_definitions_path,
         registry_output=options.fundamentals_evidence_registry_output,
         backlog_output=options.fundamentals_research_backlog_output,
         proposed_updates_output=options.fundamentals_proposed_updates_output,
@@ -504,7 +522,11 @@ def run_fundamentals_evidence_stage(options: PersonalRunOptions) -> StageResult:
         stage,
         SUCCESS,
         ["fundamentals_master", "fundamentals_evidence_input"],
-        used_inputs={"fundamentals_master": fundamentals_path, "fundamentals_evidence_input": evidence_path},
+        used_inputs={
+            "fundamentals_master": fundamentals_path,
+            "fundamentals_evidence_input": evidence_path,
+            "metric_definitions": metric_definitions_path,
+        },
         produced_outputs={role: str(path) for role, path in outputs.items()},
         notes="Personal fundamentals evidence registry and research backlog generated; master and scores were not modified.",
     )
@@ -514,9 +536,11 @@ def run_fundamentals_overlay_stage(options: PersonalRunOptions) -> StageResult:
     stage = "fundamentals_overlay"
     fundamentals_path = require_existing_path(options.fundamentals_master, "personal fundamentals master", stage)
     overlay_path = require_existing_path(options.fundamentals_overlay_input, "personal fundamentals overlay input", stage)
+    schema_path = DEFAULT_OVERLAY_SCHEMA_PATH
     outputs = run_fundamentals_overlay_engine(
         fundamentals_master_path=fundamentals_path,
         overlay_input_path=overlay_path,
+        schema_path=schema_path,
         registry_output=options.fundamentals_overlay_registry_output,
         applied_master_output=options.fundamentals_applied_master_output,
         summary_output=options.fundamentals_overlay_summary_output,
@@ -528,7 +552,11 @@ def run_fundamentals_overlay_stage(options: PersonalRunOptions) -> StageResult:
         stage,
         SUCCESS,
         ["fundamentals_master", "fundamentals_overlay_input"],
-        used_inputs={"fundamentals_master": fundamentals_path, "fundamentals_overlay_input": overlay_path},
+        used_inputs={
+            "fundamentals_master": fundamentals_path,
+            "fundamentals_overlay_input": overlay_path,
+            "fundamentals_schema": schema_path,
+        },
         produced_outputs={role: str(path) for role, path in outputs.items()},
         notes="Personal fundamentals overlay registry and applied master projection generated; original master and scores were not modified.",
     )
@@ -539,6 +567,8 @@ def run_watchlist_stage(options: PersonalRunOptions) -> StageResult:
     fundamentals_path, fundamentals_source_mode, _fundamentals_required_input = resolve_fundamentals_source(options, stage, require_path_for_base=False)
     watchlist_path = require_existing_path(options.watchlist_input, "watchlist input", stage)
     scores_path = require_existing_path(options.scores_output, "personal company scores", stage)
+    watchlist_config_path = watchlist_engine.DEFAULT_WATCHLIST_CONFIG
+    rules_path = watchlist_engine.DEFAULT_RULES_PATH
     watchlist_rows = read_csv_rows(watchlist_path)
     score_rows = read_csv_rows(scores_path)
     require_columns(watchlist_rows, ["ticker"], f"watchlist CSV ({watchlist_path})")
@@ -550,12 +580,20 @@ def run_watchlist_stage(options: PersonalRunOptions) -> StageResult:
     ranked = watchlist_engine.build_watchlist_ranked(
         watchlist_rows,
         score_rows,
+        config_path=watchlist_config_path,
+        rules_path=rules_path,
         score_source_name=f"scores CSV ({scores_path})",
         watchlist_source_name=f"watchlist CSV ({watchlist_path})",
     )
     write_csv_rows(options.watchlist_output, watchlist_engine.OUTPUT_FIELDS, ranked)
     watchlist_engine.build_watchlist_report(ranked, options.watchlist_report_output)
-    used_inputs = {"watchlist_input": watchlist_path, "scores_output": scores_path, "fundamentals_source_mode": fundamentals_source_mode}
+    used_inputs = {
+        "watchlist_input": watchlist_path,
+        "scores_output": scores_path,
+        "watchlist_config": watchlist_config_path,
+        "portfolio_rules": rules_path,
+        "fundamentals_source_mode": fundamentals_source_mode,
+    }
     if fundamentals_path:
         used_inputs["fundamentals_master"] = fundamentals_path
     return stage_result(
@@ -575,6 +613,7 @@ def run_monthly_stage(options: PersonalRunOptions) -> StageResult:
     scores_path = require_existing_path(options.scores_output, "personal company scores", stage)
     watchlist_path = require_existing_path(options.watchlist_output, "ranked watchlist", stage)
     coverage_path = require_existing_path(options.coverage_output, "personal fundamentals coverage", stage)
+    rules_path = monthly_ranking_engine.DEFAULT_RULES_PATH
     positions_rows = read_csv_rows(positions_path)
     score_rows = read_csv_rows(scores_path)
     watchlist_rows = read_csv_rows(watchlist_path)
@@ -583,6 +622,7 @@ def run_monthly_stage(options: PersonalRunOptions) -> StageResult:
         positions_rows,
         score_rows,
         watchlist_rows,
+        rules_path=rules_path,
         score_source_name=f"scores CSV ({scores_path})",
         watchlist_source_name=f"watchlist CSV ({watchlist_path})",
         coverage_rows=coverage_rows,
@@ -598,6 +638,7 @@ def run_monthly_stage(options: PersonalRunOptions) -> StageResult:
         "scores_output": scores_path,
         "watchlist_output": watchlist_path,
         "coverage_output": coverage_path,
+        "portfolio_rules": rules_path,
         "fundamentals_source_mode": fundamentals_source_mode,
     }
     if fundamentals_path:
@@ -622,6 +663,7 @@ def run_portfolio_review_stage(options: PersonalRunOptions) -> StageResult:
     positions_path = require_existing_path(options.positions_output, "positions snapshot", stage)
     scores_path = require_existing_path(options.scores_output, "personal company scores", stage)
     coverage_path = require_existing_path(options.coverage_output, "personal fundamentals coverage", stage)
+    rules_path = DEFAULT_PORTFOLIO_REVIEW_RULES_PATH
     positions_rows = read_csv_rows(positions_path)
     scores_rows = read_csv_rows(scores_path)
     coverage_rows = read_snapshot_coverage_rows(coverage_path)
@@ -629,6 +671,7 @@ def run_portfolio_review_stage(options: PersonalRunOptions) -> StageResult:
         positions_rows,
         options.portfolio_review_output,
         scores_rows=scores_rows,
+        rules_path=rules_path,
         holdings_output=options.holdings_output,
         coverage_rows=coverage_rows,
     )
@@ -636,6 +679,7 @@ def run_portfolio_review_stage(options: PersonalRunOptions) -> StageResult:
         "positions_output": positions_path,
         "scores_output": scores_path,
         "coverage_output": coverage_path,
+        "portfolio_rules": rules_path,
         "fundamentals_source_mode": fundamentals_source_mode,
     }
     if fundamentals_path:
@@ -780,6 +824,7 @@ def run_multi_benchmark_stage(options: PersonalRunOptions) -> StageResult:
             "portfolio_timeseries_output": timeseries_path,
             "benchmark_archive": archive_path,
             "benchmark_registry_output": registry_path,
+            "benchmark_config": options.benchmark_config,
         },
         produced_outputs={role: str(path) for role, path in outputs.items()},
         notes="Multi-benchmark comparison generated from archive and registry.",
@@ -790,7 +835,8 @@ def run_cost_tax_stage(options: PersonalRunOptions) -> StageResult:
     stage = "cost_tax"
     if not options.ledger and not options.cost_tax_documents:
         raise ValueError("stage cost_tax requires --ledger and/or at least one --cost-tax-document.")
-    used = {"cost_tax_archive": options.cost_tax_archive}
+    cost_tax_config_path = DEFAULT_COST_TAX_CONFIG_PATH
+    used = {"cost_tax_archive": options.cost_tax_archive, "cost_tax_config": cost_tax_config_path}
     if options.ledger:
         used["ledger"] = require_existing_path(options.ledger, "cost/tax ledger", stage)
     for index, document_path in enumerate(options.cost_tax_documents or [], start=1):
@@ -805,6 +851,7 @@ def run_cost_tax_stage(options: PersonalRunOptions) -> StageResult:
         kpi_output=options.cost_tax_kpi_output,
         report_output=options.cost_tax_report_output or default_dated_report_path("cost_tax_report.md"),
         archive_summary_output=options.cost_tax_archive_summary_output,
+        config_path=cost_tax_config_path,
     )
     return stage_result(
         stage,
@@ -818,9 +865,10 @@ def run_cost_tax_stage(options: PersonalRunOptions) -> StageResult:
 
 def run_dashboard_stage(options: PersonalRunOptions) -> StageResult:
     stage = "dashboard"
-    require_existing_path(options.positions_output, "positions snapshot", stage)
+    positions_path = require_existing_path(options.positions_output, "positions snapshot", stage)
+    dashboard_config_path = DEFAULT_DASHBOARD_CONFIG_PATH
     run_dashboard_engine(
-        positions_path=options.positions_output,
+        positions_path=positions_path,
         scores_path=options.scores_output,
         holdings_path=options.holdings_output,
         score_audit_path=options.score_audit_output,
@@ -830,6 +878,7 @@ def run_dashboard_stage(options: PersonalRunOptions) -> StageResult:
         performance_comparison_path=options.performance_comparison_output,
         cost_tax_kpis_path=options.cost_tax_kpi_output,
         cost_tax_summary_path=options.cost_tax_summary_output,
+        config_path=dashboard_config_path,
         kpi_output=options.dashboard_kpi_output,
         sections_output=options.dashboard_sections_output,
         summary_output=options.dashboard_summary_output,
@@ -840,7 +889,7 @@ def run_dashboard_stage(options: PersonalRunOptions) -> StageResult:
         SUCCESS,
         ["positions_output"],
         used_inputs={
-            "positions_output": options.positions_output,
+            "positions_output": positions_path,
             "scores_output": options.scores_output,
             "holdings_output": options.holdings_output,
             "score_audit_output": options.score_audit_output,
@@ -850,6 +899,7 @@ def run_dashboard_stage(options: PersonalRunOptions) -> StageResult:
             "performance_comparison_output": options.performance_comparison_output,
             "cost_tax_kpi_output": options.cost_tax_kpi_output,
             "cost_tax_summary_output": options.cost_tax_summary_output,
+            "dashboard_config": dashboard_config_path,
         },
         produced_outputs={
             "dashboard_kpis": options.dashboard_kpi_output,

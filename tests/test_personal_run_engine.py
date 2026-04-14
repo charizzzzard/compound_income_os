@@ -3,15 +3,21 @@ from __future__ import annotations
 import csv
 import json
 import subprocess
+import sys
 import unittest
 from datetime import date
 from pathlib import Path
+from unittest.mock import patch
 
+from src import monthly_ranking_engine, portfolio_review, scoring_engine, watchlist_engine
 from src.benchmark_history_engine import BENCHMARK_ARCHIVE_FIELDS, BENCHMARK_REGISTRY_FIELDS
 from src.common import read_csv_rows
+from src.cost_tax_archive_engine import DEFAULT_CONFIG_PATH as DEFAULT_COST_TAX_CONFIG_PATH
+from src.dashboard_engine import DEFAULT_CONFIG_PATH as DEFAULT_DASHBOARD_CONFIG_PATH
 from src.fundamentals_evidence_engine import EVIDENCE_INPUT_FIELDS
-from src.fundamentals_overlay_engine import OVERLAY_INPUT_FIELDS
-from src.personal_run_engine import USED_INPUT_FIELDS, PersonalRunOptions, run_personal_run_engine
+from src.fundamentals_master import DEFAULT_METRIC_DEFINITIONS_PATH
+from src.fundamentals_overlay_engine import DEFAULT_SCHEMA_PATH as DEFAULT_OVERLAY_SCHEMA_PATH, OVERLAY_INPUT_FIELDS
+from src.personal_run_engine import USED_INPUT_FIELDS, PersonalRunOptions, options_from_args, parse_args, run_personal_run_engine
 
 
 class PersonalRunEngineTests(unittest.TestCase):
@@ -246,6 +252,9 @@ class PersonalRunEngineTests(unittest.TestCase):
         options.source_name = f"{prefix}_source"
         return options
 
+    def _used_inputs_for_stage(self, rows: list[dict[str, str]], stage_name: str) -> dict[str, dict[str, str]]:
+        return {row["input_role"]: row for row in rows if row["stage_name"] == stage_name}
+
     def test_core_personal_run_writes_manifest_artifacts_and_reports(self) -> None:
         options = self._core_options(
             "core",
@@ -298,6 +307,9 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertTrue(Path(options.fundamentals_research_backlog_output).exists())
         self.assertTrue(Path(options.fundamentals_proposed_updates_output).exists())
         self.assertIn("fundamentals_evidence", {row["stage_name"] for row in artifact_rows if row["produced"] == "True"})
+        evidence_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "fundamentals_evidence")
+        self.assertEqual(evidence_inputs["metric_definitions"]["input_path"], DEFAULT_METRIC_DEFINITIONS_PATH)
+        self.assertEqual(evidence_inputs["metric_definitions"]["input_exists"], "True")
 
     def test_fundamentals_overlay_stage_updates_manifest_and_artifacts(self) -> None:
         options = self._core_options("overlay_stage", ["import", "fundamentals_seed", "fundamentals_overlay"])
@@ -313,6 +325,9 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertTrue(Path(options.fundamentals_applied_master_output).exists())
         self.assertTrue(Path(options.fundamentals_overlay_review_backlog_output).exists())
         self.assertIn("fundamentals_overlay", {row["stage_name"] for row in artifact_rows if row["produced"] == "True"})
+        overlay_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "fundamentals_overlay")
+        self.assertEqual(overlay_inputs["fundamentals_schema"]["input_path"], DEFAULT_OVERLAY_SCHEMA_PATH)
+        self.assertEqual(overlay_inputs["fundamentals_schema"]["input_exists"], "True")
 
     def test_use_applied_master_switch_routes_scoring_explicitly(self) -> None:
         options = self._core_options("applied_switch", ["import", "fundamentals_seed", "fundamentals_overlay", "scoring", "coverage"])
@@ -364,6 +379,65 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertNotIn("reports/sample", options.monthly_report_output)
         self.assertNotIn("reports/sample", options.portfolio_review_output)
 
+    def test_cli_default_report_paths_for_downstream_stages_are_dated(self) -> None:
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "personal_run_engine",
+                "--stage",
+                "coverage",
+                "--stage",
+                "watchlist",
+                "--stage",
+                "monthly",
+                "--stage",
+                "portfolio_review",
+            ],
+        ):
+            options = options_from_args(parse_args())
+        expected_prefix = f"reports/{date.today().isoformat()}/"
+        self.assertEqual(options.watchlist_report_output, f"{expected_prefix}personal_watchlist_report.md")
+        self.assertEqual(options.monthly_report_output, f"{expected_prefix}personal_monthly_decision_report.md")
+        self.assertEqual(options.portfolio_review_output, f"{expected_prefix}personal_portfolio_review.md")
+        self.assertNotIn("reports/sample", options.watchlist_report_output)
+        self.assertNotIn("reports/sample", options.monthly_report_output)
+        self.assertNotIn("reports/sample", options.portfolio_review_output)
+
+    def test_used_inputs_capture_stage_config_files_for_core_pipeline(self) -> None:
+        options = self._core_options(
+            "core_lineage_depth",
+            ["import", "fundamentals_seed", "scoring", "coverage", "watchlist", "monthly", "portfolio_review"],
+        )
+
+        manifest = run_personal_run_engine(options)
+
+        used_input_rows = read_csv_rows(options.used_inputs_output)
+        scoring_inputs = self._used_inputs_for_stage(used_input_rows, "scoring")
+        coverage_inputs = self._used_inputs_for_stage(used_input_rows, "coverage")
+        watchlist_inputs = self._used_inputs_for_stage(used_input_rows, "watchlist")
+        monthly_inputs = self._used_inputs_for_stage(used_input_rows, "monthly")
+        review_inputs = self._used_inputs_for_stage(used_input_rows, "portfolio_review")
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(scoring_inputs["portfolio_rules"]["input_path"], scoring_engine.DEFAULT_RULES_PATH)
+        self.assertEqual(scoring_inputs["scoring_config"]["input_path"], scoring_engine.DEFAULT_SCORING_PATH)
+        self.assertEqual(scoring_inputs["fundamentals_score_rules"]["input_path"], scoring_engine.DEFAULT_FUNDAMENTALS_SCORE_RULES_PATH)
+        self.assertEqual(coverage_inputs["metric_definitions"]["input_path"], DEFAULT_METRIC_DEFINITIONS_PATH)
+        self.assertEqual(watchlist_inputs["watchlist_config"]["input_path"], watchlist_engine.DEFAULT_WATCHLIST_CONFIG)
+        self.assertEqual(watchlist_inputs["portfolio_rules"]["input_path"], watchlist_engine.DEFAULT_RULES_PATH)
+        self.assertEqual(monthly_inputs["portfolio_rules"]["input_path"], monthly_ranking_engine.DEFAULT_RULES_PATH)
+        self.assertEqual(review_inputs["portfolio_rules"]["input_path"], portfolio_review.DEFAULT_RULES_PATH)
+        self.assertTrue(all(row["input_exists"] == "True" for row in [
+            scoring_inputs["portfolio_rules"],
+            scoring_inputs["scoring_config"],
+            scoring_inputs["fundamentals_score_rules"],
+            coverage_inputs["metric_definitions"],
+            watchlist_inputs["watchlist_config"],
+            watchlist_inputs["portfolio_rules"],
+            monthly_inputs["portfolio_rules"],
+            review_inputs["portfolio_rules"],
+        ]))
+
     def test_history_and_performance_run_uses_existing_single_benchmark_method(self) -> None:
         options = self._core_options("history_perf", ["import", "history", "performance"])
         options.performance_benchmark = "data/raw/sample_benchmark_timeseries.csv"
@@ -375,6 +449,9 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertTrue(Path(options.portfolio_timeseries_output).exists())
         self.assertTrue(Path(options.performance_kpi_output).exists())
         self.assertIn("performance", manifest["data_quality_flags"])
+        performance_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "performance")
+        self.assertEqual(performance_inputs["benchmark_config"]["input_path"], options.benchmark_config)
+        self.assertEqual(performance_inputs["benchmark_config"]["input_exists"], "True")
 
     def test_cost_tax_run_works_through_orchestrator(self) -> None:
         options = self._base_options("cost_tax", ["cost_tax"])
@@ -386,6 +463,9 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertEqual(manifest["measurement_modes"]["cost_tax"], "FULL_LEDGER")
         self.assertTrue(Path(options.cost_tax_kpi_output).exists())
         self.assertTrue(Path(options.cost_tax_archive).exists())
+        cost_tax_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "cost_tax")
+        self.assertEqual(cost_tax_inputs["cost_tax_config"]["input_path"], DEFAULT_COST_TAX_CONFIG_PATH)
+        self.assertEqual(cost_tax_inputs["cost_tax_config"]["input_exists"], "True")
 
     def test_dashboard_run_works_when_core_upstream_artifacts_exist(self) -> None:
         options = self._core_options(
@@ -398,6 +478,9 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertEqual(manifest["run_status"], "SUCCESS")
         self.assertTrue(Path(options.dashboard_kpi_output).exists())
         self.assertIn("dashboard", manifest["data_quality_flags"])
+        dashboard_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "dashboard")
+        self.assertEqual(dashboard_inputs["dashboard_config"]["input_path"], DEFAULT_DASHBOARD_CONFIG_PATH)
+        self.assertEqual(dashboard_inputs["dashboard_config"]["input_exists"], "True")
 
     def test_missing_input_failure_writes_manifest_and_skips_downstream(self) -> None:
         options = self._base_options("failure", ["scoring", "coverage"])
@@ -426,6 +509,9 @@ class PersonalRunEngineTests(unittest.TestCase):
         comparison_rows = read_csv_rows(options.multi_benchmark_comparison_output)
         self.assertEqual(manifest["run_status"], "SUCCESS")
         self.assertEqual([row["benchmark_symbol"] for row in comparison_rows], ["EUROPE", "WORLD"])
+        multi_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "multi_benchmark")
+        self.assertEqual(multi_inputs["benchmark_config"]["input_path"], options.benchmark_config)
+        self.assertEqual(multi_inputs["benchmark_config"]["input_exists"], "True")
 
     def test_cli_smoke_core_run_generates_manifest_artifacts_and_report(self) -> None:
         options = self._core_options(
