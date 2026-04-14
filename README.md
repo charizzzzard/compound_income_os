@@ -415,12 +415,13 @@ Neue Run-Artefakte:
 
 - `data/processed/personal_run_manifest.json`: Run-Status, ausgewaehlte und tatsaechlich ausgefuehrte Stages, Inputs, Outputs, Stage-Ergebnisse, Warnings, Measurement Modes und Datenqualitaetsflags
 - `data/processed/personal_run_artifacts.csv`: kompakter Artefaktindex je Stage
+- `data/processed/personal_run_used_inputs.csv`: flacher, auditierbarer Input-Lineage-Index je Stage aus den echten `StageResult.used_inputs`
 - `reports/YYYY-MM-DD/personal_run_report.md`: knapper operativer Run-Ueberblick
 
 Core-Orchestrator-Beispiel:
 
 ```powershell
-python -m src.personal_run_engine --stage import --stage fundamentals_seed --stage scoring --stage coverage --stage watchlist --stage monthly --stage portfolio_review --positions-raw-input data/raw/personal_depot.csv --import-mode real --source-name personal_depot --fundamentals-master data/raw/personal_fundamentals_master.csv --watchlist-input data/raw/sample_watchlist.csv --manifest-output data/processed/personal_run_manifest.json --artifacts-output data/processed/personal_run_artifacts.csv --report-output reports/YYYY-MM-DD/personal_run_report.md
+python -m src.personal_run_engine --stage import --stage fundamentals_seed --stage scoring --stage coverage --stage watchlist --stage monthly --stage portfolio_review --positions-raw-input data/raw/personal_depot.csv --import-mode real --source-name personal_depot --fundamentals-master data/raw/personal_fundamentals_master.csv --watchlist-input data/raw/sample_watchlist.csv --manifest-output data/processed/personal_run_manifest.json --artifacts-output data/processed/personal_run_artifacts.csv --used-inputs-output data/processed/personal_run_used_inputs.csv --report-output reports/YYYY-MM-DD/personal_run_report.md
 ```
 
 Hinweise:
@@ -432,6 +433,8 @@ Hinweise:
 - `fundamentals_evidence` erzeugt zusaetzlich `personal_fundamentals_proposed_updates.csv` als manuellen Vorschlagsoutput aus validierter Evidence mit `reported_value`.
 - `fundamentals_overlay` erzeugt nur Overlay-Registry, Applied-Master-Projektion, Review-Backlog, Summary und Overlay-Report; diese Stage ersetzt den Original-Master nicht still.
 - `--use-applied-master` schaltet nur explizit fundamentals-abhaengige Downstream-Stages wie `scoring`, `coverage`, `watchlist`, `monthly` und `portfolio_review` auf `personal_fundamentals_master_applied.csv`. Ohne den Schalter bleibt der Base-Master aktiv; wenn der Applied Master fehlt, scheitert der Run fail-fast.
+- `personal_run_used_inputs.csv` enthaelt nur die tatsaechlich verwendeten Stage-Inputs; fuer fundamentals-abhaengige Stages macht das Feld `notes` `fundamentals_source_mode=BASE` oder `fundamentals_source_mode=APPLIED` sichtbar.
+- Die persoenlichen Orchestrator-Defaults fuer Watchlist-, Monthly- und Portfolio-Review-Reports schreiben nach `reports/YYYY-MM-DD/personal_watchlist_report.md`, `reports/YYYY-MM-DD/personal_monthly_decision_report.md` und `reports/YYYY-MM-DD/personal_portfolio_review.md`, nicht nach `reports/sample/...`.
 - Multi-Benchmark-Stages behalten die expliziten Symbolauswahl-Regeln aus `src.multi_benchmark_performance_engine`; bei mehreren Symbolen gibt es keine stille Auswahl.
 - `history` und `performance` brauchen einen datierten Snapshot. Bei `--import-mode sample` sollte deshalb `--portfolio-date` explizit gesetzt werden.
 - Die Einzel-CLIs unten bleiben weiterhin gueltig und sind die fachlichen Modulvertraege.
@@ -447,10 +450,10 @@ python -m src.import_broker --input data/raw/personal_depot.csv --output data/pr
 python -m src.fundamentals_master --positions data/processed/personal_positions_snapshot.csv --init-master-output data/raw/personal_fundamentals_master.csv
 python -m src.scoring_engine --positions data/processed/personal_positions_snapshot.csv --fundamentals data/raw/personal_fundamentals_master.csv --fundamentals-format personal --output data/processed/personal_company_scores.csv --audit-output data/processed/personal_score_audit.csv
 python -m src.fundamentals_master --positions data/processed/personal_positions_snapshot.csv --fundamentals data/raw/personal_fundamentals_master.csv --scores data/processed/personal_company_scores.csv --coverage-output data/processed/personal_fundamentals_coverage.csv --enriched-output data/processed/personal_fundamentals_enriched.csv --research-priority-output data/processed/personal_research_priority.csv --report-output reports/YYYY-MM-DD/personal_fundamentals_coverage_report.md
-python -m src.watchlist_engine --input data/raw/sample_watchlist.csv --scores data/processed/personal_company_scores.csv --output data/processed/personal_watchlist_ranked.csv --report-output reports/sample/personal_watchlist_report.md
+python -m src.watchlist_engine --input data/raw/sample_watchlist.csv --scores data/processed/personal_company_scores.csv --output data/processed/personal_watchlist_ranked.csv --report-output reports/YYYY-MM-DD/personal_watchlist_report.md
 python -m src.monthly_ranking_engine --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --watchlist data/processed/personal_watchlist_ranked.csv --coverage data/processed/personal_fundamentals_coverage.csv --output data/processed/personal_monthly_buy_ranking.csv --rebalance-output data/processed/personal_rebalance_proposals.csv
-python -m src.build_monthly_decision_report --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --ranking data/processed/personal_monthly_buy_ranking.csv --coverage data/processed/personal_fundamentals_coverage.csv --output reports/sample/personal_monthly_decision_report.md
-python -m src.build_portfolio_snapshot --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --coverage data/processed/personal_fundamentals_coverage.csv --holdings-output data/processed/personal_portfolio_holdings_action_table.csv --output reports/sample/personal_portfolio_review.md
+python -m src.build_monthly_decision_report --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --ranking data/processed/personal_monthly_buy_ranking.csv --coverage data/processed/personal_fundamentals_coverage.csv --output reports/YYYY-MM-DD/personal_monthly_decision_report.md
+python -m src.build_portfolio_snapshot --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --coverage data/processed/personal_fundamentals_coverage.csv --holdings-output data/processed/personal_portfolio_holdings_action_table.csv --output reports/YYYY-MM-DD/personal_portfolio_review.md
 ```
 
 Empfohlener persoenlicher Trade-Republic-PDF-Lauf:
@@ -460,10 +463,10 @@ python -m src.import_broker --input data/raw/private/traderepublic/Depotauszug.p
 python -m src.fundamentals_master --positions data/processed/personal_positions_snapshot.csv --init-master-output data/raw/personal_fundamentals_master.csv
 python -m src.scoring_engine --positions data/processed/personal_positions_snapshot.csv --fundamentals data/raw/personal_fundamentals_master.csv --fundamentals-format personal --output data/processed/personal_company_scores.csv --audit-output data/processed/personal_score_audit.csv
 python -m src.fundamentals_master --positions data/processed/personal_positions_snapshot.csv --fundamentals data/raw/personal_fundamentals_master.csv --scores data/processed/personal_company_scores.csv --coverage-output data/processed/personal_fundamentals_coverage.csv --enriched-output data/processed/personal_fundamentals_enriched.csv --research-priority-output data/processed/personal_research_priority.csv --report-output reports/YYYY-MM-DD/personal_fundamentals_coverage_report.md
-python -m src.watchlist_engine --input data/raw/sample_watchlist.csv --scores data/processed/personal_company_scores.csv --output data/processed/personal_watchlist_ranked.csv --report-output reports/sample/personal_watchlist_report.md
+python -m src.watchlist_engine --input data/raw/sample_watchlist.csv --scores data/processed/personal_company_scores.csv --output data/processed/personal_watchlist_ranked.csv --report-output reports/YYYY-MM-DD/personal_watchlist_report.md
 python -m src.monthly_ranking_engine --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --watchlist data/processed/personal_watchlist_ranked.csv --coverage data/processed/personal_fundamentals_coverage.csv --output data/processed/personal_monthly_buy_ranking.csv --rebalance-output data/processed/personal_rebalance_proposals.csv
-python -m src.build_monthly_decision_report --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --ranking data/processed/personal_monthly_buy_ranking.csv --coverage data/processed/personal_fundamentals_coverage.csv --output reports/sample/personal_monthly_decision_report.md
-python -m src.build_portfolio_snapshot --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --coverage data/processed/personal_fundamentals_coverage.csv --holdings-output data/processed/personal_portfolio_holdings_action_table.csv --output reports/sample/personal_portfolio_review.md
+python -m src.build_monthly_decision_report --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --ranking data/processed/personal_monthly_buy_ranking.csv --coverage data/processed/personal_fundamentals_coverage.csv --output reports/YYYY-MM-DD/personal_monthly_decision_report.md
+python -m src.build_portfolio_snapshot --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --coverage data/processed/personal_fundamentals_coverage.csv --holdings-output data/processed/personal_portfolio_holdings_action_table.csv --output reports/YYYY-MM-DD/personal_portfolio_review.md
 ```
 
 Interpretation der persoenlichen Outputs:
@@ -482,6 +485,7 @@ Interpretation der persoenlichen Outputs:
 - `personal_fundamentals_overlay_registry.csv`: normalisierte lokale Analyst-Overlay-Zeilen je Holding/Stichtag/Autor
 - `personal_fundamentals_master_applied.csv`: explizite Projektion aus Original-Master plus validierten Overlays; kein Ersatz fuer die Core-KPI-Source-of-Truth
 - `personal_fundamentals_overlay_review_backlog.csv`: faellige oder ueberfaellige Overlay-Reviews; keine automatische Overlay-Deaktivierung
+- `personal_run_used_inputs.csv`: flacher Input-Lineage-Index fuer den persoenlichen Orchestrator; keine Output-Artefakte und keine hypothetischen Inputs
 - `personal_portfolio_holdings_action_table.csv`: operative Holdings-Aktionen `ADD`, `HOLD`, `WATCH`, `REDUCE`, `EXIT_REVIEW`; bei uebergebener Coverage werden offene Fundamentals-Luecken konservativ als Guardrail sichtbar
 - `personal_monthly_buy_ranking.csv`: Kauf-Ranking fuer den konfigurierten Monatszufluss; bei uebergebener Coverage werden bestehende Holdings mit offenen Fundamentals-Luecken nicht fuer frisches Kapital empfohlen
 - `personal_monthly_decision_report.md`: monatlicher Entscheidungsreport mit optional eingeblendeten Fundamentals-Research-Luecken

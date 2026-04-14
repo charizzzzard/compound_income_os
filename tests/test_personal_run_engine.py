@@ -4,13 +4,14 @@ import csv
 import json
 import subprocess
 import unittest
+from datetime import date
 from pathlib import Path
 
 from src.benchmark_history_engine import BENCHMARK_ARCHIVE_FIELDS, BENCHMARK_REGISTRY_FIELDS
 from src.common import read_csv_rows
 from src.fundamentals_evidence_engine import EVIDENCE_INPUT_FIELDS
 from src.fundamentals_overlay_engine import OVERLAY_INPUT_FIELDS
-from src.personal_run_engine import PersonalRunOptions, run_personal_run_engine
+from src.personal_run_engine import USED_INPUT_FIELDS, PersonalRunOptions, run_personal_run_engine
 
 
 class PersonalRunEngineTests(unittest.TestCase):
@@ -229,6 +230,7 @@ class PersonalRunEngineTests(unittest.TestCase):
             dashboard_report_output=str(self._path(f"_tmp_{prefix}_dashboard_report.md")),
             manifest_output=str(self._path(f"_tmp_{prefix}_manifest.json")),
             artifacts_output=str(self._path(f"_tmp_{prefix}_artifacts.csv")),
+            used_inputs_output=str(self._path(f"_tmp_{prefix}_used_inputs.csv")),
             report_output=str(self._path(f"_tmp_{prefix}_run_report.md")),
         )
 
@@ -260,15 +262,27 @@ class PersonalRunEngineTests(unittest.TestCase):
             manifest_on_disk["executed_stage_order"],
             ["import", "fundamentals_seed", "scoring", "coverage", "watchlist", "monthly", "portfolio_review"],
         )
-        self.assertEqual({row["stage_name"] for row in artifact_rows if row["produced"] == "True"}, set(manifest_on_disk["executed_stage_order"]))
+        self.assertEqual({row["stage_name"] for row in artifact_rows if row["produced"] == "True"}, {*set(manifest_on_disk["executed_stage_order"]), "personal_run"})
         self.assertTrue(Path(options.holdings_output).exists())
         self.assertTrue(Path(options.research_priority_output).exists())
+        self.assertTrue(Path(options.used_inputs_output).exists())
         self.assertIn("Personal Run Report", Path(options.report_output).read_text(encoding="utf-8"))
+        self.assertIn("Input-Lineage-Index", Path(options.report_output).read_text(encoding="utf-8"))
         statuses = {row["stage_name"]: row["status"] for row in manifest_on_disk["stage_results"]}
         self.assertEqual(statuses["cost_tax"], "NOT_REQUESTED")
         self.assertEqual(statuses["scoring"], "SUCCESS")
         scoring_result = next(row for row in manifest_on_disk["stage_results"] if row["stage_name"] == "scoring")
         self.assertEqual(scoring_result["used_inputs"]["fundamentals_source_mode"], "BASE")
+        used_input_rows = read_csv_rows(options.used_inputs_output)
+        self.assertEqual(set(used_input_rows[0]), set(USED_INPUT_FIELDS))
+        scoring_master_inputs = [row for row in used_input_rows if row["stage_name"] == "scoring" and row["input_role"] == "fundamentals_master"]
+        self.assertEqual(scoring_master_inputs[0]["input_path"], options.fundamentals_master)
+        self.assertEqual(scoring_master_inputs[0]["input_exists"], "True")
+        self.assertIn("fundamentals_source_mode=BASE", scoring_master_inputs[0]["notes"])
+        self.assertIn(
+            "used_inputs_index",
+            {row["artifact_role"] for row in artifact_rows if row["stage_name"] == "personal_run" and row["produced"] == "True"},
+        )
 
     def test_fundamentals_evidence_stage_updates_manifest_and_artifacts(self) -> None:
         options = self._core_options("evidence_stage", ["import", "fundamentals_seed", "fundamentals_evidence"])
@@ -301,18 +315,29 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertIn("fundamentals_overlay", {row["stage_name"] for row in artifact_rows if row["produced"] == "True"})
 
     def test_use_applied_master_switch_routes_scoring_explicitly(self) -> None:
-        options = self._core_options("applied_switch", ["import", "fundamentals_seed", "fundamentals_overlay", "scoring"])
+        options = self._core_options("applied_switch", ["import", "fundamentals_seed", "fundamentals_overlay", "scoring", "coverage"])
         options.use_applied_master = True
         self._write_empty_overlay(Path(options.fundamentals_overlay_input))
 
         manifest = run_personal_run_engine(options)
 
         scoring_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "scoring")
+        coverage_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "coverage")
         artifact_roles = {row["artifact_role"] for row in read_csv_rows(options.artifacts_output) if row["produced"] == "True"}
+        used_input_rows = read_csv_rows(options.used_inputs_output)
         self.assertEqual(manifest["run_status"], "SUCCESS")
         self.assertTrue(manifest["inputs"]["use_applied_master"])
         self.assertEqual(scoring_result["used_inputs"]["fundamentals_source_mode"], "APPLIED")
+        self.assertEqual(coverage_result["used_inputs"]["fundamentals_source_mode"], "APPLIED")
         self.assertEqual(scoring_result["used_inputs"]["fundamentals_master"], options.fundamentals_applied_master_output)
+        self.assertEqual(coverage_result["used_inputs"]["fundamentals_master"], options.fundamentals_applied_master_output)
+        applied_lineage_rows = [
+            row
+            for row in used_input_rows
+            if row["stage_name"] in {"scoring", "coverage"} and row["input_role"] == "fundamentals_master"
+        ]
+        self.assertEqual({row["input_path"] for row in applied_lineage_rows}, {options.fundamentals_applied_master_output})
+        self.assertTrue(all("fundamentals_source_mode=APPLIED" in row["notes"] for row in applied_lineage_rows))
         self.assertIn("applied_master", artifact_roles)
 
     def test_use_applied_master_without_projection_fails_fast(self) -> None:
@@ -327,6 +352,17 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertEqual(manifest["run_status"], "FAILED")
         self.assertEqual(statuses["scoring"], "FAILED")
         self.assertIn("applied personal fundamentals master", manifest["warnings"][0])
+
+    def test_personal_report_defaults_are_dated_not_sample_paths(self) -> None:
+        options = PersonalRunOptions(stages=["import"])
+        expected_prefix = f"reports/{date.today().isoformat()}/"
+
+        self.assertEqual(options.watchlist_report_output, f"{expected_prefix}personal_watchlist_report.md")
+        self.assertEqual(options.monthly_report_output, f"{expected_prefix}personal_monthly_decision_report.md")
+        self.assertEqual(options.portfolio_review_output, f"{expected_prefix}personal_portfolio_review.md")
+        self.assertNotIn("reports/sample", options.watchlist_report_output)
+        self.assertNotIn("reports/sample", options.monthly_report_output)
+        self.assertNotIn("reports/sample", options.portfolio_review_output)
 
     def test_history_and_performance_run_uses_existing_single_benchmark_method(self) -> None:
         options = self._core_options("history_perf", ["import", "history", "performance"])
@@ -375,7 +411,8 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertEqual(manifest["run_status"], "FAILED")
         self.assertEqual(statuses["scoring"], "FAILED")
         self.assertEqual(statuses["coverage"], "SKIPPED")
-        self.assertEqual(artifact_rows, [])
+        self.assertEqual([row["artifact_role"] for row in artifact_rows], ["used_inputs_index"])
+        self.assertEqual(read_csv_rows(options.used_inputs_output), [])
 
     def test_multi_benchmark_stage_keeps_deterministic_symbol_order(self) -> None:
         options = self._core_options("multi", ["import", "history", "multi_benchmark"])
@@ -442,6 +479,8 @@ class PersonalRunEngineTests(unittest.TestCase):
                 options.manifest_output,
                 "--artifacts-output",
                 options.artifacts_output,
+                "--used-inputs-output",
+                options.used_inputs_output,
                 "--report-output",
                 str(options.report_output),
             ]
@@ -453,6 +492,7 @@ class PersonalRunEngineTests(unittest.TestCase):
         manifest = json.loads(Path(options.manifest_output).read_text(encoding="utf-8"))
         self.assertEqual(manifest["run_status"], "SUCCESS")
         self.assertTrue(Path(options.artifacts_output).exists())
+        self.assertTrue(Path(options.used_inputs_output).exists())
         self.assertTrue(Path(options.research_priority_output).exists())
         self.assertTrue(Path(options.report_output).exists())
 

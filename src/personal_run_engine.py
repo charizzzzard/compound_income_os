@@ -79,6 +79,15 @@ STAGE_ORDER = [
 ]
 
 ARTIFACT_FIELDS = ["artifact_role", "artifact_path", "stage_name", "produced", "notes"]
+USED_INPUT_FIELDS = ["stage_name", "stage_status", "input_role", "input_path", "input_exists", "notes"]
+RUN_ARTIFACT_STAGE = "personal_run"
+USED_INPUT_METADATA_ROLES = {"fundamentals_source_mode", "import_mode", "source_name", "single_benchmark_symbol"}
+FUNDAMENTALS_SOURCE_STAGES = {"scoring", "coverage", "watchlist", "monthly", "portfolio_review"}
+
+
+def default_dated_report_path(file_name: str) -> str:
+    return f"reports/{date.today().isoformat()}/{file_name}"
+
 
 DEFAULT_PATHS = {
     "positions_output": "data/processed/personal_positions_snapshot.csv",
@@ -101,11 +110,11 @@ DEFAULT_PATHS = {
     "fundamentals_overlay_review_backlog_output": DEFAULT_OVERLAY_REVIEW_BACKLOG_OUTPUT,
     "fundamentals_overlay_template_output": DEFAULT_OVERLAY_TEMPLATE_PATH,
     "watchlist_output": "data/processed/personal_watchlist_ranked.csv",
-    "watchlist_report_output": "reports/sample/personal_watchlist_report.md",
+    "watchlist_report_output": default_dated_report_path("personal_watchlist_report.md"),
     "monthly_ranking_output": "data/processed/personal_monthly_buy_ranking.csv",
     "rebalance_output": "data/processed/personal_rebalance_proposals.csv",
-    "monthly_report_output": "reports/sample/personal_monthly_decision_report.md",
-    "portfolio_review_output": "reports/sample/personal_portfolio_review.md",
+    "monthly_report_output": default_dated_report_path("personal_monthly_decision_report.md"),
+    "portfolio_review_output": default_dated_report_path("personal_portfolio_review.md"),
     "holdings_output": "data/processed/personal_portfolio_holdings_action_table.csv",
     "portfolio_archive": "data/processed/portfolio_snapshot_archive.csv",
     "portfolio_timeseries_output": "data/processed/portfolio_timeseries.csv",
@@ -130,11 +139,8 @@ DEFAULT_PATHS = {
     "dashboard_summary_output": "data/processed/dashboard_summary.csv",
     "manifest_output": "data/processed/personal_run_manifest.json",
     "artifacts_output": "data/processed/personal_run_artifacts.csv",
+    "used_inputs_output": "data/processed/personal_run_used_inputs.csv",
 }
-
-
-def default_dated_report_path(file_name: str) -> str:
-    return f"reports/{date.today().isoformat()}/{file_name}"
 
 
 @dataclass
@@ -236,6 +242,7 @@ class PersonalRunOptions:
     dashboard_report_output: str | None = None
     manifest_output: str = DEFAULT_PATHS["manifest_output"]
     artifacts_output: str = DEFAULT_PATHS["artifacts_output"]
+    used_inputs_output: str = DEFAULT_PATHS["used_inputs_output"]
     report_output: str | None = None
 
     def normalized(self) -> "PersonalRunOptions":
@@ -339,6 +346,7 @@ def input_snapshot(options: PersonalRunOptions) -> dict[str, Any]:
         "performance_benchmark": options.performance_benchmark or options.benchmark_normalized_output,
         "ledger": options.ledger or "",
         "cost_tax_documents": options.cost_tax_documents or [],
+        "used_inputs_output": options.used_inputs_output,
     }
 
 
@@ -887,8 +895,54 @@ def artifact_rows_from_stage_results(stage_results: list[StageResult]) -> list[d
                     "notes": stage.notes,
                 }
             )
-    rows.sort(key=lambda row: (STAGE_ORDER.index(row["stage_name"]), row["artifact_role"], row["artifact_path"]))
+    rows.sort(key=lambda row: (stage_sort_index(row["stage_name"]), row["artifact_role"], row["artifact_path"]))
     return rows
+
+
+def stage_sort_index(stage_name: str) -> int:
+    return STAGE_ORDER.index(stage_name) if stage_name in STAGE_ORDER else len(STAGE_ORDER)
+
+
+def used_input_notes(stage: StageResult) -> str:
+    source_mode = stage.used_inputs.get("fundamentals_source_mode", "")
+    if stage.stage_name in FUNDAMENTALS_SOURCE_STAGES and source_mode:
+        return f"fundamentals_source_mode={source_mode}; {stage.notes}"
+    return stage.notes
+
+
+def used_input_rows_from_stage_results(stage_results: list[StageResult]) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for stage in stage_results:
+        if not stage.used_inputs:
+            continue
+        notes = used_input_notes(stage)
+        for role, path_value in sorted(stage.used_inputs.items()):
+            if role in USED_INPUT_METADATA_ROLES or not path_value:
+                continue
+            rows.append(
+                {
+                    "stage_name": stage.stage_name,
+                    "stage_status": stage.status,
+                    "input_role": role,
+                    "input_path": path_value,
+                    "input_exists": str(path_exists(path_value)),
+                    "notes": notes,
+                }
+            )
+    rows.sort(key=lambda row: (stage_sort_index(row["stage_name"]), row["input_role"], row["input_path"]))
+    return rows
+
+
+def run_level_artifact_rows(options: PersonalRunOptions) -> list[dict[str, str]]:
+    return [
+        {
+            "artifact_role": "used_inputs_index",
+            "artifact_path": options.used_inputs_output,
+            "stage_name": RUN_ARTIFACT_STAGE,
+            "produced": str(output_exists(options.used_inputs_output)),
+            "notes": "Flat stage-level used-input lineage index generated from StageResult.used_inputs.",
+        }
+    ]
 
 
 def read_first_row(path_value: str) -> dict[str, str]:
@@ -958,6 +1012,7 @@ def build_manifest(
         "outputs": {
             "manifest_output": options.manifest_output,
             "artifacts_output": options.artifacts_output,
+            "used_inputs_output": options.used_inputs_output,
             "report_output": options.report_output or "",
         },
         "stage_results": [result.as_dict() for result in stage_results],
@@ -1000,6 +1055,14 @@ def write_run_report(path_value: str, manifest: dict[str, Any], artifact_rows: l
             lines.append(f"- `{row['stage_name']}` {row['artifact_role']}: `{row['artifact_path']}`")
     else:
         lines.append("- Keine Artefakte erzeugt.")
+    lines.extend(
+        [
+            "",
+            "## Used Inputs",
+            "",
+            f"- Input-Lineage-Index: `{manifest['outputs'].get('used_inputs_output', '')}`",
+        ]
+    )
     lines.extend(["", "## Warnings", ""])
     if manifest["warnings"]:
         lines.extend(f"- {warning}" for warning in manifest["warnings"])
@@ -1044,7 +1107,11 @@ def finalize_run_outputs(
     notes: str,
 ) -> dict[str, Any]:
     run_finished_at = utc_now_text()
+    used_input_rows = used_input_rows_from_stage_results(stage_results)
+    write_csv_rows(options.used_inputs_output, USED_INPUT_FIELDS, used_input_rows)
     artifact_rows = artifact_rows_from_stage_results(stage_results)
+    artifact_rows.extend(run_level_artifact_rows(options))
+    artifact_rows.sort(key=lambda row: (stage_sort_index(row["stage_name"]), row["artifact_role"], row["artifact_path"]))
     write_csv_rows(options.artifacts_output, ARTIFACT_FIELDS, artifact_rows)
     manifest = build_manifest(
         options,
@@ -1191,6 +1258,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dashboard-report-output", help="Dashboard markdown report output.")
     parser.add_argument("--manifest-output", default=DEFAULT_PATHS["manifest_output"], help="Personal run manifest JSON output.")
     parser.add_argument("--artifacts-output", default=DEFAULT_PATHS["artifacts_output"], help="Personal run artifacts CSV output.")
+    parser.add_argument("--used-inputs-output", default=DEFAULT_PATHS["used_inputs_output"], help="Flat personal run used-inputs lineage CSV output.")
     parser.add_argument("--report-output", help="Personal run markdown report output.")
     return parser.parse_args()
 
@@ -1272,6 +1340,7 @@ def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
         dashboard_report_output=args.dashboard_report_output,
         manifest_output=args.manifest_output,
         artifacts_output=args.artifacts_output,
+        used_inputs_output=args.used_inputs_output,
         report_output=args.report_output,
     )
 
