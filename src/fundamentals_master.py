@@ -13,6 +13,8 @@ from src.common import (
     read_csv_rows,
     require_columns,
     safe_upper,
+    to_bool,
+    to_float,
     write_csv_rows,
 )
 from src.portfolio_rules import aggregate_positions_by_ticker
@@ -21,9 +23,18 @@ DEFAULT_METRIC_DEFINITIONS_PATH = "configs/fundamentals_metric_definitions.yaml"
 DEFAULT_PERSONAL_MASTER_PATH = "data/raw/personal_fundamentals_master.csv"
 DEFAULT_COVERAGE_OUTPUT = "data/processed/personal_fundamentals_coverage.csv"
 DEFAULT_ENRICHED_OUTPUT = "data/processed/personal_fundamentals_enriched.csv"
+DEFAULT_RESEARCH_PRIORITY_OUTPUT = "data/processed/personal_research_priority.csv"
 
 VALID_COMPANY_TYPE_PROFILES = {"STANDARD", "FINANCIAL", "REIT", "OTHER"}
 VALID_DATA_QUALITY_FLAGS = {"OK", "REVIEW", "MISSING_DATA"}
+PROFILE_REASON_MARKERS = (
+    "company_type_profile_reason=",
+    "profile_reason=",
+    "other_profile_reason=",
+)
+HIGH_RESEARCH_WEIGHT_TOTAL_ASSETS_PCT = 5.0
+MEDIUM_RESEARCH_WEIGHT_TOTAL_ASSETS_PCT = 1.0
+HIGH_RESEARCH_MISSING_REQUIRED_KPI_COUNT = 3
 ISIN_PATTERN = re.compile(r"^[A-Z]{2}[A-Z0-9]{9}[0-9]$")
 
 IDENTITY_METADATA_FIELDS = [
@@ -117,8 +128,29 @@ COVERAGE_OUTPUT_FIELDS = [
     "missing_required_kpis",
     "not_applicable_kpis",
     "optional_missing_kpis",
+    "profile_classification_warning_flag",
+    "profile_classification_warning_reason",
     "needs_research_flag",
     "notes",
+]
+
+RESEARCH_PRIORITY_OUTPUT_FIELDS = [
+    "ticker",
+    "isin",
+    "company_name",
+    "asset_type",
+    "company_type_profile",
+    "profile_classification_warning_flag",
+    "profile_classification_warning_reason",
+    "market_value_eur",
+    "weight_total_assets_pct",
+    "weight_portfolio_pct",
+    "missing_required_kpi_count",
+    "missing_required_kpis",
+    "needs_research_flag",
+    "coverage_status",
+    "research_priority",
+    "research_priority_reason",
 ]
 
 SCORE_FIELDS = [
@@ -408,6 +440,160 @@ def join_list(values: list[str]) -> str:
     return "; ".join(sorted(values))
 
 
+def split_kpi_list(value: Any) -> list[str]:
+    return [item.strip() for item in str(value or "").split(";") if item.strip()]
+
+
+def has_company_type_profile_reason(row: dict[str, Any]) -> bool:
+    explicit_reason = str(row.get("company_type_profile_reason", "")).strip()
+    if explicit_reason:
+        return True
+    notes = str(row.get("notes", "")).strip().lower()
+    return any(marker in notes for marker in PROFILE_REASON_MARKERS)
+
+
+def profile_classification_warning(
+    holding: dict[str, Any],
+    matched_row: dict[str, Any],
+    profile: str,
+) -> tuple[bool, str]:
+    if not matched_row:
+        return False, ""
+    asset_type = safe_upper(matched_row.get("asset_type") or holding.get("asset_type"))
+    if asset_type != "STOCK" or profile != "OTHER":
+        return False, ""
+    if has_company_type_profile_reason(matched_row):
+        return False, ""
+    return (
+        True,
+        "asset_type=STOCK mit company_type_profile=OTHER ohne explizite company_type_profile_reason in notes oder optionalem Feld",
+    )
+
+
+def validate_research_priority_positions(rows: list[dict[str, Any]], source_name: str) -> None:
+    require_columns(
+        rows,
+        ["ticker", "isin", "company_name", "asset_type", "market_value_eur", "weight_total_assets_pct"],
+        source_name,
+    )
+    for index, row in enumerate(rows, start=2):
+        for field in ["market_value_eur", "weight_total_assets_pct"]:
+            try:
+                value = parse_float_strict(row.get(field, ""))
+            except ValueError as exc:
+                raise ValueError(f"{source_name} row {index} has non-numeric {field}: {row.get(field)!r}") from exc
+            if value is None:
+                raise ValueError(f"{source_name} row {index} has blank required field: {field}")
+
+
+def build_position_relevance_lookup(positions_rows: list[dict[str, str]]) -> dict[str, dict[str, Any]]:
+    validate_research_priority_positions(positions_rows, "positions CSV for research priority")
+    lookup: dict[str, dict[str, Any]] = {}
+    for row in aggregate_positions_by_ticker(positions_rows):
+        for key in [
+            "isin:" + str(row.get("isin", "")).strip().upper(),
+            "ticker:" + canonicalize_ticker(row.get("ticker", "")),
+        ]:
+            if not key.endswith(":"):
+                lookup.setdefault(key, row)
+    return lookup
+
+
+def lookup_position_for_coverage(row: dict[str, Any], lookup: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    for key in [
+        "isin:" + str(row.get("isin", "")).strip().upper(),
+        "ticker:" + canonicalize_ticker(row.get("ticker", "")),
+    ]:
+        if not key.endswith(":") and key in lookup:
+            return lookup[key]
+    return {}
+
+
+def compute_research_priority(row: dict[str, Any], weight_total_assets_pct: float, missing_count: int) -> tuple[str, str]:
+    profile_warning = to_bool(row.get("profile_classification_warning_flag"))
+    needs_research = to_bool(row.get("needs_research_flag"))
+    match_status = safe_upper(row.get("match_status"))
+
+    if profile_warning:
+        return "HIGH", "Unbegruendetes company_type_profile=OTHER fuer asset_type=STOCK."
+    if needs_research and weight_total_assets_pct >= HIGH_RESEARCH_WEIGHT_TOTAL_ASSETS_PCT:
+        return "HIGH", f"Hohe Portfoliorelevanz ({weight_total_assets_pct:g}% total assets) mit offenem Research-Signal."
+    if missing_count >= HIGH_RESEARCH_MISSING_REQUIRED_KPI_COUNT and weight_total_assets_pct >= MEDIUM_RESEARCH_WEIGHT_TOTAL_ASSETS_PCT:
+        return "HIGH", f"{missing_count} Pflicht-KPI-Luecken bei relevanter Portfolio-Groesse."
+    if needs_research and weight_total_assets_pct >= MEDIUM_RESEARCH_WEIGHT_TOTAL_ASSETS_PCT:
+        return "MEDIUM", f"Mittlere Portfoliorelevanz ({weight_total_assets_pct:g}% total assets) mit offenem Research-Signal."
+    if missing_count > 0:
+        return "MEDIUM", f"{missing_count} offene Pflicht-KPI-Luecke(n)."
+    if match_status in {"REVIEW", "NO_MATCH", "PARTIAL"}:
+        return "MEDIUM", f"Coverage-Status {match_status} erfordert Sichtpruefung."
+    if needs_research:
+        return "LOW", "Offenes Research-Signal bei geringer Portfoliorelevanz."
+    return "LOW", "Keine unmittelbare Fundamentals-Nachpflege aus Coverage ableitbar."
+
+
+def build_research_priority_rows(
+    positions_rows: list[dict[str, str]],
+    coverage_rows: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    position_lookup = build_position_relevance_lookup(positions_rows)
+    if coverage_rows:
+        require_columns(
+            coverage_rows,
+            [
+                "ticker",
+                "isin",
+                "holding_name",
+                "asset_type",
+                "company_type_profile",
+                "match_status",
+                "missing_required_kpis",
+                "needs_research_flag",
+                "profile_classification_warning_flag",
+                "profile_classification_warning_reason",
+            ],
+            "fundamentals coverage rows for research priority",
+        )
+    priority_rows: list[dict[str, Any]] = []
+    for coverage in coverage_rows:
+        position = lookup_position_for_coverage(coverage, position_lookup)
+        market_value = to_float(position.get("market_value_eur"))
+        weight_total = to_float(position.get("weight_total_assets_pct"))
+        missing_kpis = split_kpi_list(coverage.get("missing_required_kpis", ""))
+        priority, reason = compute_research_priority(coverage, weight_total, len(missing_kpis))
+        priority_rows.append(
+            {
+                "ticker": canonicalize_ticker(coverage.get("ticker", "")),
+                "isin": str(coverage.get("isin", "")).strip().upper(),
+                "company_name": coverage.get("holding_name", ""),
+                "asset_type": coverage.get("asset_type", ""),
+                "company_type_profile": coverage.get("company_type_profile", ""),
+                "profile_classification_warning_flag": coverage.get("profile_classification_warning_flag", ""),
+                "profile_classification_warning_reason": coverage.get("profile_classification_warning_reason", ""),
+                "market_value_eur": position.get("market_value_eur", ""),
+                "weight_total_assets_pct": position.get("weight_total_assets_pct", ""),
+                "weight_portfolio_pct": position.get("weight_portfolio_pct", ""),
+                "missing_required_kpi_count": len(missing_kpis),
+                "missing_required_kpis": coverage.get("missing_required_kpis", ""),
+                "needs_research_flag": coverage.get("needs_research_flag", ""),
+                "coverage_status": coverage.get("match_status", ""),
+                "research_priority": priority,
+                "research_priority_reason": reason,
+                "_sort_market_value_eur": market_value,
+            }
+        )
+    priority_rows.sort(
+        key=lambda row: (
+            -to_float(row.get("_sort_market_value_eur")),
+            -int(row.get("missing_required_kpi_count") or 0),
+            str(row.get("ticker", "")),
+            str(row.get("isin", "")),
+        )
+    )
+    for row in priority_rows:
+        row.pop("_sort_market_value_eur", None)
+    return priority_rows
+
+
 def build_fundamentals_coverage(
     positions_rows: list[dict[str, str]],
     fundamentals_rows: list[dict[str, str]],
@@ -430,12 +616,13 @@ def build_fundamentals_coverage(
             "not_applicable": [],
             "optional_missing": [],
         }
+        profile_warning_flag, profile_warning_reason = profile_classification_warning(holding, matched_row, profile)
 
         if match["match_status"] == "NO_MATCH":
             match_status = "NO_MATCH"
         elif match["match_status"] == "REVIEW":
             match_status = "REVIEW"
-        elif quality == "OK" and not kpi_coverage["missing_required"]:
+        elif quality == "OK" and not kpi_coverage["missing_required"] and not profile_warning_flag:
             match_status = "COVERED"
         else:
             match_status = "PARTIAL"
@@ -445,7 +632,14 @@ def build_fundamentals_coverage(
             notes.append("MISSING_REQUIRED_KPI")
         if profile == "OTHER":
             notes.append("company_type_profile=OTHER; STANDARD KPI applicability is not assumed")
-        needs_research = match_status != "COVERED" or bool(kpi_coverage["missing_required"]) or quality != "OK"
+        if profile_warning_flag:
+            notes.append(profile_warning_reason)
+        needs_research = (
+            match_status != "COVERED"
+            or bool(kpi_coverage["missing_required"])
+            or quality != "OK"
+            or profile_warning_flag
+        )
 
         rows.append(
             {
@@ -466,6 +660,8 @@ def build_fundamentals_coverage(
                 "missing_required_kpis": join_list(kpi_coverage["missing_required"]),
                 "not_applicable_kpis": join_list(kpi_coverage["not_applicable"]),
                 "optional_missing_kpis": join_list(kpi_coverage["optional_missing"]),
+                "profile_classification_warning_flag": profile_warning_flag,
+                "profile_classification_warning_reason": profile_warning_reason,
                 "needs_research_flag": needs_research,
                 "notes": "; ".join(note for note in notes if note),
             }
@@ -586,21 +782,35 @@ def build_personal_enriched_rows(
 
 
 def coverage_counts(rows: list[dict[str, Any]]) -> dict[str, int]:
-    counts = {"COVERED": 0, "PARTIAL": 0, "NO_MATCH": 0, "REVIEW": 0, "MISSING_REQUIRED_KPIS": 0}
+    counts = {
+        "COVERED": 0,
+        "PARTIAL": 0,
+        "NO_MATCH": 0,
+        "REVIEW": 0,
+        "MISSING_REQUIRED_KPIS": 0,
+        "PROFILE_CLASSIFICATION_WARNINGS": 0,
+    }
     for row in rows:
         status = str(row.get("match_status", "NO_MATCH"))
         counts[status] = counts.get(status, 0) + 1
         if str(row.get("missing_required_kpis", "")).strip():
             counts["MISSING_REQUIRED_KPIS"] += 1
+        if to_bool(row.get("profile_classification_warning_flag")):
+            counts["PROFILE_CLASSIFICATION_WARNINGS"] += 1
     return counts
 
 
 def render_coverage_item(row: dict[str, Any]) -> str:
     ticker = row.get("matched_ticker") or row.get("ticker") or row.get("isin")
     missing = row.get("missing_required_kpis") or "none"
+    profile_warning = (
+        " profile_warning=true"
+        if to_bool(row.get("profile_classification_warning_flag"))
+        else ""
+    )
     return (
         f"- `{ticker}` {row.get('holding_name', '')}: status={row.get('match_status')} "
-        f"method={row.get('match_method')} quality={row.get('data_quality_flag')} missing_required={missing}"
+        f"method={row.get('match_method')} quality={row.get('data_quality_flag')} missing_required={missing}{profile_warning}"
     )
 
 
@@ -617,6 +827,7 @@ def write_coverage_report(
         "NO_MATCH": [row for row in coverage_rows if row["match_status"] == "NO_MATCH"],
         "REVIEW": [row for row in coverage_rows if row["match_status"] == "REVIEW"],
         "MISSING_REQUIRED_KPIS": [row for row in coverage_rows if str(row.get("missing_required_kpis", "")).strip()],
+        "PROFILE_CLASSIFICATION_WARNINGS": [row for row in coverage_rows if to_bool(row.get("profile_classification_warning_flag"))],
     }
     research_gaps = [row for row in coverage_rows if str(row.get("needs_research_flag", "")).lower() == "true"]
 
@@ -636,6 +847,7 @@ def write_coverage_report(
         f"- REVIEW: {counts.get('REVIEW', 0)}",
         f"- NO_MATCH: {counts.get('NO_MATCH', 0)}",
         f"- MISSING_REQUIRED_KPIS: {counts.get('MISSING_REQUIRED_KPIS', 0)}",
+        f"- PROFILE_CLASSIFICATION_WARNINGS: {counts.get('PROFILE_CLASSIFICATION_WARNINGS', 0)}",
     ]
     if warnings:
         lines.extend(["", "## Validation Warnings", ""])
@@ -647,6 +859,16 @@ def write_coverage_report(
             lines.extend(render_coverage_item(row) for row in groups[title])
         else:
             lines.append("- Keine.")
+
+    lines.extend(["", "## Profile-Classification Guardrail", ""])
+    if groups["PROFILE_CLASSIFICATION_WARNINGS"]:
+        for row in groups["PROFILE_CLASSIFICATION_WARNINGS"]:
+            lines.append(
+                f"- `{row.get('ticker') or row.get('isin')}` {row.get('holding_name', '')}: "
+                f"{row.get('profile_classification_warning_reason', '')}"
+            )
+    else:
+        lines.append("- Keine unbegruendeten OTHER-Profile fuer STOCK-Holdings.")
 
     lines.extend(["", "## Research-Luecken", ""])
     if research_gaps:
@@ -670,6 +892,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--scores", help="Optional personal company scores CSV for enriched output.")
     parser.add_argument("--coverage-output", default=DEFAULT_COVERAGE_OUTPUT, help="Coverage CSV output.")
     parser.add_argument("--enriched-output", default=DEFAULT_ENRICHED_OUTPUT, help="Matched fundamentals enriched CSV output.")
+    parser.add_argument("--research-priority-output", help="Optional research priority CSV output.")
     parser.add_argument("--report-output", help="Coverage Markdown report output.")
     parser.add_argument("--metric-definitions", default=DEFAULT_METRIC_DEFINITIONS_PATH, help="KPI definition config.")
     parser.add_argument("--init-master-output", help="Create an identity-only personal fundamentals master from positions and exit.")
@@ -696,6 +919,9 @@ def main() -> None:
     definitions = load_metric_definitions(args.metric_definitions)
     coverage_rows = build_fundamentals_coverage(positions_rows, fundamentals_rows, definitions)
     write_csv_rows(args.coverage_output, COVERAGE_OUTPUT_FIELDS, coverage_rows)
+    if args.research_priority_output:
+        research_priority_rows = build_research_priority_rows(positions_rows, coverage_rows)
+        write_csv_rows(args.research_priority_output, RESEARCH_PRIORITY_OUTPUT_FIELDS, research_priority_rows)
 
     score_rows = read_csv_rows(args.scores) if args.scores else []
     enriched_rows = build_personal_enriched_rows(coverage_rows, fundamentals_rows, score_rows)

@@ -177,6 +177,7 @@ class PersonalRunEngineTests(unittest.TestCase):
             score_audit_output=str(self._path(f"_tmp_{prefix}_score_audit.csv")),
             coverage_output=str(self._path(f"_tmp_{prefix}_coverage.csv")),
             fundamentals_enriched_output=str(self._path(f"_tmp_{prefix}_enriched.csv")),
+            research_priority_output=str(self._path(f"_tmp_{prefix}_research_priority.csv")),
             fundamentals_coverage_report_output=str(self._path(f"_tmp_{prefix}_coverage_report.md")),
             fundamentals_evidence_input=str(self._path(f"_tmp_{prefix}_evidence_input.csv")),
             fundamentals_evidence_registry_output=str(self._path(f"_tmp_{prefix}_evidence_registry.csv")),
@@ -259,6 +260,7 @@ class PersonalRunEngineTests(unittest.TestCase):
         )
         self.assertEqual({row["stage_name"] for row in artifact_rows if row["produced"] == "True"}, set(manifest_on_disk["executed_stage_order"]))
         self.assertTrue(Path(options.holdings_output).exists())
+        self.assertTrue(Path(options.research_priority_output).exists())
         self.assertIn("Personal Run Report", Path(options.report_output).read_text(encoding="utf-8"))
         statuses = {row["stage_name"]: row["status"] for row in manifest_on_disk["stage_results"]}
         self.assertEqual(statuses["cost_tax"], "NOT_REQUESTED")
@@ -384,6 +386,8 @@ class PersonalRunEngineTests(unittest.TestCase):
                 options.coverage_output,
                 "--fundamentals-enriched-output",
                 options.fundamentals_enriched_output,
+                "--research-priority-output",
+                options.research_priority_output,
                 "--fundamentals-coverage-report-output",
                 str(options.fundamentals_coverage_report_output),
                 "--watchlist-output",
@@ -415,6 +419,7 @@ class PersonalRunEngineTests(unittest.TestCase):
         manifest = json.loads(Path(options.manifest_output).read_text(encoding="utf-8"))
         self.assertEqual(manifest["run_status"], "SUCCESS")
         self.assertTrue(Path(options.artifacts_output).exists())
+        self.assertTrue(Path(options.research_priority_output).exists())
         self.assertTrue(Path(options.report_output).exists())
 
 

@@ -8,7 +8,9 @@ from pathlib import Path
 from src.fundamentals_master import (
     CORE_KPI_FIELDS,
     PERSONAL_MASTER_FIELDS,
+    RESEARCH_PRIORITY_OUTPUT_FIELDS,
     build_fundamentals_coverage,
+    build_research_priority_rows,
     load_metric_definitions,
     validate_personal_fundamentals_master,
     validate_metric_definitions,
@@ -30,6 +32,8 @@ def position_row(
         "asset_type": asset_type,
         "sleeve": "SINGLE_STOCK",
         "market_value_eur": "100",
+        "weight_total_assets_pct": "10",
+        "weight_portfolio_pct": "12",
         "cost_basis_eur": "90",
         "price_eur": "100",
     }
@@ -152,6 +156,7 @@ class FundamentalsMasterTests(unittest.TestCase):
         self.assertEqual(coverage[0]["match_status"], "NO_MATCH")
         self.assertEqual(coverage[0]["match_method"], "NO_MATCH")
         self.assertTrue(coverage[0]["needs_research_flag"])
+        self.assertFalse(coverage[0]["profile_classification_warning_flag"])
 
     def test_other_profile_kpis_are_not_marked_as_required_missing(self) -> None:
         coverage = build_fundamentals_coverage(
@@ -162,6 +167,105 @@ class FundamentalsMasterTests(unittest.TestCase):
         self.assertEqual(coverage[0]["match_status"], "PARTIAL")
         self.assertEqual(coverage[0]["missing_required_kpis"], "")
         self.assertIn("roic", coverage[0]["not_applicable_kpis"])
+
+    def test_stock_other_without_profile_reason_sets_warning_and_research_signal(self) -> None:
+        coverage = build_fundamentals_coverage(
+            [position_row(ticker="OTH", isin="US0000000006", company_name="Other Stock Co")],
+            [master_row(ticker="OTH", isin="US0000000006", company_name="Other Stock Co", profile="OTHER", data_quality_flag="OK", fill_kpis=False)],
+        )
+
+        self.assertEqual(coverage[0]["match_status"], "PARTIAL")
+        self.assertTrue(coverage[0]["profile_classification_warning_flag"])
+        self.assertIn("company_type_profile=OTHER", coverage[0]["profile_classification_warning_reason"])
+        self.assertTrue(coverage[0]["needs_research_flag"])
+
+    def test_stock_other_with_profile_reason_stays_allowed_without_warning(self) -> None:
+        master = master_row(ticker="OTH", isin="US0000000006", company_name="Other Stock Co", profile="OTHER", data_quality_flag="OK", fill_kpis=False)
+        master["notes"] = "company_type_profile_reason=non-operating holding company; fixture"
+
+        coverage = build_fundamentals_coverage(
+            [position_row(ticker="OTH", isin="US0000000006", company_name="Other Stock Co")],
+            [master],
+        )
+
+        self.assertEqual(coverage[0]["match_status"], "COVERED")
+        self.assertFalse(coverage[0]["profile_classification_warning_flag"])
+        self.assertEqual(coverage[0]["profile_classification_warning_reason"], "")
+        self.assertFalse(coverage[0]["needs_research_flag"])
+
+    def test_profile_guardrail_does_not_flag_standard_financial_or_reit(self) -> None:
+        rows = []
+        for profile in ["STANDARD", "FINANCIAL", "REIT"]:
+            isin = f"US000000000{len(rows) + 7}"
+            coverage = build_fundamentals_coverage(
+                [position_row(ticker=profile, isin=isin, company_name=f"{profile} Co")],
+                [master_row(ticker=profile, isin=isin, company_name=f"{profile} Co", profile=profile)],
+            )
+            rows.append(coverage[0])
+
+        self.assertEqual([row["profile_classification_warning_flag"] for row in rows], [False, False, False])
+
+    def test_research_priority_rows_sort_and_explain_profile_warning_first_by_value(self) -> None:
+        positions = [
+            position_row(ticker="LOW", isin="US0000000010", company_name="Low Value Co"),
+            position_row(ticker="HIGH", isin="US0000000011", company_name="High Value Co"),
+            position_row(ticker="MID", isin="US0000000012", company_name="Mid Value Co"),
+        ]
+        positions[0].update({"market_value_eur": "100", "weight_total_assets_pct": "0.5"})
+        positions[1].update({"market_value_eur": "1000", "weight_total_assets_pct": "8"})
+        positions[2].update({"market_value_eur": "500", "weight_total_assets_pct": "2"})
+        coverage = [
+            {
+                "ticker": "LOW",
+                "isin": "US0000000010",
+                "holding_name": "Low Value Co",
+                "asset_type": "STOCK",
+                "company_type_profile": "STANDARD",
+                "match_status": "PARTIAL",
+                "missing_required_kpis": "roic",
+                "needs_research_flag": "True",
+                "profile_classification_warning_flag": "False",
+                "profile_classification_warning_reason": "",
+            },
+            {
+                "ticker": "HIGH",
+                "isin": "US0000000011",
+                "holding_name": "High Value Co",
+                "asset_type": "STOCK",
+                "company_type_profile": "OTHER",
+                "match_status": "COVERED",
+                "missing_required_kpis": "",
+                "needs_research_flag": "True",
+                "profile_classification_warning_flag": "True",
+                "profile_classification_warning_reason": "asset_type=STOCK uses company_type_profile=OTHER without explicit company_type_profile_reason in notes or optional field",
+            },
+            {
+                "ticker": "MID",
+                "isin": "US0000000012",
+                "holding_name": "Mid Value Co",
+                "asset_type": "STOCK",
+                "company_type_profile": "STANDARD",
+                "match_status": "PARTIAL",
+                "missing_required_kpis": "fcf_margin; roic",
+                "needs_research_flag": "True",
+                "profile_classification_warning_flag": "False",
+                "profile_classification_warning_reason": "",
+            },
+        ]
+
+        priority_rows = build_research_priority_rows(positions, coverage)
+
+        self.assertEqual([row["ticker"] for row in priority_rows], ["HIGH", "MID", "LOW"])
+        self.assertEqual(priority_rows[0]["research_priority"], "HIGH")
+        self.assertEqual(priority_rows[1]["missing_required_kpi_count"], 2)
+        self.assertEqual(priority_rows[2]["research_priority"], "MEDIUM")
+
+    def test_research_priority_requires_position_weight_field(self) -> None:
+        bad_position = position_row()
+        bad_position.pop("weight_total_assets_pct")
+
+        with self.assertRaisesRegex(ValueError, "weight_total_assets_pct"):
+            build_research_priority_rows([bad_position], [])
 
     def test_validation_rejects_missing_required_master_columns(self) -> None:
         invalid = master_row()
@@ -187,6 +291,7 @@ class FundamentalsMasterTests(unittest.TestCase):
         fundamentals_path = Path("tests") / "_tmp_personal_master.csv"
         coverage_path = Path("tests") / "_tmp_personal_coverage.csv"
         enriched_path = Path("tests") / "_tmp_personal_enriched.csv"
+        priority_path = Path("tests") / "_tmp_personal_research_priority.csv"
         report_path = Path("tests") / "_tmp_personal_coverage.md"
         try:
             with positions_path.open("w", encoding="utf-8", newline="") as handle:
@@ -211,6 +316,8 @@ class FundamentalsMasterTests(unittest.TestCase):
                     str(coverage_path),
                     "--enriched-output",
                     str(enriched_path),
+                    "--research-priority-output",
+                    str(priority_path),
                     "--report-output",
                     str(report_path),
                 ],
@@ -222,12 +329,17 @@ class FundamentalsMasterTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertTrue(coverage_path.exists())
             self.assertTrue(enriched_path.exists())
+            self.assertTrue(priority_path.exists())
             self.assertTrue(report_path.exists())
             with coverage_path.open(encoding="utf-8") as handle:
                 coverage_rows = list(csv.DictReader(handle))
             self.assertEqual(coverage_rows[0]["match_method"], "ISIN")
+            with priority_path.open(encoding="utf-8") as handle:
+                priority_rows = list(csv.DictReader(handle))
+            self.assertEqual(priority_rows[0]["ticker"], "RAW")
+            self.assertEqual(list(priority_rows[0].keys()), RESEARCH_PRIORITY_OUTPUT_FIELDS)
         finally:
-            for path in [positions_path, fundamentals_path, coverage_path, enriched_path, report_path]:
+            for path in [positions_path, fundamentals_path, coverage_path, enriched_path, priority_path, report_path]:
                 if path.exists():
                     path.unlink()
 

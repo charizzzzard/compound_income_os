@@ -20,11 +20,14 @@ from src.dashboard_engine import run_dashboard_engine
 from src.fundamentals_master import (
     COVERAGE_OUTPUT_FIELDS,
     DEFAULT_METRIC_DEFINITIONS_PATH,
+    DEFAULT_RESEARCH_PRIORITY_OUTPUT,
     PERSONAL_ENRICHED_OUTPUT_FIELDS,
     PERSONAL_MASTER_FIELDS,
+    RESEARCH_PRIORITY_OUTPUT_FIELDS,
     build_fundamentals_coverage,
     build_master_seed_rows_from_positions,
     build_personal_enriched_rows,
+    build_research_priority_rows,
     load_metric_definitions,
     validate_personal_fundamentals_master,
     write_coverage_report,
@@ -82,6 +85,7 @@ DEFAULT_PATHS = {
     "score_audit_output": "data/processed/personal_score_audit.csv",
     "coverage_output": "data/processed/personal_fundamentals_coverage.csv",
     "fundamentals_enriched_output": "data/processed/personal_fundamentals_enriched.csv",
+    "research_priority_output": DEFAULT_RESEARCH_PRIORITY_OUTPUT,
     "fundamentals_evidence_input": DEFAULT_EVIDENCE_INPUT_PATH,
     "fundamentals_evidence_registry_output": DEFAULT_REGISTRY_OUTPUT,
     "fundamentals_research_backlog_output": DEFAULT_BACKLOG_OUTPUT,
@@ -167,6 +171,7 @@ class PersonalRunOptions:
     score_audit_output: str = DEFAULT_PATHS["score_audit_output"]
     coverage_output: str = DEFAULT_PATHS["coverage_output"]
     fundamentals_enriched_output: str = DEFAULT_PATHS["fundamentals_enriched_output"]
+    research_priority_output: str = DEFAULT_PATHS["research_priority_output"]
     fundamentals_coverage_report_output: str | None = None
     fundamentals_evidence_input: str = DEFAULT_PATHS["fundamentals_evidence_input"]
     fundamentals_evidence_registry_output: str = DEFAULT_PATHS["fundamentals_evidence_registry_output"]
@@ -310,6 +315,7 @@ def input_snapshot(options: PersonalRunOptions) -> dict[str, Any]:
         "portfolio_date": options.portfolio_date or "",
         "positions_output": options.positions_output,
         "fundamentals_master": options.fundamentals_master,
+        "research_priority_output": options.research_priority_output,
         "fundamentals_evidence_input": options.fundamentals_evidence_input,
         "fundamentals_overlay_input": options.fundamentals_overlay_input,
         "watchlist_input": options.watchlist_input or "",
@@ -412,6 +418,8 @@ def run_coverage_stage(options: PersonalRunOptions) -> StageResult:
     definitions = load_metric_definitions(options.metric_definitions)
     coverage_rows = build_fundamentals_coverage(positions_rows, fundamentals_rows, definitions)
     write_csv_rows(options.coverage_output, COVERAGE_OUTPUT_FIELDS, coverage_rows)
+    research_priority_rows = build_research_priority_rows(positions_rows, coverage_rows)
+    write_csv_rows(options.research_priority_output, RESEARCH_PRIORITY_OUTPUT_FIELDS, research_priority_rows)
     score_rows = read_csv_rows(scores_path)
     enriched_rows = build_personal_enriched_rows(coverage_rows, fundamentals_rows, score_rows)
     write_csv_rows(options.fundamentals_enriched_output, PERSONAL_ENRICHED_OUTPUT_FIELDS, enriched_rows)
@@ -425,9 +433,10 @@ def run_coverage_stage(options: PersonalRunOptions) -> StageResult:
             "fundamentals_coverage": options.coverage_output,
             "fundamentals_enriched": options.fundamentals_enriched_output,
             "fundamentals_coverage_report": options.fundamentals_coverage_report_output or "",
+            "research_priority": options.research_priority_output,
         },
         warnings=warnings,
-        notes="Personal fundamentals coverage and research gaps generated from the local master.",
+        notes="Personal fundamentals coverage, profile guardrails and research priority generated from the local master.",
     )
 
 
@@ -1064,6 +1073,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--score-audit-output", default=DEFAULT_PATHS["score_audit_output"], help="Personal score audit output.")
     parser.add_argument("--coverage-output", default=DEFAULT_PATHS["coverage_output"], help="Personal fundamentals coverage output.")
     parser.add_argument("--fundamentals-enriched-output", default=DEFAULT_PATHS["fundamentals_enriched_output"], help="Personal enriched fundamentals output.")
+    parser.add_argument("--research-priority-output", default=DEFAULT_PATHS["research_priority_output"], help="Personal fundamentals research priority output.")
     parser.add_argument("--fundamentals-coverage-report-output", help="Personal fundamentals coverage markdown report output.")
     parser.add_argument("--fundamentals-evidence-input", default=DEFAULT_PATHS["fundamentals_evidence_input"], help="Manual personal fundamentals evidence input.")
     parser.add_argument("--fundamentals-evidence-registry-output", default=DEFAULT_PATHS["fundamentals_evidence_registry_output"], help="Personal fundamentals evidence registry output.")
@@ -1141,6 +1151,7 @@ def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
         score_audit_output=args.score_audit_output,
         coverage_output=args.coverage_output,
         fundamentals_enriched_output=args.fundamentals_enriched_output,
+        research_priority_output=args.research_priority_output,
         fundamentals_coverage_report_output=args.fundamentals_coverage_report_output,
         fundamentals_evidence_input=args.fundamentals_evidence_input,
         fundamentals_evidence_registry_output=args.fundamentals_evidence_registry_output,
