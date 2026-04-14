@@ -23,6 +23,7 @@ DEFAULT_EVIDENCE_INPUT_PATH = "data/raw/personal_fundamentals_evidence.csv"
 DEFAULT_EVIDENCE_TEMPLATE_PATH = "data/raw/personal_fundamentals_evidence_template.csv"
 DEFAULT_REGISTRY_OUTPUT = "data/processed/personal_fundamentals_evidence_registry.csv"
 DEFAULT_BACKLOG_OUTPUT = "data/processed/personal_fundamentals_research_backlog.csv"
+DEFAULT_PROPOSED_UPDATES_OUTPUT = "data/processed/personal_fundamentals_proposed_updates.csv"
 DEFAULT_SUMMARY_OUTPUT = "data/processed/personal_fundamentals_evidence_summary.csv"
 
 VALID_VERIFICATION_STATUSES = {"VERIFIED", "REVIEW", "UNVERIFIED"}
@@ -100,6 +101,26 @@ RESEARCH_BACKLOG_FIELDS = [
     "optional_missing_evidence_kpis",
     "needs_research_flag",
     "research_priority",
+    "notes",
+]
+
+PROPOSED_UPDATES_FIELDS = [
+    "ticker",
+    "isin",
+    "company_name",
+    "company_type_profile",
+    "kpi_name",
+    "reported_value",
+    "reported_unit",
+    "currency",
+    "source_type",
+    "source_name",
+    "source_reference",
+    "source_as_of_date",
+    "fiscal_year",
+    "verification_status",
+    "data_quality_flag",
+    "proposal_reason",
     "notes",
 ]
 
@@ -185,6 +206,17 @@ def backlog_sort_key(row: dict[str, str]) -> tuple[int, str, str]:
         backlog_priority_sort_value(str(row.get("research_priority", ""))),
         canonicalize_ticker(row.get("ticker", "")),
         str(row.get("isin", "") or "").strip().upper(),
+    )
+
+
+def proposed_update_sort_key(row: dict[str, str]) -> tuple[str, ...]:
+    return (
+        canonicalize_ticker(row.get("ticker", "")),
+        str(row.get("isin", "") or "").strip().upper(),
+        str(row.get("kpi_name", "") or "").strip(),
+        str(row.get("source_as_of_date", "") or "").strip(),
+        str(row.get("source_name", "") or "").strip(),
+        str(row.get("source_reference", "") or "").strip(),
     )
 
 
@@ -428,6 +460,36 @@ def build_research_backlog(
     return sorted(backlog_rows, key=backlog_sort_key)
 
 
+def build_proposed_update_rows(registry_rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for row in registry_rows:
+        reported_value = str(row.get("reported_value", "") or "").strip()
+        if not reported_value:
+            continue
+        rows.append(
+            {
+                "ticker": row.get("ticker", ""),
+                "isin": row.get("isin", ""),
+                "company_name": row.get("company_name", ""),
+                "company_type_profile": row.get("company_type_profile", ""),
+                "kpi_name": row.get("kpi_name", ""),
+                "reported_value": reported_value,
+                "reported_unit": row.get("reported_unit", ""),
+                "currency": row.get("currency", ""),
+                "source_type": row.get("source_type", ""),
+                "source_name": row.get("source_name", ""),
+                "source_reference": row.get("source_reference", ""),
+                "source_as_of_date": row.get("source_as_of_date", ""),
+                "fiscal_year": row.get("fiscal_year", ""),
+                "verification_status": row.get("verification_status", ""),
+                "data_quality_flag": row.get("data_quality_flag", ""),
+                "proposal_reason": "Validated explicit evidence has reported_value; manual Personal-Master review required.",
+                "notes": row.get("notes", ""),
+            }
+        )
+    return sorted(rows, key=proposed_update_sort_key)
+
+
 def build_summary_rows(registry_rows: list[dict[str, str]], backlog_rows: list[dict[str, str]]) -> list[dict[str, str]]:
     priority_counts = Counter(row.get("research_priority", "NONE") for row in backlog_rows)
     required_gap_count = sum(1 for row in backlog_rows if str(row.get("missing_required_evidence_kpis", "")).strip())
@@ -538,6 +600,7 @@ def run_fundamentals_evidence_engine(
     metric_definitions_path: str = DEFAULT_METRIC_DEFINITIONS_PATH,
     registry_output: str = DEFAULT_REGISTRY_OUTPUT,
     backlog_output: str = DEFAULT_BACKLOG_OUTPUT,
+    proposed_updates_output: str | None = DEFAULT_PROPOSED_UPDATES_OUTPUT,
     summary_output: str | None = DEFAULT_SUMMARY_OUTPUT,
     report_output: str | None = None,
     template_output: str | None = DEFAULT_EVIDENCE_TEMPLATE_PATH,
@@ -550,10 +613,13 @@ def run_fundamentals_evidence_engine(
         source_name=f"personal fundamentals evidence ({evidence_input_path})",
     )
     backlog_rows = build_research_backlog(master_rows, registry_rows, definitions)
+    proposed_update_rows = build_proposed_update_rows(registry_rows)
 
     outputs: dict[str, Path] = {}
     outputs["evidence_registry"] = write_csv_rows(registry_output, EVIDENCE_REGISTRY_FIELDS, registry_rows)
     outputs["research_backlog"] = write_csv_rows(backlog_output, RESEARCH_BACKLOG_FIELDS, backlog_rows)
+    if proposed_updates_output:
+        outputs["proposed_updates"] = write_csv_rows(proposed_updates_output, PROPOSED_UPDATES_FIELDS, proposed_update_rows)
     if summary_output:
         outputs["evidence_summary"] = write_csv_rows(summary_output, EVIDENCE_SUMMARY_FIELDS, build_summary_rows(registry_rows, backlog_rows))
     if report_output:
@@ -570,6 +636,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--metric-definitions", default=DEFAULT_METRIC_DEFINITIONS_PATH, help="Fundamentals metric definitions config.")
     parser.add_argument("--registry-output", default=DEFAULT_REGISTRY_OUTPUT, help="Normalized evidence registry output.")
     parser.add_argument("--backlog-output", default=DEFAULT_BACKLOG_OUTPUT, help="Research backlog output.")
+    parser.add_argument("--proposed-updates-output", default=DEFAULT_PROPOSED_UPDATES_OUTPUT, help="Manual Personal-Master proposed updates output.")
     parser.add_argument("--summary-output", default=DEFAULT_SUMMARY_OUTPUT, help="Evidence summary output.")
     parser.add_argument("--report-output", default=default_evidence_report_path(), help="Evidence markdown report output.")
     parser.add_argument("--template-output", default=DEFAULT_EVIDENCE_TEMPLATE_PATH, help="Evidence input template output.")
@@ -588,6 +655,7 @@ def main() -> None:
         metric_definitions_path=args.metric_definitions,
         registry_output=args.registry_output,
         backlog_output=args.backlog_output,
+        proposed_updates_output=args.proposed_updates_output,
         summary_output=args.summary_output,
         report_output=args.report_output,
         template_output=args.template_output,

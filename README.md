@@ -151,10 +151,10 @@ Mehrdeutige Treffer werden nicht geraten, sondern als `REVIEW` mit `match_confli
 
 ## Fundamentals Evidence / Research Backlog
 
-`src.fundamentals_evidence_engine` ergaenzt den Personal-Master um eine explizite, lokale Evidence-Schicht. Der manuelle Input `data/raw/personal_fundamentals_evidence.csv` wird validiert, normalisiert und zu `data/processed/personal_fundamentals_evidence_registry.csv`, `data/processed/personal_fundamentals_research_backlog.csv`, optionaler Summary und einem Evidence-Report verarbeitet.
+`src.fundamentals_evidence_engine` ergaenzt den Personal-Master um eine explizite, lokale Evidence-Schicht. Der manuelle Input `data/raw/personal_fundamentals_evidence.csv` wird validiert, normalisiert und zu `data/processed/personal_fundamentals_evidence_registry.csv`, `data/processed/personal_fundamentals_research_backlog.csv`, `data/processed/personal_fundamentals_proposed_updates.csv`, optionaler Summary und einem Evidence-Report verarbeitet.
 
 ```powershell
-python -m src.fundamentals_evidence_engine --fundamentals-master data/raw/personal_fundamentals_master.csv --evidence-input data/raw/personal_fundamentals_evidence.csv --metric-definitions configs/fundamentals_metric_definitions.yaml --registry-output data/processed/personal_fundamentals_evidence_registry.csv --backlog-output data/processed/personal_fundamentals_research_backlog.csv --summary-output data/processed/personal_fundamentals_evidence_summary.csv --report-output reports/YYYY-MM-DD/personal_fundamentals_evidence_report.md --template-output data/raw/personal_fundamentals_evidence_template.csv
+python -m src.fundamentals_evidence_engine --fundamentals-master data/raw/personal_fundamentals_master.csv --evidence-input data/raw/personal_fundamentals_evidence.csv --metric-definitions configs/fundamentals_metric_definitions.yaml --registry-output data/processed/personal_fundamentals_evidence_registry.csv --backlog-output data/processed/personal_fundamentals_research_backlog.csv --proposed-updates-output data/processed/personal_fundamentals_proposed_updates.csv --summary-output data/processed/personal_fundamentals_evidence_summary.csv --report-output reports/YYYY-MM-DD/personal_fundamentals_evidence_report.md --template-output data/raw/personal_fundamentals_evidence_template.csv
 ```
 
 Leitplanken:
@@ -163,15 +163,16 @@ Leitplanken:
 - `kpi_name` muss exakt einem kanonischen KPI aus `configs/fundamentals_metric_definitions.yaml` entsprechen; es gibt keine KPI-Aliase oder fuzzy Matches.
 - Holding-Zuordnung erfolgt nur ueber exakte Ticker-/ISIN-Identitaet gegen den Personal-Master.
 - `reported_value` bleibt Evidence-Metadatum und befuellt weder automatisch den Personal-Master noch Scores.
+- `personal_fundamentals_proposed_updates.csv` enthaelt nur validierte Evidence-Zeilen mit `reported_value` und ist ein manueller Pruef-/Uebertragungsoutput; er schreibt nicht in den Master zurueck.
 - Es gibt keine PDF-/Web-/API-Extraktion, keine automatische Rueckschreibung und keine Scoring-Aenderung.
 - Ein header-only Evidence-Input ist zulaessig; bei `OTHER`-Profilen fuehrt das typischerweise zu `LOW`-Backlog statt `HIGH`, weil STANDARD-Required-KPIs fuer dieses Profil nicht als Pflichtluecke gelten.
 
 ## Fundamentals Overlay / Applied Master
 
-`src.fundamentals_overlay_engine` ergaenzt den Personal-Master um eine explizite lokale Analyst-Overlay-Schicht. Der manuelle Input `data/raw/personal_fundamentals_overlay.csv` wird validiert, zu `data/processed/personal_fundamentals_overlay_registry.csv` normalisiert und als `data/processed/personal_fundamentals_master_applied.csv` auf den Personal-Master projiziert.
+`src.fundamentals_overlay_engine` ergaenzt den Personal-Master um eine explizite lokale Analyst-Overlay-Schicht. Der manuelle Input `data/raw/personal_fundamentals_overlay.csv` wird validiert, zu `data/processed/personal_fundamentals_overlay_registry.csv` normalisiert und als `data/processed/personal_fundamentals_master_applied.csv` auf den Personal-Master projiziert. `overlay_review_due_date` wird als `NOT_SET`, `OK`, `DUE` oder `OVERDUE` sichtbar und kann zusaetzlich in `personal_fundamentals_overlay_review_backlog.csv` ausgegeben werden.
 
 ```powershell
-python -m src.fundamentals_overlay_engine --fundamentals-master data/raw/personal_fundamentals_master.csv --overlay-input data/raw/personal_fundamentals_overlay.csv --registry-output data/processed/personal_fundamentals_overlay_registry.csv --applied-master-output data/processed/personal_fundamentals_master_applied.csv --summary-output data/processed/personal_fundamentals_overlay_summary.csv --report-output reports/YYYY-MM-DD/personal_fundamentals_overlay_report.md --template-output data/raw/personal_fundamentals_overlay_template.csv
+python -m src.fundamentals_overlay_engine --fundamentals-master data/raw/personal_fundamentals_master.csv --overlay-input data/raw/personal_fundamentals_overlay.csv --registry-output data/processed/personal_fundamentals_overlay_registry.csv --applied-master-output data/processed/personal_fundamentals_master_applied.csv --summary-output data/processed/personal_fundamentals_overlay_summary.csv --review-backlog-output data/processed/personal_fundamentals_overlay_review_backlog.csv --report-output reports/YYYY-MM-DD/personal_fundamentals_overlay_report.md --template-output data/raw/personal_fundamentals_overlay_template.csv
 ```
 
 Leitplanken:
@@ -180,6 +181,7 @@ Leitplanken:
 - Die Applied-Master-Projektion veraendert keine Core-KPIs und schreibt nicht in `data/raw/personal_fundamentals_master.csv` zurueck.
 - Es gibt keine neue Scoring-Logik, keine automatische Research-/PDF-/Web-/API-Extraktion und keine automatische Uebernahme in Scores.
 - `personal_fundamentals_master_applied.csv` ist eine explizite Projektion fuer nachgelagerte Fundamentals-/Scoring-Pfade, wenn sie bewusst als `--fundamentals` uebergeben wird; sie ersetzt den Original-Master nicht still.
+- Faellige oder ueberfaellige Overlay-Reviews werden markiert, aber Overlays werden dadurch nicht automatisch deaktiviert.
 
 Der Audit-Output `data/processed/score_audit.csv` zeigt pro Titel:
 
@@ -427,7 +429,9 @@ Hinweise:
 - `fundamentals_seed` erzeugt nur Identity-Seed-Zeilen und erfindet keine KPI-Werte. Ein vorhandener Personal-Master wird nur mit `--overwrite-fundamentals-master` ersetzt.
 - `coverage` erzeugt neben Coverage, Enriched und Report auch `personal_research_priority.csv` als operative Nachpflege-Liste fuer Profile/KPI-Luecken.
 - `fundamentals_evidence` erzeugt nur Evidence-Registry, Research-Backlog, Summary und Evidence-Report; diese Stage schreibt nicht in den Personal-Master zurueck.
-- `fundamentals_overlay` erzeugt nur Overlay-Registry, Applied-Master-Projektion, Summary und Overlay-Report; diese Stage ersetzt den Original-Master nicht still.
+- `fundamentals_evidence` erzeugt zusaetzlich `personal_fundamentals_proposed_updates.csv` als manuellen Vorschlagsoutput aus validierter Evidence mit `reported_value`.
+- `fundamentals_overlay` erzeugt nur Overlay-Registry, Applied-Master-Projektion, Review-Backlog, Summary und Overlay-Report; diese Stage ersetzt den Original-Master nicht still.
+- `--use-applied-master` schaltet nur explizit fundamentals-abhaengige Downstream-Stages wie `scoring`, `coverage`, `watchlist`, `monthly` und `portfolio_review` auf `personal_fundamentals_master_applied.csv`. Ohne den Schalter bleibt der Base-Master aktiv; wenn der Applied Master fehlt, scheitert der Run fail-fast.
 - Multi-Benchmark-Stages behalten die expliziten Symbolauswahl-Regeln aus `src.multi_benchmark_performance_engine`; bei mehreren Symbolen gibt es keine stille Auswahl.
 - `history` und `performance` brauchen einen datierten Snapshot. Bei `--import-mode sample` sollte deshalb `--portfolio-date` explizit gesetzt werden.
 - Die Einzel-CLIs unten bleiben weiterhin gueltig und sind die fachlichen Modulvertraege.
@@ -474,8 +478,10 @@ Interpretation der persoenlichen Outputs:
 - `personal_research_priority.csv`: operative Nachpflege-Liste fuer unbegruendete `OTHER`-Profile und offene Pflicht-KPI-Luecken, sortiert nach Portfoliorelevanz
 - `personal_fundamentals_evidence_registry.csv`: normalisierte lokale Evidence-Zeilen je Holding/KPI/Quelle
 - `personal_fundamentals_research_backlog.csv`: operative Evidence-Luecken je Holding auf Basis der kanonischen Required-KPI-Methodik
+- `personal_fundamentals_proposed_updates.csv`: manueller Vorschlagsoutput aus validierter Evidence mit `reported_value`; keine automatische Master-Rueckschreibung
 - `personal_fundamentals_overlay_registry.csv`: normalisierte lokale Analyst-Overlay-Zeilen je Holding/Stichtag/Autor
 - `personal_fundamentals_master_applied.csv`: explizite Projektion aus Original-Master plus validierten Overlays; kein Ersatz fuer die Core-KPI-Source-of-Truth
+- `personal_fundamentals_overlay_review_backlog.csv`: faellige oder ueberfaellige Overlay-Reviews; keine automatische Overlay-Deaktivierung
 - `personal_portfolio_holdings_action_table.csv`: operative Holdings-Aktionen `ADD`, `HOLD`, `WATCH`, `REDUCE`, `EXIT_REVIEW`; bei uebergebener Coverage werden offene Fundamentals-Luecken konservativ als Guardrail sichtbar
 - `personal_monthly_buy_ranking.csv`: Kauf-Ranking fuer den konfigurierten Monatszufluss; bei uebergebener Coverage werden bestehende Holdings mit offenen Fundamentals-Luecken nicht fuer frisches Kapital empfohlen
 - `personal_monthly_decision_report.md`: monatlicher Entscheidungsreport mit optional eingeblendeten Fundamentals-Research-Luecken

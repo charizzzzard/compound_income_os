@@ -8,6 +8,7 @@ from pathlib import Path
 from src.common import read_csv_rows
 from src.fundamentals_evidence_engine import (
     EVIDENCE_INPUT_FIELDS,
+    PROPOSED_UPDATES_FIELDS,
     RESEARCH_BACKLOG_FIELDS,
     build_evidence_registry,
     required_kpis_for_profile,
@@ -115,11 +116,12 @@ class FundamentalsEvidenceEngineTests(unittest.TestCase):
         master_rows: list[dict[str, str]],
         evidence_rows: list[dict[str, str]],
         prefix: str,
-    ) -> tuple[Path, Path, Path, Path, Path, Path]:
+    ) -> tuple[Path, Path, Path, Path, Path, Path, Path]:
         master_path = self._path(f"_tmp_evidence_{prefix}_master.csv")
         evidence_path = self._path(f"_tmp_evidence_{prefix}_input.csv")
         registry_path = self._path(f"_tmp_evidence_{prefix}_registry.csv")
         backlog_path = self._path(f"_tmp_evidence_{prefix}_backlog.csv")
+        proposed_path = self._path(f"_tmp_evidence_{prefix}_proposed_updates.csv")
         summary_path = self._path(f"_tmp_evidence_{prefix}_summary.csv")
         report_path = self._path(f"_tmp_evidence_{prefix}_report.md")
         template_path = self._path(f"_tmp_evidence_{prefix}_template.csv")
@@ -130,18 +132,19 @@ class FundamentalsEvidenceEngineTests(unittest.TestCase):
             evidence_input_path=str(evidence_path),
             registry_output=str(registry_path),
             backlog_output=str(backlog_path),
+            proposed_updates_output=str(proposed_path),
             summary_output=str(summary_path),
             report_output=str(report_path),
             template_output=str(template_path),
         )
-        return master_path, evidence_path, registry_path, backlog_path, summary_path, report_path
+        return master_path, evidence_path, registry_path, backlog_path, proposed_path, summary_path, report_path
 
     def test_valid_evidence_input_generates_registry_backlog_summary_and_report(self) -> None:
         definitions = load_metric_definitions()
         required = required_kpis_for_profile("STANDARD", definitions)
         evidence_rows = [evidence_row(kpi_name=kpi_name, reported_value=str(index)) for index, kpi_name in enumerate(required, start=1)]
 
-        _master_path, _evidence_path, registry_path, backlog_path, summary_path, report_path = self._run_engine(
+        _master_path, _evidence_path, registry_path, backlog_path, proposed_path, summary_path, report_path = self._run_engine(
             [master_row()],
             evidence_rows,
             "valid",
@@ -149,8 +152,11 @@ class FundamentalsEvidenceEngineTests(unittest.TestCase):
 
         registry_rows = read_csv_rows(registry_path)
         backlog_rows = read_csv_rows(backlog_path)
+        proposed_rows = read_csv_rows(proposed_path)
         summary_rows = {row["metric_name"]: row["metric_value"] for row in read_csv_rows(summary_path)}
         self.assertEqual(len(registry_rows), len(required))
+        self.assertEqual(len(proposed_rows), len(required))
+        self.assertEqual(proposed_rows[0]["proposal_reason"], "Validated explicit evidence has reported_value; manual Personal-Master review required.")
         self.assertEqual(backlog_rows[0]["required_kpis_expected"], str(len(required)))
         self.assertEqual(backlog_rows[0]["required_kpis_with_evidence"], str(len(required)))
         self.assertEqual(backlog_rows[0]["missing_required_evidence_kpis"], "")
@@ -185,7 +191,7 @@ class FundamentalsEvidenceEngineTests(unittest.TestCase):
             )
 
     def test_required_kpi_expectations_follow_company_type_profile(self) -> None:
-        _master_path, _evidence_path, _registry_path, backlog_path, _summary_path, _report_path = self._run_engine(
+        _master_path, _evidence_path, _registry_path, backlog_path, _proposed_path, _summary_path, _report_path = self._run_engine(
             [
                 master_row(ticker="STD", isin="US0000000001", company_name="Standard Co", profile="STANDARD"),
                 master_row(ticker="FIN", isin="US0000000002", company_name="Financial Co", profile="FINANCIAL"),
@@ -201,7 +207,7 @@ class FundamentalsEvidenceEngineTests(unittest.TestCase):
         self.assertNotEqual(rows_by_ticker["FIN"]["research_priority"], "HIGH")
 
     def test_holding_without_required_evidence_is_research_gap(self) -> None:
-        _master_path, _evidence_path, _registry_path, backlog_path, _summary_path, _report_path = self._run_engine(
+        _master_path, _evidence_path, _registry_path, backlog_path, _proposed_path, _summary_path, _report_path = self._run_engine(
             [master_row()],
             [],
             "missing",
@@ -222,7 +228,7 @@ class FundamentalsEvidenceEngineTests(unittest.TestCase):
             else:
                 evidence_rows.append(evidence_row(kpi_name=kpi_name))
 
-        _master_path, _evidence_path, _registry_path, backlog_path, _summary_path, _report_path = self._run_engine(
+        _master_path, _evidence_path, _registry_path, backlog_path, _proposed_path, _summary_path, _report_path = self._run_engine(
             [master_row()],
             evidence_rows,
             "weak",
@@ -244,8 +250,21 @@ class FundamentalsEvidenceEngineTests(unittest.TestCase):
         self.assertEqual(header, EVIDENCE_INPUT_FIELDS)
         self.assertEqual(remaining, [])
 
+    def test_proposed_updates_skip_blank_reported_values(self) -> None:
+        _master_path, _evidence_path, _registry_path, _backlog_path, proposed_path, _summary_path, _report_path = self._run_engine(
+            [master_row()],
+            [evidence_row(reported_value="")],
+            "blank_proposal",
+        )
+
+        with proposed_path.open(encoding="utf-8", newline="") as handle:
+            header = next(csv.reader(handle))
+            remaining = list(csv.reader(handle))
+        self.assertEqual(header, PROPOSED_UPDATES_FIELDS)
+        self.assertEqual(remaining, [])
+
     def test_duplicate_identical_evidence_is_idempotent(self) -> None:
-        _master_path, _evidence_path, registry_path, _backlog_path, _summary_path, _report_path = self._run_engine(
+        _master_path, _evidence_path, registry_path, _backlog_path, _proposed_path, _summary_path, _report_path = self._run_engine(
             [master_row()],
             [evidence_row(), evidence_row()],
             "dedupe",
@@ -266,7 +285,7 @@ class FundamentalsEvidenceEngineTests(unittest.TestCase):
             evidence_row(ticker="AAPL", isin="US0378331005", company_name="Apple Inc", kpi_name="roic"),
         ]
 
-        _master_path, _evidence_path, registry_path, backlog_path, _summary_path, _report_path = self._run_engine(
+        _master_path, _evidence_path, registry_path, backlog_path, _proposed_path, _summary_path, _report_path = self._run_engine(
             [
                 master_row(ticker="MSFT", isin="US5949181045", company_name="Microsoft Corp"),
                 master_row(ticker="AAPL", isin="US0378331005", company_name="Apple Inc"),
@@ -283,6 +302,7 @@ class FundamentalsEvidenceEngineTests(unittest.TestCase):
         evidence_path = self._path("_tmp_evidence_cli_input.csv")
         registry_path = self._path("_tmp_evidence_cli_registry.csv")
         backlog_path = self._path("_tmp_evidence_cli_backlog.csv")
+        proposed_path = self._path("_tmp_evidence_cli_proposed_updates.csv")
         summary_path = self._path("_tmp_evidence_cli_summary.csv")
         report_path = self._path("_tmp_evidence_cli_report.md")
         template_path = self._path("_tmp_evidence_cli_template.csv")
@@ -302,6 +322,8 @@ class FundamentalsEvidenceEngineTests(unittest.TestCase):
                 str(registry_path),
                 "--backlog-output",
                 str(backlog_path),
+                "--proposed-updates-output",
+                str(proposed_path),
                 "--summary-output",
                 str(summary_path),
                 "--report-output",
@@ -315,9 +337,10 @@ class FundamentalsEvidenceEngineTests(unittest.TestCase):
         )
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        for path in [registry_path, backlog_path, summary_path, report_path, template_path]:
+        for path in [registry_path, backlog_path, proposed_path, summary_path, report_path, template_path]:
             self.assertTrue(path.exists(), path)
         self.assertEqual(read_csv_rows(registry_path)[0]["kpi_name"], "roic")
+        self.assertEqual(read_csv_rows(proposed_path)[0]["reported_value"], "25.0")
 
 
 if __name__ == "__main__":

@@ -182,6 +182,7 @@ class PersonalRunEngineTests(unittest.TestCase):
             fundamentals_evidence_input=str(self._path(f"_tmp_{prefix}_evidence_input.csv")),
             fundamentals_evidence_registry_output=str(self._path(f"_tmp_{prefix}_evidence_registry.csv")),
             fundamentals_research_backlog_output=str(self._path(f"_tmp_{prefix}_research_backlog.csv")),
+            fundamentals_proposed_updates_output=str(self._path(f"_tmp_{prefix}_proposed_updates.csv")),
             fundamentals_evidence_summary_output=str(self._path(f"_tmp_{prefix}_evidence_summary.csv")),
             fundamentals_evidence_template_output=str(self._path(f"_tmp_{prefix}_evidence_template.csv")),
             fundamentals_evidence_report_output=str(self._path(f"_tmp_{prefix}_evidence_report.md")),
@@ -189,6 +190,7 @@ class PersonalRunEngineTests(unittest.TestCase):
             fundamentals_overlay_registry_output=str(self._path(f"_tmp_{prefix}_overlay_registry.csv")),
             fundamentals_applied_master_output=str(self._path(f"_tmp_{prefix}_applied_master.csv")),
             fundamentals_overlay_summary_output=str(self._path(f"_tmp_{prefix}_overlay_summary.csv")),
+            fundamentals_overlay_review_backlog_output=str(self._path(f"_tmp_{prefix}_overlay_review_backlog.csv")),
             fundamentals_overlay_template_output=str(self._path(f"_tmp_{prefix}_overlay_template.csv")),
             fundamentals_overlay_report_output=str(self._path(f"_tmp_{prefix}_overlay_report.md")),
             watchlist_output=str(self._path(f"_tmp_{prefix}_watchlist_ranked.csv")),
@@ -265,6 +267,8 @@ class PersonalRunEngineTests(unittest.TestCase):
         statuses = {row["stage_name"]: row["status"] for row in manifest_on_disk["stage_results"]}
         self.assertEqual(statuses["cost_tax"], "NOT_REQUESTED")
         self.assertEqual(statuses["scoring"], "SUCCESS")
+        scoring_result = next(row for row in manifest_on_disk["stage_results"] if row["stage_name"] == "scoring")
+        self.assertEqual(scoring_result["used_inputs"]["fundamentals_source_mode"], "BASE")
 
     def test_fundamentals_evidence_stage_updates_manifest_and_artifacts(self) -> None:
         options = self._core_options("evidence_stage", ["import", "fundamentals_seed", "fundamentals_evidence"])
@@ -278,6 +282,7 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertEqual(statuses["fundamentals_evidence"], "SUCCESS")
         self.assertTrue(Path(options.fundamentals_evidence_registry_output).exists())
         self.assertTrue(Path(options.fundamentals_research_backlog_output).exists())
+        self.assertTrue(Path(options.fundamentals_proposed_updates_output).exists())
         self.assertIn("fundamentals_evidence", {row["stage_name"] for row in artifact_rows if row["produced"] == "True"})
 
     def test_fundamentals_overlay_stage_updates_manifest_and_artifacts(self) -> None:
@@ -292,7 +297,36 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertEqual(statuses["fundamentals_overlay"], "SUCCESS")
         self.assertTrue(Path(options.fundamentals_overlay_registry_output).exists())
         self.assertTrue(Path(options.fundamentals_applied_master_output).exists())
+        self.assertTrue(Path(options.fundamentals_overlay_review_backlog_output).exists())
         self.assertIn("fundamentals_overlay", {row["stage_name"] for row in artifact_rows if row["produced"] == "True"})
+
+    def test_use_applied_master_switch_routes_scoring_explicitly(self) -> None:
+        options = self._core_options("applied_switch", ["import", "fundamentals_seed", "fundamentals_overlay", "scoring"])
+        options.use_applied_master = True
+        self._write_empty_overlay(Path(options.fundamentals_overlay_input))
+
+        manifest = run_personal_run_engine(options)
+
+        scoring_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "scoring")
+        artifact_roles = {row["artifact_role"] for row in read_csv_rows(options.artifacts_output) if row["produced"] == "True"}
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertTrue(manifest["inputs"]["use_applied_master"])
+        self.assertEqual(scoring_result["used_inputs"]["fundamentals_source_mode"], "APPLIED")
+        self.assertEqual(scoring_result["used_inputs"]["fundamentals_master"], options.fundamentals_applied_master_output)
+        self.assertIn("applied_master", artifact_roles)
+
+    def test_use_applied_master_without_projection_fails_fast(self) -> None:
+        options = self._core_options("applied_missing", ["import", "fundamentals_seed", "scoring"])
+        options.use_applied_master = True
+
+        with self.assertRaisesRegex(RuntimeError, "applied personal fundamentals master"):
+            run_personal_run_engine(options)
+
+        manifest = json.loads(Path(options.manifest_output).read_text(encoding="utf-8"))
+        statuses = {row["stage_name"]: row["status"] for row in manifest["stage_results"]}
+        self.assertEqual(manifest["run_status"], "FAILED")
+        self.assertEqual(statuses["scoring"], "FAILED")
+        self.assertIn("applied personal fundamentals master", manifest["warnings"][0])
 
     def test_history_and_performance_run_uses_existing_single_benchmark_method(self) -> None:
         options = self._core_options("history_perf", ["import", "history", "performance"])

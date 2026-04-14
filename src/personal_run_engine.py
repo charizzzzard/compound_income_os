@@ -36,6 +36,7 @@ from src.fundamentals_evidence_engine import (
     DEFAULT_BACKLOG_OUTPUT,
     DEFAULT_EVIDENCE_INPUT_PATH,
     DEFAULT_EVIDENCE_TEMPLATE_PATH,
+    DEFAULT_PROPOSED_UPDATES_OUTPUT,
     DEFAULT_REGISTRY_OUTPUT,
     DEFAULT_SUMMARY_OUTPUT as DEFAULT_EVIDENCE_SUMMARY_OUTPUT,
     run_fundamentals_evidence_engine,
@@ -44,6 +45,7 @@ from src.fundamentals_overlay_engine import (
     DEFAULT_APPLIED_MASTER_OUTPUT,
     DEFAULT_OVERLAY_INPUT_PATH,
     DEFAULT_OVERLAY_REGISTRY_OUTPUT,
+    DEFAULT_OVERLAY_REVIEW_BACKLOG_OUTPUT,
     DEFAULT_OVERLAY_SUMMARY_OUTPUT,
     DEFAULT_OVERLAY_TEMPLATE_PATH,
     run_fundamentals_overlay_engine,
@@ -61,10 +63,10 @@ NOT_REQUESTED = "NOT_REQUESTED"
 STAGE_ORDER = [
     "import",
     "fundamentals_seed",
-    "scoring",
-    "coverage",
     "fundamentals_evidence",
     "fundamentals_overlay",
+    "scoring",
+    "coverage",
     "watchlist",
     "monthly",
     "portfolio_review",
@@ -89,12 +91,14 @@ DEFAULT_PATHS = {
     "fundamentals_evidence_input": DEFAULT_EVIDENCE_INPUT_PATH,
     "fundamentals_evidence_registry_output": DEFAULT_REGISTRY_OUTPUT,
     "fundamentals_research_backlog_output": DEFAULT_BACKLOG_OUTPUT,
+    "fundamentals_proposed_updates_output": DEFAULT_PROPOSED_UPDATES_OUTPUT,
     "fundamentals_evidence_summary_output": DEFAULT_EVIDENCE_SUMMARY_OUTPUT,
     "fundamentals_evidence_template_output": DEFAULT_EVIDENCE_TEMPLATE_PATH,
     "fundamentals_overlay_input": DEFAULT_OVERLAY_INPUT_PATH,
     "fundamentals_overlay_registry_output": DEFAULT_OVERLAY_REGISTRY_OUTPUT,
     "fundamentals_applied_master_output": DEFAULT_APPLIED_MASTER_OUTPUT,
     "fundamentals_overlay_summary_output": DEFAULT_OVERLAY_SUMMARY_OUTPUT,
+    "fundamentals_overlay_review_backlog_output": DEFAULT_OVERLAY_REVIEW_BACKLOG_OUTPUT,
     "fundamentals_overlay_template_output": DEFAULT_OVERLAY_TEMPLATE_PATH,
     "watchlist_output": "data/processed/personal_watchlist_ranked.csv",
     "watchlist_report_output": "reports/sample/personal_watchlist_report.md",
@@ -166,6 +170,7 @@ class PersonalRunOptions:
     positions_output: str = DEFAULT_PATHS["positions_output"]
     fundamentals_master: str = DEFAULT_PATHS["fundamentals_master"]
     overwrite_fundamentals_master: bool = False
+    use_applied_master: bool = False
     metric_definitions: str = DEFAULT_METRIC_DEFINITIONS_PATH
     scores_output: str = DEFAULT_PATHS["scores_output"]
     score_audit_output: str = DEFAULT_PATHS["score_audit_output"]
@@ -176,6 +181,7 @@ class PersonalRunOptions:
     fundamentals_evidence_input: str = DEFAULT_PATHS["fundamentals_evidence_input"]
     fundamentals_evidence_registry_output: str = DEFAULT_PATHS["fundamentals_evidence_registry_output"]
     fundamentals_research_backlog_output: str = DEFAULT_PATHS["fundamentals_research_backlog_output"]
+    fundamentals_proposed_updates_output: str = DEFAULT_PATHS["fundamentals_proposed_updates_output"]
     fundamentals_evidence_summary_output: str = DEFAULT_PATHS["fundamentals_evidence_summary_output"]
     fundamentals_evidence_template_output: str = DEFAULT_PATHS["fundamentals_evidence_template_output"]
     fundamentals_evidence_report_output: str | None = None
@@ -183,6 +189,7 @@ class PersonalRunOptions:
     fundamentals_overlay_registry_output: str = DEFAULT_PATHS["fundamentals_overlay_registry_output"]
     fundamentals_applied_master_output: str = DEFAULT_PATHS["fundamentals_applied_master_output"]
     fundamentals_overlay_summary_output: str = DEFAULT_PATHS["fundamentals_overlay_summary_output"]
+    fundamentals_overlay_review_backlog_output: str = DEFAULT_PATHS["fundamentals_overlay_review_backlog_output"]
     fundamentals_overlay_template_output: str = DEFAULT_PATHS["fundamentals_overlay_template_output"]
     fundamentals_overlay_report_output: str | None = None
     watchlist_input: str | None = None
@@ -315,9 +322,13 @@ def input_snapshot(options: PersonalRunOptions) -> dict[str, Any]:
         "portfolio_date": options.portfolio_date or "",
         "positions_output": options.positions_output,
         "fundamentals_master": options.fundamentals_master,
+        "fundamentals_applied_master": options.fundamentals_applied_master_output,
+        "use_applied_master": options.use_applied_master,
         "research_priority_output": options.research_priority_output,
         "fundamentals_evidence_input": options.fundamentals_evidence_input,
+        "fundamentals_proposed_updates_output": options.fundamentals_proposed_updates_output,
         "fundamentals_overlay_input": options.fundamentals_overlay_input,
+        "fundamentals_overlay_review_backlog_output": options.fundamentals_overlay_review_backlog_output,
         "watchlist_input": options.watchlist_input or "",
         "benchmark_input": options.benchmark_input or "",
         "benchmark_config": options.benchmark_config,
@@ -329,6 +340,25 @@ def input_snapshot(options: PersonalRunOptions) -> dict[str, Any]:
         "ledger": options.ledger or "",
         "cost_tax_documents": options.cost_tax_documents or [],
     }
+
+
+def resolve_fundamentals_source(
+    options: PersonalRunOptions,
+    stage_name: str,
+    *,
+    require_path_for_base: bool,
+) -> tuple[str | None, str, str | None]:
+    if options.use_applied_master:
+        applied_path = require_existing_path(
+            options.fundamentals_applied_master_output,
+            "applied personal fundamentals master (--use-applied-master)",
+            stage_name,
+        )
+        return applied_path, "APPLIED", "fundamentals_applied_master_output"
+    if require_path_for_base:
+        base_path = require_existing_path(options.fundamentals_master, "personal fundamentals master", stage_name)
+        return base_path, "BASE", "fundamentals_master"
+    return None, "BASE", None
 
 
 def run_import_stage(options: PersonalRunOptions) -> StageResult:
@@ -379,7 +409,8 @@ def run_fundamentals_seed_stage(options: PersonalRunOptions) -> StageResult:
 def run_scoring_stage(options: PersonalRunOptions) -> StageResult:
     stage = "scoring"
     positions_path = require_existing_path(options.positions_output, "positions snapshot", stage)
-    fundamentals_path = require_existing_path(options.fundamentals_master, "personal fundamentals master", stage)
+    fundamentals_path, fundamentals_source_mode, fundamentals_required_input = resolve_fundamentals_source(options, stage, require_path_for_base=True)
+    assert fundamentals_path is not None
     positions_rows = read_csv_rows(positions_path)
     fundamentals_rows = read_csv_rows(fundamentals_path)
     require_columns(positions_rows, ["ticker", "market_value_eur", "asset_type", "sleeve", "sector"], f"positions CSV ({positions_path})")
@@ -400,17 +431,18 @@ def run_scoring_stage(options: PersonalRunOptions) -> StageResult:
     return stage_result(
         stage,
         SUCCESS,
-        ["positions_output", "fundamentals_master"],
-        used_inputs={"positions_output": positions_path, "fundamentals_master": fundamentals_path},
+        ["positions_output", fundamentals_required_input or "fundamentals_master"],
+        used_inputs={"positions_output": positions_path, "fundamentals_master": fundamentals_path, "fundamentals_source_mode": fundamentals_source_mode},
         produced_outputs={"company_scores": options.scores_output, "score_audit": options.score_audit_output},
-        notes="Scores generated with fundamentals_format=personal; no sample fundamentals fallback used.",
+        notes=f"Scores generated with fundamentals_format=personal; fundamentals_source_mode={fundamentals_source_mode}; no sample fundamentals fallback used.",
     )
 
 
 def run_coverage_stage(options: PersonalRunOptions) -> StageResult:
     stage = "coverage"
     positions_path = require_existing_path(options.positions_output, "positions snapshot", stage)
-    fundamentals_path = require_existing_path(options.fundamentals_master, "personal fundamentals master", stage)
+    fundamentals_path, fundamentals_source_mode, fundamentals_required_input = resolve_fundamentals_source(options, stage, require_path_for_base=True)
+    assert fundamentals_path is not None
     scores_path = require_existing_path(options.scores_output, "personal company scores", stage)
     positions_rows = read_csv_rows(positions_path)
     fundamentals_rows = read_csv_rows(fundamentals_path)
@@ -427,8 +459,13 @@ def run_coverage_stage(options: PersonalRunOptions) -> StageResult:
     return stage_result(
         stage,
         SUCCESS,
-        ["positions_output", "fundamentals_master", "scores_output"],
-        used_inputs={"positions_output": positions_path, "fundamentals_master": fundamentals_path, "scores_output": scores_path},
+        ["positions_output", fundamentals_required_input or "fundamentals_master", "scores_output"],
+        used_inputs={
+            "positions_output": positions_path,
+            "fundamentals_master": fundamentals_path,
+            "fundamentals_source_mode": fundamentals_source_mode,
+            "scores_output": scores_path,
+        },
         produced_outputs={
             "fundamentals_coverage": options.coverage_output,
             "fundamentals_enriched": options.fundamentals_enriched_output,
@@ -436,7 +473,7 @@ def run_coverage_stage(options: PersonalRunOptions) -> StageResult:
             "research_priority": options.research_priority_output,
         },
         warnings=warnings,
-        notes="Personal fundamentals coverage, profile guardrails and research priority generated from the local master.",
+        notes=f"Personal fundamentals coverage, profile guardrails and research priority generated with fundamentals_source_mode={fundamentals_source_mode}.",
     )
 
 
@@ -450,6 +487,7 @@ def run_fundamentals_evidence_stage(options: PersonalRunOptions) -> StageResult:
         metric_definitions_path=options.metric_definitions,
         registry_output=options.fundamentals_evidence_registry_output,
         backlog_output=options.fundamentals_research_backlog_output,
+        proposed_updates_output=options.fundamentals_proposed_updates_output,
         summary_output=options.fundamentals_evidence_summary_output,
         report_output=options.fundamentals_evidence_report_output,
         template_output=options.fundamentals_evidence_template_output,
@@ -474,6 +512,7 @@ def run_fundamentals_overlay_stage(options: PersonalRunOptions) -> StageResult:
         registry_output=options.fundamentals_overlay_registry_output,
         applied_master_output=options.fundamentals_applied_master_output,
         summary_output=options.fundamentals_overlay_summary_output,
+        review_backlog_output=options.fundamentals_overlay_review_backlog_output,
         report_output=options.fundamentals_overlay_report_output,
         template_output=options.fundamentals_overlay_template_output,
     )
@@ -489,6 +528,7 @@ def run_fundamentals_overlay_stage(options: PersonalRunOptions) -> StageResult:
 
 def run_watchlist_stage(options: PersonalRunOptions) -> StageResult:
     stage = "watchlist"
+    fundamentals_path, fundamentals_source_mode, _fundamentals_required_input = resolve_fundamentals_source(options, stage, require_path_for_base=False)
     watchlist_path = require_existing_path(options.watchlist_input, "watchlist input", stage)
     scores_path = require_existing_path(options.scores_output, "personal company scores", stage)
     watchlist_rows = read_csv_rows(watchlist_path)
@@ -507,18 +547,22 @@ def run_watchlist_stage(options: PersonalRunOptions) -> StageResult:
     )
     write_csv_rows(options.watchlist_output, watchlist_engine.OUTPUT_FIELDS, ranked)
     watchlist_engine.build_watchlist_report(ranked, options.watchlist_report_output)
+    used_inputs = {"watchlist_input": watchlist_path, "scores_output": scores_path, "fundamentals_source_mode": fundamentals_source_mode}
+    if fundamentals_path:
+        used_inputs["fundamentals_master"] = fundamentals_path
     return stage_result(
         stage,
         SUCCESS,
         ["watchlist_input", "scores_output"],
-        used_inputs={"watchlist_input": watchlist_path, "scores_output": scores_path},
+        used_inputs=used_inputs,
         produced_outputs={"watchlist_ranked": options.watchlist_output, "watchlist_report": options.watchlist_report_output},
-        notes="Watchlist ranked from personal scores.",
+        notes=f"Watchlist ranked from personal scores; fundamentals_source_mode={fundamentals_source_mode}.",
     )
 
 
 def run_monthly_stage(options: PersonalRunOptions) -> StageResult:
     stage = "monthly"
+    fundamentals_path, fundamentals_source_mode, _fundamentals_required_input = resolve_fundamentals_source(options, stage, require_path_for_base=False)
     positions_path = require_existing_path(options.positions_output, "positions snapshot", stage)
     scores_path = require_existing_path(options.scores_output, "personal company scores", stage)
     watchlist_path = require_existing_path(options.watchlist_output, "ranked watchlist", stage)
@@ -541,27 +585,32 @@ def run_monthly_stage(options: PersonalRunOptions) -> StageResult:
     write_csv_rows(options.rebalance_output, monthly_ranking_engine.REBALANCE_FIELDS, rebalance)
     report_coverage_rows = read_report_coverage_rows(coverage_path)
     build_monthly_decision_report(positions_rows, score_rows, cleaned_ranking, options.monthly_report_output, coverage_rows=report_coverage_rows)
+    used_inputs = {
+        "positions_output": positions_path,
+        "scores_output": scores_path,
+        "watchlist_output": watchlist_path,
+        "coverage_output": coverage_path,
+        "fundamentals_source_mode": fundamentals_source_mode,
+    }
+    if fundamentals_path:
+        used_inputs["fundamentals_master"] = fundamentals_path
     return stage_result(
         stage,
         SUCCESS,
         ["positions_output", "scores_output", "watchlist_output", "coverage_output"],
-        used_inputs={
-            "positions_output": positions_path,
-            "scores_output": scores_path,
-            "watchlist_output": watchlist_path,
-            "coverage_output": coverage_path,
-        },
+        used_inputs=used_inputs,
         produced_outputs={
             "monthly_buy_ranking": options.monthly_ranking_output,
             "rebalance_proposals": options.rebalance_output,
             "monthly_decision_report": options.monthly_report_output,
         },
-        notes="Monthly ranking and decision report generated with fundamentals coverage guardrail.",
+        notes=f"Monthly ranking and decision report generated with fundamentals coverage guardrail; fundamentals_source_mode={fundamentals_source_mode}.",
     )
 
 
 def run_portfolio_review_stage(options: PersonalRunOptions) -> StageResult:
     stage = "portfolio_review"
+    fundamentals_path, fundamentals_source_mode, _fundamentals_required_input = resolve_fundamentals_source(options, stage, require_path_for_base=False)
     positions_path = require_existing_path(options.positions_output, "positions snapshot", stage)
     scores_path = require_existing_path(options.scores_output, "personal company scores", stage)
     coverage_path = require_existing_path(options.coverage_output, "personal fundamentals coverage", stage)
@@ -575,13 +624,21 @@ def run_portfolio_review_stage(options: PersonalRunOptions) -> StageResult:
         holdings_output=options.holdings_output,
         coverage_rows=coverage_rows,
     )
+    used_inputs = {
+        "positions_output": positions_path,
+        "scores_output": scores_path,
+        "coverage_output": coverage_path,
+        "fundamentals_source_mode": fundamentals_source_mode,
+    }
+    if fundamentals_path:
+        used_inputs["fundamentals_master"] = fundamentals_path
     return stage_result(
         stage,
         SUCCESS,
         ["positions_output", "scores_output", "coverage_output"],
-        used_inputs={"positions_output": positions_path, "scores_output": scores_path, "coverage_output": coverage_path},
+        used_inputs=used_inputs,
         produced_outputs={"portfolio_review_report": options.portfolio_review_output, "holdings_action_table": options.holdings_output},
-        notes="Portfolio review report and holdings action table generated with coverage guardrail.",
+        notes=f"Portfolio review report and holdings action table generated with coverage guardrail; fundamentals_source_mode={fundamentals_source_mode}.",
     )
 
 
@@ -1068,6 +1125,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--positions-output", default=DEFAULT_PATHS["positions_output"], help="Personal positions snapshot path.")
     parser.add_argument("--fundamentals-master", default=DEFAULT_PATHS["fundamentals_master"], help="Personal fundamentals master path.")
     parser.add_argument("--overwrite-fundamentals-master", action="store_true", help="Allow fundamentals_seed to overwrite an existing master.")
+    parser.add_argument("--use-applied-master", action="store_true", help="Use the explicit applied Personal-Fundamentals master for downstream fundamentals-dependent stages.")
     parser.add_argument("--metric-definitions", default=DEFAULT_METRIC_DEFINITIONS_PATH, help="Fundamentals KPI definitions config.")
     parser.add_argument("--scores-output", default=DEFAULT_PATHS["scores_output"], help="Personal company scores output.")
     parser.add_argument("--score-audit-output", default=DEFAULT_PATHS["score_audit_output"], help="Personal score audit output.")
@@ -1078,6 +1136,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--fundamentals-evidence-input", default=DEFAULT_PATHS["fundamentals_evidence_input"], help="Manual personal fundamentals evidence input.")
     parser.add_argument("--fundamentals-evidence-registry-output", default=DEFAULT_PATHS["fundamentals_evidence_registry_output"], help="Personal fundamentals evidence registry output.")
     parser.add_argument("--fundamentals-research-backlog-output", default=DEFAULT_PATHS["fundamentals_research_backlog_output"], help="Personal fundamentals research backlog output.")
+    parser.add_argument("--fundamentals-proposed-updates-output", default=DEFAULT_PATHS["fundamentals_proposed_updates_output"], help="Manual Personal-Master proposed updates output from evidence.")
     parser.add_argument("--fundamentals-evidence-summary-output", default=DEFAULT_PATHS["fundamentals_evidence_summary_output"], help="Personal fundamentals evidence summary output.")
     parser.add_argument("--fundamentals-evidence-template-output", default=DEFAULT_PATHS["fundamentals_evidence_template_output"], help="Personal fundamentals evidence template output.")
     parser.add_argument("--fundamentals-evidence-report-output", help="Personal fundamentals evidence markdown report output.")
@@ -1085,6 +1144,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--fundamentals-overlay-registry-output", default=DEFAULT_PATHS["fundamentals_overlay_registry_output"], help="Personal fundamentals overlay registry output.")
     parser.add_argument("--fundamentals-applied-master-output", default=DEFAULT_PATHS["fundamentals_applied_master_output"], help="Applied personal fundamentals master output.")
     parser.add_argument("--fundamentals-overlay-summary-output", default=DEFAULT_PATHS["fundamentals_overlay_summary_output"], help="Personal fundamentals overlay summary output.")
+    parser.add_argument("--fundamentals-overlay-review-backlog-output", default=DEFAULT_PATHS["fundamentals_overlay_review_backlog_output"], help="Personal fundamentals overlay review backlog output.")
     parser.add_argument("--fundamentals-overlay-template-output", default=DEFAULT_PATHS["fundamentals_overlay_template_output"], help="Personal fundamentals overlay template output.")
     parser.add_argument("--fundamentals-overlay-report-output", help="Personal fundamentals overlay markdown report output.")
     parser.add_argument("--watchlist-input", help="Watchlist CSV input.")
@@ -1146,6 +1206,7 @@ def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
         positions_output=args.positions_output,
         fundamentals_master=args.fundamentals_master,
         overwrite_fundamentals_master=args.overwrite_fundamentals_master,
+        use_applied_master=args.use_applied_master,
         metric_definitions=args.metric_definitions,
         scores_output=args.scores_output,
         score_audit_output=args.score_audit_output,
@@ -1156,6 +1217,7 @@ def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
         fundamentals_evidence_input=args.fundamentals_evidence_input,
         fundamentals_evidence_registry_output=args.fundamentals_evidence_registry_output,
         fundamentals_research_backlog_output=args.fundamentals_research_backlog_output,
+        fundamentals_proposed_updates_output=args.fundamentals_proposed_updates_output,
         fundamentals_evidence_summary_output=args.fundamentals_evidence_summary_output,
         fundamentals_evidence_template_output=args.fundamentals_evidence_template_output,
         fundamentals_evidence_report_output=args.fundamentals_evidence_report_output,
@@ -1163,6 +1225,7 @@ def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
         fundamentals_overlay_registry_output=args.fundamentals_overlay_registry_output,
         fundamentals_applied_master_output=args.fundamentals_applied_master_output,
         fundamentals_overlay_summary_output=args.fundamentals_overlay_summary_output,
+        fundamentals_overlay_review_backlog_output=args.fundamentals_overlay_review_backlog_output,
         fundamentals_overlay_template_output=args.fundamentals_overlay_template_output,
         fundamentals_overlay_report_output=args.fundamentals_overlay_report_output,
         watchlist_input=args.watchlist_input,

@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 from collections import Counter
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -21,9 +21,11 @@ DEFAULT_OVERLAY_TEMPLATE_PATH = "data/raw/personal_fundamentals_overlay_template
 DEFAULT_OVERLAY_REGISTRY_OUTPUT = "data/processed/personal_fundamentals_overlay_registry.csv"
 DEFAULT_APPLIED_MASTER_OUTPUT = "data/processed/personal_fundamentals_master_applied.csv"
 DEFAULT_OVERLAY_SUMMARY_OUTPUT = "data/processed/personal_fundamentals_overlay_summary.csv"
+DEFAULT_OVERLAY_REVIEW_BACKLOG_OUTPUT = "data/processed/personal_fundamentals_overlay_review_backlog.csv"
 
 VALID_VERIFICATION_STATUSES = {"VERIFIED", "REVIEW", "UNVERIFIED"}
 VALID_OVERLAY_PRIORITIES = {"HIGH", "MEDIUM", "LOW"}
+OVERLAY_REVIEW_DUE_SOON_DAYS = 30
 TRUE_VALUES = {"TRUE", "1", "YES", "Y"}
 FALSE_VALUES = {"FALSE", "0", "NO", "N"}
 
@@ -72,6 +74,8 @@ OVERLAY_REGISTRY_FIELDS = [
     "overlay_manual_override_flag",
     "overlay_manual_override_reason",
     "overlay_review_due_date",
+    "overlay_review_status",
+    "needs_overlay_review_flag",
     "overlay_priority",
     "verification_status",
     "overlay_validation_status",
@@ -86,6 +90,21 @@ APPLIED_MASTER_EXTRA_FIELDS = [
 ]
 
 APPLIED_MASTER_FIELDS = [*PERSONAL_MASTER_FIELDS, *APPLIED_MASTER_EXTRA_FIELDS]
+OVERLAY_REVIEW_BACKLOG_FIELDS = [
+    "ticker",
+    "isin",
+    "company_name",
+    "overlay_as_of_date",
+    "overlay_review_due_date",
+    "overlay_review_status",
+    "overlay_author",
+    "overlay_source_name",
+    "overlay_has_hard_risk_flag",
+    "overlay_manual_override_flag",
+    "overlay_priority",
+    "needs_overlay_review_flag",
+    "notes",
+]
 OVERLAY_SUMMARY_FIELDS = ["metric_name", "metric_value", "notes"]
 
 
@@ -130,6 +149,17 @@ def parse_optional_iso_date_text(value: Any, field: str, source_name: str, row_n
     if not text:
         return ""
     return parse_iso_date_text(text, field, source_name, row_number)
+
+
+def compute_overlay_review_status(due_date_text: str, run_date: date) -> str:
+    if not due_date_text:
+        return "NOT_SET"
+    due_date = date.fromisoformat(due_date_text)
+    if due_date < run_date:
+        return "OVERDUE"
+    if due_date <= run_date + timedelta(days=OVERLAY_REVIEW_DUE_SOON_DAYS):
+        return "DUE"
+    return "OK"
 
 
 def parse_bool_text(value: Any, field: str, source_name: str, row_number: int) -> str:
@@ -226,6 +256,7 @@ def canonical_overlay_registry_row(
     allowed_thesis_values: set[str],
     source_name: str,
     row_number: int,
+    run_date: date,
 ) -> dict[str, str]:
     overlay_as_of_date = parse_iso_date_text(row.get("overlay_as_of_date", ""), "overlay_as_of_date", source_name, row_number)
     overlay_author = require_nonblank_value(row, "overlay_author", source_name, row_number)
@@ -257,6 +288,8 @@ def canonical_overlay_registry_row(
         )
 
     ticker, isin = master_identifier_key(master_row)
+    overlay_review_due_date = parse_optional_iso_date_text(row.get("overlay_review_due_date", ""), "overlay_review_due_date", source_name, row_number)
+    overlay_review_status = compute_overlay_review_status(overlay_review_due_date, run_date)
     registry_row = {
         "ticker": ticker,
         "isin": isin,
@@ -270,7 +303,9 @@ def canonical_overlay_registry_row(
         "overlay_analyst_notes": str(row.get("overlay_analyst_notes", "") or "").strip(),
         "overlay_manual_override_flag": manual_override,
         "overlay_manual_override_reason": manual_reason,
-        "overlay_review_due_date": parse_optional_iso_date_text(row.get("overlay_review_due_date", ""), "overlay_review_due_date", source_name, row_number),
+        "overlay_review_due_date": overlay_review_due_date,
+        "overlay_review_status": overlay_review_status,
+        "needs_overlay_review_flag": str(overlay_review_status in {"DUE", "OVERDUE"}),
         "overlay_priority": overlay_priority,
         "verification_status": verification_status,
         "overlay_validation_status": "VALID",
@@ -298,12 +333,14 @@ def build_overlay_registry(
     master_rows: list[dict[str, str]],
     allowed_thesis_values: set[str],
     source_name: str = "personal fundamentals overlay",
+    run_date: date | None = None,
 ) -> list[dict[str, str]]:
+    effective_run_date = run_date or date.today()
     master_index = build_master_identifier_index(master_rows)
     indexed: dict[tuple[str, ...], dict[str, str]] = {}
     for row_number, row in enumerate(overlay_rows, start=2):
         master_row = match_overlay_to_master(row, master_index, source_name, row_number)
-        registry_row = canonical_overlay_registry_row(row, master_row, allowed_thesis_values, source_name, row_number)
+        registry_row = canonical_overlay_registry_row(row, master_row, allowed_thesis_values, source_name, row_number, effective_run_date)
         identity = overlay_identity(registry_row)
         existing = indexed.get(identity)
         if existing is None:
@@ -339,6 +376,35 @@ def choose_active_overlays(registry_rows: list[dict[str, str]]) -> dict[tuple[st
     return selected
 
 
+def overlay_review_priority_sort_value(priority: str) -> int:
+    return {"HIGH": 0, "MEDIUM": 1, "LOW": 2, "": 3}.get(priority, 4)
+
+
+def overlay_review_status_sort_value(status: str) -> int:
+    return {"OVERDUE": 0, "DUE": 1, "NOT_SET": 2, "OK": 3}.get(status, 4)
+
+
+def overlay_review_backlog_sort_key(row: dict[str, str]) -> tuple[int, int, int, str, str, str]:
+    hard_or_override = row.get("overlay_has_hard_risk_flag") == "True" or row.get("overlay_manual_override_flag") == "True"
+    return (
+        overlay_review_status_sort_value(str(row.get("overlay_review_status", ""))),
+        0 if hard_or_override else 1,
+        overlay_review_priority_sort_value(str(row.get("overlay_priority", ""))),
+        canonicalize_ticker(row.get("ticker", "")),
+        str(row.get("isin", "") or "").strip().upper(),
+        str(row.get("overlay_as_of_date", "") or "").strip(),
+    )
+
+
+def build_overlay_review_backlog(registry_rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    backlog_rows = [
+        {field: str(row.get(field, "") or "") for field in OVERLAY_REVIEW_BACKLOG_FIELDS}
+        for row in registry_rows
+        if row.get("needs_overlay_review_flag") == "True"
+    ]
+    return sorted(backlog_rows, key=overlay_review_backlog_sort_key)
+
+
 def build_applied_master_rows(master_rows: list[dict[str, str]], registry_rows: list[dict[str, str]]) -> list[dict[str, str]]:
     active_overlays = choose_active_overlays(registry_rows)
     applied_rows: list[dict[str, str]] = []
@@ -360,12 +426,25 @@ def build_summary_rows(master_rows: list[dict[str, str]], registry_rows: list[di
     hard_risk_count = sum(1 for row in registry_rows if row.get("overlay_has_hard_risk_flag") == "True")
     manual_override_count = sum(1 for row in registry_rows if row.get("overlay_manual_override_flag") == "True")
     active_holdings = sum(1 for row in applied_rows if row.get("overlay_active_flag") == "True")
+    review_status_counts = Counter(row.get("overlay_review_status", "NOT_SET") for row in registry_rows)
+    needs_review_count = sum(1 for row in registry_rows if row.get("needs_overlay_review_flag") == "True")
+    hard_risk_or_manual_needs_review_count = sum(
+        1
+        for row in registry_rows
+        if row.get("needs_overlay_review_flag") == "True"
+        and (row.get("overlay_has_hard_risk_flag") == "True" or row.get("overlay_manual_override_flag") == "True")
+    )
     rows = [
         ("holdings_checked", len(master_rows), "Personal-Master rows evaluated for overlay projection."),
         ("overlay_registry_rows", len(registry_rows), "Validated explicit overlay rows after deterministic dedupe."),
         ("holdings_with_active_overlay", active_holdings, "Holdings with an active latest-date overlay applied in the projection."),
         ("hard_risk_overlay_count", hard_risk_count, "Validated overlay rows with overlay_has_hard_risk_flag=True."),
         ("manual_override_count", manual_override_count, "Validated overlay rows with overlay_manual_override_flag=True."),
+        ("overlay_review_due_count", review_status_counts.get("DUE", 0), "Overlay rows with review due within the conservative due window."),
+        ("overlay_review_overdue_count", review_status_counts.get("OVERDUE", 0), "Overlay rows with review due date before the run date."),
+        ("overlay_review_not_set_count", review_status_counts.get("NOT_SET", 0), "Overlay rows without overlay_review_due_date."),
+        ("overlay_review_needed_count", needs_review_count, "Overlay rows with DUE or OVERDUE review status."),
+        ("hard_risk_or_manual_override_review_needed_count", hard_risk_or_manual_needs_review_count, "DUE/OVERDUE overlay rows with hard-risk or manual-override flags."),
         ("rejected_overlay_rows", 0, "Successful runs reject invalid overlays fail-fast before outputs are written."),
     ]
     return [{"metric_name": name, "metric_value": str(value), "notes": notes} for name, value, notes in rows]
@@ -378,10 +457,12 @@ def write_overlay_report(
     applied_rows: list[dict[str, str]],
     fundamentals_master_path: str,
     overlay_input_path: str,
+    review_backlog_rows: list[dict[str, str]] | None = None,
 ) -> Path:
     summary_rows = build_summary_rows(master_rows, registry_rows, applied_rows)
     summary = {row["metric_name"]: row["metric_value"] for row in summary_rows}
     active_rows = [row for row in applied_rows if row.get("overlay_active_flag") == "True"]
+    review_backlog_rows = review_backlog_rows if review_backlog_rows is not None else build_overlay_review_backlog(registry_rows)
     lines = [
         "# Personal Fundamentals Overlay",
         "",
@@ -399,7 +480,11 @@ def write_overlay_report(
         f"- Holdings mit aktiven Overlays: {summary.get('holdings_with_active_overlay', '0')}",
         f"- Hard-Risk-Overlays: {summary.get('hard_risk_overlay_count', '0')}",
         f"- Manual-Override-Faelle: {summary.get('manual_override_count', '0')}",
+        f"- Faellige Overlay-Reviews: {summary.get('overlay_review_due_count', '0')}",
+        f"- Ueberfaellige Overlay-Reviews: {summary.get('overlay_review_overdue_count', '0')}",
+        f"- Overlay-Reviews ohne Due-Date: {summary.get('overlay_review_not_set_count', '0')}",
         f"- Abgewiesene Overlay-Zeilen: {summary.get('rejected_overlay_rows', '0')}",
+        "- Faellige oder ueberfaellige Overlays werden markiert, aber nicht automatisch deaktiviert.",
         "",
         "## Aktive Overlays",
         "",
@@ -416,6 +501,18 @@ def write_overlay_report(
             )
     else:
         lines.append("- Keine aktiven Analyst-Overlays.")
+
+    lines.extend(["", "## Faellige Overlay-Reviews", ""])
+    if review_backlog_rows:
+        for row in review_backlog_rows:
+            ticker = row.get("ticker") or row.get("isin") or row.get("company_name")
+            lines.append(
+                f"- `{ticker}` status={row.get('overlay_review_status')} due={row.get('overlay_review_due_date') or 'none'} "
+                f"hard_risk={row.get('overlay_has_hard_risk_flag')} manual_override={row.get('overlay_manual_override_flag')} "
+                f"priority={row.get('overlay_priority') or 'none'}"
+            )
+    else:
+        lines.append("- Keine faelligen oder ueberfaelligen Overlay-Reviews.")
 
     path = ensure_parent_dir(output_path)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -446,8 +543,10 @@ def run_fundamentals_overlay_engine(
     registry_output: str = DEFAULT_OVERLAY_REGISTRY_OUTPUT,
     applied_master_output: str = DEFAULT_APPLIED_MASTER_OUTPUT,
     summary_output: str | None = DEFAULT_OVERLAY_SUMMARY_OUTPUT,
+    review_backlog_output: str | None = DEFAULT_OVERLAY_REVIEW_BACKLOG_OUTPUT,
     report_output: str | None = None,
     template_output: str | None = DEFAULT_OVERLAY_TEMPLATE_PATH,
+    run_date: date | None = None,
 ) -> dict[str, Path]:
     master_rows, overlay_rows, allowed_thesis_values = load_validated_inputs(fundamentals_master_path, overlay_input_path, schema_path)
     registry_rows = build_overlay_registry(
@@ -455,8 +554,10 @@ def run_fundamentals_overlay_engine(
         master_rows,
         allowed_thesis_values,
         source_name=f"personal fundamentals overlay ({overlay_input_path})",
+        run_date=run_date,
     )
     applied_rows = build_applied_master_rows(master_rows, registry_rows)
+    review_backlog_rows = build_overlay_review_backlog(registry_rows)
     validate_personal_fundamentals_master(applied_rows, f"personal fundamentals applied master ({applied_master_output})")
 
     outputs: dict[str, Path] = {}
@@ -464,8 +565,10 @@ def run_fundamentals_overlay_engine(
     outputs["applied_master"] = write_csv_rows(applied_master_output, APPLIED_MASTER_FIELDS, applied_rows)
     if summary_output:
         outputs["overlay_summary"] = write_csv_rows(summary_output, OVERLAY_SUMMARY_FIELDS, build_summary_rows(master_rows, registry_rows, applied_rows))
+    if review_backlog_output:
+        outputs["overlay_review_backlog"] = write_csv_rows(review_backlog_output, OVERLAY_REVIEW_BACKLOG_FIELDS, review_backlog_rows)
     if report_output:
-        outputs["overlay_report"] = write_overlay_report(report_output, master_rows, registry_rows, applied_rows, fundamentals_master_path, overlay_input_path)
+        outputs["overlay_report"] = write_overlay_report(report_output, master_rows, registry_rows, applied_rows, fundamentals_master_path, overlay_input_path, review_backlog_rows)
     if template_output:
         outputs["overlay_template"] = write_overlay_template(template_output)
     return outputs
@@ -479,6 +582,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--registry-output", default=DEFAULT_OVERLAY_REGISTRY_OUTPUT, help="Normalized overlay registry output.")
     parser.add_argument("--applied-master-output", default=DEFAULT_APPLIED_MASTER_OUTPUT, help="Applied personal fundamentals master output.")
     parser.add_argument("--summary-output", default=DEFAULT_OVERLAY_SUMMARY_OUTPUT, help="Overlay summary output.")
+    parser.add_argument("--review-backlog-output", default=DEFAULT_OVERLAY_REVIEW_BACKLOG_OUTPUT, help="Overlay review backlog output.")
     parser.add_argument("--report-output", default=default_overlay_report_path(), help="Overlay markdown report output.")
     parser.add_argument("--template-output", default=DEFAULT_OVERLAY_TEMPLATE_PATH, help="Overlay input template output.")
     parser.add_argument("--template-only", action="store_true", help="Only write the overlay template; do not require master or overlay input.")
@@ -497,6 +601,7 @@ def main() -> None:
         registry_output=args.registry_output,
         applied_master_output=args.applied_master_output,
         summary_output=args.summary_output,
+        review_backlog_output=args.review_backlog_output,
         report_output=args.report_output,
         template_output=args.template_output,
     )

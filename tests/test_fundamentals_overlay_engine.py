@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import subprocess
 import unittest
+from datetime import date
 from pathlib import Path
 
 from src.common import read_csv_rows
@@ -10,6 +11,7 @@ from src.fundamentals_master import CORE_KPI_FIELDS, PERSONAL_MASTER_FIELDS
 from src.fundamentals_overlay_engine import (
     APPLIED_MASTER_FIELDS,
     OVERLAY_INPUT_FIELDS,
+    OVERLAY_REVIEW_BACKLOG_FIELDS,
     build_overlay_registry,
     load_allowed_overlay_thesis_values,
     run_fundamentals_overlay_engine,
@@ -118,12 +120,14 @@ class FundamentalsOverlayEngineTests(unittest.TestCase):
         master_rows: list[dict[str, str]],
         overlay_rows: list[dict[str, str]],
         prefix: str,
-    ) -> tuple[Path, Path, Path, Path, Path, Path, Path]:
+        run_date: date = date(2026, 4, 14),
+    ) -> tuple[Path, Path, Path, Path, Path, Path, Path, Path]:
         master_path = self._path(f"_tmp_overlay_{prefix}_master.csv")
         overlay_path = self._path(f"_tmp_overlay_{prefix}_input.csv")
         registry_path = self._path(f"_tmp_overlay_{prefix}_registry.csv")
         applied_path = self._path(f"_tmp_overlay_{prefix}_applied.csv")
         summary_path = self._path(f"_tmp_overlay_{prefix}_summary.csv")
+        review_backlog_path = self._path(f"_tmp_overlay_{prefix}_review_backlog.csv")
         report_path = self._path(f"_tmp_overlay_{prefix}_report.md")
         template_path = self._path(f"_tmp_overlay_{prefix}_template.csv")
         self._write_csv(master_path, PERSONAL_MASTER_FIELDS, master_rows)
@@ -134,13 +138,15 @@ class FundamentalsOverlayEngineTests(unittest.TestCase):
             registry_output=str(registry_path),
             applied_master_output=str(applied_path),
             summary_output=str(summary_path),
+            review_backlog_output=str(review_backlog_path),
             report_output=str(report_path),
             template_output=str(template_path),
+            run_date=run_date,
         )
-        return master_path, overlay_path, registry_path, applied_path, summary_path, report_path, template_path
+        return master_path, overlay_path, registry_path, applied_path, summary_path, review_backlog_path, report_path, template_path
 
     def test_valid_overlay_input_generates_registry_applied_master_summary_and_report(self) -> None:
-        _master_path, _overlay_path, registry_path, applied_path, summary_path, report_path, _template_path = self._run_engine(
+        _master_path, _overlay_path, registry_path, applied_path, summary_path, review_backlog_path, report_path, _template_path = self._run_engine(
             [master_row()],
             [overlay_row(hard_risk="true", manual_override="true", manual_reason="temporary override")],
             "valid",
@@ -151,6 +157,8 @@ class FundamentalsOverlayEngineTests(unittest.TestCase):
         summary_rows = {row["metric_name"]: row["metric_value"] for row in read_csv_rows(summary_path)}
         self.assertEqual(len(registry_rows), 1)
         self.assertEqual(registry_rows[0]["overlay_has_hard_risk_flag"], "True")
+        self.assertEqual(registry_rows[0]["overlay_review_status"], "OK")
+        self.assertEqual(read_csv_rows(review_backlog_path), [])
         self.assertEqual(applied_rows[0]["overlay_active_flag"], "True")
         self.assertEqual(applied_rows[0]["overlay_thesis_robustness"], "ROBUST")
         self.assertEqual(applied_rows[0]["overlay_manual_override_reason"], "temporary override")
@@ -189,7 +197,7 @@ class FundamentalsOverlayEngineTests(unittest.TestCase):
             self._run_engine([master_row()], [overlay_row(manual_override="true", manual_reason="")], "manual_reason")
 
     def test_applied_master_preserves_core_kpi_fields(self) -> None:
-        _master_path, _overlay_path, _registry_path, applied_path, _summary_path, _report_path, _template_path = self._run_engine(
+        _master_path, _overlay_path, _registry_path, applied_path, _summary_path, _review_backlog_path, _report_path, _template_path = self._run_engine(
             [master_row()],
             [overlay_row(thesis="FRAGILE")],
             "preserve_core",
@@ -201,7 +209,7 @@ class FundamentalsOverlayEngineTests(unittest.TestCase):
         self.assertEqual(applied["overlay_thesis_robustness"], "FRAGILE")
 
     def test_duplicate_identical_overlay_is_idempotent(self) -> None:
-        _master_path, _overlay_path, registry_path, _applied_path, _summary_path, _report_path, _template_path = self._run_engine(
+        _master_path, _overlay_path, registry_path, _applied_path, _summary_path, _review_backlog_path, _report_path, _template_path = self._run_engine(
             [master_row()],
             [overlay_row(), overlay_row()],
             "dedupe",
@@ -216,7 +224,7 @@ class FundamentalsOverlayEngineTests(unittest.TestCase):
             self._run_engine([master_row()], [overlay_row(), conflicting], "conflict")
 
     def test_registry_and_applied_master_sorting_are_deterministic(self) -> None:
-        _master_path, _overlay_path, registry_path, applied_path, _summary_path, _report_path, _template_path = self._run_engine(
+        _master_path, _overlay_path, registry_path, applied_path, _summary_path, _review_backlog_path, _report_path, _template_path = self._run_engine(
             [
                 master_row(ticker="MSFT", isin="US5949181045", company_name="Microsoft Corp"),
                 master_row(ticker="AAPL", isin="US0378331005", company_name="Apple Inc"),
@@ -230,6 +238,46 @@ class FundamentalsOverlayEngineTests(unittest.TestCase):
 
         self.assertEqual([row["ticker"] for row in read_csv_rows(registry_path)], ["AAPL", "MSFT"])
         self.assertEqual([row["ticker"] for row in read_csv_rows(applied_path)], ["AAPL", "MSFT"])
+
+    def test_review_due_and_overdue_are_marked_and_backlogged(self) -> None:
+        overdue = overlay_row(
+            ticker="AAPL",
+            isin="US0378331005",
+            company_name="Apple Inc",
+            overlay_as_of_date="2026-04-01",
+            overlay_author="analyst_b",
+            hard_risk="true",
+            notes="overdue overlay",
+        )
+        overdue["overlay_review_due_date"] = "2026-04-13"
+        overdue["overlay_priority"] = "HIGH"
+        due = overlay_row(manual_override="true", manual_reason="temporary override", notes="due overlay")
+        due["overlay_review_due_date"] = "2026-04-14"
+
+        _master_path, _overlay_path, registry_path, _applied_path, summary_path, review_backlog_path, report_path, _template_path = self._run_engine(
+            [
+                master_row(ticker="MSFT", isin="US5949181045", company_name="Microsoft Corp"),
+                master_row(ticker="AAPL", isin="US0378331005", company_name="Apple Inc"),
+            ],
+            [due, overdue],
+            "review_due",
+            run_date=date(2026, 4, 14),
+        )
+
+        registry_by_ticker = {row["ticker"]: row for row in read_csv_rows(registry_path)}
+        summary_rows = {row["metric_name"]: row["metric_value"] for row in read_csv_rows(summary_path)}
+        backlog_rows = read_csv_rows(review_backlog_path)
+        self.assertEqual(registry_by_ticker["AAPL"]["overlay_review_status"], "OVERDUE")
+        self.assertEqual(registry_by_ticker["MSFT"]["overlay_review_status"], "DUE")
+        self.assertEqual(registry_by_ticker["AAPL"]["needs_overlay_review_flag"], "True")
+        self.assertEqual(summary_rows["overlay_review_due_count"], "1")
+        self.assertEqual(summary_rows["overlay_review_overdue_count"], "1")
+        self.assertEqual([row["ticker"] for row in backlog_rows], ["AAPL", "MSFT"])
+        self.assertEqual(backlog_rows[0]["overlay_review_status"], "OVERDUE")
+        self.assertEqual(set(backlog_rows[0]), set(OVERLAY_REVIEW_BACKLOG_FIELDS))
+        report_text = report_path.read_text(encoding="utf-8")
+        self.assertIn("Faellige Overlay-Reviews", report_text)
+        self.assertIn("OVERDUE", report_text)
 
     def test_template_output_is_header_only_contract(self) -> None:
         template_path = self._path("_tmp_overlay_template_only.csv")
@@ -248,6 +296,7 @@ class FundamentalsOverlayEngineTests(unittest.TestCase):
         registry_path = self._path("_tmp_overlay_cli_registry.csv")
         applied_path = self._path("_tmp_overlay_cli_applied.csv")
         summary_path = self._path("_tmp_overlay_cli_summary.csv")
+        review_backlog_path = self._path("_tmp_overlay_cli_review_backlog.csv")
         report_path = self._path("_tmp_overlay_cli_report.md")
         template_path = self._path("_tmp_overlay_cli_template.csv")
         self._write_csv(master_path, PERSONAL_MASTER_FIELDS, [master_row()])
@@ -268,6 +317,8 @@ class FundamentalsOverlayEngineTests(unittest.TestCase):
                 str(applied_path),
                 "--summary-output",
                 str(summary_path),
+                "--review-backlog-output",
+                str(review_backlog_path),
                 "--report-output",
                 str(report_path),
                 "--template-output",
@@ -279,7 +330,7 @@ class FundamentalsOverlayEngineTests(unittest.TestCase):
         )
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        for path in [registry_path, applied_path, summary_path, report_path, template_path]:
+        for path in [registry_path, applied_path, summary_path, review_backlog_path, report_path, template_path]:
             self.assertTrue(path.exists(), path)
         self.assertEqual(read_csv_rows(registry_path)[0]["overlay_thesis_robustness"], "ROBUST")
         self.assertEqual(read_csv_rows(applied_path)[0]["overlay_active_flag"], "True")
