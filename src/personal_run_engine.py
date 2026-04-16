@@ -92,7 +92,7 @@ ARTIFACT_FIELDS = ["artifact_role", "artifact_path", "stage_name", "produced", "
 USED_INPUT_FIELDS = ["stage_name", "stage_status", "input_role", "input_path", "input_exists", "notes"]
 RUN_ARTIFACT_STAGE = "personal_run"
 USED_INPUT_METADATA_ROLES = {"fundamentals_source_mode", "import_mode", "source_name", "single_benchmark_symbol"}
-FUNDAMENTALS_SOURCE_STAGES = {"scoring", "coverage", "watchlist", "monthly", "portfolio_review"}
+FUNDAMENTALS_SOURCE_STAGES = {"fundamentals_overlay", "scoring", "coverage", "watchlist", "monthly", "portfolio_review"}
 
 
 def default_dated_report_path(file_name: str) -> str:
@@ -190,6 +190,7 @@ class PersonalRunOptions:
     positions_output: str = DEFAULT_PATHS["positions_output"]
     fundamentals_master: str = DEFAULT_PATHS["fundamentals_master"]
     overwrite_fundamentals_master: bool = False
+    use_profiled_master: bool = False
     use_applied_master: bool = False
     metric_definitions: str = DEFAULT_METRIC_DEFINITIONS_PATH
     scores_output: str = DEFAULT_PATHS["scores_output"]
@@ -347,6 +348,7 @@ def input_snapshot(options: PersonalRunOptions) -> dict[str, Any]:
         "portfolio_date": options.portfolio_date or "",
         "positions_output": options.positions_output,
         "fundamentals_master": options.fundamentals_master,
+        "use_profiled_master": options.use_profiled_master,
         "fundamentals_applied_master": options.fundamentals_applied_master_output,
         "use_applied_master": options.use_applied_master,
         "research_priority_output": options.research_priority_output,
@@ -377,8 +379,18 @@ def resolve_fundamentals_source(
     stage_name: str,
     *,
     require_path_for_base: bool,
+    allow_applied_master: bool = True,
 ) -> tuple[str | None, str, str | None]:
-    if options.use_applied_master:
+    if options.use_profiled_master and options.use_applied_master:
+        raise ValueError("--use-profiled-master and --use-applied-master are mutually exclusive")
+    if options.use_profiled_master:
+        profiled_path = require_existing_path(
+            options.profiled_master_output,
+            "profiled personal fundamentals master (--use-profiled-master)",
+            stage_name,
+        )
+        return profiled_path, "PROFILED", "profiled_master_output"
+    if allow_applied_master and options.use_applied_master:
         applied_path = require_existing_path(
             options.fundamentals_applied_master_output,
             "applied personal fundamentals master (--use-applied-master)",
@@ -579,7 +591,13 @@ def run_fundamentals_evidence_stage(options: PersonalRunOptions) -> StageResult:
 
 def run_fundamentals_overlay_stage(options: PersonalRunOptions) -> StageResult:
     stage = "fundamentals_overlay"
-    fundamentals_path = require_existing_path(options.fundamentals_master, "personal fundamentals master", stage)
+    fundamentals_path, fundamentals_source_mode, fundamentals_required_input = resolve_fundamentals_source(
+        options,
+        stage,
+        require_path_for_base=True,
+        allow_applied_master=False,
+    )
+    assert fundamentals_path is not None
     overlay_path = require_existing_path(options.fundamentals_overlay_input, "personal fundamentals overlay input", stage)
     schema_path = DEFAULT_OVERLAY_SCHEMA_PATH
     outputs = run_fundamentals_overlay_engine(
@@ -596,14 +614,15 @@ def run_fundamentals_overlay_stage(options: PersonalRunOptions) -> StageResult:
     return stage_result(
         stage,
         SUCCESS,
-        ["fundamentals_master", "fundamentals_overlay_input"],
+        [fundamentals_required_input or "fundamentals_master", "fundamentals_overlay_input"],
         used_inputs={
             "fundamentals_master": fundamentals_path,
             "fundamentals_overlay_input": overlay_path,
             "fundamentals_schema": schema_path,
+            "fundamentals_source_mode": fundamentals_source_mode,
         },
         produced_outputs={role: str(path) for role, path in outputs.items()},
-        notes="Personal fundamentals overlay registry and applied master projection generated; original master and scores were not modified.",
+        notes=f"Personal fundamentals overlay registry and applied master projection generated from fundamentals_source_mode={fundamentals_source_mode}; original master and scores were not modified.",
     )
 
 
@@ -1288,6 +1307,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--positions-output", default=DEFAULT_PATHS["positions_output"], help="Personal positions snapshot path.")
     parser.add_argument("--fundamentals-master", default=DEFAULT_PATHS["fundamentals_master"], help="Personal fundamentals master path.")
     parser.add_argument("--overwrite-fundamentals-master", action="store_true", help="Allow fundamentals_seed to overwrite an existing master.")
+    parser.add_argument("--use-profiled-master", action="store_true", help="Use the explicit profiled Personal-Fundamentals master for eligible fundamentals-dependent stages.")
     parser.add_argument("--use-applied-master", action="store_true", help="Use the explicit applied Personal-Fundamentals master for downstream fundamentals-dependent stages.")
     parser.add_argument("--metric-definitions", default=DEFAULT_METRIC_DEFINITIONS_PATH, help="Fundamentals KPI definitions config.")
     parser.add_argument("--scores-output", default=DEFAULT_PATHS["scores_output"], help="Personal company scores output.")
@@ -1374,6 +1394,7 @@ def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
         positions_output=args.positions_output,
         fundamentals_master=args.fundamentals_master,
         overwrite_fundamentals_master=args.overwrite_fundamentals_master,
+        use_profiled_master=args.use_profiled_master,
         use_applied_master=args.use_applied_master,
         metric_definitions=args.metric_definitions,
         scores_output=args.scores_output,

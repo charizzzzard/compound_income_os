@@ -406,10 +406,93 @@ class PersonalRunEngineTests(unittest.TestCase):
         manifest = run_personal_run_engine(options)
 
         scoring_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "scoring")
+        scoring_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "scoring")
         self.assertEqual(manifest["run_status"], "SUCCESS")
         self.assertEqual(scoring_result["used_inputs"]["fundamentals_source_mode"], "BASE")
         self.assertEqual(scoring_result["used_inputs"]["fundamentals_master"], options.fundamentals_master)
         self.assertNotEqual(scoring_result["used_inputs"]["fundamentals_master"], options.profiled_master_output)
+        self.assertEqual(scoring_inputs["fundamentals_master"]["input_path"], options.fundamentals_master)
+        self.assertIn("fundamentals_source_mode=BASE", scoring_inputs["fundamentals_master"]["notes"])
+
+    def test_use_profiled_master_switch_routes_scoring_and_coverage_explicitly(self) -> None:
+        options = self._core_options("profiled_switch", ["import", "fundamentals_seed", "fundamentals_profile", "scoring", "coverage"])
+        options.use_profiled_master = True
+        self._write_profile_review_rows(
+            Path(options.profile_review_input),
+            [self._profile_review_row(isin="", proposed_company_type_profile="STANDARD", profile_reason="operating company")],
+        )
+
+        manifest = run_personal_run_engine(options)
+
+        scoring_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "scoring")
+        coverage_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "coverage")
+        coverage_rows = read_csv_rows(options.coverage_output)
+        used_input_rows = read_csv_rows(options.used_inputs_output)
+        scoring_inputs = self._used_inputs_for_stage(used_input_rows, "scoring")
+        coverage_inputs = self._used_inputs_for_stage(used_input_rows, "coverage")
+        profiled_lineage_rows = [
+            row
+            for row in used_input_rows
+            if row["stage_name"] in {"scoring", "coverage"} and row["input_role"] == "fundamentals_master"
+        ]
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertTrue(manifest["inputs"]["use_profiled_master"])
+        self.assertEqual(scoring_result["used_inputs"]["fundamentals_source_mode"], "PROFILED")
+        self.assertEqual(coverage_result["used_inputs"]["fundamentals_source_mode"], "PROFILED")
+        self.assertEqual(scoring_result["used_inputs"]["fundamentals_master"], options.profiled_master_output)
+        self.assertEqual(coverage_result["used_inputs"]["fundamentals_master"], options.profiled_master_output)
+        self.assertEqual({row["input_path"] for row in profiled_lineage_rows}, {options.profiled_master_output})
+        self.assertTrue(all("fundamentals_source_mode=PROFILED" in row["notes"] for row in profiled_lineage_rows))
+        self.assertEqual(scoring_inputs["scoring_config"]["input_path"], scoring_engine.DEFAULT_SCORING_PATH)
+        self.assertEqual(coverage_inputs["metric_definitions"]["input_path"], DEFAULT_METRIC_DEFINITIONS_PATH)
+        self.assertEqual(coverage_rows[0]["company_type_profile"], "STANDARD")
+
+    def test_use_profiled_master_routes_overlay_input_without_switching_to_applied(self) -> None:
+        options = self._core_options("profiled_overlay", ["import", "fundamentals_seed", "fundamentals_profile", "fundamentals_overlay"])
+        options.use_profiled_master = True
+        self._write_profile_review_rows(
+            Path(options.profile_review_input),
+            [self._profile_review_row(isin="", proposed_company_type_profile="STANDARD", profile_reason="operating company")],
+        )
+        self._write_empty_overlay(Path(options.fundamentals_overlay_input))
+
+        manifest = run_personal_run_engine(options)
+
+        overlay_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "fundamentals_overlay")
+        overlay_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "fundamentals_overlay")
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(overlay_result["used_inputs"]["fundamentals_source_mode"], "PROFILED")
+        self.assertEqual(overlay_result["used_inputs"]["fundamentals_master"], options.profiled_master_output)
+        self.assertEqual(overlay_inputs["fundamentals_master"]["input_path"], options.profiled_master_output)
+        self.assertIn("fundamentals_source_mode=PROFILED", overlay_inputs["fundamentals_master"]["notes"])
+        self.assertTrue(Path(options.fundamentals_applied_master_output).exists())
+
+    def test_use_profiled_master_and_use_applied_master_are_mutually_exclusive(self) -> None:
+        options = self._core_options("profiled_applied_conflict", ["import", "fundamentals_seed", "scoring"])
+        options.use_profiled_master = True
+        options.use_applied_master = True
+
+        with self.assertRaisesRegex(RuntimeError, "--use-profiled-master and --use-applied-master are mutually exclusive"):
+            run_personal_run_engine(options)
+
+        manifest = json.loads(Path(options.manifest_output).read_text(encoding="utf-8"))
+        statuses = {row["stage_name"]: row["status"] for row in manifest["stage_results"]}
+        self.assertEqual(manifest["run_status"], "FAILED")
+        self.assertEqual(statuses["scoring"], "FAILED")
+        self.assertIn("--use-profiled-master and --use-applied-master are mutually exclusive", manifest["warnings"][0])
+
+    def test_use_profiled_master_without_projection_fails_fast(self) -> None:
+        options = self._core_options("profiled_missing", ["import", "fundamentals_seed", "scoring"])
+        options.use_profiled_master = True
+
+        with self.assertRaisesRegex(RuntimeError, "profiled personal fundamentals master"):
+            run_personal_run_engine(options)
+
+        manifest = json.loads(Path(options.manifest_output).read_text(encoding="utf-8"))
+        statuses = {row["stage_name"]: row["status"] for row in manifest["stage_results"]}
+        self.assertEqual(manifest["run_status"], "FAILED")
+        self.assertEqual(statuses["scoring"], "FAILED")
+        self.assertIn("profiled personal fundamentals master", manifest["warnings"][0])
 
     def test_use_applied_master_switch_routes_scoring_explicitly(self) -> None:
         options = self._core_options("applied_switch", ["import", "fundamentals_seed", "fundamentals_overlay", "scoring", "coverage"])
