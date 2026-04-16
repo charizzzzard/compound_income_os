@@ -1,0 +1,46 @@
+{
+  "sources": {
+    "fundamentals_master": {
+      "enabled": true,
+      "path": "data/raw/personal_fundamentals_master.csv",
+      "required": true,
+      "kind": "file",
+      "description": "Canonical personal fundamentals master used as BASE source when no explicit CLI override is supplied."
+    },
+    "profile_review_input": {
+      "enabled": true,
+      "path": "data/raw/personal_fundamentals_profile_review.csv",
+      "required": false,
+      "kind": "file",
+      "description": "Manual profile-review input for fundamentals_profile."
+    },
+    "fundamentals_evidence_input": {
+      "enabled": true,
+      "path": "data/raw/personal_fundamentals_evidence.csv",
+      "required": false,
+      "kind": "file",
+      "description": "Manual evidence input for fundamentals_evidence."
+    },
+    "fundamentals_overlay_input": {
+      "enabled": true,
+      "path": "data/raw/personal_fundamentals_overlay.csv",
+      "required": false,
+      "kind": "file",
+      "description": "Manual overlay input for fundamentals_overlay."
+    },
+    "benchmark_input": {
+      "enabled": true,
+      "path": "data/raw/sample_benchmark_timeseries.csv",
+      "required": false,
+      "kind": "file",
+      "description": "Default local benchmark timeseries for benchmark_archive when no explicit CLI input is supplied."
+    },
+    "cost_tax_ledger_input": {
+      "enabled": true,
+      "path": "data/raw/sample_cost_tax_ledger.csv",
+      "required": false,
+      "kind": "file",
+      "description": "Default local cost/tax ledger for cost_tax when no explicit CLI ledger is supplied."
+    }
+  }
+}

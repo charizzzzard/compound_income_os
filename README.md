@@ -433,7 +433,11 @@ Neue Run-Artefakte:
 - `data/processed/personal_run_manifest.json`: Run-Status, ausgewaehlte und tatsaechlich ausgefuehrte Stages, Inputs, Outputs, Stage-Ergebnisse, Warnings, Measurement Modes und Datenqualitaetsflags
 - `data/processed/personal_run_artifacts.csv`: kompakter Artefaktindex je Stage
 - `data/processed/personal_run_used_inputs.csv`: flacher, auditierbarer Input-Lineage-Index je Stage aus den echten `StageResult.used_inputs`
+- `data/processed/personal_data_source_status.csv`: flacher Status-Export der read-only Personal-Run-Source-Registry
+- `data/processed/personal_data_source_registry_resolved.csv`: sichtbare Aufloesung, welche Registry-Quellen als Default-Inputs dienen koennen
 - `reports/YYYY-MM-DD/personal_run_report.md`: knapper operativer Run-Ueberblick
+
+Die additive read-only Source-Registry fuer den persoenlichen Lauf liegt in `configs/personal_run_data_sources.yaml`. Sie schliesst nur lokale Dateiquellen kontrolliert an; Secrets, API-Keys und direkte Web-/API-Logik gehoeren nicht in diese Schicht.
 
 Core-Orchestrator-Beispiel:
 
@@ -443,6 +447,8 @@ python -m src.personal_run_engine --stage import --stage fundamentals_seed --sta
 
 Hinweise:
 
+- `data_sources_validate` validiert nur die Personal-Run-Source-Registry und schreibt `personal_data_source_status.csv` sowie `personal_data_source_registry_resolved.csv`; es fuehrt keine neue Fachlogik ein.
+- Input-Prioritaet im Orchestrator bleibt explizit: gesetzter CLI-Pfad, dann `configs/personal_run_data_sources.yaml`, dann bestehender Repo-Default. Es gibt keinen stillen Fantasie-Fallback.
 - `scoring` bleibt eine eigenstaendige Stage und wird nicht in `fundamentals_seed` oder `coverage` versteckt.
 - `fundamentals_seed` erzeugt nur Identity-Seed-Zeilen und erfindet keine KPI-Werte. Ein vorhandener Personal-Master wird nur mit `--overwrite-fundamentals-master` ersetzt.
 - `coverage` erzeugt neben Coverage, Enriched und Report auch `personal_research_priority.csv` als operative Nachpflege-Liste fuer Profile/KPI-Luecken.
@@ -455,6 +461,7 @@ Hinweise:
 - `--use-profiled-master` und `--use-applied-master` sind in dieser Iteration gegenseitig ausschliessend; es gibt keine neue Kaskade wie `PROFILED_APPLIED`.
 - `personal_run_used_inputs.csv` enthaelt nur die tatsaechlich verwendeten Stage-Inputs; fuer fundamentals-abhaengige Stages macht das Feld `notes` `fundamentals_source_mode=BASE`, `fundamentals_source_mode=PROFILED` oder `fundamentals_source_mode=APPLIED` sichtbar.
 - Der Used-Inputs-Index bleibt bewusst eine flache Projektion aus `StageResult.used_inputs`; wenn eine Stage lokale Config-Dateien real liest, erscheinen diese Pfade dort ebenfalls als Stage-Inputs.
+- Wenn ein Input ueber `configs/personal_run_data_sources.yaml` als Default aufgeloest wurde, machen `personal_data_source_registry_resolved.csv` und die Stage-Notes dies sichtbar; das ersetzt keine tiefere engine-interne Lineage.
 - Die persoenlichen Orchestrator-Defaults fuer Watchlist-, Monthly- und Portfolio-Review-Reports schreiben nach `reports/YYYY-MM-DD/personal_watchlist_report.md`, `reports/YYYY-MM-DD/personal_monthly_decision_report.md` und `reports/YYYY-MM-DD/personal_portfolio_review.md`, nicht nach `reports/sample/...`.
 - Multi-Benchmark-Stages behalten die expliziten Symbolauswahl-Regeln aus `src.multi_benchmark_performance_engine`; bei mehreren Symbolen gibt es keine stille Auswahl.
 - `history` und `performance` brauchen einen datierten Snapshot. Bei `--import-mode sample` sollte deshalb `--portfolio-date` explizit gesetzt werden.

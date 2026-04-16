@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -16,6 +16,16 @@ from src.build_monthly_decision_report import build_monthly_decision_report, rea
 from src.build_portfolio_snapshot import build_portfolio_snapshot_report, read_coverage_rows as read_snapshot_coverage_rows
 from src.common import ensure_parent_dir, read_csv_rows, require_columns, require_non_blank_fields, resolve_repo_path, write_csv_rows
 from src.cost_tax_archive_engine import DEFAULT_CONFIG_PATH as DEFAULT_COST_TAX_CONFIG_PATH, run_cost_tax_archive_engine
+from src.data_source_registry import (
+    DEFAULT_CONFIG_PATH as DEFAULT_DATA_SOURCES_CONFIG_PATH,
+    DEFAULT_RESOLVED_OUTPUT as DEFAULT_DATA_SOURCE_RESOLVED_OUTPUT,
+    DEFAULT_STATUS_OUTPUT as DEFAULT_DATA_SOURCE_STATUS_OUTPUT,
+    SourceRecord,
+    build_status_rows as build_data_source_status_rows,
+    load_personal_data_source_records,
+    missing_required_source_keys,
+    write_data_source_outputs,
+)
 from src.dashboard_engine import DEFAULT_CONFIG_PATH as DEFAULT_DASHBOARD_CONFIG_PATH, run_dashboard_engine
 from src.fundamentals_master import (
     COVERAGE_OUTPUT_FIELDS,
@@ -70,6 +80,7 @@ SKIPPED = "SKIPPED"
 NOT_REQUESTED = "NOT_REQUESTED"
 
 STAGE_ORDER = [
+    "data_sources_validate",
     "import",
     "fundamentals_seed",
     "fundamentals_profile",
@@ -100,6 +111,9 @@ def default_dated_report_path(file_name: str) -> str:
 
 
 DEFAULT_PATHS = {
+    "data_sources_config": DEFAULT_DATA_SOURCES_CONFIG_PATH,
+    "data_source_status_output": DEFAULT_DATA_SOURCE_STATUS_OUTPUT,
+    "data_source_resolved_output": DEFAULT_DATA_SOURCE_RESOLVED_OUTPUT,
     "positions_output": "data/processed/personal_positions_snapshot.csv",
     "fundamentals_master": "data/raw/personal_fundamentals_master.csv",
     "scores_output": "data/processed/personal_company_scores.csv",
@@ -156,6 +170,28 @@ DEFAULT_PATHS = {
     "used_inputs_output": "data/processed/personal_run_used_inputs.csv",
 }
 
+DATA_SOURCE_OPTION_FIELDS = {
+    "fundamentals_master": "fundamentals_master",
+    "profile_review_input": "profile_review_input",
+    "fundamentals_evidence_input": "fundamentals_evidence_input",
+    "fundamentals_overlay_input": "fundamentals_overlay_input",
+    "benchmark_input": "benchmark_input",
+    "cost_tax_ledger_input": "ledger",
+    "positions_raw_input": "positions_raw_input",
+    "cash_input": "cash_input",
+}
+
+OPTION_FIELD_DEFAULTS = {
+    "positions_raw_input": "",
+    "cash_input": "",
+    "fundamentals_master": DEFAULT_PATHS["fundamentals_master"],
+    "profile_review_input": DEFAULT_PATHS["profile_review_input"],
+    "fundamentals_evidence_input": DEFAULT_PATHS["fundamentals_evidence_input"],
+    "fundamentals_overlay_input": DEFAULT_PATHS["fundamentals_overlay_input"],
+    "benchmark_input": "",
+    "ledger": "",
+}
+
 
 @dataclass
 class StageResult:
@@ -182,6 +218,9 @@ class StageResult:
 @dataclass
 class PersonalRunOptions:
     stages: list[str]
+    data_sources_config: str = DEFAULT_PATHS["data_sources_config"]
+    data_source_status_output: str = DEFAULT_PATHS["data_source_status_output"]
+    data_source_resolved_output: str = DEFAULT_PATHS["data_source_resolved_output"]
     positions_raw_input: str | None = None
     cash_input: str | None = None
     import_mode: str = "real"
@@ -263,8 +302,19 @@ class PersonalRunOptions:
     artifacts_output: str = DEFAULT_PATHS["artifacts_output"]
     used_inputs_output: str = DEFAULT_PATHS["used_inputs_output"]
     report_output: str | None = None
+    input_resolution_baseline: dict[str, str] = field(default_factory=dict)
+    resolved_default_source_keys: set[str] = field(default_factory=set)
+    resolved_default_input_fields: dict[str, str] = field(default_factory=dict)
+    data_source_records: dict[str, SourceRecord] = field(default_factory=dict)
+    data_source_status_rows: list[dict[str, str]] = field(default_factory=list)
+    data_source_registry_loaded: bool = False
 
     def normalized(self) -> "PersonalRunOptions":
+        if not self.input_resolution_baseline:
+            self.input_resolution_baseline = {
+                field_name: str(getattr(self, field_name, "") or "")
+                for field_name in OPTION_FIELD_DEFAULTS
+            }
         self.benchmark_symbols = [str(symbol).strip().upper() for symbol in (self.benchmark_symbols or []) if str(symbol).strip()]
         self.cost_tax_documents = [str(path).strip() for path in (self.cost_tax_documents or []) if str(path).strip()]
         if self.fundamentals_coverage_report_output is None:
@@ -339,8 +389,66 @@ def validate_stage_selection(stages: list[str]) -> list[str]:
     return sorted(set(stages), key=STAGE_ORDER.index)
 
 
+def option_was_explicitly_set(options: PersonalRunOptions, field_name: str) -> bool:
+    baseline = str(options.input_resolution_baseline.get(field_name, "") or "")
+    default_value = str(OPTION_FIELD_DEFAULTS.get(field_name, "") or "")
+    return baseline != default_value
+
+
+def ensure_data_source_registry_loaded(options: PersonalRunOptions) -> None:
+    if options.data_source_registry_loaded:
+        return
+    records = load_personal_data_source_records(options.data_sources_config)
+    options.data_source_records = records
+    options.data_source_status_rows = build_data_source_status_rows(records)
+    for source_key, field_name in DATA_SOURCE_OPTION_FIELDS.items():
+        record = records.get(source_key)
+        if record is None or not record.enabled or record.status != "OK":
+            continue
+        if option_was_explicitly_set(options, field_name):
+            continue
+        setattr(options, field_name, record.configured_path)
+        options.resolved_default_source_keys.add(source_key)
+        options.resolved_default_input_fields[field_name] = source_key
+    options.data_source_registry_loaded = True
+
+
+def maybe_raise_required_registry_source(options: PersonalRunOptions, field_name: str, stage_name: str) -> None:
+    if option_was_explicitly_set(options, field_name):
+        return
+    source_key = next((key for key, mapped_field in DATA_SOURCE_OPTION_FIELDS.items() if mapped_field == field_name), "")
+    if not source_key:
+        return
+    ensure_data_source_registry_loaded(options)
+    record = options.data_source_records.get(source_key)
+    if record is None or not record.enabled or not record.required or record.status != "MISSING":
+        return
+    raise ValueError(
+        f"stage {stage_name} requires configured data source '{source_key}' from {options.data_sources_config}: "
+        f"{record.configured_path}"
+    )
+
+
+def append_registry_default_note(options: PersonalRunOptions, note: str, *field_names: str) -> str:
+    source_keys = sorted(
+        {
+            options.resolved_default_input_fields.get(field_name, "")
+            for field_name in field_names
+            if options.resolved_default_input_fields.get(field_name, "")
+        }
+    )
+    source_keys = [source_key for source_key in source_keys if source_key]
+    if not source_keys:
+        return note
+    suffix = f"data_source_registry_defaults={','.join(source_keys)}"
+    if not note:
+        return f"{suffix}."
+    return f"{note.rstrip('.')}; {suffix}."
+
+
 def input_snapshot(options: PersonalRunOptions) -> dict[str, Any]:
     return {
+        "data_sources_config": options.data_sources_config,
         "positions_raw_input": options.positions_raw_input or "",
         "cash_input": options.cash_input or "",
         "import_mode": options.import_mode,
@@ -356,6 +464,8 @@ def input_snapshot(options: PersonalRunOptions) -> dict[str, Any]:
         "profile_review_registry_output": options.profile_review_registry_output,
         "profile_review_backlog_output": options.profile_review_backlog_output,
         "profiled_master_output": options.profiled_master_output,
+        "data_source_status_output": options.data_source_status_output,
+        "data_source_resolved_output": options.data_source_resolved_output,
         "fundamentals_evidence_input": options.fundamentals_evidence_input,
         "fundamentals_proposed_updates_output": options.fundamentals_proposed_updates_output,
         "fundamentals_overlay_input": options.fundamentals_overlay_input,
@@ -398,13 +508,41 @@ def resolve_fundamentals_source(
         )
         return applied_path, "APPLIED", "fundamentals_applied_master_output"
     if require_path_for_base:
+        maybe_raise_required_registry_source(options, "fundamentals_master", stage_name)
         base_path = require_existing_path(options.fundamentals_master, "personal fundamentals master", stage_name)
         return base_path, "BASE", "fundamentals_master"
     return None, "BASE", None
 
 
+def run_data_sources_validate_stage(options: PersonalRunOptions) -> StageResult:
+    stage = "data_sources_validate"
+    ensure_data_source_registry_loaded(options)
+    outputs = write_data_source_outputs(
+        options.data_source_records,
+        status_output=options.data_source_status_output,
+        resolved_output=options.data_source_resolved_output,
+        used_as_default_source_keys=options.resolved_default_source_keys,
+    )
+    missing_required = missing_required_source_keys(options.data_source_records)
+    used_inputs = {"data_sources_config": options.data_sources_config}
+    for source_key, record in options.data_source_records.items():
+        used_inputs[f"source_{source_key}"] = record.configured_path
+    if missing_required:
+        missing_text = ", ".join(missing_required)
+        raise ValueError(f"data source registry has missing required source(s): {missing_text}")
+    return stage_result(
+        stage,
+        SUCCESS,
+        ["data_sources_config"],
+        used_inputs=used_inputs,
+        produced_outputs={role: str(path) for role, path in outputs.items()},
+        notes="Personal data source registry validated; status and resolved default-input outputs generated.",
+    )
+
+
 def run_import_stage(options: PersonalRunOptions) -> StageResult:
     stage = "import"
+    maybe_raise_required_registry_source(options, "positions_raw_input", stage)
     raw_input = require_existing_path(options.positions_raw_input, "positions raw input", stage)
     used = {"positions_raw_input": raw_input, "import_mode": options.import_mode, "source_name": options.source_name}
     if options.import_mode == "tr_pdf":
@@ -450,6 +588,8 @@ def run_fundamentals_seed_stage(options: PersonalRunOptions) -> StageResult:
 
 def run_fundamentals_profile_stage(options: PersonalRunOptions) -> StageResult:
     stage = "fundamentals_profile"
+    maybe_raise_required_registry_source(options, "fundamentals_master", stage)
+    maybe_raise_required_registry_source(options, "profile_review_input", stage)
     fundamentals_path = require_existing_path(options.fundamentals_master, "personal fundamentals master", stage)
     profile_review_path = require_existing_path(options.profile_review_input, "personal profile review input", stage)
     outputs = run_fundamentals_profile_engine(
@@ -469,7 +609,12 @@ def run_fundamentals_profile_stage(options: PersonalRunOptions) -> StageResult:
             "profile_review_input": profile_review_path,
         },
         produced_outputs={role: str(path) for role, path in outputs.items()},
-        notes="Profile review registry, backlog and profiled master projection generated; raw master remained unchanged and downstream stages stayed on existing BASE/APPLIED semantics.",
+        notes=append_registry_default_note(
+            options,
+            "Profile review registry, backlog and profiled master projection generated; raw master remained unchanged and downstream stages stayed on existing BASE/APPLIED semantics.",
+            "fundamentals_master",
+            "profile_review_input",
+        ),
     )
 
 
@@ -514,7 +659,11 @@ def run_scoring_stage(options: PersonalRunOptions) -> StageResult:
             "fundamentals_source_mode": fundamentals_source_mode,
         },
         produced_outputs={"company_scores": options.scores_output, "score_audit": options.score_audit_output},
-        notes=f"Scores generated with fundamentals_format=personal; fundamentals_source_mode={fundamentals_source_mode}; no sample fundamentals fallback used.",
+        notes=append_registry_default_note(
+            options,
+            f"Scores generated with fundamentals_format=personal; fundamentals_source_mode={fundamentals_source_mode}; no sample fundamentals fallback used.",
+            "fundamentals_master",
+        ),
     )
 
 
@@ -555,12 +704,18 @@ def run_coverage_stage(options: PersonalRunOptions) -> StageResult:
             "research_priority": options.research_priority_output,
         },
         warnings=warnings,
-        notes=f"Personal fundamentals coverage, profile guardrails and research priority generated with fundamentals_source_mode={fundamentals_source_mode}.",
+        notes=append_registry_default_note(
+            options,
+            f"Personal fundamentals coverage, profile guardrails and research priority generated with fundamentals_source_mode={fundamentals_source_mode}.",
+            "fundamentals_master",
+        ),
     )
 
 
 def run_fundamentals_evidence_stage(options: PersonalRunOptions) -> StageResult:
     stage = "fundamentals_evidence"
+    maybe_raise_required_registry_source(options, "fundamentals_master", stage)
+    maybe_raise_required_registry_source(options, "fundamentals_evidence_input", stage)
     fundamentals_path = require_existing_path(options.fundamentals_master, "personal fundamentals master", stage)
     evidence_path = require_existing_path(options.fundamentals_evidence_input, "personal fundamentals evidence input", stage)
     metric_definitions_path = options.metric_definitions
@@ -585,7 +740,12 @@ def run_fundamentals_evidence_stage(options: PersonalRunOptions) -> StageResult:
             "metric_definitions": metric_definitions_path,
         },
         produced_outputs={role: str(path) for role, path in outputs.items()},
-        notes="Personal fundamentals evidence registry and research backlog generated; master and scores were not modified.",
+        notes=append_registry_default_note(
+            options,
+            "Personal fundamentals evidence registry and research backlog generated; master and scores were not modified.",
+            "fundamentals_master",
+            "fundamentals_evidence_input",
+        ),
     )
 
 
@@ -598,6 +758,7 @@ def run_fundamentals_overlay_stage(options: PersonalRunOptions) -> StageResult:
         allow_applied_master=False,
     )
     assert fundamentals_path is not None
+    maybe_raise_required_registry_source(options, "fundamentals_overlay_input", stage)
     overlay_path = require_existing_path(options.fundamentals_overlay_input, "personal fundamentals overlay input", stage)
     schema_path = DEFAULT_OVERLAY_SCHEMA_PATH
     outputs = run_fundamentals_overlay_engine(
@@ -622,7 +783,12 @@ def run_fundamentals_overlay_stage(options: PersonalRunOptions) -> StageResult:
             "fundamentals_source_mode": fundamentals_source_mode,
         },
         produced_outputs={role: str(path) for role, path in outputs.items()},
-        notes=f"Personal fundamentals overlay registry and applied master projection generated from fundamentals_source_mode={fundamentals_source_mode}; original master and scores were not modified.",
+        notes=append_registry_default_note(
+            options,
+            f"Personal fundamentals overlay registry and applied master projection generated from fundamentals_source_mode={fundamentals_source_mode}; original master and scores were not modified.",
+            "fundamentals_master",
+            "fundamentals_overlay_input",
+        ),
     )
 
 
@@ -666,7 +832,11 @@ def run_watchlist_stage(options: PersonalRunOptions) -> StageResult:
         ["watchlist_input", "scores_output"],
         used_inputs=used_inputs,
         produced_outputs={"watchlist_ranked": options.watchlist_output, "watchlist_report": options.watchlist_report_output},
-        notes=f"Watchlist ranked from personal scores; fundamentals_source_mode={fundamentals_source_mode}.",
+        notes=append_registry_default_note(
+            options,
+            f"Watchlist ranked from personal scores; fundamentals_source_mode={fundamentals_source_mode}.",
+            "fundamentals_master",
+        ),
     )
 
 
@@ -717,7 +887,11 @@ def run_monthly_stage(options: PersonalRunOptions) -> StageResult:
             "rebalance_proposals": options.rebalance_output,
             "monthly_decision_report": options.monthly_report_output,
         },
-        notes=f"Monthly ranking and decision report generated with fundamentals coverage guardrail; fundamentals_source_mode={fundamentals_source_mode}.",
+        notes=append_registry_default_note(
+            options,
+            f"Monthly ranking and decision report generated with fundamentals coverage guardrail; fundamentals_source_mode={fundamentals_source_mode}.",
+            "fundamentals_master",
+        ),
     )
 
 
@@ -754,7 +928,11 @@ def run_portfolio_review_stage(options: PersonalRunOptions) -> StageResult:
         ["positions_output", "scores_output", "coverage_output"],
         used_inputs=used_inputs,
         produced_outputs={"portfolio_review_report": options.portfolio_review_output, "holdings_action_table": options.holdings_output},
-        notes=f"Portfolio review report and holdings action table generated with coverage guardrail; fundamentals_source_mode={fundamentals_source_mode}.",
+        notes=append_registry_default_note(
+            options,
+            f"Portfolio review report and holdings action table generated with coverage guardrail; fundamentals_source_mode={fundamentals_source_mode}.",
+            "fundamentals_master",
+        ),
     )
 
 
@@ -796,6 +974,7 @@ def resolve_single_benchmark_symbol(options: PersonalRunOptions) -> str | None:
 def run_benchmark_archive_stage(options: PersonalRunOptions) -> StageResult:
     stage = "benchmark_archive"
     if not options.benchmark_input and not path_exists(options.benchmark_archive):
+        maybe_raise_required_registry_source(options, "benchmark_input", stage)
         raise ValueError(f"stage benchmark_archive requires --benchmark-input or existing benchmark archive: {options.benchmark_archive}")
     if options.benchmark_input:
         require_existing_path(options.benchmark_input, "benchmark input", stage)
@@ -823,7 +1002,11 @@ def run_benchmark_archive_stage(options: PersonalRunOptions) -> StageResult:
         ["benchmark_input_or_existing_archive", "benchmark_config"],
         used_inputs=used,
         produced_outputs={role: str(path) for role, path in outputs.items()},
-        notes="Benchmark archive/registry generated; normalized output remains a single explicit benchmark series.",
+        notes=append_registry_default_note(
+            options,
+            "Benchmark archive/registry generated; normalized output remains a single explicit benchmark series.",
+            "benchmark_input",
+        ),
     )
 
 
@@ -898,6 +1081,7 @@ def run_multi_benchmark_stage(options: PersonalRunOptions) -> StageResult:
 def run_cost_tax_stage(options: PersonalRunOptions) -> StageResult:
     stage = "cost_tax"
     if not options.ledger and not options.cost_tax_documents:
+        maybe_raise_required_registry_source(options, "ledger", stage)
         raise ValueError("stage cost_tax requires --ledger and/or at least one --cost-tax-document.")
     cost_tax_config_path = DEFAULT_COST_TAX_CONFIG_PATH
     used = {"cost_tax_archive": options.cost_tax_archive, "cost_tax_config": cost_tax_config_path}
@@ -923,7 +1107,11 @@ def run_cost_tax_stage(options: PersonalRunOptions) -> StageResult:
         ["ledger_or_cost_tax_document"],
         used_inputs=used,
         produced_outputs={role: str(path) for role, path in outputs.items()},
-        notes="Cost/tax archive and downstream artifacts generated from explicit ledger/document evidence.",
+        notes=append_registry_default_note(
+            options,
+            "Cost/tax archive and downstream artifacts generated from explicit ledger/document evidence.",
+            "ledger",
+        ),
     )
 
 
@@ -976,6 +1164,7 @@ def run_dashboard_stage(options: PersonalRunOptions) -> StageResult:
 
 
 STAGE_RUNNERS: dict[str, Callable[[PersonalRunOptions], StageResult]] = {
+    "data_sources_validate": run_data_sources_validate_stage,
     "import": run_import_stage,
     "fundamentals_seed": run_fundamentals_seed_stage,
     "fundamentals_profile": run_fundamentals_profile_stage,
@@ -1128,6 +1317,8 @@ def build_manifest(
             "manifest_output": options.manifest_output,
             "artifacts_output": options.artifacts_output,
             "used_inputs_output": options.used_inputs_output,
+            "data_source_status_output": options.data_source_status_output,
+            "data_source_resolved_output": options.data_source_resolved_output,
             "report_output": options.report_output or "",
         },
         "stage_results": [result.as_dict() for result in stage_results],
@@ -1299,6 +1490,9 @@ def run_personal_run_engine(options: PersonalRunOptions) -> dict[str, Any]:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run selected personal pipeline stages and write a reproducible run manifest.")
     parser.add_argument("--stage", action="append", default=[], choices=STAGE_ORDER, help="Stage to run; repeat for multiple stages.")
+    parser.add_argument("--data-sources-config", default=DEFAULT_PATHS["data_sources_config"], help="Personal run data source registry config.")
+    parser.add_argument("--data-source-status-output", default=DEFAULT_PATHS["data_source_status_output"], help="Personal run data source status CSV output.")
+    parser.add_argument("--data-source-resolved-output", default=DEFAULT_PATHS["data_source_resolved_output"], help="Personal run resolved personal data source registry CSV output.")
     parser.add_argument("--positions-raw-input", help="Raw personal positions input for import stage.")
     parser.add_argument("--cash-input", help="Optional cash input for document import stage.")
     parser.add_argument("--import-mode", choices=["sample", "real", "tr_pdf"], default="real", help="Import mode.")
@@ -1386,6 +1580,9 @@ def parse_args() -> argparse.Namespace:
 def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
     return PersonalRunOptions(
         stages=args.stage,
+        data_sources_config=args.data_sources_config,
+        data_source_status_output=args.data_source_status_output,
+        data_source_resolved_output=args.data_source_resolved_output,
         positions_raw_input=args.positions_raw_input,
         cash_input=args.cash_input,
         import_mode=args.import_mode,

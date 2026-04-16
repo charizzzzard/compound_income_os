@@ -13,12 +13,13 @@ from src import monthly_ranking_engine, portfolio_review, scoring_engine, watchl
 from src.benchmark_history_engine import BENCHMARK_ARCHIVE_FIELDS, BENCHMARK_REGISTRY_FIELDS
 from src.common import read_csv_rows
 from src.cost_tax_archive_engine import DEFAULT_CONFIG_PATH as DEFAULT_COST_TAX_CONFIG_PATH
+from src.data_source_registry import RESOLVED_FIELDS, STATUS_FIELDS
 from src.dashboard_engine import DEFAULT_CONFIG_PATH as DEFAULT_DASHBOARD_CONFIG_PATH
 from src.fundamentals_evidence_engine import EVIDENCE_INPUT_FIELDS
 from src.fundamentals_master import DEFAULT_METRIC_DEFINITIONS_PATH
 from src.fundamentals_overlay_engine import DEFAULT_SCHEMA_PATH as DEFAULT_OVERLAY_SCHEMA_PATH, OVERLAY_INPUT_FIELDS
 from src.fundamentals_profile_engine import PROFILE_REVIEW_INPUT_FIELDS
-from src.personal_run_engine import USED_INPUT_FIELDS, PersonalRunOptions, options_from_args, parse_args, run_personal_run_engine
+from src.personal_run_engine import DEFAULT_PATHS, USED_INPUT_FIELDS, PersonalRunOptions, options_from_args, parse_args, run_personal_run_engine
 
 
 class PersonalRunEngineTests(unittest.TestCase):
@@ -125,6 +126,9 @@ class PersonalRunEngineTests(unittest.TestCase):
     def _write_profile_review_rows(self, path: Path, rows: list[dict[str, object]]) -> None:
         self._write_csv(path, PROFILE_REVIEW_INPUT_FIELDS, rows)
 
+    def _write_data_sources_config(self, path: Path, sources: dict[str, dict[str, object]]) -> None:
+        path.write_text(json.dumps({"sources": sources}, indent=2) + "\n", encoding="utf-8")
+
     def _profile_review_row(
         self,
         *,
@@ -213,8 +217,13 @@ class PersonalRunEngineTests(unittest.TestCase):
         )
 
     def _base_options(self, prefix: str, stages: list[str]) -> PersonalRunOptions:
+        data_sources_config = self._path(f"_tmp_{prefix}_data_sources.yaml")
+        self._write_data_sources_config(data_sources_config, {})
         return PersonalRunOptions(
             stages=stages,
+            data_sources_config=str(data_sources_config),
+            data_source_status_output=str(self._path(f"_tmp_{prefix}_data_source_status.csv")),
+            data_source_resolved_output=str(self._path(f"_tmp_{prefix}_data_source_resolved.csv")),
             positions_output=str(self._path(f"_tmp_{prefix}_positions.csv")),
             fundamentals_master=str(self._path(f"_tmp_{prefix}_personal_master.csv")),
             scores_output=str(self._path(f"_tmp_{prefix}_scores.csv")),
@@ -577,6 +586,126 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertNotIn("reports/sample", options.monthly_report_output)
         self.assertNotIn("reports/sample", options.portfolio_review_output)
 
+    def test_data_sources_validate_stage_writes_status_and_resolved_outputs(self) -> None:
+        options = self._base_options("data_sources_validate", ["data_sources_validate"])
+        options.fundamentals_master = DEFAULT_PATHS["fundamentals_master"]
+        options.profile_review_input = DEFAULT_PATHS["profile_review_input"]
+        configured_master = self._path("_tmp_data_sources_validate_master.csv")
+        configured_review = self._path("_tmp_data_sources_validate_profile_review.csv")
+        configured_master.write_text("ticker,company_name\nMSFT,Microsoft\n", encoding="utf-8")
+        self._write_profile_review_rows(Path(configured_review), [])
+        self._write_data_sources_config(
+            Path(options.data_sources_config),
+            {
+                "fundamentals_master": {
+                    "enabled": True,
+                    "path": str(configured_master),
+                    "required": True,
+                    "kind": "file",
+                    "description": "configured personal fundamentals master",
+                },
+                "profile_review_input": {
+                    "enabled": True,
+                    "path": str(configured_review),
+                    "required": False,
+                    "kind": "file",
+                    "description": "configured profile review input",
+                },
+            },
+        )
+
+        manifest = run_personal_run_engine(options)
+
+        status_rows = read_csv_rows(options.data_source_status_output)
+        resolved_rows = read_csv_rows(options.data_source_resolved_output)
+        used_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "data_sources_validate")
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(set(status_rows[0]), set(STATUS_FIELDS))
+        self.assertEqual(set(resolved_rows[0]), set(RESOLVED_FIELDS))
+        self.assertEqual(used_inputs["data_sources_config"]["input_path"], options.data_sources_config)
+        self.assertEqual(used_inputs["source_fundamentals_master"]["input_path"], str(configured_master))
+        self.assertEqual(
+            {row["source_key"] for row in resolved_rows if row["used_as_default_input"] == "True"},
+            {"fundamentals_master", "profile_review_input"},
+        )
+
+    def test_required_missing_data_source_fails_fast_with_source_key(self) -> None:
+        options = self._base_options("data_sources_missing", ["data_sources_validate"])
+        missing_master = self._path("_tmp_data_sources_missing_master.csv")
+        self._write_data_sources_config(
+            Path(options.data_sources_config),
+            {
+                "fundamentals_master": {
+                    "enabled": True,
+                    "path": str(missing_master),
+                    "required": True,
+                    "kind": "file",
+                    "description": "missing configured personal fundamentals master",
+                }
+            },
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "fundamentals_master"):
+            run_personal_run_engine(options)
+
+        manifest = json.loads(Path(options.manifest_output).read_text(encoding="utf-8"))
+        self.assertEqual(manifest["run_status"], "FAILED")
+        self.assertIn("fundamentals_master", manifest["warnings"][0])
+
+    def test_explicit_cli_fundamentals_master_wins_against_registry_default(self) -> None:
+        options = self._core_options("registry_cli_priority", ["import", "fundamentals_seed", "scoring"])
+        registry_master = self._path("_tmp_registry_cli_priority_master.csv")
+        registry_master.write_text(Path("data/raw/personal_fundamentals_master.csv").read_text(encoding="utf-8"), encoding="utf-8")
+        self._write_data_sources_config(
+            Path(options.data_sources_config),
+            {
+                "fundamentals_master": {
+                    "enabled": True,
+                    "path": str(registry_master),
+                    "required": True,
+                    "kind": "file",
+                    "description": "registry master should lose to explicit CLI path",
+                }
+            },
+        )
+
+        manifest = run_personal_run_engine(options)
+
+        scoring_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "scoring")
+        scoring_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "scoring")
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(scoring_result["used_inputs"]["fundamentals_master"], options.fundamentals_master)
+        self.assertEqual(scoring_inputs["fundamentals_master"]["input_path"], options.fundamentals_master)
+        self.assertNotEqual(scoring_inputs["fundamentals_master"]["input_path"], str(registry_master))
+        self.assertNotIn("data_source_registry_defaults=fundamentals_master", scoring_inputs["fundamentals_master"]["notes"])
+
+    def test_registry_default_fundamentals_master_overrides_repo_default_when_no_cli_override_exists(self) -> None:
+        options = self._core_options("registry_default_priority", ["import", "scoring"])
+        registry_master = self._path("_tmp_registry_default_priority_master.csv")
+        registry_master.write_text(Path("data/raw/personal_fundamentals_master.csv").read_text(encoding="utf-8"), encoding="utf-8")
+        options.fundamentals_master = "data/raw/personal_fundamentals_master.csv"
+        self._write_data_sources_config(
+            Path(options.data_sources_config),
+            {
+                "fundamentals_master": {
+                    "enabled": True,
+                    "path": str(registry_master),
+                    "required": True,
+                    "kind": "file",
+                    "description": "registry master should win over repo default",
+                }
+            },
+        )
+
+        manifest = run_personal_run_engine(options)
+
+        scoring_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "scoring")
+        scoring_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "scoring")
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(scoring_result["used_inputs"]["fundamentals_master"], str(registry_master))
+        self.assertEqual(scoring_inputs["fundamentals_master"]["input_path"], str(registry_master))
+        self.assertIn("data_source_registry_defaults=fundamentals_master", scoring_inputs["fundamentals_master"]["notes"])
+
     def test_used_inputs_capture_stage_config_files_for_core_pipeline(self) -> None:
         options = self._core_options(
             "core_lineage_depth",
@@ -685,6 +814,47 @@ class PersonalRunEngineTests(unittest.TestCase):
         multi_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "multi_benchmark")
         self.assertEqual(multi_inputs["benchmark_config"]["input_path"], options.benchmark_config)
         self.assertEqual(multi_inputs["benchmark_config"]["input_exists"], "True")
+
+    def test_cli_mutually_exclusive_profiled_and_applied_flags_fail_fast(self) -> None:
+        options = self._core_options("cli_profiled_applied_conflict", ["import", "fundamentals_seed", "scoring"])
+        command = [
+            "python",
+            "-m",
+            "src.personal_run_engine",
+        ]
+        for stage in options.stages:
+            command.extend(["--stage", stage])
+        command.extend(
+            [
+                "--positions-raw-input",
+                str(options.positions_raw_input),
+                "--positions-output",
+                options.positions_output,
+                "--fundamentals-master",
+                options.fundamentals_master,
+                "--scores-output",
+                options.scores_output,
+                "--score-audit-output",
+                options.score_audit_output,
+                "--manifest-output",
+                options.manifest_output,
+                "--artifacts-output",
+                options.artifacts_output,
+                "--used-inputs-output",
+                options.used_inputs_output,
+                "--report-output",
+                str(options.report_output),
+                "--use-profiled-master",
+                "--use-applied-master",
+            ]
+        )
+
+        result = subprocess.run(command, cwd=Path.cwd(), capture_output=True, text=True)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--use-profiled-master and --use-applied-master are mutually exclusive", result.stderr)
+        manifest = json.loads(Path(options.manifest_output).read_text(encoding="utf-8"))
+        self.assertEqual(manifest["run_status"], "FAILED")
 
     def test_cli_smoke_core_run_generates_manifest_artifacts_and_report(self) -> None:
         options = self._core_options(
