@@ -28,6 +28,13 @@
       "kind": "file",
       "description": "Manual overlay input for fundamentals_overlay."
     },
+    "fundamentals_snapshot_input": {
+      "enabled": false,
+      "path": "data/raw/private/fundamentals/personal_fundamentals_snapshot.csv",
+      "required": false,
+      "kind": "file",
+      "description": "Optional local external fundamentals snapshot input for fundamentals_snapshot_ingest."
+    },
     "benchmark_input": {
       "enabled": true,
       "path": "data/raw/sample_benchmark_timeseries.csv",

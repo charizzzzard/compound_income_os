@@ -184,6 +184,29 @@ Leitplanken:
 - Die Projektion aendert nur `company_type_profile` plus einen nachvollziehbaren Notes-Hinweis; KPI-Werte, Overlays und andere Master-Felder bleiben unberuehrt.
 - In diesem Patch nutzen Downstream-Stages den profiled Master nicht automatisch. Erst `src.personal_run_engine --use-profiled-master` schaltet geeignete fundamentals-abhaengige Stages explizit auf `personal_fundamentals_master_profiled.csv`.
 
+## Lokaler Fundamentals Snapshot Ingest
+
+`src.fundamentals_snapshot_ingestion` schliesst die groesste reale Datenbeschaffungsluecke im Personal-Fundamentals-Pfad: lokale externe CSV-Snapshots koennen read-only ingestiert, gegen den bestehenden Personal-Master exakt gematcht und in ein Evidence-Staging-Artefakt ueberfuehrt werden. Der Snapshot-Import ist bewusst vendor-neutral, lokal und reproduzierbar; es gibt keine Live-API, kein Web-Scraping und keine automatische Rueckschreibung in Raw-Master oder manuelle Evidence-CSV. Im Orchestrator wird derselbe Input optional ueber den Personal-Source-Key `fundamentals_snapshot_input` aufgeloest.
+
+```powershell
+python -m src.fundamentals_snapshot_ingestion --fundamentals-master data/raw/personal_fundamentals_master.csv --snapshot-input data/raw/private/fundamentals/personal_fundamentals_snapshot.csv --normalized-output data/processed/personal_fundamentals_snapshot_normalized.csv --unmatched-output data/processed/personal_fundamentals_snapshot_unmatched.csv --evidence-staging-output data/processed/personal_fundamentals_snapshot_evidence_staging.csv --summary-output data/processed/personal_fundamentals_snapshot_summary.csv --template-output data/raw/personal_fundamentals_snapshot_template.csv
+```
+
+Template- und Output-Vertrag:
+
+- `data/raw/personal_fundamentals_snapshot_template.csv`: vendor-neutrales lokales Snapshot-Template mit exakten Identity-/Metadatenfeldern und bestehenden Core-KPI-Namen
+- `data/processed/personal_fundamentals_snapshot_normalized.csv`: gematchte Snapshot-Zeilen pro Personal-Master-Identitaet
+- `data/processed/personal_fundamentals_snapshot_unmatched.csv`: Snapshot-Zeilen ohne exakten Match; keine stille Holding-Erfindung
+- `data/processed/personal_fundamentals_snapshot_evidence_staging.csv`: flaches Langformat im bestehenden Evidence-Eingabevertrag
+- `data/processed/personal_fundamentals_snapshot_summary.csv`: reine Ingest-/Match-/Staging-Zusammenfassung
+
+Leitplanken:
+
+- Matchen erfolgt konservativ nur ueber exakte `ticker`-/`isin`-Identitaet gegen den bestehenden Personal-Master; `company_name` wird nicht fuzzy verwendet.
+- Snapshot-Ingest erzeugt nur Staging-Evidence mit `source_type=SNAPSHOT_IMPORT`, `verification_status=UNVERIFIED` und `data_quality_flag=REVIEW`.
+- Es gibt keine automatische Uebernahme in `data/raw/personal_fundamentals_evidence.csv` und keine automatische Nutzung in `scoring` oder `coverage`.
+- Snapshot-Ingest ist bewusst nicht die Evidence-Engine: `src.fundamentals_evidence_engine` validiert explizite Evidence-Zeilen, Registry, Backlog und Proposed Updates; `src.fundamentals_snapshot_ingestion` bereitet nur lokale Snapshot-Exporte fuer diesen spaeteren Schritt vor.
+
 ## Fundamentals Overlay / Applied Master
 
 `src.fundamentals_overlay_engine` ergaenzt den Personal-Master um eine explizite lokale Analyst-Overlay-Schicht. Der manuelle Input `data/raw/personal_fundamentals_overlay.csv` wird validiert, zu `data/processed/personal_fundamentals_overlay_registry.csv` normalisiert und als `data/processed/personal_fundamentals_master_applied.csv` auf den Personal-Master projiziert. `overlay_review_due_date` wird als `NOT_SET`, `OK`, `DUE` oder `OVERDUE` sichtbar und kann zusaetzlich in `personal_fundamentals_overlay_review_backlog.csv` ausgegeben werden.
@@ -453,6 +476,7 @@ Hinweise:
 - `fundamentals_seed` erzeugt nur Identity-Seed-Zeilen und erfindet keine KPI-Werte. Ein vorhandener Personal-Master wird nur mit `--overwrite-fundamentals-master` ersetzt.
 - `coverage` erzeugt neben Coverage, Enriched und Report auch `personal_research_priority.csv` als operative Nachpflege-Liste fuer Profile/KPI-Luecken.
 - `fundamentals_profile` erzeugt nur Profile-Registry, Review-Backlog und `personal_fundamentals_master_profiled.csv`; diese Stage schreibt nicht in den Raw-Master zurueck und schaltet Downstream-Stages nicht automatisch um.
+- `fundamentals_snapshot_ingest` liest nur einen lokalen externen Fundamentals-Snapshot, schreibt `personal_fundamentals_snapshot_normalized.csv`, `personal_fundamentals_snapshot_unmatched.csv`, `personal_fundamentals_snapshot_evidence_staging.csv` und `personal_fundamentals_snapshot_summary.csv` und aendert weder Raw-Master noch manuelle Evidence-CSV.
 - `--use-profiled-master` schaltet nur explizit geeignete fundamentals-abhaengige Stages wie `fundamentals_overlay`, `scoring`, `coverage`, `watchlist`, `monthly` und `portfolio_review` auf `personal_fundamentals_master_profiled.csv`. Ohne den Schalter bleibt der Base-Master aktiv; wenn der profiled Master fehlt, scheitert der Run fail-fast.
 - `fundamentals_evidence` erzeugt nur Evidence-Registry, Research-Backlog, Summary und Evidence-Report; diese Stage schreibt nicht in den Personal-Master zurueck.
 - `fundamentals_evidence` erzeugt zusaetzlich `personal_fundamentals_proposed_updates.csv` als manuellen Vorschlagsoutput aus validierter Evidence mit `reported_value`.
@@ -510,6 +534,10 @@ Interpretation der persoenlichen Outputs:
 - `personal_fundamentals_evidence_registry.csv`: normalisierte lokale Evidence-Zeilen je Holding/KPI/Quelle
 - `personal_fundamentals_research_backlog.csv`: operative Evidence-Luecken je Holding auf Basis der kanonischen Required-KPI-Methodik
 - `personal_fundamentals_proposed_updates.csv`: manueller Vorschlagsoutput aus validierter Evidence mit `reported_value`; keine automatische Master-Rueckschreibung
+- `personal_fundamentals_snapshot_normalized.csv`: read-only ingestierte lokale Fundamentals-Snapshot-Werte je exakt gematchter Personal-Identitaet
+- `personal_fundamentals_snapshot_unmatched.csv`: lokale Fundamentals-Snapshot-Zeilen ohne exakten Personal-Master-Match
+- `personal_fundamentals_snapshot_evidence_staging.csv`: aus dem Snapshot abgeleitete manuelle Evidence-Staging-Zeilen; keine automatische Uebernahme in `personal_fundamentals_evidence.csv`
+- `personal_fundamentals_snapshot_summary.csv`: Ingest-/Match-/Staging-Summary fuer den lokalen Snapshot-Import
 - `personal_fundamentals_overlay_registry.csv`: normalisierte lokale Analyst-Overlay-Zeilen je Holding/Stichtag/Autor
 - `personal_fundamentals_master_applied.csv`: explizite Projektion aus Original-Master plus validierten Overlays; kein Ersatz fuer die Core-KPI-Source-of-Truth
 - `personal_fundamentals_overlay_review_backlog.csv`: faellige oder ueberfaellige Overlay-Reviews; keine automatische Overlay-Deaktivierung

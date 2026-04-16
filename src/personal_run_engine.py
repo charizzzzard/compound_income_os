@@ -68,6 +68,14 @@ from src.fundamentals_profile_engine import (
     DEFAULT_PROFILED_MASTER_OUTPUT,
     run_fundamentals_profile_engine,
 )
+from src.fundamentals_snapshot_ingestion import (
+    DEFAULT_EVIDENCE_STAGING_OUTPUT as DEFAULT_SNAPSHOT_EVIDENCE_STAGING_OUTPUT,
+    DEFAULT_NORMALIZED_OUTPUT as DEFAULT_SNAPSHOT_NORMALIZED_OUTPUT,
+    DEFAULT_SNAPSHOT_INPUT_PATH,
+    DEFAULT_SUMMARY_OUTPUT as DEFAULT_SNAPSHOT_SUMMARY_OUTPUT,
+    DEFAULT_UNMATCHED_OUTPUT as DEFAULT_SNAPSHOT_UNMATCHED_OUTPUT,
+    run_fundamentals_snapshot_ingestion,
+)
 from src.multi_benchmark_performance_engine import run_multi_benchmark_performance_engine
 from src.performance_engine import run_performance_engine
 from src.portfolio_history_engine import run_portfolio_history_engine
@@ -84,6 +92,7 @@ STAGE_ORDER = [
     "import",
     "fundamentals_seed",
     "fundamentals_profile",
+    "fundamentals_snapshot_ingest",
     "fundamentals_evidence",
     "fundamentals_overlay",
     "scoring",
@@ -125,6 +134,11 @@ DEFAULT_PATHS = {
     "profile_review_registry_output": DEFAULT_PROFILE_REGISTRY_OUTPUT,
     "profile_review_backlog_output": DEFAULT_PROFILE_REVIEW_BACKLOG_OUTPUT,
     "profiled_master_output": DEFAULT_PROFILED_MASTER_OUTPUT,
+    "fundamentals_snapshot_input": DEFAULT_SNAPSHOT_INPUT_PATH,
+    "fundamentals_snapshot_normalized_output": DEFAULT_SNAPSHOT_NORMALIZED_OUTPUT,
+    "fundamentals_snapshot_unmatched_output": DEFAULT_SNAPSHOT_UNMATCHED_OUTPUT,
+    "fundamentals_snapshot_evidence_staging_output": DEFAULT_SNAPSHOT_EVIDENCE_STAGING_OUTPUT,
+    "fundamentals_snapshot_summary_output": DEFAULT_SNAPSHOT_SUMMARY_OUTPUT,
     "fundamentals_evidence_input": DEFAULT_EVIDENCE_INPUT_PATH,
     "fundamentals_evidence_registry_output": DEFAULT_REGISTRY_OUTPUT,
     "fundamentals_research_backlog_output": DEFAULT_BACKLOG_OUTPUT,
@@ -173,6 +187,7 @@ DEFAULT_PATHS = {
 DATA_SOURCE_OPTION_FIELDS = {
     "fundamentals_master": "fundamentals_master",
     "profile_review_input": "profile_review_input",
+    "fundamentals_snapshot_input": "fundamentals_snapshot_input",
     "fundamentals_evidence_input": "fundamentals_evidence_input",
     "fundamentals_overlay_input": "fundamentals_overlay_input",
     "benchmark_input": "benchmark_input",
@@ -186,6 +201,7 @@ OPTION_FIELD_DEFAULTS = {
     "cash_input": "",
     "fundamentals_master": DEFAULT_PATHS["fundamentals_master"],
     "profile_review_input": DEFAULT_PATHS["profile_review_input"],
+    "fundamentals_snapshot_input": DEFAULT_PATHS["fundamentals_snapshot_input"],
     "fundamentals_evidence_input": DEFAULT_PATHS["fundamentals_evidence_input"],
     "fundamentals_overlay_input": DEFAULT_PATHS["fundamentals_overlay_input"],
     "benchmark_input": "",
@@ -242,6 +258,11 @@ class PersonalRunOptions:
     profile_review_registry_output: str = DEFAULT_PATHS["profile_review_registry_output"]
     profile_review_backlog_output: str = DEFAULT_PATHS["profile_review_backlog_output"]
     profiled_master_output: str = DEFAULT_PATHS["profiled_master_output"]
+    fundamentals_snapshot_input: str = DEFAULT_PATHS["fundamentals_snapshot_input"]
+    fundamentals_snapshot_normalized_output: str = DEFAULT_PATHS["fundamentals_snapshot_normalized_output"]
+    fundamentals_snapshot_unmatched_output: str = DEFAULT_PATHS["fundamentals_snapshot_unmatched_output"]
+    fundamentals_snapshot_evidence_staging_output: str = DEFAULT_PATHS["fundamentals_snapshot_evidence_staging_output"]
+    fundamentals_snapshot_summary_output: str = DEFAULT_PATHS["fundamentals_snapshot_summary_output"]
     fundamentals_evidence_input: str = DEFAULT_PATHS["fundamentals_evidence_input"]
     fundamentals_evidence_registry_output: str = DEFAULT_PATHS["fundamentals_evidence_registry_output"]
     fundamentals_research_backlog_output: str = DEFAULT_PATHS["fundamentals_research_backlog_output"]
@@ -464,6 +485,11 @@ def input_snapshot(options: PersonalRunOptions) -> dict[str, Any]:
         "profile_review_registry_output": options.profile_review_registry_output,
         "profile_review_backlog_output": options.profile_review_backlog_output,
         "profiled_master_output": options.profiled_master_output,
+        "fundamentals_snapshot_input": options.fundamentals_snapshot_input,
+        "fundamentals_snapshot_normalized_output": options.fundamentals_snapshot_normalized_output,
+        "fundamentals_snapshot_unmatched_output": options.fundamentals_snapshot_unmatched_output,
+        "fundamentals_snapshot_evidence_staging_output": options.fundamentals_snapshot_evidence_staging_output,
+        "fundamentals_snapshot_summary_output": options.fundamentals_snapshot_summary_output,
         "data_source_status_output": options.data_source_status_output,
         "data_source_resolved_output": options.data_source_resolved_output,
         "fundamentals_evidence_input": options.fundamentals_evidence_input,
@@ -614,6 +640,39 @@ def run_fundamentals_profile_stage(options: PersonalRunOptions) -> StageResult:
             "Profile review registry, backlog and profiled master projection generated; raw master remained unchanged and downstream stages stayed on existing BASE/APPLIED semantics.",
             "fundamentals_master",
             "profile_review_input",
+        ),
+    )
+
+
+def run_fundamentals_snapshot_ingest_stage(options: PersonalRunOptions) -> StageResult:
+    stage = "fundamentals_snapshot_ingest"
+    maybe_raise_required_registry_source(options, "fundamentals_master", stage)
+    maybe_raise_required_registry_source(options, "fundamentals_snapshot_input", stage)
+    fundamentals_path = require_existing_path(options.fundamentals_master, "personal fundamentals master", stage)
+    snapshot_input_path = require_existing_path(options.fundamentals_snapshot_input, "local fundamentals snapshot input", stage)
+    outputs = run_fundamentals_snapshot_ingestion(
+        fundamentals_master_path=fundamentals_path,
+        snapshot_input_path=snapshot_input_path,
+        normalized_output=options.fundamentals_snapshot_normalized_output,
+        unmatched_output=options.fundamentals_snapshot_unmatched_output,
+        evidence_staging_output=options.fundamentals_snapshot_evidence_staging_output,
+        summary_output=options.fundamentals_snapshot_summary_output,
+        template_output=None,
+    )
+    return stage_result(
+        stage,
+        SUCCESS,
+        ["fundamentals_master", "fundamentals_snapshot_input"],
+        used_inputs={
+            "fundamentals_master": fundamentals_path,
+            "fundamentals_snapshot_input": snapshot_input_path,
+        },
+        produced_outputs={role: str(path) for role, path in outputs.items()},
+        notes=append_registry_default_note(
+            options,
+            "Local fundamentals snapshot normalized, unmatched rows isolated and evidence-staging CSV generated; no raw master or evidence input was modified.",
+            "fundamentals_master",
+            "fundamentals_snapshot_input",
         ),
     )
 
@@ -1168,6 +1227,7 @@ STAGE_RUNNERS: dict[str, Callable[[PersonalRunOptions], StageResult]] = {
     "import": run_import_stage,
     "fundamentals_seed": run_fundamentals_seed_stage,
     "fundamentals_profile": run_fundamentals_profile_stage,
+    "fundamentals_snapshot_ingest": run_fundamentals_snapshot_ingest_stage,
     "scoring": run_scoring_stage,
     "coverage": run_coverage_stage,
     "fundamentals_evidence": run_fundamentals_evidence_stage,
@@ -1514,6 +1574,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--profile-review-registry-output", default=DEFAULT_PATHS["profile_review_registry_output"], help="Personal profile review registry output.")
     parser.add_argument("--profile-review-backlog-output", default=DEFAULT_PATHS["profile_review_backlog_output"], help="Personal profile review backlog output.")
     parser.add_argument("--profiled-master-output", default=DEFAULT_PATHS["profiled_master_output"], help="Projected personal profiled master output.")
+    parser.add_argument("--fundamentals-snapshot-input", default=DEFAULT_PATHS["fundamentals_snapshot_input"], help="Local external fundamentals snapshot CSV input.")
+    parser.add_argument("--fundamentals-snapshot-normalized-output", default=DEFAULT_PATHS["fundamentals_snapshot_normalized_output"], help="Normalized matched local fundamentals snapshot output.")
+    parser.add_argument("--fundamentals-snapshot-unmatched-output", default=DEFAULT_PATHS["fundamentals_snapshot_unmatched_output"], help="Unmatched local fundamentals snapshot output.")
+    parser.add_argument("--fundamentals-snapshot-evidence-staging-output", default=DEFAULT_PATHS["fundamentals_snapshot_evidence_staging_output"], help="Evidence-staging output from local fundamentals snapshot ingest.")
+    parser.add_argument("--fundamentals-snapshot-summary-output", default=DEFAULT_PATHS["fundamentals_snapshot_summary_output"], help="Local fundamentals snapshot ingest summary output.")
     parser.add_argument("--fundamentals-evidence-input", default=DEFAULT_PATHS["fundamentals_evidence_input"], help="Manual personal fundamentals evidence input.")
     parser.add_argument("--fundamentals-evidence-registry-output", default=DEFAULT_PATHS["fundamentals_evidence_registry_output"], help="Personal fundamentals evidence registry output.")
     parser.add_argument("--fundamentals-research-backlog-output", default=DEFAULT_PATHS["fundamentals_research_backlog_output"], help="Personal fundamentals research backlog output.")
@@ -1604,6 +1669,11 @@ def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
         profile_review_registry_output=args.profile_review_registry_output,
         profile_review_backlog_output=args.profile_review_backlog_output,
         profiled_master_output=args.profiled_master_output,
+        fundamentals_snapshot_input=args.fundamentals_snapshot_input,
+        fundamentals_snapshot_normalized_output=args.fundamentals_snapshot_normalized_output,
+        fundamentals_snapshot_unmatched_output=args.fundamentals_snapshot_unmatched_output,
+        fundamentals_snapshot_evidence_staging_output=args.fundamentals_snapshot_evidence_staging_output,
+        fundamentals_snapshot_summary_output=args.fundamentals_snapshot_summary_output,
         fundamentals_evidence_input=args.fundamentals_evidence_input,
         fundamentals_evidence_registry_output=args.fundamentals_evidence_registry_output,
         fundamentals_research_backlog_output=args.fundamentals_research_backlog_output,

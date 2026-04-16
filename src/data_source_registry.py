@@ -38,6 +38,7 @@ SUPPORTED_SOURCE_KEYS = {
     "fundamentals_evidence_input",
     "fundamentals_master",
     "fundamentals_overlay_input",
+    "fundamentals_snapshot_input",
     "positions_raw_input",
     "profile_review_input",
 }

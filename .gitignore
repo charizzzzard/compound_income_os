@@ -25,6 +25,7 @@ data/raw/personal_*
 !data/raw/personal_fundamentals_overlay_template.csv
 !data/raw/personal_fundamentals_profile_review.csv
 !data/raw/personal_fundamentals_profile_review_template.csv
+!data/raw/personal_fundamentals_snapshot_template.csv
 data/raw/private_*
 
 # Personal generated artifacts
