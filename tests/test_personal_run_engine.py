@@ -125,6 +125,9 @@ class PersonalRunEngineTests(unittest.TestCase):
     def _write_empty_evidence(self, path: Path) -> None:
         self._write_csv(path, EVIDENCE_INPUT_FIELDS, [])
 
+    def _write_evidence_rows(self, path: Path, rows: list[dict[str, object]]) -> None:
+        self._write_csv(path, EVIDENCE_INPUT_FIELDS, rows)
+
     def _write_empty_overlay(self, path: Path) -> None:
         self._write_csv(path, OVERLAY_INPUT_FIELDS, [])
 
@@ -202,6 +205,47 @@ class PersonalRunEngineTests(unittest.TestCase):
                 "sleeve": "SINGLE_STOCK" if asset_type != "CASH" else "CASH",
                 "current_price_eur": "100",
                 "mandate_fit_score": "80",
+            }
+        )
+        return row
+
+    def _evidence_row(
+        self,
+        *,
+        ticker: str = "MSFT",
+        isin: str = "",
+        company_name: str = "Microsoft",
+        kpi_name: str = "roic",
+        source_type: str = "ANNUAL_REPORT",
+        source_name: str = "annual_report_2025",
+        source_reference: str = "FY2025 annual report",
+        source_as_of_date: str = "2026-03-31",
+        fiscal_year: str = "2025",
+        verification_status: str = "VERIFIED",
+        data_quality_flag: str = "OK",
+        reported_value: str = "25.0",
+        notes: str = "unit evidence row",
+    ) -> dict[str, object]:
+        row = {field: "" for field in EVIDENCE_INPUT_FIELDS}
+        row.update(
+            {
+                "ticker": ticker,
+                "isin": isin,
+                "company_name": company_name,
+                "kpi_name": kpi_name,
+                "source_type": source_type,
+                "source_name": source_name,
+                "source_reference": source_reference,
+                "source_as_of_date": source_as_of_date,
+                "fiscal_year": fiscal_year,
+                "verification_status": verification_status,
+                "data_quality_flag": data_quality_flag,
+                "notes": notes,
+                "source_section": "unit section",
+                "source_page": "1",
+                "reported_value": reported_value,
+                "reported_unit": "percent",
+                "currency": "USD",
             }
         )
         return row
@@ -359,10 +403,14 @@ class PersonalRunEngineTests(unittest.TestCase):
             fundamentals_snapshot_summary_output=str(self._path(f"_tmp_{prefix}_fundamentals_snapshot_summary.csv")),
             fundamentals_snapshot_review_input=str(self._path(f"_tmp_{prefix}_fundamentals_snapshot_review.csv")),
             fundamentals_snapshot_review_registry_output=str(self._path(f"_tmp_{prefix}_fundamentals_snapshot_review_registry.csv")),
+            fundamentals_snapshot_evidence_promoted_input=str(self._path(f"_tmp_{prefix}_fundamentals_snapshot_evidence_promoted.csv")),
             fundamentals_snapshot_evidence_promoted_output=str(self._path(f"_tmp_{prefix}_fundamentals_snapshot_evidence_promoted.csv")),
             fundamentals_snapshot_review_backlog_output=str(self._path(f"_tmp_{prefix}_fundamentals_snapshot_review_backlog.csv")),
             fundamentals_snapshot_review_summary_output=str(self._path(f"_tmp_{prefix}_fundamentals_snapshot_review_summary.csv")),
             fundamentals_evidence_input=str(self._path(f"_tmp_{prefix}_evidence_input.csv")),
+            fundamentals_evidence_composed_output=str(self._path(f"_tmp_{prefix}_evidence_composed.csv")),
+            fundamentals_evidence_compose_conflicts_output=str(self._path(f"_tmp_{prefix}_evidence_compose_conflicts.csv")),
+            fundamentals_evidence_compose_summary_output=str(self._path(f"_tmp_{prefix}_evidence_compose_summary.csv")),
             fundamentals_evidence_registry_output=str(self._path(f"_tmp_{prefix}_evidence_registry.csv")),
             fundamentals_research_backlog_output=str(self._path(f"_tmp_{prefix}_research_backlog.csv")),
             fundamentals_proposed_updates_output=str(self._path(f"_tmp_{prefix}_proposed_updates.csv")),
@@ -680,6 +728,156 @@ class PersonalRunEngineTests(unittest.TestCase):
             "data_source_registry_defaults=fundamentals_snapshot_review_input",
             review_inputs["fundamentals_snapshot_review_input"]["notes"],
         )
+
+    def test_fundamentals_evidence_compose_stage_writes_composed_conflicts_and_summary(self) -> None:
+        options = self._core_options(
+            "evidence_compose_stage",
+            [
+                "import",
+                "fundamentals_seed",
+                "fundamentals_snapshot_ingest",
+                "fundamentals_snapshot_review",
+                "fundamentals_evidence_compose",
+            ],
+        )
+        self._write_evidence_rows(
+            Path(options.fundamentals_evidence_input),
+            [self._evidence_row(kpi_name="dividend_yield_current_pct", reported_value="0.8")],
+        )
+        self._write_snapshot_rows(Path(options.fundamentals_snapshot_input), [self._snapshot_row(isin="")])
+        self._write_snapshot_review_rows(
+            Path(options.fundamentals_snapshot_review_input),
+            [self._snapshot_review_row(isin="", kpi_name="roic", review_decision="APPROVE")],
+        )
+
+        manifest = run_personal_run_engine(options)
+
+        composed_rows = read_csv_rows(options.fundamentals_evidence_composed_output)
+        conflict_rows = read_csv_rows(options.fundamentals_evidence_compose_conflicts_output)
+        summary_rows = read_csv_rows(options.fundamentals_evidence_compose_summary_output)
+        compose_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "fundamentals_evidence_compose")
+        compose_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "fundamentals_evidence_compose")
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(len(composed_rows), 2)
+        self.assertEqual(conflict_rows, [])
+        self.assertEqual(summary_rows[0]["manual_rows_total"], "1")
+        self.assertEqual(summary_rows[0]["promoted_rows_total"], "1")
+        self.assertEqual(summary_rows[0]["composed_rows_total"], "2")
+        self.assertEqual(compose_result["used_inputs"]["fundamentals_evidence_input"], options.fundamentals_evidence_input)
+        self.assertEqual(
+            compose_result["used_inputs"]["fundamentals_snapshot_evidence_promoted_input"],
+            options.fundamentals_snapshot_evidence_promoted_output,
+        )
+        self.assertEqual(compose_inputs["fundamentals_evidence_input"]["input_path"], options.fundamentals_evidence_input)
+        self.assertEqual(
+            compose_inputs["fundamentals_snapshot_evidence_promoted_input"]["input_path"],
+            options.fundamentals_snapshot_evidence_promoted_output,
+        )
+
+    def test_fundamentals_evidence_compose_uses_registry_default_promoted_input_when_no_cli_override_exists(self) -> None:
+        options = self._core_options("evidence_compose_registry_default", ["import", "fundamentals_seed", "fundamentals_evidence_compose"])
+        registry_promoted = self._path("_tmp_evidence_compose_registry_promoted.csv")
+        self._write_empty_evidence(Path(options.fundamentals_evidence_input))
+        self._write_evidence_rows(
+            Path(registry_promoted),
+            [
+                self._evidence_row(
+                    source_type="SNAPSHOT_IMPORT",
+                    source_name="vendor_snapshot",
+                    source_reference="vendor_export_2026q1",
+                    source_as_of_date="2026-04-15",
+                    verification_status="UNVERIFIED",
+                    data_quality_flag="REVIEW",
+                    notes="registry promoted evidence",
+                )
+            ],
+        )
+        options.fundamentals_snapshot_evidence_promoted_input = DEFAULT_PATHS["fundamentals_snapshot_evidence_promoted_input"]
+        self._write_data_sources_config(
+            Path(options.data_sources_config),
+            {
+                "fundamentals_snapshot_evidence_promoted_input": {
+                    "enabled": True,
+                    "path": str(registry_promoted),
+                    "required": True,
+                    "kind": "file",
+                    "description": "registry promoted evidence input for compose stage",
+                }
+            },
+        )
+
+        manifest = run_personal_run_engine(options)
+
+        compose_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "fundamentals_evidence_compose")
+        compose_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "fundamentals_evidence_compose")
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(
+            compose_result["used_inputs"]["fundamentals_snapshot_evidence_promoted_input"],
+            str(registry_promoted),
+        )
+        self.assertEqual(compose_inputs["fundamentals_snapshot_evidence_promoted_input"]["input_path"], str(registry_promoted))
+        self.assertIn(
+            "data_source_registry_defaults=fundamentals_snapshot_evidence_promoted_input",
+            compose_inputs["fundamentals_snapshot_evidence_promoted_input"]["notes"],
+        )
+
+    def test_use_composed_evidence_switch_routes_fundamentals_evidence_explicitly(self) -> None:
+        options = self._core_options(
+            "use_composed_evidence",
+            ["import", "fundamentals_seed", "fundamentals_evidence_compose", "fundamentals_evidence"],
+        )
+        options.use_composed_evidence = True
+        self._write_empty_evidence(Path(options.fundamentals_evidence_input))
+        self._write_evidence_rows(
+            Path(options.fundamentals_snapshot_evidence_promoted_input),
+            [
+                self._evidence_row(
+                    source_type="SNAPSHOT_IMPORT",
+                    source_name="vendor_snapshot",
+                    source_reference="vendor_export_2026q1",
+                    source_as_of_date="2026-04-15",
+                    verification_status="UNVERIFIED",
+                    data_quality_flag="REVIEW",
+                    notes="promoted snapshot evidence",
+                )
+            ],
+        )
+
+        manifest = run_personal_run_engine(options)
+
+        evidence_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "fundamentals_evidence")
+        evidence_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "fundamentals_evidence")
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(evidence_result["used_inputs"]["fundamentals_evidence_input"], options.fundamentals_evidence_composed_output)
+        self.assertEqual(evidence_result["used_inputs"]["evidence_input_mode"], "COMPOSED")
+        self.assertEqual(evidence_inputs["fundamentals_evidence_input"]["input_path"], options.fundamentals_evidence_composed_output)
+        self.assertIn("evidence_input_mode=COMPOSED", evidence_inputs["fundamentals_evidence_input"]["notes"])
+
+    def test_use_composed_evidence_and_explicit_different_evidence_input_are_mutually_exclusive(self) -> None:
+        options = self._core_options("use_composed_evidence_conflict", ["import", "fundamentals_seed", "fundamentals_evidence"])
+        options.use_composed_evidence = True
+        self._write_empty_evidence(Path(options.fundamentals_evidence_input))
+        self._write_evidence_rows(
+            Path(options.fundamentals_evidence_composed_output),
+            [
+                self._evidence_row(
+                    source_type="SNAPSHOT_IMPORT",
+                    source_name="vendor_snapshot",
+                    source_reference="vendor_export_2026q1",
+                    source_as_of_date="2026-04-15",
+                    verification_status="UNVERIFIED",
+                    data_quality_flag="REVIEW",
+                )
+            ],
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "--use-composed-evidence and an explicit --fundamentals-evidence-input are mutually exclusive"):
+            run_personal_run_engine(options)
+
+        manifest = json.loads(Path(options.manifest_output).read_text(encoding="utf-8"))
+        self.assertEqual(manifest["run_status"], "FAILED")
+        evidence_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "fundamentals_evidence")
+        self.assertEqual(evidence_result["status"], "FAILED")
 
     def test_use_profiled_master_switch_routes_scoring_and_coverage_explicitly(self) -> None:
         options = self._core_options("profiled_switch", ["import", "fundamentals_seed", "fundamentals_profile", "scoring", "coverage"])
@@ -1132,6 +1330,106 @@ class PersonalRunEngineTests(unittest.TestCase):
             snapshot_inputs["fundamentals_snapshot_input"]["notes"],
         )
         self.assertEqual(normalized_rows[0]["source_reference"], "explicit_snapshot_reference")
+
+    def test_cli_explicit_snapshot_review_input_override_wins_against_registry_end_to_end(self) -> None:
+        options = self._core_options(
+            "cli_snapshot_review_registry_priority_e2e",
+            ["data_sources_validate", "import", "fundamentals_seed", "fundamentals_snapshot_ingest", "fundamentals_snapshot_review"],
+        )
+        explicit_review = self._path("_tmp_cli_snapshot_review_priority_explicit.csv")
+        registry_review = self._path("_tmp_cli_snapshot_review_priority_registry.csv")
+        self._write_snapshot_rows(Path(options.fundamentals_snapshot_input), [self._snapshot_row()])
+        self._write_snapshot_review_rows(
+            Path(explicit_review),
+            [self._snapshot_review_row(kpi_name="roic", review_decision="APPROVE", review_reason="explicit cli review")],
+        )
+        self._write_snapshot_review_rows(
+            Path(registry_review),
+            [self._snapshot_review_row(kpi_name="fcf_margin", review_decision="APPROVE", review_reason="registry review should lose")],
+        )
+        self._write_data_sources_config(
+            Path(options.data_sources_config),
+            {
+                "fundamentals_snapshot_review_input": {
+                    "enabled": True,
+                    "path": str(registry_review),
+                    "required": True,
+                    "kind": "file",
+                    "description": "registry snapshot review input should lose to explicit CLI override in real CLI path",
+                }
+            },
+        )
+        command = [
+            "python",
+            "-m",
+            "src.personal_run_engine",
+            "--stage",
+            "data_sources_validate",
+            "--stage",
+            "import",
+            "--stage",
+            "fundamentals_seed",
+            "--stage",
+            "fundamentals_snapshot_ingest",
+            "--stage",
+            "fundamentals_snapshot_review",
+            "--data-sources-config",
+            options.data_sources_config,
+            "--data-source-status-output",
+            options.data_source_status_output,
+            "--data-source-resolved-output",
+            options.data_source_resolved_output,
+            "--positions-raw-input",
+            str(options.positions_raw_input),
+            "--positions-output",
+            options.positions_output,
+            "--fundamentals-master",
+            options.fundamentals_master,
+            "--fundamentals-snapshot-input",
+            options.fundamentals_snapshot_input,
+            "--fundamentals-snapshot-normalized-output",
+            options.fundamentals_snapshot_normalized_output,
+            "--fundamentals-snapshot-unmatched-output",
+            options.fundamentals_snapshot_unmatched_output,
+            "--fundamentals-snapshot-evidence-staging-output",
+            options.fundamentals_snapshot_evidence_staging_output,
+            "--fundamentals-snapshot-summary-output",
+            options.fundamentals_snapshot_summary_output,
+            "--fundamentals-snapshot-review-input",
+            str(explicit_review),
+            "--fundamentals-snapshot-review-registry-output",
+            options.fundamentals_snapshot_review_registry_output,
+            "--fundamentals-snapshot-evidence-promoted-output",
+            options.fundamentals_snapshot_evidence_promoted_output,
+            "--fundamentals-snapshot-review-backlog-output",
+            options.fundamentals_snapshot_review_backlog_output,
+            "--fundamentals-snapshot-review-summary-output",
+            options.fundamentals_snapshot_review_summary_output,
+            "--manifest-output",
+            options.manifest_output,
+            "--artifacts-output",
+            options.artifacts_output,
+            "--used-inputs-output",
+            options.used_inputs_output,
+            "--report-output",
+            str(options.report_output),
+        ]
+
+        result = subprocess.run(command, cwd=Path.cwd(), capture_output=True, text=True)
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        manifest = json.loads(Path(options.manifest_output).read_text(encoding="utf-8"))
+        review_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "fundamentals_snapshot_review")
+        review_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "fundamentals_snapshot_review")
+        promoted_rows = read_csv_rows(options.fundamentals_snapshot_evidence_promoted_output)
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(review_result["used_inputs"]["fundamentals_snapshot_review_input"], str(explicit_review))
+        self.assertEqual(review_inputs["fundamentals_snapshot_review_input"]["input_path"], str(explicit_review))
+        self.assertNotIn(
+            "data_source_registry_defaults=fundamentals_snapshot_review_input",
+            review_inputs["fundamentals_snapshot_review_input"]["notes"],
+        )
+        self.assertEqual([row["kpi_name"] for row in promoted_rows], ["roic"])
 
     def test_used_inputs_capture_stage_config_files_for_core_pipeline(self) -> None:
         options = self._core_options(

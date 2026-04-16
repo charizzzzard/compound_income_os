@@ -51,6 +51,13 @@ from src.fundamentals_evidence_engine import (
     DEFAULT_SUMMARY_OUTPUT as DEFAULT_EVIDENCE_SUMMARY_OUTPUT,
     run_fundamentals_evidence_engine,
 )
+from src.fundamentals_evidence_compose import (
+    DEFAULT_COMPOSED_OUTPUT as DEFAULT_EVIDENCE_COMPOSED_OUTPUT,
+    DEFAULT_CONFLICTS_OUTPUT as DEFAULT_EVIDENCE_COMPOSE_CONFLICTS_OUTPUT,
+    DEFAULT_PROMOTED_EVIDENCE_INPUT_PATH as DEFAULT_PROMOTED_EVIDENCE_INPUT_PATH,
+    DEFAULT_SUMMARY_OUTPUT as DEFAULT_EVIDENCE_COMPOSE_SUMMARY_OUTPUT,
+    run_fundamentals_evidence_compose,
+)
 from src.fundamentals_overlay_engine import (
     DEFAULT_APPLIED_MASTER_OUTPUT,
     DEFAULT_OVERLAY_INPUT_PATH,
@@ -102,6 +109,7 @@ STAGE_ORDER = [
     "fundamentals_profile",
     "fundamentals_snapshot_ingest",
     "fundamentals_snapshot_review",
+    "fundamentals_evidence_compose",
     "fundamentals_evidence",
     "fundamentals_overlay",
     "scoring",
@@ -120,7 +128,13 @@ STAGE_ORDER = [
 ARTIFACT_FIELDS = ["artifact_role", "artifact_path", "stage_name", "produced", "notes"]
 USED_INPUT_FIELDS = ["stage_name", "stage_status", "input_role", "input_path", "input_exists", "notes"]
 RUN_ARTIFACT_STAGE = "personal_run"
-USED_INPUT_METADATA_ROLES = {"fundamentals_source_mode", "import_mode", "source_name", "single_benchmark_symbol"}
+USED_INPUT_METADATA_ROLES = {
+    "evidence_input_mode",
+    "fundamentals_source_mode",
+    "import_mode",
+    "source_name",
+    "single_benchmark_symbol",
+}
 FUNDAMENTALS_SOURCE_STAGES = {"fundamentals_overlay", "scoring", "coverage", "watchlist", "monthly", "portfolio_review"}
 
 
@@ -150,10 +164,14 @@ DEFAULT_PATHS = {
     "fundamentals_snapshot_summary_output": DEFAULT_SNAPSHOT_SUMMARY_OUTPUT,
     "fundamentals_snapshot_review_input": DEFAULT_SNAPSHOT_REVIEW_INPUT_PATH,
     "fundamentals_snapshot_review_registry_output": DEFAULT_SNAPSHOT_REVIEW_REGISTRY_OUTPUT,
+    "fundamentals_snapshot_evidence_promoted_input": DEFAULT_PROMOTED_EVIDENCE_INPUT_PATH,
     "fundamentals_snapshot_evidence_promoted_output": DEFAULT_SNAPSHOT_PROMOTED_EVIDENCE_OUTPUT,
     "fundamentals_snapshot_review_backlog_output": DEFAULT_SNAPSHOT_REVIEW_BACKLOG_OUTPUT,
     "fundamentals_snapshot_review_summary_output": DEFAULT_SNAPSHOT_REVIEW_SUMMARY_OUTPUT,
     "fundamentals_evidence_input": DEFAULT_EVIDENCE_INPUT_PATH,
+    "fundamentals_evidence_composed_output": DEFAULT_EVIDENCE_COMPOSED_OUTPUT,
+    "fundamentals_evidence_compose_conflicts_output": DEFAULT_EVIDENCE_COMPOSE_CONFLICTS_OUTPUT,
+    "fundamentals_evidence_compose_summary_output": DEFAULT_EVIDENCE_COMPOSE_SUMMARY_OUTPUT,
     "fundamentals_evidence_registry_output": DEFAULT_REGISTRY_OUTPUT,
     "fundamentals_research_backlog_output": DEFAULT_BACKLOG_OUTPUT,
     "fundamentals_proposed_updates_output": DEFAULT_PROPOSED_UPDATES_OUTPUT,
@@ -203,6 +221,7 @@ DATA_SOURCE_OPTION_FIELDS = {
     "profile_review_input": "profile_review_input",
     "fundamentals_snapshot_input": "fundamentals_snapshot_input",
     "fundamentals_snapshot_review_input": "fundamentals_snapshot_review_input",
+    "fundamentals_snapshot_evidence_promoted_input": "fundamentals_snapshot_evidence_promoted_input",
     "fundamentals_evidence_input": "fundamentals_evidence_input",
     "fundamentals_overlay_input": "fundamentals_overlay_input",
     "benchmark_input": "benchmark_input",
@@ -218,6 +237,7 @@ OPTION_FIELD_DEFAULTS = {
     "profile_review_input": DEFAULT_PATHS["profile_review_input"],
     "fundamentals_snapshot_input": DEFAULT_PATHS["fundamentals_snapshot_input"],
     "fundamentals_snapshot_review_input": DEFAULT_PATHS["fundamentals_snapshot_review_input"],
+    "fundamentals_snapshot_evidence_promoted_input": DEFAULT_PATHS["fundamentals_snapshot_evidence_promoted_input"],
     "fundamentals_evidence_input": DEFAULT_PATHS["fundamentals_evidence_input"],
     "fundamentals_overlay_input": DEFAULT_PATHS["fundamentals_overlay_input"],
     "benchmark_input": "",
@@ -263,6 +283,7 @@ class PersonalRunOptions:
     overwrite_fundamentals_master: bool = False
     use_profiled_master: bool = False
     use_applied_master: bool = False
+    use_composed_evidence: bool = False
     metric_definitions: str = DEFAULT_METRIC_DEFINITIONS_PATH
     scores_output: str = DEFAULT_PATHS["scores_output"]
     score_audit_output: str = DEFAULT_PATHS["score_audit_output"]
@@ -281,10 +302,14 @@ class PersonalRunOptions:
     fundamentals_snapshot_summary_output: str = DEFAULT_PATHS["fundamentals_snapshot_summary_output"]
     fundamentals_snapshot_review_input: str = DEFAULT_PATHS["fundamentals_snapshot_review_input"]
     fundamentals_snapshot_review_registry_output: str = DEFAULT_PATHS["fundamentals_snapshot_review_registry_output"]
+    fundamentals_snapshot_evidence_promoted_input: str = DEFAULT_PATHS["fundamentals_snapshot_evidence_promoted_input"]
     fundamentals_snapshot_evidence_promoted_output: str = DEFAULT_PATHS["fundamentals_snapshot_evidence_promoted_output"]
     fundamentals_snapshot_review_backlog_output: str = DEFAULT_PATHS["fundamentals_snapshot_review_backlog_output"]
     fundamentals_snapshot_review_summary_output: str = DEFAULT_PATHS["fundamentals_snapshot_review_summary_output"]
     fundamentals_evidence_input: str = DEFAULT_PATHS["fundamentals_evidence_input"]
+    fundamentals_evidence_composed_output: str = DEFAULT_PATHS["fundamentals_evidence_composed_output"]
+    fundamentals_evidence_compose_conflicts_output: str = DEFAULT_PATHS["fundamentals_evidence_compose_conflicts_output"]
+    fundamentals_evidence_compose_summary_output: str = DEFAULT_PATHS["fundamentals_evidence_compose_summary_output"]
     fundamentals_evidence_registry_output: str = DEFAULT_PATHS["fundamentals_evidence_registry_output"]
     fundamentals_research_backlog_output: str = DEFAULT_PATHS["fundamentals_research_backlog_output"]
     fundamentals_proposed_updates_output: str = DEFAULT_PATHS["fundamentals_proposed_updates_output"]
@@ -501,6 +526,7 @@ def input_snapshot(options: PersonalRunOptions) -> dict[str, Any]:
         "use_profiled_master": options.use_profiled_master,
         "fundamentals_applied_master": options.fundamentals_applied_master_output,
         "use_applied_master": options.use_applied_master,
+        "use_composed_evidence": options.use_composed_evidence,
         "research_priority_output": options.research_priority_output,
         "profile_review_input": options.profile_review_input,
         "profile_review_registry_output": options.profile_review_registry_output,
@@ -513,12 +539,16 @@ def input_snapshot(options: PersonalRunOptions) -> dict[str, Any]:
         "fundamentals_snapshot_summary_output": options.fundamentals_snapshot_summary_output,
         "fundamentals_snapshot_review_input": options.fundamentals_snapshot_review_input,
         "fundamentals_snapshot_review_registry_output": options.fundamentals_snapshot_review_registry_output,
+        "fundamentals_snapshot_evidence_promoted_input": options.fundamentals_snapshot_evidence_promoted_input,
         "fundamentals_snapshot_evidence_promoted_output": options.fundamentals_snapshot_evidence_promoted_output,
         "fundamentals_snapshot_review_backlog_output": options.fundamentals_snapshot_review_backlog_output,
         "fundamentals_snapshot_review_summary_output": options.fundamentals_snapshot_review_summary_output,
         "data_source_status_output": options.data_source_status_output,
         "data_source_resolved_output": options.data_source_resolved_output,
         "fundamentals_evidence_input": options.fundamentals_evidence_input,
+        "fundamentals_evidence_composed_output": options.fundamentals_evidence_composed_output,
+        "fundamentals_evidence_compose_conflicts_output": options.fundamentals_evidence_compose_conflicts_output,
+        "fundamentals_evidence_compose_summary_output": options.fundamentals_evidence_compose_summary_output,
         "fundamentals_proposed_updates_output": options.fundamentals_proposed_updates_output,
         "fundamentals_overlay_input": options.fundamentals_overlay_input,
         "fundamentals_overlay_review_backlog_output": options.fundamentals_overlay_review_backlog_output,
@@ -564,6 +594,47 @@ def resolve_fundamentals_source(
         base_path = require_existing_path(options.fundamentals_master, "personal fundamentals master", stage_name)
         return base_path, "BASE", "fundamentals_master"
     return None, "BASE", None
+
+
+def resolve_snapshot_promoted_evidence_input(options: PersonalRunOptions, stage_name: str) -> tuple[str, str]:
+    if option_was_explicitly_set(options, "fundamentals_snapshot_evidence_promoted_input"):
+        promoted_path = require_existing_path(
+            options.fundamentals_snapshot_evidence_promoted_input,
+            "promoted snapshot evidence input",
+            stage_name,
+        )
+        return promoted_path, "fundamentals_snapshot_evidence_promoted_input"
+    if "fundamentals_snapshot_review" in options.stages and path_exists(options.fundamentals_snapshot_evidence_promoted_output):
+        return str(options.fundamentals_snapshot_evidence_promoted_output), "fundamentals_snapshot_evidence_promoted_output"
+    maybe_raise_required_registry_source(options, "fundamentals_snapshot_evidence_promoted_input", stage_name)
+    promoted_path = require_existing_path(
+        options.fundamentals_snapshot_evidence_promoted_input,
+        "promoted snapshot evidence input",
+        stage_name,
+    )
+    return promoted_path, "fundamentals_snapshot_evidence_promoted_input"
+
+
+def resolve_evidence_input(options: PersonalRunOptions, stage_name: str) -> tuple[str, str, str]:
+    if options.use_composed_evidence:
+        explicit_input = option_was_explicitly_set(options, "fundamentals_evidence_input")
+        explicit_path = str(options.fundamentals_evidence_input or "")
+        composed_path = str(options.fundamentals_evidence_composed_output or "")
+        compose_stage_selected = "fundamentals_evidence_compose" in options.stages
+        if explicit_input and explicit_path != composed_path and not compose_stage_selected:
+            raise ValueError(
+                "--use-composed-evidence and an explicit --fundamentals-evidence-input are mutually exclusive "
+                "unless both point to the composed evidence output"
+            )
+        resolved_path = require_existing_path(
+            options.fundamentals_evidence_composed_output,
+            "composed personal fundamentals evidence (--use-composed-evidence)",
+            stage_name,
+        )
+        return resolved_path, "COMPOSED", "fundamentals_evidence_composed_output"
+    maybe_raise_required_registry_source(options, "fundamentals_evidence_input", stage_name)
+    resolved_path = require_existing_path(options.fundamentals_evidence_input, "personal fundamentals evidence input", stage_name)
+    return resolved_path, "RAW", "fundamentals_evidence_input"
 
 
 def run_data_sources_validate_stage(options: PersonalRunOptions) -> StageResult:
@@ -742,6 +813,36 @@ def run_fundamentals_snapshot_review_stage(options: PersonalRunOptions) -> Stage
     )
 
 
+def run_fundamentals_evidence_compose_stage(options: PersonalRunOptions) -> StageResult:
+    stage = "fundamentals_evidence_compose"
+    maybe_raise_required_registry_source(options, "fundamentals_evidence_input", stage)
+    manual_evidence_path = require_existing_path(options.fundamentals_evidence_input, "personal fundamentals evidence input", stage)
+    promoted_evidence_path, promoted_required_input = resolve_snapshot_promoted_evidence_input(options, stage)
+    outputs = run_fundamentals_evidence_compose(
+        manual_evidence_input_path=manual_evidence_path,
+        promoted_evidence_input_path=promoted_evidence_path,
+        composed_output=options.fundamentals_evidence_composed_output,
+        conflicts_output=options.fundamentals_evidence_compose_conflicts_output,
+        summary_output=options.fundamentals_evidence_compose_summary_output,
+    )
+    return stage_result(
+        stage,
+        SUCCESS,
+        ["fundamentals_evidence_input", promoted_required_input],
+        used_inputs={
+            "fundamentals_evidence_input": manual_evidence_path,
+            "fundamentals_snapshot_evidence_promoted_input": promoted_evidence_path,
+        },
+        produced_outputs={role: str(path) for role, path in outputs.items()},
+        notes=append_registry_default_note(
+            options,
+            "Manual raw evidence and promoted snapshot evidence were composed into a separate artifact; raw evidence input and master remained unchanged and conflicts were not silently resolved.",
+            "fundamentals_evidence_input",
+            "fundamentals_snapshot_evidence_promoted_input",
+        ),
+    )
+
+
 def run_scoring_stage(options: PersonalRunOptions) -> StageResult:
     stage = "scoring"
     positions_path = require_existing_path(options.positions_output, "positions snapshot", stage)
@@ -839,9 +940,8 @@ def run_coverage_stage(options: PersonalRunOptions) -> StageResult:
 def run_fundamentals_evidence_stage(options: PersonalRunOptions) -> StageResult:
     stage = "fundamentals_evidence"
     maybe_raise_required_registry_source(options, "fundamentals_master", stage)
-    maybe_raise_required_registry_source(options, "fundamentals_evidence_input", stage)
     fundamentals_path = require_existing_path(options.fundamentals_master, "personal fundamentals master", stage)
-    evidence_path = require_existing_path(options.fundamentals_evidence_input, "personal fundamentals evidence input", stage)
+    evidence_path, evidence_input_mode, evidence_required_input = resolve_evidence_input(options, stage)
     metric_definitions_path = options.metric_definitions
     outputs = run_fundamentals_evidence_engine(
         fundamentals_master_path=fundamentals_path,
@@ -857,16 +957,17 @@ def run_fundamentals_evidence_stage(options: PersonalRunOptions) -> StageResult:
     return stage_result(
         stage,
         SUCCESS,
-        ["fundamentals_master", "fundamentals_evidence_input"],
+        ["fundamentals_master", evidence_required_input],
         used_inputs={
             "fundamentals_master": fundamentals_path,
             "fundamentals_evidence_input": evidence_path,
+            "evidence_input_mode": evidence_input_mode,
             "metric_definitions": metric_definitions_path,
         },
         produced_outputs={role: str(path) for role, path in outputs.items()},
         notes=append_registry_default_note(
             options,
-            "Personal fundamentals evidence registry and research backlog generated; master and scores were not modified.",
+            f"Personal fundamentals evidence registry and research backlog generated with evidence_input_mode={evidence_input_mode}; master and scores were not modified.",
             "fundamentals_master",
             "fundamentals_evidence_input",
         ),
@@ -1294,6 +1395,7 @@ STAGE_RUNNERS: dict[str, Callable[[PersonalRunOptions], StageResult]] = {
     "fundamentals_profile": run_fundamentals_profile_stage,
     "fundamentals_snapshot_ingest": run_fundamentals_snapshot_ingest_stage,
     "fundamentals_snapshot_review": run_fundamentals_snapshot_review_stage,
+    "fundamentals_evidence_compose": run_fundamentals_evidence_compose_stage,
     "scoring": run_scoring_stage,
     "coverage": run_coverage_stage,
     "fundamentals_evidence": run_fundamentals_evidence_stage,
@@ -1335,9 +1437,17 @@ def stage_sort_index(stage_name: str) -> int:
 
 def used_input_notes(stage: StageResult) -> str:
     source_mode = stage.used_inputs.get("fundamentals_source_mode", "")
+    evidence_input_mode = stage.used_inputs.get("evidence_input_mode", "")
+    prefixes: list[str] = []
     if stage.stage_name in FUNDAMENTALS_SOURCE_STAGES and source_mode:
-        return f"fundamentals_source_mode={source_mode}; {stage.notes}"
-    return stage.notes
+        prefixes.append(f"fundamentals_source_mode={source_mode}")
+    if evidence_input_mode:
+        prefixes.append(f"evidence_input_mode={evidence_input_mode}")
+    if not prefixes:
+        return stage.notes
+    if not stage.notes:
+        return "; ".join(prefixes)
+    return f"{'; '.join(prefixes)}; {stage.notes}"
 
 
 def used_input_rows_from_stage_results(stage_results: list[StageResult]) -> list[dict[str, str]]:
@@ -1629,6 +1739,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--overwrite-fundamentals-master", action="store_true", help="Allow fundamentals_seed to overwrite an existing master.")
     parser.add_argument("--use-profiled-master", action="store_true", help="Use the explicit profiled Personal-Fundamentals master for eligible fundamentals-dependent stages.")
     parser.add_argument("--use-applied-master", action="store_true", help="Use the explicit applied Personal-Fundamentals master for downstream fundamentals-dependent stages.")
+    parser.add_argument("--use-composed-evidence", action="store_true", help="Use the explicit composed personal evidence artifact for fundamentals_evidence.")
     parser.add_argument("--metric-definitions", default=DEFAULT_METRIC_DEFINITIONS_PATH, help="Fundamentals KPI definitions config.")
     parser.add_argument("--scores-output", default=DEFAULT_PATHS["scores_output"], help="Personal company scores output.")
     parser.add_argument("--score-audit-output", default=DEFAULT_PATHS["score_audit_output"], help="Personal score audit output.")
@@ -1647,10 +1758,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--fundamentals-snapshot-summary-output", default=DEFAULT_PATHS["fundamentals_snapshot_summary_output"], help="Local fundamentals snapshot ingest summary output.")
     parser.add_argument("--fundamentals-snapshot-review-input", default=DEFAULT_PATHS["fundamentals_snapshot_review_input"], help="Manual snapshot-evidence review input.")
     parser.add_argument("--fundamentals-snapshot-review-registry-output", default=DEFAULT_PATHS["fundamentals_snapshot_review_registry_output"], help="Snapshot review registry output.")
+    parser.add_argument("--fundamentals-snapshot-evidence-promoted-input", default=DEFAULT_PATHS["fundamentals_snapshot_evidence_promoted_input"], help="Promoted snapshot evidence input for compose/reuse.")
     parser.add_argument("--fundamentals-snapshot-evidence-promoted-output", default=DEFAULT_PATHS["fundamentals_snapshot_evidence_promoted_output"], help="Promoted snapshot evidence output.")
     parser.add_argument("--fundamentals-snapshot-review-backlog-output", default=DEFAULT_PATHS["fundamentals_snapshot_review_backlog_output"], help="Snapshot review backlog output.")
     parser.add_argument("--fundamentals-snapshot-review-summary-output", default=DEFAULT_PATHS["fundamentals_snapshot_review_summary_output"], help="Snapshot review summary output.")
     parser.add_argument("--fundamentals-evidence-input", default=DEFAULT_PATHS["fundamentals_evidence_input"], help="Manual personal fundamentals evidence input.")
+    parser.add_argument("--fundamentals-evidence-composed-output", default=DEFAULT_PATHS["fundamentals_evidence_composed_output"], help="Composed personal fundamentals evidence output.")
+    parser.add_argument("--fundamentals-evidence-compose-conflicts-output", default=DEFAULT_PATHS["fundamentals_evidence_compose_conflicts_output"], help="Evidence compose conflicts output.")
+    parser.add_argument("--fundamentals-evidence-compose-summary-output", default=DEFAULT_PATHS["fundamentals_evidence_compose_summary_output"], help="Evidence compose summary output.")
     parser.add_argument("--fundamentals-evidence-registry-output", default=DEFAULT_PATHS["fundamentals_evidence_registry_output"], help="Personal fundamentals evidence registry output.")
     parser.add_argument("--fundamentals-research-backlog-output", default=DEFAULT_PATHS["fundamentals_research_backlog_output"], help="Personal fundamentals research backlog output.")
     parser.add_argument("--fundamentals-proposed-updates-output", default=DEFAULT_PATHS["fundamentals_proposed_updates_output"], help="Manual Personal-Master proposed updates output from evidence.")
@@ -1729,6 +1844,7 @@ def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
         overwrite_fundamentals_master=args.overwrite_fundamentals_master,
         use_profiled_master=args.use_profiled_master,
         use_applied_master=args.use_applied_master,
+        use_composed_evidence=args.use_composed_evidence,
         metric_definitions=args.metric_definitions,
         scores_output=args.scores_output,
         score_audit_output=args.score_audit_output,
@@ -1747,10 +1863,14 @@ def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
         fundamentals_snapshot_summary_output=args.fundamentals_snapshot_summary_output,
         fundamentals_snapshot_review_input=args.fundamentals_snapshot_review_input,
         fundamentals_snapshot_review_registry_output=args.fundamentals_snapshot_review_registry_output,
+        fundamentals_snapshot_evidence_promoted_input=args.fundamentals_snapshot_evidence_promoted_input,
         fundamentals_snapshot_evidence_promoted_output=args.fundamentals_snapshot_evidence_promoted_output,
         fundamentals_snapshot_review_backlog_output=args.fundamentals_snapshot_review_backlog_output,
         fundamentals_snapshot_review_summary_output=args.fundamentals_snapshot_review_summary_output,
         fundamentals_evidence_input=args.fundamentals_evidence_input,
+        fundamentals_evidence_composed_output=args.fundamentals_evidence_composed_output,
+        fundamentals_evidence_compose_conflicts_output=args.fundamentals_evidence_compose_conflicts_output,
+        fundamentals_evidence_compose_summary_output=args.fundamentals_evidence_compose_summary_output,
         fundamentals_evidence_registry_output=args.fundamentals_evidence_registry_output,
         fundamentals_research_backlog_output=args.fundamentals_research_backlog_output,
         fundamentals_proposed_updates_output=args.fundamentals_proposed_updates_output,

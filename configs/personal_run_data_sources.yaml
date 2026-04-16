@@ -42,6 +42,13 @@
       "kind": "file",
       "description": "Optional manual snapshot review input for fundamentals_snapshot_review."
     },
+    "fundamentals_snapshot_evidence_promoted_input": {
+      "enabled": false,
+      "path": "data/processed/personal_fundamentals_snapshot_evidence_promoted.csv",
+      "required": false,
+      "kind": "file",
+      "description": "Optional promoted snapshot evidence input for fundamentals_evidence_compose."
+    },
     "benchmark_input": {
       "enabled": true,
       "path": "data/raw/sample_benchmark_timeseries.csv",

@@ -231,6 +231,21 @@ Leitplanken:
 - Promoted Snapshot-Evidence bleibt bewusst konservativ und erhaelt den bestehenden Snapshot-Contract; insbesondere gibt es keine stillschweigende Hochstufung auf `VERIFIED`.
 - Snapshot-Review ist nicht die Evidence-Engine: `src.fundamentals_evidence_engine` bleibt der bestehende Workflow fuer validierte Evidence-Registry, Backlog und Proposed Updates.
 
+## Evidence Compose / Explicit Evidence Switch
+
+`src.fundamentals_evidence_compose` schliesst die operative Luecke zwischen manuell gepflegter Raw-Evidence und separater promoted Snapshot-Evidence: `data/raw/personal_fundamentals_evidence.csv` und `personal_fundamentals_snapshot_evidence_promoted.csv` koennen explizit in ein separates, auditierbares Compose-Artefakt zusammengefuehrt werden. Das Ergebnis bleibt bewusst getrennt vom Raw-Evidence-Input; es gibt kein automatisches Ueberschreiben von `data/raw/personal_fundamentals_evidence.csv`, keine Master-Rueckschreibung und keine stille Konfliktaufloesung.
+
+```powershell
+python -m src.fundamentals_evidence_compose --manual-evidence-input data/raw/personal_fundamentals_evidence.csv --promoted-evidence-input data/processed/personal_fundamentals_snapshot_evidence_promoted.csv --composed-output data/processed/personal_fundamentals_evidence_composed.csv --conflicts-output data/processed/personal_fundamentals_evidence_compose_conflicts.csv --summary-output data/processed/personal_fundamentals_evidence_compose_summary.csv
+```
+
+Leitplanken:
+
+- Compose nutzt exakt den bestehenden Evidence-Input-Vertrag; Schema-Drift wird fail-fast abgewiesen.
+- Identische Zeilen werden dedupliziert, echte Inhaltskonflikte werden in `personal_fundamentals_evidence_compose_conflicts.csv` sichtbar und nicht still per `last wins` oder `first wins` aufgeloest.
+- `personal_fundamentals_evidence_composed.csv` bleibt ein separates Evidence-Artefakt. Die Nutzung im bestehenden Evidence-Workflow erfolgt nur explizit, z. B. im Orchestrator mit `--use-composed-evidence`.
+- `personal_fundamentals_snapshot_evidence_promoted.csv` bleibt bewusst ein separates promoted Artefakt; die Uebernahme in `personal_fundamentals_evidence.csv` bleibt weiterhin ein expliziter manueller Folgeschritt.
+
 ## Fundamentals Overlay / Applied Master
 
 `src.fundamentals_overlay_engine` ergaenzt den Personal-Master um eine explizite lokale Analyst-Overlay-Schicht. Der manuelle Input `data/raw/personal_fundamentals_overlay.csv` wird validiert, zu `data/processed/personal_fundamentals_overlay_registry.csv` normalisiert und als `data/processed/personal_fundamentals_master_applied.csv` auf den Personal-Master projiziert. `overlay_review_due_date` wird als `NOT_SET`, `OK`, `DUE` oder `OVERDUE` sichtbar und kann zusaetzlich in `personal_fundamentals_overlay_review_backlog.csv` ausgegeben werden.
@@ -496,15 +511,18 @@ Hinweise:
 
 - `data_sources_validate` validiert nur die Personal-Run-Source-Registry und schreibt `personal_data_source_status.csv` sowie `personal_data_source_registry_resolved.csv`; es fuehrt keine neue Fachlogik ein.
 - Input-Prioritaet im Orchestrator bleibt explizit: gesetzter CLI-Pfad, dann `configs/personal_run_data_sources.yaml`, dann bestehender Repo-Default. Es gibt keinen stillen Fantasie-Fallback.
+- Die Personal-Source-Registry kann fuer diesen Pfad optional `fundamentals_snapshot_evidence_promoted_input` auf ein separates promoted Snapshot-Evidence-Artefakt zeigen; sie fuehrt keine neue Evidence- oder Source-Mode-Logik ein.
 - `scoring` bleibt eine eigenstaendige Stage und wird nicht in `fundamentals_seed` oder `coverage` versteckt.
 - `fundamentals_seed` erzeugt nur Identity-Seed-Zeilen und erfindet keine KPI-Werte. Ein vorhandener Personal-Master wird nur mit `--overwrite-fundamentals-master` ersetzt.
 - `coverage` erzeugt neben Coverage, Enriched und Report auch `personal_research_priority.csv` als operative Nachpflege-Liste fuer Profile/KPI-Luecken.
 - `fundamentals_profile` erzeugt nur Profile-Registry, Review-Backlog und `personal_fundamentals_master_profiled.csv`; diese Stage schreibt nicht in den Raw-Master zurueck und schaltet Downstream-Stages nicht automatisch um.
 - `fundamentals_snapshot_ingest` liest nur einen lokalen externen Fundamentals-Snapshot, schreibt `personal_fundamentals_snapshot_normalized.csv`, `personal_fundamentals_snapshot_unmatched.csv`, `personal_fundamentals_snapshot_evidence_staging.csv` und `personal_fundamentals_snapshot_summary.csv` und aendert weder Raw-Master noch manuelle Evidence-CSV.
 - `fundamentals_snapshot_review` liest nur den vorhandenen Snapshot-Evidence-Staging-Output plus einen expliziten manuellen Review-Input, schreibt `personal_fundamentals_snapshot_review_registry.csv`, `personal_fundamentals_snapshot_evidence_promoted.csv`, `personal_fundamentals_snapshot_review_backlog.csv` und `personal_fundamentals_snapshot_review_summary.csv` und merged nichts automatisch in `personal_fundamentals_evidence.csv` oder den Master.
+- `fundamentals_evidence_compose` fuehrt nur `data/raw/personal_fundamentals_evidence.csv` und `personal_fundamentals_snapshot_evidence_promoted.csv` explizit in `personal_fundamentals_evidence_composed.csv` zusammen, schreibt Konflikte/Summary separat und ueberschreibt niemals `personal_fundamentals_evidence.csv`.
 - `--use-profiled-master` schaltet nur explizit geeignete fundamentals-abhaengige Stages wie `fundamentals_overlay`, `scoring`, `coverage`, `watchlist`, `monthly` und `portfolio_review` auf `personal_fundamentals_master_profiled.csv`. Ohne den Schalter bleibt der Base-Master aktiv; wenn der profiled Master fehlt, scheitert der Run fail-fast.
 - `fundamentals_evidence` erzeugt nur Evidence-Registry, Research-Backlog, Summary und Evidence-Report; diese Stage schreibt nicht in den Personal-Master zurueck.
 - `fundamentals_evidence` erzeugt zusaetzlich `personal_fundamentals_proposed_updates.csv` als manuellen Vorschlagsoutput aus validierter Evidence mit `reported_value`.
+- `--use-composed-evidence` schaltet `fundamentals_evidence` explizit auf `personal_fundamentals_evidence_composed.csv`. Ohne den Schalter bleibt der bestehende Raw-/CLI-/Registry-Evidence-Input aktiv; ein abweichender expliziter `--fundamentals-evidence-input` ist dabei fuer `fundamentals_evidence` bewusst mehrdeutig und wird ausserhalb eines gleichzeitig ausgefuehrten `fundamentals_evidence_compose`-Schritts fail-fast abgewiesen.
 - `fundamentals_overlay` erzeugt nur Overlay-Registry, Applied-Master-Projektion, Review-Backlog, Summary und Overlay-Report; diese Stage ersetzt den Original-Master nicht still.
 - `--use-applied-master` schaltet nur explizit fundamentals-abhaengige Downstream-Stages wie `scoring`, `coverage`, `watchlist`, `monthly` und `portfolio_review` auf `personal_fundamentals_master_applied.csv`. Ohne den Schalter bleibt der Base-Master aktiv; wenn der Applied Master fehlt, scheitert der Run fail-fast.
 - `--use-profiled-master` und `--use-applied-master` sind in dieser Iteration gegenseitig ausschliessend; es gibt keine neue Kaskade wie `PROFILED_APPLIED`.
@@ -567,6 +585,9 @@ Interpretation der persoenlichen Outputs:
 - `personal_fundamentals_snapshot_evidence_promoted.csv`: separat freigegebene Snapshot-Evidence im bestehenden Evidence-Input-Vertrag; weiterhin kein automatischer Merge in `personal_fundamentals_evidence.csv`
 - `personal_fundamentals_snapshot_review_backlog.csv`: offene Snapshot-Review-Faelle ohne Entscheidung oder mit `PENDING`
 - `personal_fundamentals_snapshot_review_summary.csv`: Review-/Promote-Summary fuer den Snapshot-Freigabepfad
+- `personal_fundamentals_evidence_composed.csv`: explizit zusammengesetztes Evidence-Artefakt aus Raw-Manual-Evidence und promoted Snapshot-Evidence; weiterhin kein automatisches Ueberschreiben von `personal_fundamentals_evidence.csv`
+- `personal_fundamentals_evidence_compose_conflicts.csv`: explizite Konfliktzeilen aus dem Compose-Schritt; keine stille Priorisierung
+- `personal_fundamentals_evidence_compose_summary.csv`: Compose-Summary fuer Manual-/Promoted-Evidence, Dedupe und Konfliktzaehlung
 - `personal_fundamentals_overlay_registry.csv`: normalisierte lokale Analyst-Overlay-Zeilen je Holding/Stichtag/Autor
 - `personal_fundamentals_master_applied.csv`: explizite Projektion aus Original-Master plus validierten Overlays; kein Ersatz fuer die Core-KPI-Source-of-Truth
 - `personal_fundamentals_overlay_review_backlog.csv`: faellige oder ueberfaellige Overlay-Reviews; keine automatische Overlay-Deaktivierung
