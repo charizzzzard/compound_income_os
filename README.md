@@ -207,6 +207,30 @@ Leitplanken:
 - Es gibt keine automatische Uebernahme in `data/raw/personal_fundamentals_evidence.csv` und keine automatische Nutzung in `scoring` oder `coverage`.
 - Snapshot-Ingest ist bewusst nicht die Evidence-Engine: `src.fundamentals_evidence_engine` validiert explizite Evidence-Zeilen, Registry, Backlog und Proposed Updates; `src.fundamentals_snapshot_ingestion` bereitet nur lokale Snapshot-Exporte fuer diesen spaeteren Schritt vor.
 
+## Snapshot Review / Promote
+
+`src.fundamentals_snapshot_review` schliesst die operative Luecke zwischen Snapshot-Staging und validierter Evidence: einzelne Zeilen aus `personal_fundamentals_snapshot_evidence_staging.csv` koennen ueber einen separaten manuellen Review-Input explizit freigegeben, abgelehnt oder offengehalten werden. Das Ergebnis ist ein separates, auditierbares Promote-Artefakt; es gibt weiterhin keinen automatischen Merge in `data/raw/personal_fundamentals_evidence.csv` und keine automatische Rueckschreibung in den Personal-Master.
+
+```powershell
+python -m src.fundamentals_snapshot_review --staging-input data/processed/personal_fundamentals_snapshot_evidence_staging.csv --review-input data/raw/personal_fundamentals_snapshot_review.csv --registry-output data/processed/personal_fundamentals_snapshot_review_registry.csv --promoted-output data/processed/personal_fundamentals_snapshot_evidence_promoted.csv --backlog-output data/processed/personal_fundamentals_snapshot_review_backlog.csv --summary-output data/processed/personal_fundamentals_snapshot_review_summary.csv --template-output data/raw/personal_fundamentals_snapshot_review_template.csv
+```
+
+Template- und Output-Vertrag:
+
+- `data/raw/personal_fundamentals_snapshot_review.csv`: expliziter manueller Review-Input fuer Snapshot-Staging-Zeilen
+- `data/raw/personal_fundamentals_snapshot_review_template.csv`: repo-portables Header-Only-Template fuer denselben Contract
+- `data/processed/personal_fundamentals_snapshot_review_registry.csv`: normalisierte Review-Entscheidungen je exakt gematchter Staging-Identitaet
+- `data/processed/personal_fundamentals_snapshot_evidence_promoted.csv`: freigegebene Evidence-Zeilen im bestehenden Evidence-Eingabevertrag
+- `data/processed/personal_fundamentals_snapshot_review_backlog.csv`: offene Snapshot-Review-Faelle ohne Review oder mit `PENDING`
+- `data/processed/personal_fundamentals_snapshot_review_summary.csv`: reine Review-/Promote-Zusammenfassung
+
+Leitplanken:
+
+- Review-Matching erfolgt konservativ nur ueber exakte Staging-Identitaet; es gibt kein fuzzy Matching und keine Promotion fuer nicht existente Staging-Zeilen.
+- `APPROVE` erzeugt promoted Evidence, `REJECT` und `PENDING` nicht.
+- Promoted Snapshot-Evidence bleibt bewusst konservativ und erhaelt den bestehenden Snapshot-Contract; insbesondere gibt es keine stillschweigende Hochstufung auf `VERIFIED`.
+- Snapshot-Review ist nicht die Evidence-Engine: `src.fundamentals_evidence_engine` bleibt der bestehende Workflow fuer validierte Evidence-Registry, Backlog und Proposed Updates.
+
 ## Fundamentals Overlay / Applied Master
 
 `src.fundamentals_overlay_engine` ergaenzt den Personal-Master um eine explizite lokale Analyst-Overlay-Schicht. Der manuelle Input `data/raw/personal_fundamentals_overlay.csv` wird validiert, zu `data/processed/personal_fundamentals_overlay_registry.csv` normalisiert und als `data/processed/personal_fundamentals_master_applied.csv` auf den Personal-Master projiziert. `overlay_review_due_date` wird als `NOT_SET`, `OK`, `DUE` oder `OVERDUE` sichtbar und kann zusaetzlich in `personal_fundamentals_overlay_review_backlog.csv` ausgegeben werden.
@@ -477,6 +501,7 @@ Hinweise:
 - `coverage` erzeugt neben Coverage, Enriched und Report auch `personal_research_priority.csv` als operative Nachpflege-Liste fuer Profile/KPI-Luecken.
 - `fundamentals_profile` erzeugt nur Profile-Registry, Review-Backlog und `personal_fundamentals_master_profiled.csv`; diese Stage schreibt nicht in den Raw-Master zurueck und schaltet Downstream-Stages nicht automatisch um.
 - `fundamentals_snapshot_ingest` liest nur einen lokalen externen Fundamentals-Snapshot, schreibt `personal_fundamentals_snapshot_normalized.csv`, `personal_fundamentals_snapshot_unmatched.csv`, `personal_fundamentals_snapshot_evidence_staging.csv` und `personal_fundamentals_snapshot_summary.csv` und aendert weder Raw-Master noch manuelle Evidence-CSV.
+- `fundamentals_snapshot_review` liest nur den vorhandenen Snapshot-Evidence-Staging-Output plus einen expliziten manuellen Review-Input, schreibt `personal_fundamentals_snapshot_review_registry.csv`, `personal_fundamentals_snapshot_evidence_promoted.csv`, `personal_fundamentals_snapshot_review_backlog.csv` und `personal_fundamentals_snapshot_review_summary.csv` und merged nichts automatisch in `personal_fundamentals_evidence.csv` oder den Master.
 - `--use-profiled-master` schaltet nur explizit geeignete fundamentals-abhaengige Stages wie `fundamentals_overlay`, `scoring`, `coverage`, `watchlist`, `monthly` und `portfolio_review` auf `personal_fundamentals_master_profiled.csv`. Ohne den Schalter bleibt der Base-Master aktiv; wenn der profiled Master fehlt, scheitert der Run fail-fast.
 - `fundamentals_evidence` erzeugt nur Evidence-Registry, Research-Backlog, Summary und Evidence-Report; diese Stage schreibt nicht in den Personal-Master zurueck.
 - `fundamentals_evidence` erzeugt zusaetzlich `personal_fundamentals_proposed_updates.csv` als manuellen Vorschlagsoutput aus validierter Evidence mit `reported_value`.
@@ -538,6 +563,10 @@ Interpretation der persoenlichen Outputs:
 - `personal_fundamentals_snapshot_unmatched.csv`: lokale Fundamentals-Snapshot-Zeilen ohne exakten Personal-Master-Match
 - `personal_fundamentals_snapshot_evidence_staging.csv`: aus dem Snapshot abgeleitete manuelle Evidence-Staging-Zeilen; keine automatische Uebernahme in `personal_fundamentals_evidence.csv`
 - `personal_fundamentals_snapshot_summary.csv`: Ingest-/Match-/Staging-Summary fuer den lokalen Snapshot-Import
+- `personal_fundamentals_snapshot_review_registry.csv`: normalisierte manuelle Review-Entscheidungen je Snapshot-Staging-Identitaet
+- `personal_fundamentals_snapshot_evidence_promoted.csv`: separat freigegebene Snapshot-Evidence im bestehenden Evidence-Input-Vertrag; weiterhin kein automatischer Merge in `personal_fundamentals_evidence.csv`
+- `personal_fundamentals_snapshot_review_backlog.csv`: offene Snapshot-Review-Faelle ohne Entscheidung oder mit `PENDING`
+- `personal_fundamentals_snapshot_review_summary.csv`: Review-/Promote-Summary fuer den Snapshot-Freigabepfad
 - `personal_fundamentals_overlay_registry.csv`: normalisierte lokale Analyst-Overlay-Zeilen je Holding/Stichtag/Autor
 - `personal_fundamentals_master_applied.csv`: explizite Projektion aus Original-Master plus validierten Overlays; kein Ersatz fuer die Core-KPI-Source-of-Truth
 - `personal_fundamentals_overlay_review_backlog.csv`: faellige oder ueberfaellige Overlay-Reviews; keine automatische Overlay-Deaktivierung

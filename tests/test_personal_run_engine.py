@@ -20,6 +20,7 @@ from src.fundamentals_master import DEFAULT_METRIC_DEFINITIONS_PATH, PERSONAL_MA
 from src.fundamentals_overlay_engine import DEFAULT_SCHEMA_PATH as DEFAULT_OVERLAY_SCHEMA_PATH, OVERLAY_INPUT_FIELDS
 from src.fundamentals_profile_engine import PROFILE_REVIEW_INPUT_FIELDS
 from src.fundamentals_snapshot_ingestion import SNAPSHOT_INPUT_FIELDS, SUMMARY_FIELDS
+from src.fundamentals_snapshot_review import SNAPSHOT_REVIEW_INPUT_FIELDS, SNAPSHOT_REVIEW_SUMMARY_FIELDS
 from src.personal_run_engine import DEFAULT_PATHS, USED_INPUT_FIELDS, PersonalRunOptions, options_from_args, parse_args, run_personal_run_engine
 
 
@@ -133,6 +134,9 @@ class PersonalRunEngineTests(unittest.TestCase):
     def _write_profile_review_rows(self, path: Path, rows: list[dict[str, object]]) -> None:
         self._write_csv(path, PROFILE_REVIEW_INPUT_FIELDS, rows)
 
+    def _write_snapshot_review_rows(self, path: Path, rows: list[dict[str, object]]) -> None:
+        self._write_csv(path, SNAPSHOT_REVIEW_INPUT_FIELDS, rows)
+
     def _write_data_sources_config(self, path: Path, sources: dict[str, dict[str, object]]) -> None:
         path.write_text(json.dumps({"sources": sources}, indent=2) + "\n", encoding="utf-8")
 
@@ -237,6 +241,43 @@ class PersonalRunEngineTests(unittest.TestCase):
         )
         return row
 
+    def _snapshot_review_row(
+        self,
+        *,
+        ticker: str = "MSFT",
+        isin: str = "",
+        company_name: str = "Microsoft",
+        kpi_name: str = "roic",
+        source_name: str = "vendor_snapshot",
+        source_reference: str = "vendor_export_2026q1",
+        source_as_of_date: str = "2026-04-15",
+        fiscal_year: str = "2025",
+        review_decision: str = "APPROVE",
+        review_reason: str = "manual snapshot review",
+        review_author: str = "qa_user",
+        review_as_of_date: str = "2026-04-17",
+        notes: str = "unit snapshot review",
+    ) -> dict[str, object]:
+        row = {field: "" for field in SNAPSHOT_REVIEW_INPUT_FIELDS}
+        row.update(
+            {
+                "ticker": ticker,
+                "isin": isin,
+                "company_name": company_name,
+                "kpi_name": kpi_name,
+                "source_name": source_name,
+                "source_reference": source_reference,
+                "source_as_of_date": source_as_of_date,
+                "fiscal_year": fiscal_year,
+                "review_decision": review_decision,
+                "review_reason": review_reason,
+                "review_author": review_author,
+                "review_as_of_date": review_as_of_date,
+                "notes": notes,
+            }
+        )
+        return row
+
     def _archive_row(self, symbol: str, point_date: str, value: str, name: str | None = None) -> dict[str, str]:
         row = {field: "" for field in BENCHMARK_ARCHIVE_FIELDS}
         row.update(
@@ -316,6 +357,11 @@ class PersonalRunEngineTests(unittest.TestCase):
             fundamentals_snapshot_unmatched_output=str(self._path(f"_tmp_{prefix}_fundamentals_snapshot_unmatched.csv")),
             fundamentals_snapshot_evidence_staging_output=str(self._path(f"_tmp_{prefix}_fundamentals_snapshot_evidence_staging.csv")),
             fundamentals_snapshot_summary_output=str(self._path(f"_tmp_{prefix}_fundamentals_snapshot_summary.csv")),
+            fundamentals_snapshot_review_input=str(self._path(f"_tmp_{prefix}_fundamentals_snapshot_review.csv")),
+            fundamentals_snapshot_review_registry_output=str(self._path(f"_tmp_{prefix}_fundamentals_snapshot_review_registry.csv")),
+            fundamentals_snapshot_evidence_promoted_output=str(self._path(f"_tmp_{prefix}_fundamentals_snapshot_evidence_promoted.csv")),
+            fundamentals_snapshot_review_backlog_output=str(self._path(f"_tmp_{prefix}_fundamentals_snapshot_review_backlog.csv")),
+            fundamentals_snapshot_review_summary_output=str(self._path(f"_tmp_{prefix}_fundamentals_snapshot_review_summary.csv")),
             fundamentals_evidence_input=str(self._path(f"_tmp_{prefix}_evidence_input.csv")),
             fundamentals_evidence_registry_output=str(self._path(f"_tmp_{prefix}_evidence_registry.csv")),
             fundamentals_research_backlog_output=str(self._path(f"_tmp_{prefix}_research_backlog.csv")),
@@ -560,6 +606,80 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertEqual(snapshot_result["used_inputs"]["fundamentals_snapshot_input"], str(registry_snapshot))
         self.assertEqual(snapshot_inputs["fundamentals_snapshot_input"]["input_path"], str(registry_snapshot))
         self.assertIn("data_source_registry_defaults=fundamentals_snapshot_input", snapshot_inputs["fundamentals_snapshot_input"]["notes"])
+
+    def test_fundamentals_snapshot_review_stage_writes_registry_promoted_backlog_and_summary(self) -> None:
+        options = self._core_options(
+            "snapshot_review_stage",
+            ["import", "fundamentals_seed", "fundamentals_snapshot_ingest", "fundamentals_snapshot_review"],
+        )
+        self._write_snapshot_rows(Path(options.fundamentals_snapshot_input), [self._snapshot_row()])
+        self._write_snapshot_review_rows(
+            Path(options.fundamentals_snapshot_review_input),
+            [
+                self._snapshot_review_row(kpi_name="roic", review_decision="APPROVE"),
+                self._snapshot_review_row(kpi_name="fcf_margin", review_decision="PENDING", review_reason="awaiting second check"),
+            ],
+        )
+
+        manifest = run_personal_run_engine(options)
+
+        registry_rows = read_csv_rows(options.fundamentals_snapshot_review_registry_output)
+        promoted_rows = read_csv_rows(options.fundamentals_snapshot_evidence_promoted_output)
+        backlog_rows = read_csv_rows(options.fundamentals_snapshot_review_backlog_output)
+        summary_rows = read_csv_rows(options.fundamentals_snapshot_review_summary_output)
+        review_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "fundamentals_snapshot_review")
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(len(registry_rows), 2)
+        self.assertEqual({row["promotion_status"] for row in registry_rows}, {"PROMOTED", "PENDING"})
+        self.assertEqual(len(promoted_rows), 1)
+        self.assertEqual(promoted_rows[0]["kpi_name"], "roic")
+        self.assertIn("snapshot_review_decision=APPROVE", promoted_rows[0]["notes"])
+        self.assertEqual(len(backlog_rows), 1)
+        self.assertEqual(backlog_rows[0]["backlog_status"], "PENDING")
+        self.assertEqual(set(summary_rows[0]), set(SNAPSHOT_REVIEW_SUMMARY_FIELDS))
+        self.assertEqual(summary_rows[0]["approved_rows"], "1")
+        self.assertEqual(summary_rows[0]["pending_rows"], "1")
+        self.assertEqual(summary_rows[0]["promoted_rows"], "1")
+        self.assertEqual(review_inputs["fundamentals_snapshot_evidence_staging_output"]["input_path"], options.fundamentals_snapshot_evidence_staging_output)
+        self.assertEqual(review_inputs["fundamentals_snapshot_review_input"]["input_path"], options.fundamentals_snapshot_review_input)
+        self.assertEqual(review_inputs["fundamentals_snapshot_review_input"]["input_exists"], "True")
+
+    def test_fundamentals_snapshot_review_uses_registry_default_input_when_no_cli_override_exists(self) -> None:
+        options = self._core_options(
+            "snapshot_review_registry_default",
+            ["import", "fundamentals_seed", "fundamentals_snapshot_ingest", "fundamentals_snapshot_review"],
+        )
+        registry_review = self._path("_tmp_snapshot_review_registry_default_input.csv")
+        self._write_snapshot_rows(Path(options.fundamentals_snapshot_input), [self._snapshot_row()])
+        self._write_snapshot_review_rows(
+            Path(registry_review),
+            [self._snapshot_review_row(kpi_name="roic", review_decision="APPROVE")],
+        )
+        options.fundamentals_snapshot_review_input = DEFAULT_PATHS["fundamentals_snapshot_review_input"]
+        self._write_data_sources_config(
+            Path(options.data_sources_config),
+            {
+                "fundamentals_snapshot_review_input": {
+                    "enabled": True,
+                    "path": str(registry_review),
+                    "required": True,
+                    "kind": "file",
+                    "description": "registry snapshot review input should win over repo default",
+                }
+            },
+        )
+
+        manifest = run_personal_run_engine(options)
+
+        review_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "fundamentals_snapshot_review")
+        review_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "fundamentals_snapshot_review")
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(review_result["used_inputs"]["fundamentals_snapshot_review_input"], str(registry_review))
+        self.assertEqual(review_inputs["fundamentals_snapshot_review_input"]["input_path"], str(registry_review))
+        self.assertIn(
+            "data_source_registry_defaults=fundamentals_snapshot_review_input",
+            review_inputs["fundamentals_snapshot_review_input"]["notes"],
+        )
 
     def test_use_profiled_master_switch_routes_scoring_and_coverage_explicitly(self) -> None:
         options = self._core_options("profiled_switch", ["import", "fundamentals_seed", "fundamentals_profile", "scoring", "coverage"])
@@ -924,6 +1044,94 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertEqual(coverage_inputs["fundamentals_master"]["input_path"], str(explicit_master))
         self.assertNotIn("data_source_registry_defaults=fundamentals_master", scoring_inputs["fundamentals_master"]["notes"])
         self.assertNotIn("data_source_registry_defaults=fundamentals_master", coverage_inputs["fundamentals_master"]["notes"])
+
+    def test_cli_explicit_snapshot_input_override_wins_against_registry_end_to_end(self) -> None:
+        options = self._core_options(
+            "cli_snapshot_registry_priority_e2e",
+            ["data_sources_validate", "import", "fundamentals_seed", "fundamentals_snapshot_ingest"],
+        )
+        explicit_snapshot = self._path("_tmp_cli_snapshot_priority_explicit.csv")
+        registry_snapshot = self._path("_tmp_cli_snapshot_priority_registry.csv")
+        self._write_snapshot_rows(
+            Path(explicit_snapshot),
+            [self._snapshot_row(source_reference="explicit_snapshot_reference", notes="explicit snapshot")],
+        )
+        self._write_snapshot_rows(
+            Path(registry_snapshot),
+            [self._snapshot_row(source_reference="registry_snapshot_reference", notes="registry snapshot")],
+        )
+        self._write_data_sources_config(
+            Path(options.data_sources_config),
+            {
+                "fundamentals_snapshot_input": {
+                    "enabled": True,
+                    "path": str(registry_snapshot),
+                    "required": True,
+                    "kind": "file",
+                    "description": "registry snapshot input should lose to explicit CLI override in real CLI path",
+                }
+            },
+        )
+        command = [
+            "python",
+            "-m",
+            "src.personal_run_engine",
+            "--stage",
+            "data_sources_validate",
+            "--stage",
+            "import",
+            "--stage",
+            "fundamentals_seed",
+            "--stage",
+            "fundamentals_snapshot_ingest",
+            "--data-sources-config",
+            options.data_sources_config,
+            "--data-source-status-output",
+            options.data_source_status_output,
+            "--data-source-resolved-output",
+            options.data_source_resolved_output,
+            "--positions-raw-input",
+            str(options.positions_raw_input),
+            "--positions-output",
+            options.positions_output,
+            "--fundamentals-master",
+            options.fundamentals_master,
+            "--fundamentals-snapshot-input",
+            str(explicit_snapshot),
+            "--fundamentals-snapshot-normalized-output",
+            options.fundamentals_snapshot_normalized_output,
+            "--fundamentals-snapshot-unmatched-output",
+            options.fundamentals_snapshot_unmatched_output,
+            "--fundamentals-snapshot-evidence-staging-output",
+            options.fundamentals_snapshot_evidence_staging_output,
+            "--fundamentals-snapshot-summary-output",
+            options.fundamentals_snapshot_summary_output,
+            "--manifest-output",
+            options.manifest_output,
+            "--artifacts-output",
+            options.artifacts_output,
+            "--used-inputs-output",
+            options.used_inputs_output,
+            "--report-output",
+            str(options.report_output),
+        ]
+
+        result = subprocess.run(command, cwd=Path.cwd(), capture_output=True, text=True)
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        manifest = json.loads(Path(options.manifest_output).read_text(encoding="utf-8"))
+        snapshot_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "fundamentals_snapshot_ingest")
+        used_inputs = read_csv_rows(options.used_inputs_output)
+        snapshot_inputs = self._used_inputs_for_stage(used_inputs, "fundamentals_snapshot_ingest")
+        normalized_rows = read_csv_rows(options.fundamentals_snapshot_normalized_output)
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(snapshot_result["used_inputs"]["fundamentals_snapshot_input"], str(explicit_snapshot))
+        self.assertEqual(snapshot_inputs["fundamentals_snapshot_input"]["input_path"], str(explicit_snapshot))
+        self.assertNotIn(
+            "data_source_registry_defaults=fundamentals_snapshot_input",
+            snapshot_inputs["fundamentals_snapshot_input"]["notes"],
+        )
+        self.assertEqual(normalized_rows[0]["source_reference"], "explicit_snapshot_reference")
 
     def test_used_inputs_capture_stage_config_files_for_core_pipeline(self) -> None:
         options = self._core_options(

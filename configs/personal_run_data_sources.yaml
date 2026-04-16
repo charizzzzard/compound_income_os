@@ -35,6 +35,13 @@
       "kind": "file",
       "description": "Optional local external fundamentals snapshot input for fundamentals_snapshot_ingest."
     },
+    "fundamentals_snapshot_review_input": {
+      "enabled": false,
+      "path": "data/raw/private/fundamentals/personal_fundamentals_snapshot_review.csv",
+      "required": false,
+      "kind": "file",
+      "description": "Optional manual snapshot review input for fundamentals_snapshot_review."
+    },
     "benchmark_input": {
       "enabled": true,
       "path": "data/raw/sample_benchmark_timeseries.csv",
