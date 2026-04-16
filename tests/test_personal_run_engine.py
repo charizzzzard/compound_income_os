@@ -17,6 +17,7 @@ from src.dashboard_engine import DEFAULT_CONFIG_PATH as DEFAULT_DASHBOARD_CONFIG
 from src.fundamentals_evidence_engine import EVIDENCE_INPUT_FIELDS
 from src.fundamentals_master import DEFAULT_METRIC_DEFINITIONS_PATH
 from src.fundamentals_overlay_engine import DEFAULT_SCHEMA_PATH as DEFAULT_OVERLAY_SCHEMA_PATH, OVERLAY_INPUT_FIELDS
+from src.fundamentals_profile_engine import PROFILE_REVIEW_INPUT_FIELDS
 from src.personal_run_engine import USED_INPUT_FIELDS, PersonalRunOptions, options_from_args, parse_args, run_personal_run_engine
 
 
@@ -121,6 +122,42 @@ class PersonalRunEngineTests(unittest.TestCase):
     def _write_empty_overlay(self, path: Path) -> None:
         self._write_csv(path, OVERLAY_INPUT_FIELDS, [])
 
+    def _write_profile_review_rows(self, path: Path, rows: list[dict[str, object]]) -> None:
+        self._write_csv(path, PROFILE_REVIEW_INPUT_FIELDS, rows)
+
+    def _profile_review_row(
+        self,
+        *,
+        ticker: str = "MSFT",
+        isin: str = "US5949181045",
+        company_name: str = "Microsoft",
+        proposed_company_type_profile: str = "STANDARD",
+        profile_reason: str = "manual profile review",
+        review_status: str = "APPROVED",
+        review_author: str = "qa_user",
+        review_as_of_date: str = "2026-04-16",
+        source_name: str = "manual_profile_review",
+        source_reference: str = "internal note",
+        notes: str = "unit profile review",
+    ) -> dict[str, object]:
+        row = {field: "" for field in PROFILE_REVIEW_INPUT_FIELDS}
+        row.update(
+            {
+                "ticker": ticker,
+                "isin": isin,
+                "company_name": company_name,
+                "proposed_company_type_profile": proposed_company_type_profile,
+                "profile_reason": profile_reason,
+                "review_status": review_status,
+                "review_author": review_author,
+                "review_as_of_date": review_as_of_date,
+                "source_name": source_name,
+                "source_reference": source_reference,
+                "notes": notes,
+            }
+        )
+        return row
+
     def _archive_row(self, symbol: str, point_date: str, value: str, name: str | None = None) -> dict[str, str]:
         row = {field: "" for field in BENCHMARK_ARCHIVE_FIELDS}
         row.update(
@@ -186,6 +223,10 @@ class PersonalRunEngineTests(unittest.TestCase):
             fundamentals_enriched_output=str(self._path(f"_tmp_{prefix}_enriched.csv")),
             research_priority_output=str(self._path(f"_tmp_{prefix}_research_priority.csv")),
             fundamentals_coverage_report_output=str(self._path(f"_tmp_{prefix}_coverage_report.md")),
+            profile_review_input=str(self._path(f"_tmp_{prefix}_profile_review.csv")),
+            profile_review_registry_output=str(self._path(f"_tmp_{prefix}_profile_registry.csv")),
+            profile_review_backlog_output=str(self._path(f"_tmp_{prefix}_profile_backlog.csv")),
+            profiled_master_output=str(self._path(f"_tmp_{prefix}_profiled_master.csv")),
             fundamentals_evidence_input=str(self._path(f"_tmp_{prefix}_evidence_input.csv")),
             fundamentals_evidence_registry_output=str(self._path(f"_tmp_{prefix}_evidence_registry.csv")),
             fundamentals_research_backlog_output=str(self._path(f"_tmp_{prefix}_research_backlog.csv")),
@@ -329,6 +370,47 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertEqual(overlay_inputs["fundamentals_schema"]["input_path"], DEFAULT_OVERLAY_SCHEMA_PATH)
         self.assertEqual(overlay_inputs["fundamentals_schema"]["input_exists"], "True")
 
+    def test_fundamentals_profile_stage_writes_registry_backlog_and_profiled_master(self) -> None:
+        options = self._core_options("profile_stage", ["import", "fundamentals_seed", "fundamentals_profile"])
+        self._write_profile_review_rows(
+            Path(options.profile_review_input),
+            [self._profile_review_row(isin="", proposed_company_type_profile="STANDARD", profile_reason="operating company")],
+        )
+
+        manifest = run_personal_run_engine(options)
+
+        artifact_rows = read_csv_rows(options.artifacts_output)
+        statuses = {row["stage_name"]: row["status"] for row in manifest["stage_results"]}
+        registry_rows = read_csv_rows(options.profile_review_registry_output)
+        profiled_rows = read_csv_rows(options.profiled_master_output)
+        profile_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "fundamentals_profile")
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(statuses["fundamentals_profile"], "SUCCESS")
+        self.assertTrue(Path(options.profile_review_registry_output).exists())
+        self.assertTrue(Path(options.profile_review_backlog_output).exists())
+        self.assertTrue(Path(options.profiled_master_output).exists())
+        self.assertIn("fundamentals_profile", {row["stage_name"] for row in artifact_rows if row["produced"] == "True"})
+        self.assertEqual(registry_rows[0]["projection_applied"], "True")
+        self.assertEqual(profiled_rows[0]["company_type_profile"], "STANDARD")
+        self.assertEqual(profile_inputs["fundamentals_master"]["input_path"], options.fundamentals_master)
+        self.assertEqual(profile_inputs["profile_review_input"]["input_path"], options.profile_review_input)
+        self.assertEqual(profile_inputs["profile_review_input"]["input_exists"], "True")
+
+    def test_fundamentals_profile_stage_does_not_switch_downstream_master_implicitly(self) -> None:
+        options = self._core_options("profile_no_switch", ["import", "fundamentals_seed", "fundamentals_profile", "scoring"])
+        self._write_profile_review_rows(
+            Path(options.profile_review_input),
+            [self._profile_review_row(isin="", proposed_company_type_profile="STANDARD", profile_reason="operating company")],
+        )
+
+        manifest = run_personal_run_engine(options)
+
+        scoring_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "scoring")
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(scoring_result["used_inputs"]["fundamentals_source_mode"], "BASE")
+        self.assertEqual(scoring_result["used_inputs"]["fundamentals_master"], options.fundamentals_master)
+        self.assertNotEqual(scoring_result["used_inputs"]["fundamentals_master"], options.profiled_master_output)
+
     def test_use_applied_master_switch_routes_scoring_explicitly(self) -> None:
         options = self._core_options("applied_switch", ["import", "fundamentals_seed", "fundamentals_overlay", "scoring", "coverage"])
         options.use_applied_master = True
@@ -346,6 +428,9 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertEqual(coverage_result["used_inputs"]["fundamentals_source_mode"], "APPLIED")
         self.assertEqual(scoring_result["used_inputs"]["fundamentals_master"], options.fundamentals_applied_master_output)
         self.assertEqual(coverage_result["used_inputs"]["fundamentals_master"], options.fundamentals_applied_master_output)
+        overlay_inputs = self._used_inputs_for_stage(used_input_rows, "fundamentals_overlay")
+        scoring_inputs = self._used_inputs_for_stage(used_input_rows, "scoring")
+        coverage_inputs = self._used_inputs_for_stage(used_input_rows, "coverage")
         applied_lineage_rows = [
             row
             for row in used_input_rows
@@ -353,6 +438,11 @@ class PersonalRunEngineTests(unittest.TestCase):
         ]
         self.assertEqual({row["input_path"] for row in applied_lineage_rows}, {options.fundamentals_applied_master_output})
         self.assertTrue(all("fundamentals_source_mode=APPLIED" in row["notes"] for row in applied_lineage_rows))
+        self.assertEqual(overlay_inputs["fundamentals_schema"]["input_path"], DEFAULT_OVERLAY_SCHEMA_PATH)
+        self.assertEqual(scoring_inputs["scoring_config"]["input_path"], scoring_engine.DEFAULT_SCORING_PATH)
+        self.assertEqual(coverage_inputs["metric_definitions"]["input_path"], DEFAULT_METRIC_DEFINITIONS_PATH)
+        self.assertIn("fundamentals_source_mode=APPLIED", scoring_inputs["fundamentals_master"]["notes"])
+        self.assertIn("fundamentals_source_mode=APPLIED", coverage_inputs["fundamentals_master"]["notes"])
         self.assertIn("applied_master", artifact_roles)
 
     def test_use_applied_master_without_projection_fails_fast(self) -> None:

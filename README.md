@@ -167,6 +167,23 @@ Leitplanken:
 - Es gibt keine PDF-/Web-/API-Extraktion, keine automatische Rueckschreibung und keine Scoring-Aenderung.
 - Ein header-only Evidence-Input ist zulaessig; bei `OTHER`-Profilen fuehrt das typischerweise zu `LOW`-Backlog statt `HIGH`, weil STANDARD-Required-KPIs fuer dieses Profil nicht als Pflichtluecke gelten.
 
+## Fundamentals Profile Review / Profiled Master
+
+`src.fundamentals_profile_engine` ergaenzt den Personal-Master um eine kleine, kontrollierte Pflege-Schicht nur fuer `company_type_profile`. Der manuelle Input `data/raw/personal_fundamentals_profile_review.csv` wird gegen den bestehenden Personal-Master identitaetsbasiert validiert und zu `data/processed/personal_fundamentals_profile_registry.csv`, `data/processed/personal_fundamentals_profile_review_backlog.csv` und `data/processed/personal_fundamentals_master_profiled.csv` verarbeitet.
+
+```powershell
+python -m src.fundamentals_profile_engine --fundamentals-master data/raw/personal_fundamentals_master.csv --profile-review-input data/raw/personal_fundamentals_profile_review.csv --registry-output data/processed/personal_fundamentals_profile_registry.csv --backlog-output data/processed/personal_fundamentals_profile_review_backlog.csv --profiled-master-output data/processed/personal_fundamentals_master_profiled.csv --template-output data/raw/personal_fundamentals_profile_review_template.csv
+```
+
+Leitplanken:
+
+- Profile Review ist keine zweite Required-/Coverage-/Research-Priority-Logik. Die Methodik fuer KPI-Anwendbarkeit und Guardrails bleibt in `src.fundamentals_master`.
+- Evidence = KPI-Fakten, Overlay = qualitative Analystenebene, Profile Review = kontrollierte Pflege von `company_type_profile`.
+- Es gibt keine automatische Rueckschreibung in `data/raw/personal_fundamentals_master.csv`.
+- Nur `APPROVED`-Reviews werden in `personal_fundamentals_master_profiled.csv` projiziert; `PENDING` und `REJECTED` bleiben in Registry und Backlog sichtbar.
+- Die Projektion aendert nur `company_type_profile` plus einen nachvollziehbaren Notes-Hinweis; KPI-Werte, Overlays und andere Master-Felder bleiben unberuehrt.
+- In diesem Patch nutzen Downstream-Stages den profiled Master nicht automatisch. Der bestehende BASE/APPLIED-Vertrag bleibt unveraendert.
+
 ## Fundamentals Overlay / Applied Master
 
 `src.fundamentals_overlay_engine` ergaenzt den Personal-Master um eine explizite lokale Analyst-Overlay-Schicht. Der manuelle Input `data/raw/personal_fundamentals_overlay.csv` wird validiert, zu `data/processed/personal_fundamentals_overlay_registry.csv` normalisiert und als `data/processed/personal_fundamentals_master_applied.csv` auf den Personal-Master projiziert. `overlay_review_due_date` wird als `NOT_SET`, `OK`, `DUE` oder `OVERDUE` sichtbar und kann zusaetzlich in `personal_fundamentals_overlay_review_backlog.csv` ausgegeben werden.
@@ -429,6 +446,7 @@ Hinweise:
 - `scoring` bleibt eine eigenstaendige Stage und wird nicht in `fundamentals_seed` oder `coverage` versteckt.
 - `fundamentals_seed` erzeugt nur Identity-Seed-Zeilen und erfindet keine KPI-Werte. Ein vorhandener Personal-Master wird nur mit `--overwrite-fundamentals-master` ersetzt.
 - `coverage` erzeugt neben Coverage, Enriched und Report auch `personal_research_priority.csv` als operative Nachpflege-Liste fuer Profile/KPI-Luecken.
+- `fundamentals_profile` erzeugt nur Profile-Registry, Review-Backlog und `personal_fundamentals_master_profiled.csv`; diese Stage schreibt nicht in den Raw-Master zurueck und schaltet Downstream-Stages nicht automatisch um.
 - `fundamentals_evidence` erzeugt nur Evidence-Registry, Research-Backlog, Summary und Evidence-Report; diese Stage schreibt nicht in den Personal-Master zurueck.
 - `fundamentals_evidence` erzeugt zusaetzlich `personal_fundamentals_proposed_updates.csv` als manuellen Vorschlagsoutput aus validierter Evidence mit `reported_value`.
 - `fundamentals_overlay` erzeugt nur Overlay-Registry, Applied-Master-Projektion, Review-Backlog, Summary und Overlay-Report; diese Stage ersetzt den Original-Master nicht still.
