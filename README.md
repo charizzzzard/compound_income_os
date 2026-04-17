@@ -246,6 +246,21 @@ Leitplanken:
 - `personal_fundamentals_evidence_composed.csv` bleibt ein separates Evidence-Artefakt. Die Nutzung im bestehenden Evidence-Workflow erfolgt nur explizit, z. B. im Orchestrator mit `--use-composed-evidence`.
 - `personal_fundamentals_snapshot_evidence_promoted.csv` bleibt bewusst ein separates promoted Artefakt; die Uebernahme in `personal_fundamentals_evidence.csv` bleibt weiterhin ein expliziter manueller Folgeschritt.
 
+## Evidence Apply / Explicit Evidence-Applied Master
+
+`src.fundamentals_evidence_apply` schliesst die operative Luecke zwischen validierter Evidence und einem real nutzbaren Fundamentals-Master fuer Downstream-Stages: das bereits vorhandene `personal_fundamentals_proposed_updates.csv` aus `src.fundamentals_evidence_engine` wird als kanonischer feldbezogener Apply-Input genutzt und explizit auf den bestehenden Personal-Master projiziert. Das Ergebnis bleibt bewusst separat; weder `data/raw/personal_fundamentals_master.csv` noch `data/raw/personal_fundamentals_evidence.csv` werden automatisch ueberschrieben.
+
+```powershell
+python -m src.fundamentals_evidence_apply --fundamentals-master data/raw/personal_fundamentals_master.csv --proposed-updates-input data/processed/personal_fundamentals_proposed_updates.csv --registry-output data/processed/personal_fundamentals_evidence_apply_registry.csv --evidence-applied-master-output data/processed/personal_fundamentals_master_evidence_applied.csv --summary-output data/processed/personal_fundamentals_evidence_apply_summary.csv
+```
+
+Leitplanken:
+
+- Apply nutzt bewusst `personal_fundamentals_proposed_updates.csv`, weil dieser bestehende Evidence-Output bereits validierte feldbezogene `reported_value`-Zeilen fuer manuelle Master-Projektionen enthaelt.
+- Nur sauber 1:1 auf den Personal-Master abbildbare KPI-/Facts-Felder werden projiziert; Identity-, Profile- und Overlay-Felder bleiben unberuehrt.
+- Echte Mehrfachwert-Konflikte je Entity+Ziel-Feld werden fail-fast behandelt; identische Duplikate werden nur dedupliziert und im Apply-Registry-Artefakt sichtbar.
+- `personal_fundamentals_master_evidence_applied.csv` behaelt exakt das Personal-Master-Schema und bleibt ein separates, auditierbares Downstream-Artefakt.
+
 ## Fundamentals Overlay / Applied Master
 
 `src.fundamentals_overlay_engine` ergaenzt den Personal-Master um eine explizite lokale Analyst-Overlay-Schicht. Der manuelle Input `data/raw/personal_fundamentals_overlay.csv` wird validiert, zu `data/processed/personal_fundamentals_overlay_registry.csv` normalisiert und als `data/processed/personal_fundamentals_master_applied.csv` auf den Personal-Master projiziert. `overlay_review_due_date` wird als `NOT_SET`, `OK`, `DUE` oder `OVERDUE` sichtbar und kann zusaetzlich in `personal_fundamentals_overlay_review_backlog.csv` ausgegeben werden.
@@ -523,10 +538,12 @@ Hinweise:
 - `fundamentals_evidence` erzeugt nur Evidence-Registry, Research-Backlog, Summary und Evidence-Report; diese Stage schreibt nicht in den Personal-Master zurueck.
 - `fundamentals_evidence` erzeugt zusaetzlich `personal_fundamentals_proposed_updates.csv` als manuellen Vorschlagsoutput aus validierter Evidence mit `reported_value`.
 - `--use-composed-evidence` schaltet `fundamentals_evidence` explizit auf `personal_fundamentals_evidence_composed.csv`. Ohne den Schalter bleibt der bestehende Raw-/CLI-/Registry-Evidence-Input aktiv; ein abweichender expliziter `--fundamentals-evidence-input` ist dabei fuer `fundamentals_evidence` bewusst mehrdeutig und wird ausserhalb eines gleichzeitig ausgefuehrten `fundamentals_evidence_compose`-Schritts fail-fast abgewiesen.
+- `fundamentals_evidence_apply` projiziert nur validierte Proposed Updates explizit in `personal_fundamentals_master_evidence_applied.csv`, schreibt Apply-Registry/Summary separat und aendert weder Raw-Master noch Raw-Evidence.
+- `--use-evidence-applied-master` schaltet nur explizit geeignete Downstream-Stages wie `scoring`, `coverage`, `watchlist`, `monthly` und `portfolio_review` auf `personal_fundamentals_master_evidence_applied.csv`. Ohne den Schalter bleibt das bestehende Verhalten aktiv; wenn der Evidence-Applied Master fehlt, scheitert der Run fail-fast.
 - `fundamentals_overlay` erzeugt nur Overlay-Registry, Applied-Master-Projektion, Review-Backlog, Summary und Overlay-Report; diese Stage ersetzt den Original-Master nicht still.
 - `--use-applied-master` schaltet nur explizit fundamentals-abhaengige Downstream-Stages wie `scoring`, `coverage`, `watchlist`, `monthly` und `portfolio_review` auf `personal_fundamentals_master_applied.csv`. Ohne den Schalter bleibt der Base-Master aktiv; wenn der Applied Master fehlt, scheitert der Run fail-fast.
-- `--use-profiled-master` und `--use-applied-master` sind in dieser Iteration gegenseitig ausschliessend; es gibt keine neue Kaskade wie `PROFILED_APPLIED`.
-- `personal_run_used_inputs.csv` enthaelt nur die tatsaechlich verwendeten Stage-Inputs; fuer fundamentals-abhaengige Stages macht das Feld `notes` `fundamentals_source_mode=BASE`, `fundamentals_source_mode=PROFILED` oder `fundamentals_source_mode=APPLIED` sichtbar.
+- `--use-profiled-master`, `--use-applied-master` und `--use-evidence-applied-master` sind in dieser Iteration gegenseitig ausschliessend; es gibt keine kombinierte Master-Source-Kaskade.
+- `personal_run_used_inputs.csv` enthaelt nur die tatsaechlich verwendeten Stage-Inputs; fuer fundamentals-abhaengige Stages macht das Feld `notes` `fundamentals_source_mode=BASE`, `fundamentals_source_mode=PROFILED`, `fundamentals_source_mode=APPLIED` oder `fundamentals_source_mode=EVIDENCE_APPLIED` sichtbar.
 - Der Used-Inputs-Index bleibt bewusst eine flache Projektion aus `StageResult.used_inputs`; wenn eine Stage lokale Config-Dateien real liest, erscheinen diese Pfade dort ebenfalls als Stage-Inputs.
 - Wenn ein Input ueber `configs/personal_run_data_sources.yaml` als Default aufgeloest wurde, machen `personal_data_source_registry_resolved.csv` und die Stage-Notes dies sichtbar; das ersetzt keine tiefere engine-interne Lineage.
 - Die persoenlichen Orchestrator-Defaults fuer Watchlist-, Monthly- und Portfolio-Review-Reports schreiben nach `reports/YYYY-MM-DD/personal_watchlist_report.md`, `reports/YYYY-MM-DD/personal_monthly_decision_report.md` und `reports/YYYY-MM-DD/personal_portfolio_review.md`, nicht nach `reports/sample/...`.
@@ -588,6 +605,9 @@ Interpretation der persoenlichen Outputs:
 - `personal_fundamentals_evidence_composed.csv`: explizit zusammengesetztes Evidence-Artefakt aus Raw-Manual-Evidence und promoted Snapshot-Evidence; weiterhin kein automatisches Ueberschreiben von `personal_fundamentals_evidence.csv`
 - `personal_fundamentals_evidence_compose_conflicts.csv`: explizite Konfliktzeilen aus dem Compose-Schritt; keine stille Priorisierung
 - `personal_fundamentals_evidence_compose_summary.csv`: Compose-Summary fuer Manual-/Promoted-Evidence, Dedupe und Konfliktzaehlung
+- `personal_fundamentals_evidence_apply_registry.csv`: explizite Evidence-Apply-Registry je Entity/Ziel-Feld aus validierten Proposed Updates
+- `personal_fundamentals_master_evidence_applied.csv`: separater evidence-applied Personal-Master aus Basis-Master plus unterstuetzten Evidence-Facts; kein automatischer Ersatz des Raw-Masters
+- `personal_fundamentals_evidence_apply_summary.csv`: Apply-Summary fuer Basis-Master, Proposed Updates, angewandte Felder und explizit uebersprungene Zeilen
 - `personal_fundamentals_overlay_registry.csv`: normalisierte lokale Analyst-Overlay-Zeilen je Holding/Stichtag/Autor
 - `personal_fundamentals_master_applied.csv`: explizite Projektion aus Original-Master plus validierten Overlays; kein Ersatz fuer die Core-KPI-Source-of-Truth
 - `personal_fundamentals_overlay_review_backlog.csv`: faellige oder ueberfaellige Overlay-Reviews; keine automatische Overlay-Deaktivierung

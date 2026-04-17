@@ -58,6 +58,12 @@ from src.fundamentals_evidence_compose import (
     DEFAULT_SUMMARY_OUTPUT as DEFAULT_EVIDENCE_COMPOSE_SUMMARY_OUTPUT,
     run_fundamentals_evidence_compose,
 )
+from src.fundamentals_evidence_apply import (
+    DEFAULT_APPLY_REGISTRY_OUTPUT as DEFAULT_EVIDENCE_APPLY_REGISTRY_OUTPUT,
+    DEFAULT_APPLY_SUMMARY_OUTPUT as DEFAULT_EVIDENCE_APPLY_SUMMARY_OUTPUT,
+    DEFAULT_EVIDENCE_APPLIED_MASTER_OUTPUT,
+    run_fundamentals_evidence_apply,
+)
 from src.fundamentals_overlay_engine import (
     DEFAULT_APPLIED_MASTER_OUTPUT,
     DEFAULT_OVERLAY_INPUT_PATH,
@@ -111,6 +117,7 @@ STAGE_ORDER = [
     "fundamentals_snapshot_review",
     "fundamentals_evidence_compose",
     "fundamentals_evidence",
+    "fundamentals_evidence_apply",
     "fundamentals_overlay",
     "scoring",
     "coverage",
@@ -177,6 +184,9 @@ DEFAULT_PATHS = {
     "fundamentals_proposed_updates_output": DEFAULT_PROPOSED_UPDATES_OUTPUT,
     "fundamentals_evidence_summary_output": DEFAULT_EVIDENCE_SUMMARY_OUTPUT,
     "fundamentals_evidence_template_output": DEFAULT_EVIDENCE_TEMPLATE_PATH,
+    "fundamentals_evidence_apply_registry_output": DEFAULT_EVIDENCE_APPLY_REGISTRY_OUTPUT,
+    "fundamentals_evidence_applied_master_output": DEFAULT_EVIDENCE_APPLIED_MASTER_OUTPUT,
+    "fundamentals_evidence_apply_summary_output": DEFAULT_EVIDENCE_APPLY_SUMMARY_OUTPUT,
     "fundamentals_overlay_input": DEFAULT_OVERLAY_INPUT_PATH,
     "fundamentals_overlay_registry_output": DEFAULT_OVERLAY_REGISTRY_OUTPUT,
     "fundamentals_applied_master_output": DEFAULT_APPLIED_MASTER_OUTPUT,
@@ -283,6 +293,7 @@ class PersonalRunOptions:
     overwrite_fundamentals_master: bool = False
     use_profiled_master: bool = False
     use_applied_master: bool = False
+    use_evidence_applied_master: bool = False
     use_composed_evidence: bool = False
     metric_definitions: str = DEFAULT_METRIC_DEFINITIONS_PATH
     scores_output: str = DEFAULT_PATHS["scores_output"]
@@ -315,6 +326,9 @@ class PersonalRunOptions:
     fundamentals_proposed_updates_output: str = DEFAULT_PATHS["fundamentals_proposed_updates_output"]
     fundamentals_evidence_summary_output: str = DEFAULT_PATHS["fundamentals_evidence_summary_output"]
     fundamentals_evidence_template_output: str = DEFAULT_PATHS["fundamentals_evidence_template_output"]
+    fundamentals_evidence_apply_registry_output: str = DEFAULT_PATHS["fundamentals_evidence_apply_registry_output"]
+    fundamentals_evidence_applied_master_output: str = DEFAULT_PATHS["fundamentals_evidence_applied_master_output"]
+    fundamentals_evidence_apply_summary_output: str = DEFAULT_PATHS["fundamentals_evidence_apply_summary_output"]
     fundamentals_evidence_report_output: str | None = None
     fundamentals_overlay_input: str = DEFAULT_PATHS["fundamentals_overlay_input"]
     fundamentals_overlay_registry_output: str = DEFAULT_PATHS["fundamentals_overlay_registry_output"]
@@ -526,6 +540,8 @@ def input_snapshot(options: PersonalRunOptions) -> dict[str, Any]:
         "use_profiled_master": options.use_profiled_master,
         "fundamentals_applied_master": options.fundamentals_applied_master_output,
         "use_applied_master": options.use_applied_master,
+        "fundamentals_evidence_applied_master": options.fundamentals_evidence_applied_master_output,
+        "use_evidence_applied_master": options.use_evidence_applied_master,
         "use_composed_evidence": options.use_composed_evidence,
         "research_priority_output": options.research_priority_output,
         "profile_review_input": options.profile_review_input,
@@ -550,6 +566,9 @@ def input_snapshot(options: PersonalRunOptions) -> dict[str, Any]:
         "fundamentals_evidence_compose_conflicts_output": options.fundamentals_evidence_compose_conflicts_output,
         "fundamentals_evidence_compose_summary_output": options.fundamentals_evidence_compose_summary_output,
         "fundamentals_proposed_updates_output": options.fundamentals_proposed_updates_output,
+        "fundamentals_evidence_apply_registry_output": options.fundamentals_evidence_apply_registry_output,
+        "fundamentals_evidence_applied_master_output": options.fundamentals_evidence_applied_master_output,
+        "fundamentals_evidence_apply_summary_output": options.fundamentals_evidence_apply_summary_output,
         "fundamentals_overlay_input": options.fundamentals_overlay_input,
         "fundamentals_overlay_review_backlog_output": options.fundamentals_overlay_review_backlog_output,
         "watchlist_input": options.watchlist_input or "",
@@ -572,9 +591,23 @@ def resolve_fundamentals_source(
     *,
     require_path_for_base: bool,
     allow_applied_master: bool = True,
+    allow_evidence_applied_master: bool = True,
 ) -> tuple[str | None, str, str | None]:
-    if options.use_profiled_master and options.use_applied_master:
-        raise ValueError("--use-profiled-master and --use-applied-master are mutually exclusive")
+    enabled_modes = [
+        flag
+        for flag, enabled in [
+            ("--use-profiled-master", options.use_profiled_master),
+            ("--use-applied-master", options.use_applied_master),
+            ("--use-evidence-applied-master", options.use_evidence_applied_master),
+        ]
+        if enabled
+    ]
+    if len(enabled_modes) > 1:
+        if len(enabled_modes) == 2:
+            mode_text = " and ".join(enabled_modes)
+        else:
+            mode_text = ", ".join(enabled_modes[:-1]) + f", and {enabled_modes[-1]}"
+        raise ValueError(f"{mode_text} are mutually exclusive")
     if options.use_profiled_master:
         profiled_path = require_existing_path(
             options.profiled_master_output,
@@ -582,6 +615,15 @@ def resolve_fundamentals_source(
             stage_name,
         )
         return profiled_path, "PROFILED", "profiled_master_output"
+    if options.use_evidence_applied_master:
+        if not allow_evidence_applied_master:
+            raise ValueError(f"--use-evidence-applied-master is not supported for stage {stage_name}")
+        evidence_applied_path = require_existing_path(
+            options.fundamentals_evidence_applied_master_output,
+            "evidence-applied personal fundamentals master (--use-evidence-applied-master)",
+            stage_name,
+        )
+        return evidence_applied_path, "EVIDENCE_APPLIED", "fundamentals_evidence_applied_master_output"
     if allow_applied_master and options.use_applied_master:
         applied_path = require_existing_path(
             options.fundamentals_applied_master_output,
@@ -974,6 +1016,39 @@ def run_fundamentals_evidence_stage(options: PersonalRunOptions) -> StageResult:
     )
 
 
+def run_fundamentals_evidence_apply_stage(options: PersonalRunOptions) -> StageResult:
+    stage = "fundamentals_evidence_apply"
+    maybe_raise_required_registry_source(options, "fundamentals_master", stage)
+    fundamentals_path = require_existing_path(options.fundamentals_master, "personal fundamentals master", stage)
+    proposed_updates_path = require_existing_path(
+        options.fundamentals_proposed_updates_output,
+        "validated proposed updates input",
+        stage,
+    )
+    outputs = run_fundamentals_evidence_apply(
+        fundamentals_master_path=fundamentals_path,
+        proposed_updates_input_path=proposed_updates_path,
+        registry_output=options.fundamentals_evidence_apply_registry_output,
+        evidence_applied_master_output=options.fundamentals_evidence_applied_master_output,
+        summary_output=options.fundamentals_evidence_apply_summary_output,
+    )
+    return stage_result(
+        stage,
+        SUCCESS,
+        ["fundamentals_master", "fundamentals_proposed_updates_output"],
+        used_inputs={
+            "fundamentals_master": fundamentals_path,
+            "fundamentals_proposed_updates_output": proposed_updates_path,
+        },
+        produced_outputs={role: str(path) for role, path in outputs.items()},
+        notes=append_registry_default_note(
+            options,
+            "Evidence-applied Personal-Master projection generated from the validated proposed-updates artifact selected as the canonical field-level Evidence apply source; raw master and raw evidence remained unchanged.",
+            "fundamentals_master",
+        ),
+    )
+
+
 def run_fundamentals_overlay_stage(options: PersonalRunOptions) -> StageResult:
     stage = "fundamentals_overlay"
     fundamentals_path, fundamentals_source_mode, fundamentals_required_input = resolve_fundamentals_source(
@@ -981,6 +1056,7 @@ def run_fundamentals_overlay_stage(options: PersonalRunOptions) -> StageResult:
         stage,
         require_path_for_base=True,
         allow_applied_master=False,
+        allow_evidence_applied_master=False,
     )
     assert fundamentals_path is not None
     maybe_raise_required_registry_source(options, "fundamentals_overlay_input", stage)
@@ -1396,10 +1472,11 @@ STAGE_RUNNERS: dict[str, Callable[[PersonalRunOptions], StageResult]] = {
     "fundamentals_snapshot_ingest": run_fundamentals_snapshot_ingest_stage,
     "fundamentals_snapshot_review": run_fundamentals_snapshot_review_stage,
     "fundamentals_evidence_compose": run_fundamentals_evidence_compose_stage,
+    "fundamentals_evidence": run_fundamentals_evidence_stage,
+    "fundamentals_evidence_apply": run_fundamentals_evidence_apply_stage,
+    "fundamentals_overlay": run_fundamentals_overlay_stage,
     "scoring": run_scoring_stage,
     "coverage": run_coverage_stage,
-    "fundamentals_evidence": run_fundamentals_evidence_stage,
-    "fundamentals_overlay": run_fundamentals_overlay_stage,
     "watchlist": run_watchlist_stage,
     "monthly": run_monthly_stage,
     "portfolio_review": run_portfolio_review_stage,
@@ -1739,6 +1816,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--overwrite-fundamentals-master", action="store_true", help="Allow fundamentals_seed to overwrite an existing master.")
     parser.add_argument("--use-profiled-master", action="store_true", help="Use the explicit profiled Personal-Fundamentals master for eligible fundamentals-dependent stages.")
     parser.add_argument("--use-applied-master", action="store_true", help="Use the explicit applied Personal-Fundamentals master for downstream fundamentals-dependent stages.")
+    parser.add_argument("--use-evidence-applied-master", action="store_true", help="Use the explicit evidence-applied Personal-Fundamentals master for downstream fundamentals-dependent stages.")
     parser.add_argument("--use-composed-evidence", action="store_true", help="Use the explicit composed personal evidence artifact for fundamentals_evidence.")
     parser.add_argument("--metric-definitions", default=DEFAULT_METRIC_DEFINITIONS_PATH, help="Fundamentals KPI definitions config.")
     parser.add_argument("--scores-output", default=DEFAULT_PATHS["scores_output"], help="Personal company scores output.")
@@ -1771,6 +1849,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--fundamentals-proposed-updates-output", default=DEFAULT_PATHS["fundamentals_proposed_updates_output"], help="Manual Personal-Master proposed updates output from evidence.")
     parser.add_argument("--fundamentals-evidence-summary-output", default=DEFAULT_PATHS["fundamentals_evidence_summary_output"], help="Personal fundamentals evidence summary output.")
     parser.add_argument("--fundamentals-evidence-template-output", default=DEFAULT_PATHS["fundamentals_evidence_template_output"], help="Personal fundamentals evidence template output.")
+    parser.add_argument("--fundamentals-evidence-apply-registry-output", default=DEFAULT_PATHS["fundamentals_evidence_apply_registry_output"], help="Personal fundamentals evidence-apply registry output.")
+    parser.add_argument("--fundamentals-evidence-applied-master-output", default=DEFAULT_PATHS["fundamentals_evidence_applied_master_output"], help="Evidence-applied personal fundamentals master output.")
+    parser.add_argument("--fundamentals-evidence-apply-summary-output", default=DEFAULT_PATHS["fundamentals_evidence_apply_summary_output"], help="Personal fundamentals evidence-apply summary output.")
     parser.add_argument("--fundamentals-evidence-report-output", help="Personal fundamentals evidence markdown report output.")
     parser.add_argument("--fundamentals-overlay-input", default=DEFAULT_PATHS["fundamentals_overlay_input"], help="Manual personal fundamentals overlay input.")
     parser.add_argument("--fundamentals-overlay-registry-output", default=DEFAULT_PATHS["fundamentals_overlay_registry_output"], help="Personal fundamentals overlay registry output.")
@@ -1844,6 +1925,7 @@ def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
         overwrite_fundamentals_master=args.overwrite_fundamentals_master,
         use_profiled_master=args.use_profiled_master,
         use_applied_master=args.use_applied_master,
+        use_evidence_applied_master=args.use_evidence_applied_master,
         use_composed_evidence=args.use_composed_evidence,
         metric_definitions=args.metric_definitions,
         scores_output=args.scores_output,
@@ -1876,6 +1958,9 @@ def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
         fundamentals_proposed_updates_output=args.fundamentals_proposed_updates_output,
         fundamentals_evidence_summary_output=args.fundamentals_evidence_summary_output,
         fundamentals_evidence_template_output=args.fundamentals_evidence_template_output,
+        fundamentals_evidence_apply_registry_output=args.fundamentals_evidence_apply_registry_output,
+        fundamentals_evidence_applied_master_output=args.fundamentals_evidence_applied_master_output,
+        fundamentals_evidence_apply_summary_output=args.fundamentals_evidence_apply_summary_output,
         fundamentals_evidence_report_output=args.fundamentals_evidence_report_output,
         fundamentals_overlay_input=args.fundamentals_overlay_input,
         fundamentals_overlay_registry_output=args.fundamentals_overlay_registry_output,

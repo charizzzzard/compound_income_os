@@ -15,7 +15,8 @@ from src.common import read_csv_rows
 from src.cost_tax_archive_engine import DEFAULT_CONFIG_PATH as DEFAULT_COST_TAX_CONFIG_PATH
 from src.data_source_registry import RESOLVED_FIELDS, STATUS_FIELDS
 from src.dashboard_engine import DEFAULT_CONFIG_PATH as DEFAULT_DASHBOARD_CONFIG_PATH
-from src.fundamentals_evidence_engine import EVIDENCE_INPUT_FIELDS
+from src.fundamentals_evidence_apply import APPLY_SUMMARY_FIELDS
+from src.fundamentals_evidence_engine import EVIDENCE_INPUT_FIELDS, PROPOSED_UPDATES_FIELDS
 from src.fundamentals_master import DEFAULT_METRIC_DEFINITIONS_PATH, PERSONAL_MASTER_FIELDS
 from src.fundamentals_overlay_engine import DEFAULT_SCHEMA_PATH as DEFAULT_OVERLAY_SCHEMA_PATH, OVERLAY_INPUT_FIELDS
 from src.fundamentals_profile_engine import PROFILE_REVIEW_INPUT_FIELDS
@@ -127,6 +128,9 @@ class PersonalRunEngineTests(unittest.TestCase):
 
     def _write_evidence_rows(self, path: Path, rows: list[dict[str, object]]) -> None:
         self._write_csv(path, EVIDENCE_INPUT_FIELDS, rows)
+
+    def _write_proposed_updates_rows(self, path: Path, rows: list[dict[str, object]]) -> None:
+        self._write_csv(path, PROPOSED_UPDATES_FIELDS, rows)
 
     def _write_empty_overlay(self, path: Path) -> None:
         self._write_csv(path, OVERLAY_INPUT_FIELDS, [])
@@ -322,6 +326,47 @@ class PersonalRunEngineTests(unittest.TestCase):
         )
         return row
 
+    def _proposed_update_row(
+        self,
+        *,
+        ticker: str = "MSFT",
+        isin: str = "",
+        company_name: str = "Microsoft",
+        kpi_name: str = "roic",
+        reported_value: str = "25.0",
+        source_type: str = "ANNUAL_REPORT",
+        source_name: str = "annual_report_2025",
+        source_reference: str = "FY2025 annual report",
+        source_as_of_date: str = "2026-03-31",
+        fiscal_year: str = "2025",
+        verification_status: str = "VERIFIED",
+        data_quality_flag: str = "OK",
+        notes: str = "unit proposed update",
+    ) -> dict[str, object]:
+        row = {field: "" for field in PROPOSED_UPDATES_FIELDS}
+        row.update(
+            {
+                "ticker": ticker,
+                "isin": isin,
+                "company_name": company_name,
+                "company_type_profile": "OTHER",
+                "kpi_name": kpi_name,
+                "reported_value": reported_value,
+                "reported_unit": "percent",
+                "currency": "USD",
+                "source_type": source_type,
+                "source_name": source_name,
+                "source_reference": source_reference,
+                "source_as_of_date": source_as_of_date,
+                "fiscal_year": fiscal_year,
+                "verification_status": verification_status,
+                "data_quality_flag": data_quality_flag,
+                "proposal_reason": "validated evidence for apply test",
+                "notes": notes,
+            }
+        )
+        return row
+
     def _archive_row(self, symbol: str, point_date: str, value: str, name: str | None = None) -> dict[str, str]:
         row = {field: "" for field in BENCHMARK_ARCHIVE_FIELDS}
         row.update(
@@ -416,6 +461,9 @@ class PersonalRunEngineTests(unittest.TestCase):
             fundamentals_proposed_updates_output=str(self._path(f"_tmp_{prefix}_proposed_updates.csv")),
             fundamentals_evidence_summary_output=str(self._path(f"_tmp_{prefix}_evidence_summary.csv")),
             fundamentals_evidence_template_output=str(self._path(f"_tmp_{prefix}_evidence_template.csv")),
+            fundamentals_evidence_apply_registry_output=str(self._path(f"_tmp_{prefix}_evidence_apply_registry.csv")),
+            fundamentals_evidence_applied_master_output=str(self._path(f"_tmp_{prefix}_evidence_applied_master.csv")),
+            fundamentals_evidence_apply_summary_output=str(self._path(f"_tmp_{prefix}_evidence_apply_summary.csv")),
             fundamentals_evidence_report_output=str(self._path(f"_tmp_{prefix}_evidence_report.md")),
             fundamentals_overlay_input=str(self._path(f"_tmp_{prefix}_overlay_input.csv")),
             fundamentals_overlay_registry_output=str(self._path(f"_tmp_{prefix}_overlay_registry.csv")),
@@ -534,6 +582,58 @@ class PersonalRunEngineTests(unittest.TestCase):
         evidence_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "fundamentals_evidence")
         self.assertEqual(evidence_inputs["metric_definitions"]["input_path"], DEFAULT_METRIC_DEFINITIONS_PATH)
         self.assertEqual(evidence_inputs["metric_definitions"]["input_exists"], "True")
+
+    def test_fundamentals_evidence_apply_stage_writes_registry_summary_and_evidence_applied_master(self) -> None:
+        options = self._core_options(
+            "evidence_apply_stage",
+            ["import", "fundamentals_seed", "fundamentals_evidence", "fundamentals_evidence_apply"],
+        )
+        self._write_evidence_rows(Path(options.fundamentals_evidence_input), [self._evidence_row(kpi_name="roic", reported_value="25.0")])
+
+        manifest = run_personal_run_engine(options)
+
+        registry_rows = read_csv_rows(options.fundamentals_evidence_apply_registry_output)
+        summary_rows = read_csv_rows(options.fundamentals_evidence_apply_summary_output)
+        applied_master_rows = read_csv_rows(options.fundamentals_evidence_applied_master_output)
+        apply_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "fundamentals_evidence_apply")
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(registry_rows[0]["apply_status"], "APPLIED")
+        self.assertEqual(registry_rows[0]["target_field"], "roic")
+        self.assertEqual(set(summary_rows[0]), set(APPLY_SUMMARY_FIELDS))
+        self.assertEqual(summary_rows[0]["applied_rows_total"], "1")
+        self.assertEqual(summary_rows[0]["applied_fields_total"], "1")
+        self.assertEqual(applied_master_rows[0]["roic"], "25.0")
+        self.assertEqual(apply_inputs["fundamentals_master"]["input_path"], options.fundamentals_master)
+        self.assertEqual(
+            apply_inputs["fundamentals_proposed_updates_output"]["input_path"],
+            options.fundamentals_proposed_updates_output,
+        )
+
+    def test_use_evidence_applied_master_switch_routes_scoring_and_coverage_explicitly(self) -> None:
+        options = self._core_options(
+            "evidence_applied_switch",
+            ["import", "fundamentals_seed", "fundamentals_evidence", "fundamentals_evidence_apply", "scoring", "coverage"],
+        )
+        options.use_evidence_applied_master = True
+        self._write_evidence_rows(Path(options.fundamentals_evidence_input), [self._evidence_row(kpi_name="roic", reported_value="25.0")])
+
+        manifest = run_personal_run_engine(options)
+
+        applied_master_rows = read_csv_rows(options.fundamentals_evidence_applied_master_output)
+        used_input_rows = read_csv_rows(options.used_inputs_output)
+        scoring_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "scoring")
+        coverage_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "coverage")
+        scoring_inputs = self._used_inputs_for_stage(used_input_rows, "scoring")
+        coverage_inputs = self._used_inputs_for_stage(used_input_rows, "coverage")
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertTrue(manifest["inputs"]["use_evidence_applied_master"])
+        self.assertEqual(applied_master_rows[0]["roic"], "25.0")
+        self.assertEqual(scoring_result["used_inputs"]["fundamentals_source_mode"], "EVIDENCE_APPLIED")
+        self.assertEqual(coverage_result["used_inputs"]["fundamentals_source_mode"], "EVIDENCE_APPLIED")
+        self.assertEqual(scoring_result["used_inputs"]["fundamentals_master"], options.fundamentals_evidence_applied_master_output)
+        self.assertEqual(coverage_result["used_inputs"]["fundamentals_master"], options.fundamentals_evidence_applied_master_output)
+        self.assertIn("fundamentals_source_mode=EVIDENCE_APPLIED", scoring_inputs["fundamentals_master"]["notes"])
+        self.assertIn("fundamentals_source_mode=EVIDENCE_APPLIED", coverage_inputs["fundamentals_master"]["notes"])
 
     def test_fundamentals_overlay_stage_updates_manifest_and_artifacts(self) -> None:
         options = self._core_options("overlay_stage", ["import", "fundamentals_seed", "fundamentals_overlay"])
@@ -946,6 +1046,28 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertEqual(statuses["scoring"], "FAILED")
         self.assertIn("--use-profiled-master and --use-applied-master are mutually exclusive", manifest["warnings"][0])
 
+    def test_use_evidence_applied_master_is_mutually_exclusive_with_profiled_and_applied(self) -> None:
+        conflict_specs = [
+            ("evidence_applied_profiled_conflict", "--use-profiled-master and --use-evidence-applied-master are mutually exclusive", {"use_profiled_master": True}),
+            ("evidence_applied_applied_conflict", "--use-applied-master and --use-evidence-applied-master are mutually exclusive", {"use_applied_master": True}),
+        ]
+
+        for prefix, message, updates in conflict_specs:
+            options = self._core_options(prefix, ["import", "fundamentals_seed", "scoring"])
+            options.use_evidence_applied_master = True
+            for field_name, value in updates.items():
+                setattr(options, field_name, value)
+
+            with self.subTest(prefix=prefix):
+                with self.assertRaisesRegex(RuntimeError, message):
+                    run_personal_run_engine(options)
+
+                manifest = json.loads(Path(options.manifest_output).read_text(encoding="utf-8"))
+                statuses = {row["stage_name"]: row["status"] for row in manifest["stage_results"]}
+                self.assertEqual(manifest["run_status"], "FAILED")
+                self.assertEqual(statuses["scoring"], "FAILED")
+                self.assertIn(message, manifest["warnings"][0])
+
     def test_use_profiled_master_without_projection_fails_fast(self) -> None:
         options = self._core_options("profiled_missing", ["import", "fundamentals_seed", "scoring"])
         options.use_profiled_master = True
@@ -1005,6 +1127,19 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertEqual(manifest["run_status"], "FAILED")
         self.assertEqual(statuses["scoring"], "FAILED")
         self.assertIn("applied personal fundamentals master", manifest["warnings"][0])
+
+    def test_use_evidence_applied_master_without_projection_fails_fast(self) -> None:
+        options = self._core_options("evidence_applied_missing", ["import", "fundamentals_seed", "scoring"])
+        options.use_evidence_applied_master = True
+
+        with self.assertRaisesRegex(RuntimeError, "evidence-applied personal fundamentals master"):
+            run_personal_run_engine(options)
+
+        manifest = json.loads(Path(options.manifest_output).read_text(encoding="utf-8"))
+        statuses = {row["stage_name"]: row["status"] for row in manifest["stage_results"]}
+        self.assertEqual(manifest["run_status"], "FAILED")
+        self.assertEqual(statuses["scoring"], "FAILED")
+        self.assertIn("evidence-applied personal fundamentals master", manifest["warnings"][0])
 
     def test_personal_report_defaults_are_dated_not_sample_paths(self) -> None:
         options = PersonalRunOptions(stages=["import"])
@@ -1578,6 +1713,59 @@ class PersonalRunEngineTests(unittest.TestCase):
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("--use-profiled-master and --use-applied-master are mutually exclusive", result.stderr)
+        manifest = json.loads(Path(options.manifest_output).read_text(encoding="utf-8"))
+        self.assertEqual(manifest["run_status"], "FAILED")
+
+    def test_cli_composed_evidence_and_explicit_different_evidence_input_fail_fast(self) -> None:
+        options = self._core_options("cli_composed_evidence_conflict", ["import", "fundamentals_seed", "fundamentals_evidence"])
+        explicit_evidence_input = self._path("_tmp_cli_composed_evidence_conflict_explicit_evidence.csv")
+        self._write_empty_evidence(explicit_evidence_input)
+        self._write_empty_evidence(Path(options.fundamentals_evidence_composed_output))
+        command = [
+            "python",
+            "-m",
+            "src.personal_run_engine",
+        ]
+        for stage in options.stages:
+            command.extend(["--stage", stage])
+        command.extend(
+            [
+                "--positions-raw-input",
+                str(options.positions_raw_input),
+                "--positions-output",
+                options.positions_output,
+                "--fundamentals-master",
+                options.fundamentals_master,
+                "--fundamentals-evidence-input",
+                str(explicit_evidence_input),
+                "--fundamentals-evidence-composed-output",
+                options.fundamentals_evidence_composed_output,
+                "--fundamentals-evidence-registry-output",
+                options.fundamentals_evidence_registry_output,
+                "--fundamentals-research-backlog-output",
+                options.fundamentals_research_backlog_output,
+                "--fundamentals-proposed-updates-output",
+                options.fundamentals_proposed_updates_output,
+                "--fundamentals-evidence-summary-output",
+                options.fundamentals_evidence_summary_output,
+                "--fundamentals-evidence-template-output",
+                options.fundamentals_evidence_template_output,
+                "--manifest-output",
+                options.manifest_output,
+                "--artifacts-output",
+                options.artifacts_output,
+                "--used-inputs-output",
+                options.used_inputs_output,
+                "--report-output",
+                str(options.report_output),
+                "--use-composed-evidence",
+            ]
+        )
+
+        result = subprocess.run(command, cwd=Path.cwd(), capture_output=True, text=True)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--use-composed-evidence and an explicit --fundamentals-evidence-input are mutually exclusive", result.stderr)
         manifest = json.loads(Path(options.manifest_output).read_text(encoding="utf-8"))
         self.assertEqual(manifest["run_status"], "FAILED")
 
