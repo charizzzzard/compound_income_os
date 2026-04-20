@@ -188,7 +188,10 @@ Leitplanken:
 
 `src.external_sec_companyfacts_fetch` ist ein expliziter Zero-Cost-Adapter fuer US-`STOCK`-Fundamentals aus SEC CompanyFacts. Der Fetch ist read-only, nutzt eine lokal gepflegte Identity-Map fuer CIKs und schreibt nur lokale Snapshot-/Transparenz-Artefakte fuer den bestehenden Snapshot-/Review-/Evidence-Pfad. Er schreibt weder in `data/raw/personal_fundamentals_master.csv` noch in `data/raw/personal_fundamentals_evidence.csv`.
 
+Optional kann `src.external_sec_identity_resolve` vorgelagert offizielle SEC-Ticker-/Issuer-Daten laden und daraus lokale Candidate-/Failure-/Summary-Artefakte erzeugen. Diese Candidates sind nur Staging fuer die manuelle CIK-Pflege; `data/raw/private/fundamentals/personal_sec_identity_map.csv` wird nie automatisch geschrieben.
+
 ```powershell
+python -m src.external_sec_identity_resolve --master-input data/raw/personal_fundamentals_master.csv --candidates-output data/processed/external_sec_identity_candidates.csv --failures-output data/processed/external_sec_identity_failures.csv --summary-output data/processed/external_sec_identity_summary.csv --as-of-date YYYY-MM-DD --allow-network --sec-user-agent "Your Name your@email.com"
 python -m src.external_sec_companyfacts_fetch --master-input data/raw/personal_fundamentals_master.csv --identity-map-input data/raw/private/fundamentals/personal_sec_identity_map.csv --output data/raw/private/fundamentals/personal_fundamentals_snapshot.csv --registry-output data/processed/external_sec_fetch_registry.csv --failures-output data/processed/external_sec_fetch_failures.csv --summary-output data/processed/external_sec_fetch_summary.csv --as-of-date YYYY-MM-DD --allow-network --sec-user-agent "Your Name your@email.com"
 ```
 
@@ -196,6 +199,9 @@ Template- und Output-Vertrag:
 
 - `data/raw/personal_sec_identity_map_template.csv`: lokale manuelle Identity-Map-Struktur fuer `ticker`, `isin`, `cik`, SEC-Entity, Asset-Type, Country und `enabled`
 - `data/raw/private/fundamentals/personal_sec_identity_map.csv`: private Live-Identity-Map; CIKs werden nicht automatisch gesucht oder fuzzy gematcht
+- `data/processed/external_sec_identity_candidates.csv`: review-/copy-freundliche offizielle SEC-Candidates mit `enabled=false`
+- `data/processed/external_sec_identity_failures.csv`: no-match, ambiguous oder unsupported Identity-Faelle
+- `data/processed/external_sec_identity_summary.csv`: reine Candidate-Staging-Zusammenfassung
 - `data/raw/private/fundamentals/personal_fundamentals_snapshot.csv`: Snapshot im bestehenden `src.fundamentals_snapshot_ingestion`-Schema
 - `data/processed/external_sec_fetch_registry.csv`: Fetch-/Skip-Status je Identity-Map-Zeile
 - `data/processed/external_sec_fetch_failures.csv`: fehlende Identitaeten, nicht unterstuetzte Scope-Faelle oder Fetch-/Parse-Fehler
@@ -208,6 +214,24 @@ Leitplanken:
 - Matchen erfolgt nur ueber exakte Personal-Master-Identitaet per `ticker`/`isin`; `company_name` wird nicht fuzzy verwendet und SEC-Symbole ersetzen nie still den Master-Key.
 - Nur konservativ aus annualen SEC-Facts ableitbare Felder werden geschrieben: `revenue_cagr_5y`, `eps_cagr_5y`, `gross_margin`, `operating_margin`, `interest_coverage` und `share_count_cagr_5y`, jeweils nur bei ausreichender Faktentiefe. Nicht robuste KPI-Felder bleiben leer.
 - Der Fetch ist ein vorgelagerter Snapshot-Erzeuger. Review, Evidence, Compose und Evidence-Apply bleiben weiterhin separate explizite Schritte; es gibt keine direkte Live-Datenleitung in Scoring, Watchlist, Monthly, Dashboard oder Reports.
+
+## SEC Refresh Pipeline / Auto-Safe Review
+
+`src.personal_sec_refresh_pipeline` orchestriert den expliziten SEC-Fetch und den bestehenden lokalen Pfad `Snapshot -> Review -> Compose -> Evidence -> Apply`. Die Pipeline bleibt separat von `src.personal_run_engine` und `src.data_source_registry`; Live-SEC-Logik wird nicht in Downstream-Engines eingebaut.
+
+```powershell
+python -m src.personal_sec_refresh_pipeline --master-input data/raw/personal_fundamentals_master.csv --identity-map-input data/raw/private/fundamentals/personal_sec_identity_map.csv --manual-review-input data/raw/private/fundamentals/personal_fundamentals_snapshot_review.csv --review-policy auto_safe --as-of-date YYYY-MM-DD --allow-network --sec-user-agent "Your Name your@email.com"
+```
+
+Review-Policies:
+
+- `manual_only`: nutzt nur den expliziten manuellen Review-Input und erzeugt keine Auto-Approvals.
+- `reviewed_input_only`: nutzt nur einen vorhandenen Review-Input als resolved Review-Input.
+- `auto_safe`: erzeugt `data/processed/personal_fundamentals_snapshot_review_auto.csv`, merged deterministisch mit dem manuellen Review-Input zu `data/processed/personal_fundamentals_snapshot_review_resolved.csv` und laesst manuelle Entscheidungen immer gewinnen.
+
+`auto_safe` approved nur SEC-CompanyFacts-Staging-Zeilen mit exakter privater CIK-Identitaet, nicht leerem `reported_value` und KPI auf der engen Allowlist `revenue_cagr_5y`, `eps_cagr_5y`, `gross_margin`, `operating_margin`, `interest_coverage`, `share_count_cagr_5y`. Alles andere bleibt `PENDING` und geht in den bestehenden Snapshot-Review-Backlog. Die Raw-Review-Datei unter `data/raw/private/fundamentals/` wird nie ueberschrieben.
+
+Markdown-Dateien sind per `.gitattributes` auf LF normalisiert; der README-Test blockt CRLF-Regressionen.
 
 ## Lokaler Fundamentals Snapshot Ingest
 

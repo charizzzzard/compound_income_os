@@ -21,6 +21,11 @@ class ReadmeAndReportTests(unittest.TestCase):
         self.assertIn("data/processed/personal_positions_snapshot.csv", readme)
         self.assertIn("Private Rohdaten sollten nicht committed werden.", readme)
 
+    def test_readme_is_lf_normalized(self) -> None:
+        readme_bytes = Path("README.md").read_bytes()
+        self.assertNotIn(b"\r\n", readme_bytes)
+        self.assertIn("*.md text eol=lf", Path(".gitattributes").read_text(encoding="utf-8"))
+
     def test_report_builders_generate_german_markdown(self) -> None:
         portfolio_output = Path("tests") / "_tmp_portfolio_snapshot.md"
         decision_output = Path("tests") / "_tmp_decision_report.md"
