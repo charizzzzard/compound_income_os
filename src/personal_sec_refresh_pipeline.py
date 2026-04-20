@@ -442,6 +442,7 @@ def run_personal_sec_refresh_pipeline(
         proposed_updates_output=evidence_proposed_updates_output,
         summary_output=evidence_summary_output,
         report_output=None,
+        template_output=None,
     )
     outputs.update(evidence_outputs)
     append_summary_rows(step_rows, "fundamentals_evidence", evidence_outputs, "Evidence input mode is COMPOSED.")

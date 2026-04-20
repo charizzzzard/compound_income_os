@@ -26,6 +26,22 @@ class ReadmeAndReportTests(unittest.TestCase):
         self.assertNotIn(b"\r\n", readme_bytes)
         self.assertIn("*.md text eol=lf", Path(".gitattributes").read_text(encoding="utf-8"))
 
+    def test_sec_related_csv_templates_are_lf_normalized_without_trailing_whitespace(self) -> None:
+        gitattributes = Path(".gitattributes").read_text(encoding="utf-8")
+        template_paths = [
+            Path("data/raw/personal_fundamentals_evidence_template.csv"),
+            Path("data/raw/personal_fundamentals_snapshot_review_template.csv"),
+            Path("data/raw/personal_sec_identity_map_template.csv"),
+        ]
+        for path in template_paths:
+            content = path.read_bytes()
+            with self.subTest(path=str(path)):
+                self.assertNotIn(b"\r\n", content)
+                self.assertIn(b"\n", content)
+                for line in content.splitlines():
+                    self.assertEqual(line.rstrip(b" \t"), line)
+                self.assertIn(f"{path.as_posix()} text eol=lf", gitattributes)
+
     def test_report_builders_generate_german_markdown(self) -> None:
         portfolio_output = Path("tests") / "_tmp_portfolio_snapshot.md"
         decision_output = Path("tests") / "_tmp_decision_report.md"

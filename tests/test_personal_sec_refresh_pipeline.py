@@ -245,6 +245,14 @@ class PersonalSecRefreshPipelineTests(unittest.TestCase):
         self.assertNotEqual(applied_master["revenue_cagr_5y"], "")
         self.assertNotEqual(applied_master["gross_margin"], "")
 
+    def test_refresh_pipeline_does_not_rewrite_raw_evidence_template(self) -> None:
+        template_path = Path("data/raw/personal_fundamentals_evidence_template.csv")
+        before_bytes = template_path.read_bytes()
+
+        self._run_pipeline(prefix="template_guard")
+
+        self.assertEqual(template_path.read_bytes(), before_bytes)
+
     def test_refresh_pipeline_requires_network_and_user_agent_before_fetch(self) -> None:
         with self.assertRaisesRegex(ValueError, "--allow-network"):
             run_personal_sec_refresh_pipeline(as_of_date="2026-04-20")

@@ -1,1 +1,4 @@
 *.md text eol=lf
+data/raw/personal_fundamentals_evidence_template.csv text eol=lf
+data/raw/personal_fundamentals_snapshot_review_template.csv text eol=lf
+data/raw/personal_sec_identity_map_template.csv text eol=lf
