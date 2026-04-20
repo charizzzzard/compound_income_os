@@ -198,6 +198,12 @@ def match_identity_to_master(
     ticker_match = master_index["ticker"].get(ticker) if ticker else None
     isin_match = master_index["isin"].get(isin) if isin else None
     if ticker and isin:
+        # Allow the reviewed identity-map ticker to bridge a dirty master row whose
+        # ticker field still mirrors the ISIN placeholder from the scope-review prep step.
+        if ticker_match is None and isin_match is not None:
+            master_ticker = canonicalize_ticker(isin_match.get("ticker", ""))
+            if not master_ticker or master_ticker == isin:
+                return isin_match, ""
         if ticker_match is None or isin_match is None:
             return None, f"ticker/isin did not both match the Personal-Master: ticker={ticker}, isin={isin}"
         if id(ticker_match) != id(isin_match):

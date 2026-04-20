@@ -46,10 +46,10 @@ def master_row() -> dict[str, str]:
     return row
 
 
-def identity_row() -> dict[str, str]:
+def identity_row(*, ticker: str = "MSFT", isin: str = "US5949181045") -> dict[str, str]:
     return {
-        "ticker": "MSFT",
-        "isin": "US5949181045",
+        "ticker": ticker,
+        "isin": isin,
         "company_name": "Microsoft Corp",
         "cik": "789019",
         "sec_entity_name": "MICROSOFT CORP",
@@ -96,12 +96,18 @@ def companyfacts_fixture() -> dict[str, Any]:
     return {"cik": 789019, "entityName": "MICROSOFT CORP", "facts": {"us-gaap": facts}}
 
 
-def staging_row(*, kpi_name: str, reported_value: str = "10") -> dict[str, str]:
+def staging_row(
+    *,
+    kpi_name: str,
+    reported_value: str = "10",
+    ticker: str = "MSFT",
+    isin: str = "US5949181045",
+) -> dict[str, str]:
     row = {field: "" for field in EVIDENCE_INPUT_FIELDS}
     row.update(
         {
-            "ticker": "MSFT",
-            "isin": "US5949181045",
+            "ticker": ticker,
+            "isin": isin,
             "company_name": "Microsoft Corp",
             "kpi_name": kpi_name,
             "source_type": "SNAPSHOT_IMPORT",
@@ -175,7 +181,13 @@ class PersonalSecRefreshPipelineTests(unittest.TestCase):
         ]
         return {name: self._path(f"_tmp_sec_refresh_{prefix}_{name}.csv") for name in names}
 
-    def _run_pipeline(self, *, prefix: str, run_downstream: bool = False) -> dict[str, Path]:
+    def _run_pipeline(
+        self,
+        *,
+        prefix: str,
+        run_downstream: bool = False,
+        watchlist_input: str | None = None,
+    ) -> dict[str, Path]:
         paths = self._pipeline_paths(prefix)
         self._write_csv(paths["master"], PERSONAL_MASTER_FIELDS, [master_row()])
         self._write_csv(paths["identity"], IDENTITY_MAP_FIELDS, [identity_row()])
@@ -217,6 +229,7 @@ class PersonalSecRefreshPipelineTests(unittest.TestCase):
             companyfacts_fetcher=lambda _cik, _ua: companyfacts_fixture(),
             run_downstream=run_downstream,
             downstream_stages=["scoring"] if run_downstream else None,
+            watchlist_input=watchlist_input,
         )
         return paths
 
@@ -318,6 +331,31 @@ class PersonalSecRefreshPipelineTests(unittest.TestCase):
         self.assertEqual(read_csv_rows(resolved_path)[0]["review_decision"], "REJECT")
         self.assertEqual(read_csv_rows(resolved_path)[0]["review_author"], "human")
 
+    def test_auto_safe_can_bridge_dirty_staging_ticker_that_still_equals_isin(self) -> None:
+        staging_path = self._path("_tmp_sec_refresh_dirty_ticker_staging.csv")
+        manual_path = self._path("_tmp_sec_refresh_dirty_ticker_manual.csv")
+        auto_path = self._path("_tmp_sec_refresh_dirty_ticker_auto.csv")
+        resolved_path = self._path("_tmp_sec_refresh_dirty_ticker_resolved.csv")
+        self._write_csv(
+            staging_path,
+            EVIDENCE_INPUT_FIELDS,
+            [staging_row(kpi_name="gross_margin", ticker="US5949181045", isin="US5949181045")],
+        )
+        self._write_csv(manual_path, SNAPSHOT_REVIEW_INPUT_FIELDS, [])
+
+        prepare_resolved_review_input(
+            policy="auto_safe",
+            staging_input=str(staging_path),
+            manual_review_input=str(manual_path),
+            enabled_identity_rows=[identity_row(ticker="MSFT", isin="US5949181045")],
+            auto_review_output=str(auto_path),
+            resolved_review_output=str(resolved_path),
+            review_as_of_date="2026-04-20",
+        )
+
+        self.assertEqual(read_csv_rows(auto_path)[0]["review_decision"], "APPROVE")
+        self.assertEqual(read_csv_rows(resolved_path)[0]["review_decision"], "APPROVE")
+
     def test_private_identity_map_is_required_and_not_replaced_by_candidates(self) -> None:
         master_path = self._path("_tmp_sec_refresh_missing_identity_master.csv")
         missing_identity_path = self._path("_tmp_sec_refresh_missing_identity_private.csv")
@@ -340,14 +378,20 @@ class PersonalSecRefreshPipelineTests(unittest.TestCase):
             captured["stages"] = options.stages
             captured["use_evidence_applied_master"] = options.use_evidence_applied_master
             captured["evidence_applied_master"] = options.fundamentals_evidence_applied_master_output
+            captured["watchlist_input"] = options.watchlist_input
             return {"run_status": "SUCCESS"}
 
         with patch("src.personal_sec_refresh_pipeline.run_personal_run_engine", side_effect=fake_personal_run):
-            paths = self._run_pipeline(prefix="downstream", run_downstream=True)
+            paths = self._run_pipeline(
+                prefix="downstream",
+                run_downstream=True,
+                watchlist_input="data/raw/sample_watchlist.csv",
+            )
 
         self.assertEqual(captured["stages"], ["scoring"])
         self.assertTrue(captured["use_evidence_applied_master"])
         self.assertEqual(captured["evidence_applied_master"], str(paths["evidence_applied_master"]))
+        self.assertEqual(captured["watchlist_input"], "data/raw/sample_watchlist.csv")
         self.assertTrue(paths["apply_summary"].exists())
 
 

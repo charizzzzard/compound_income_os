@@ -144,7 +144,12 @@ def supported_enabled_identity_index(identity_rows: list[dict[str, str]]) -> dic
             continue
         if safe_upper(row.get("country", "")) not in SUPPORTED_COUNTRIES:
             continue
-        index[enabled_identity_key(row)] = row
+        ticker, isin = enabled_identity_key(row)
+        index[(ticker, isin)] = row
+        if isin:
+            # Bridge staging rows that still carry the dirty Personal-Master
+            # ticker placeholder equal to the ISIN from the scope-prepare step.
+            index.setdefault((isin, isin), row)
     return index
 
 
@@ -343,6 +348,7 @@ def run_personal_sec_refresh_pipeline(
     refresh_summary_output: str = DEFAULT_REFRESH_SUMMARY_OUTPUT,
     run_downstream: bool = False,
     downstream_stages: list[str] | None = None,
+    watchlist_input: str | None = None,
     companyfacts_fetcher: Callable[[str, str], dict[str, object]] | None = None,
     identity_fetcher: Callable[[str], object] | None = None,
 ) -> dict[str, Path]:
@@ -465,6 +471,7 @@ def run_personal_sec_refresh_pipeline(
                 fundamentals_master=master_input,
                 fundamentals_evidence_applied_master_output=evidence_applied_master_output,
                 use_evidence_applied_master=True,
+                watchlist_input=watchlist_input,
             ).normalized()
         )
         step_rows.append(
@@ -524,6 +531,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--refresh-summary-output", default=DEFAULT_REFRESH_SUMMARY_OUTPUT, help="SEC refresh summary output.")
     parser.add_argument("--run-downstream", action="store_true", help="Run downstream personal stages with --use-evidence-applied-master after apply.")
     parser.add_argument("--downstream-stage", action="append", default=[], help="Downstream personal stage to run; repeatable.")
+    parser.add_argument("--watchlist-input", help="Watchlist CSV input for downstream watchlist/monthly stages.")
     return parser.parse_args()
 
 
@@ -566,6 +574,7 @@ def main() -> None:
         refresh_summary_output=args.refresh_summary_output,
         run_downstream=args.run_downstream,
         downstream_stages=args.downstream_stage,
+        watchlist_input=args.watchlist_input,
     )
 
 

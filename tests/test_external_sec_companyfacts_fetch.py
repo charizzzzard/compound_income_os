@@ -246,6 +246,26 @@ class ExternalSecCompanyfactsFetchTests(unittest.TestCase):
         self.assertEqual(read_csv_rows(failures_path)[0]["failure_reason"], "SKIPPED_IDENTITY_MISSING")
         self.assertEqual(read_csv_rows(summary_path)[0]["failure_rows_total"], "1")
 
+    def test_identity_map_can_bridge_dirty_master_ticker_that_still_equals_isin(self) -> None:
+        calls: list[str] = []
+
+        def fetcher(cik: str, _user_agent: str) -> dict[str, Any]:
+            calls.append(cik)
+            return companyfacts_fixture()
+
+        _master, _identity, snapshot_path, registry_path, failures_path, summary_path = self._run_fetch(
+            master_rows=[master_row(ticker="US5949181045")],
+            identity_rows=[identity_row(ticker="MSFT", isin="US5949181045")],
+            fetcher=fetcher,
+            prefix="dirty_master_ticker_bridge",
+        )
+
+        self.assertEqual(calls, ["0000789019"])
+        self.assertEqual(read_csv_rows(snapshot_path)[0]["ticker"], "US5949181045")
+        self.assertEqual(read_csv_rows(registry_path)[0]["fetch_status"], "FETCHED")
+        self.assertEqual(read_csv_rows(failures_path), [])
+        self.assertEqual(read_csv_rows(summary_path)[0]["snapshot_rows_written"], "1")
+
     def test_unsupported_non_us_or_non_stock_rows_are_visible_without_fetch(self) -> None:
         def fetcher(_cik: str, _user_agent: str) -> dict[str, Any]:
             raise AssertionError("fetcher should not be called for unsupported rows")
