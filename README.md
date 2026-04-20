@@ -184,6 +184,31 @@ Leitplanken:
 - Die Projektion aendert nur `company_type_profile` plus einen nachvollziehbaren Notes-Hinweis; KPI-Werte, Overlays und andere Master-Felder bleiben unberuehrt.
 - In diesem Patch nutzen Downstream-Stages den profiled Master nicht automatisch. Erst `src.personal_run_engine --use-profiled-master` schaltet geeignete fundamentals-abhaengige Stages explizit auf `personal_fundamentals_master_profiled.csv`.
 
+## SEC CompanyFacts Snapshot Fetch
+
+`src.external_sec_companyfacts_fetch` ist ein expliziter Zero-Cost-Adapter fuer US-`STOCK`-Fundamentals aus SEC CompanyFacts. Der Fetch ist read-only, nutzt eine lokal gepflegte Identity-Map fuer CIKs und schreibt nur lokale Snapshot-/Transparenz-Artefakte fuer den bestehenden Snapshot-/Review-/Evidence-Pfad. Er schreibt weder in `data/raw/personal_fundamentals_master.csv` noch in `data/raw/personal_fundamentals_evidence.csv`.
+
+```powershell
+python -m src.external_sec_companyfacts_fetch --master-input data/raw/personal_fundamentals_master.csv --identity-map-input data/raw/private/fundamentals/personal_sec_identity_map.csv --output data/raw/private/fundamentals/personal_fundamentals_snapshot.csv --registry-output data/processed/external_sec_fetch_registry.csv --failures-output data/processed/external_sec_fetch_failures.csv --summary-output data/processed/external_sec_fetch_summary.csv --as-of-date YYYY-MM-DD --allow-network --sec-user-agent "Your Name your@email.com"
+```
+
+Template- und Output-Vertrag:
+
+- `data/raw/personal_sec_identity_map_template.csv`: lokale manuelle Identity-Map-Struktur fuer `ticker`, `isin`, `cik`, SEC-Entity, Asset-Type, Country und `enabled`
+- `data/raw/private/fundamentals/personal_sec_identity_map.csv`: private Live-Identity-Map; CIKs werden nicht automatisch gesucht oder fuzzy gematcht
+- `data/raw/private/fundamentals/personal_fundamentals_snapshot.csv`: Snapshot im bestehenden `src.fundamentals_snapshot_ingestion`-Schema
+- `data/processed/external_sec_fetch_registry.csv`: Fetch-/Skip-Status je Identity-Map-Zeile
+- `data/processed/external_sec_fetch_failures.csv`: fehlende Identitaeten, nicht unterstuetzte Scope-Faelle oder Fetch-/Parse-Fehler
+- `data/processed/external_sec_fetch_summary.csv`: reine Laufzaehlung fuer Master-, Identity-, Candidate-, Snapshot- und Failure-Rows
+
+Leitplanken:
+
+- Echte SEC-HTTP-Calls laufen nur mit explizitem `--allow-network` und explizitem `--sec-user-agent`.
+- Der Adapter verarbeitet in diesem Patch nur aktivierte US-`STOCK`-Zeilen mit lokal gepflegtem CIK; ETFs, Nicht-US-Werte und ADRs bleiben ausserhalb des ersten Scope.
+- Matchen erfolgt nur ueber exakte Personal-Master-Identitaet per `ticker`/`isin`; `company_name` wird nicht fuzzy verwendet und SEC-Symbole ersetzen nie still den Master-Key.
+- Nur konservativ aus annualen SEC-Facts ableitbare Felder werden geschrieben: `revenue_cagr_5y`, `eps_cagr_5y`, `gross_margin`, `operating_margin`, `interest_coverage` und `share_count_cagr_5y`, jeweils nur bei ausreichender Faktentiefe. Nicht robuste KPI-Felder bleiben leer.
+- Der Fetch ist ein vorgelagerter Snapshot-Erzeuger. Review, Evidence, Compose und Evidence-Apply bleiben weiterhin separate explizite Schritte; es gibt keine direkte Live-Datenleitung in Scoring, Watchlist, Monthly, Dashboard oder Reports.
+
 ## Lokaler Fundamentals Snapshot Ingest
 
 `src.fundamentals_snapshot_ingestion` schliesst die groesste reale Datenbeschaffungsluecke im Personal-Fundamentals-Pfad: lokale externe CSV-Snapshots koennen read-only ingestiert, gegen den bestehenden Personal-Master exakt gematcht und in ein Evidence-Staging-Artefakt ueberfuehrt werden. Der Snapshot-Import ist bewusst vendor-neutral, lokal und reproduzierbar; es gibt keine Live-API, kein Web-Scraping und keine automatische Rueckschreibung in Raw-Master oder manuelle Evidence-CSV. Im Orchestrator wird derselbe Input optional ueber den Personal-Source-Key `fundamentals_snapshot_input` aufgeloest.
@@ -594,6 +619,9 @@ Interpretation der persoenlichen Outputs:
 - `personal_fundamentals_evidence_registry.csv`: normalisierte lokale Evidence-Zeilen je Holding/KPI/Quelle
 - `personal_fundamentals_research_backlog.csv`: operative Evidence-Luecken je Holding auf Basis der kanonischen Required-KPI-Methodik
 - `personal_fundamentals_proposed_updates.csv`: manueller Vorschlagsoutput aus validierter Evidence mit `reported_value`; keine automatische Master-Rueckschreibung
+- `external_sec_fetch_registry.csv`: Fetch-/Skip-Status je explizit gepflegter SEC-Identity-Map-Zeile
+- `external_sec_fetch_failures.csv`: sichtbare Identity-, Scope-, HTTP- oder Parse-Fehler des SEC-Snapshot-Fetches
+- `external_sec_fetch_summary.csv`: Laufzaehlung fuer SEC-Candidates, geschriebene Snapshot-Zeilen und Failures
 - `personal_fundamentals_snapshot_normalized.csv`: read-only ingestierte lokale Fundamentals-Snapshot-Werte je exakt gematchter Personal-Identitaet
 - `personal_fundamentals_snapshot_unmatched.csv`: lokale Fundamentals-Snapshot-Zeilen ohne exakten Personal-Master-Match
 - `personal_fundamentals_snapshot_evidence_staging.csv`: aus dem Snapshot abgeleitete manuelle Evidence-Staging-Zeilen; keine automatische Uebernahme in `personal_fundamentals_evidence.csv`
