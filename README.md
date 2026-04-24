@@ -569,6 +569,21 @@ Sample-CLI:
 python -m src.dashboard_engine --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --holdings data/processed/personal_portfolio_holdings_action_table.csv --score-audit data/processed/personal_score_audit.csv --coverage data/processed/personal_fundamentals_coverage.csv --performance-kpis data/processed/performance_kpis.csv --performance-summary data/processed/performance_summary.csv --performance-comparison data/processed/performance_comparison.csv --cost-tax-kpis data/processed/cost_tax_kpis.csv --cost-tax-summary data/processed/cost_tax_summary.csv --config configs/dashboard_kpis.yaml --kpi-output data/processed/dashboard_kpis.csv --sections-output data/processed/dashboard_sections.csv --summary-output data/processed/dashboard_summary.csv --report-output reports/sample/dashboard_report.md
 ```
 
+### Localhost Dashboard UI
+
+`src.dashboard_server` ist ein rein lokaler Read-only-Viewer fuer die bereits erzeugten Dashboard-Artefakte. Er berechnet keine neuen KPIs, schreibt keine neuen Outputs und bindet nur an `127.0.0.1`.
+
+```powershell
+python -m src.dashboard_server --kpis data/processed/dashboard_kpis.csv --sections data/processed/dashboard_sections.csv --summary data/processed/dashboard_summary.csv --host 127.0.0.1 --port 8765
+```
+
+Hinweise:
+
+- Die Browser-UI liegt dann unter `http://127.0.0.1:8765/`.
+- `GET /api/kpis.json`, `GET /api/sections.json` und `GET /api/summary.json` liefern die jeweiligen CSV-Inhalte als JSON.
+- Fehlende Dateien bleiben explizit als `NOT_AVAILABLE` sichtbar; es gibt keinen stillen Fallback auf andere Artefakte.
+- Aenderungen an den drei Dashboard-CSVs werden beim naechsten Request ueber einen `mtime`-basierten Reload sichtbar. Es gibt keinen Watcher, keinen Polling-Thread und keinen Server-Neustart-Zwang.
+
 ## Persoenlicher Run-Orchestrator
 
 `src.personal_run_engine` koordiniert ausgewaehlte persoenliche Stages ueber die bestehenden kanonischen Engines. Er fuehrt keine neue Scoring-, Matching-, Performance-, Benchmark-, Tax- oder Dashboard-Fachlogik ein. Jede Stage muss explizit mit `--stage` angefordert werden; es gibt keinen stillen Komplettlauf.
