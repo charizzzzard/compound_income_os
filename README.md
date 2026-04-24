@@ -571,18 +571,20 @@ python -m src.dashboard_engine --positions data/processed/personal_positions_sna
 
 ### Localhost Dashboard UI
 
-`src.dashboard_server` ist ein rein lokaler Read-only-Viewer fuer die bereits erzeugten Dashboard-Artefakte. Er berechnet keine neuen KPIs, schreibt keine neuen Outputs und bindet nur an `127.0.0.1`.
+`src.dashboard_server` ist ein rein lokaler Read-only-Viewer fuer bereits erzeugte processed Artefakte. Er berechnet keine neuen KPIs, keine neuen Investment-Scores, schreibt keine neuen Outputs und bindet nur an `127.0.0.1`.
 
 ```powershell
-python -m src.dashboard_server --kpis data/processed/dashboard_kpis.csv --sections data/processed/dashboard_sections.csv --summary data/processed/dashboard_summary.csv --host 127.0.0.1 --port 8765
+python -m src.dashboard_server --kpis data/processed/dashboard_kpis.csv --sections data/processed/dashboard_sections.csv --summary data/processed/dashboard_summary.csv --positions data/processed/personal_positions_snapshot.csv --holdings data/processed/personal_portfolio_holdings_action_table.csv --monthly-buy-ranking data/processed/personal_monthly_buy_ranking.csv --rebalance-proposals data/processed/personal_rebalance_proposals.csv --watchlist data/processed/personal_watchlist_ranked.csv --fundamentals-coverage data/processed/personal_fundamentals_coverage.csv --research-priority data/processed/personal_research_priority.csv --cost-tax-ledger data/processed/cost_tax_ledger_normalized.csv --portfolio-timeseries data/processed/portfolio_timeseries.csv --benchmark-timeseries data/processed/benchmark_timeseries_normalized.csv --host 127.0.0.1 --port 8765
 ```
 
 Hinweise:
 
 - Die Browser-UI liegt dann unter `http://127.0.0.1:8765/`.
-- `GET /api/kpis.json`, `GET /api/sections.json` und `GET /api/summary.json` liefern die jeweiligen CSV-Inhalte als JSON.
+- `GET /api/kpis.json`, `GET /api/sections.json`, `GET /api/summary.json`, `GET /api/positions.json`, `GET /api/holdings.json`, `GET /api/monthly-buy-ranking.json`, `GET /api/rebalance-proposals.json`, `GET /api/watchlist.json`, `GET /api/fundamentals-coverage.json`, `GET /api/research-priority.json`, `GET /api/cost-tax-ledger.json` und `GET /api/history-status.json` liefern die jeweiligen Read-only-Sichten als JSON.
 - Fehlende Dateien bleiben explizit als `NOT_AVAILABLE` sichtbar; es gibt keinen stillen Fallback auf andere Artefakte.
-- Aenderungen an den drei Dashboard-CSVs werden beim naechsten Request ueber einen `mtime`-basierten Reload sichtbar. Es gibt keinen Watcher, keinen Polling-Thread und keinen Server-Neustart-Zwang.
+- Das Dashboard visualisiert Decision-Snapshots wie Holdings Detail, Monthly Buy Ranking, Watchlist, Rebalance Proposals, Fundamentals Coverage, Research Priority, Cost/Tax Ledger und einen lokalen History Gate.
+- Portfolio-/Benchmark-Zeitreihen werden erst ab 12 realen Datenpunkten als einfacher Read-only-Chart gerendert. Darunter bleibt der UI-Zustand explizit `INSUFFICIENT_HISTORY`.
+- Aenderungen an den konfigurierten processed CSVs werden beim naechsten Request ueber einen `mtime`-basierten Reload sichtbar. Es gibt keinen Watcher, keinen Polling-Thread und keinen Server-Neustart-Zwang.
 
 ## Persoenlicher Run-Orchestrator
 
