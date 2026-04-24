@@ -123,8 +123,12 @@ COVERAGE_OUTPUT_FIELDS = [
     "matched_isin",
     "match_conflict_flag",
     "data_quality_flag",
+    "derived_data_quality_flag",
+    "derived_data_quality_reason",
+    "core_kpis_present_count",
     "required_kpis_expected",
     "required_kpis_present",
+    "required_kpis_missing_count",
     "missing_required_kpis",
     "not_applicable_kpis",
     "optional_missing_kpis",
@@ -436,6 +440,44 @@ def compute_kpi_coverage(row: dict[str, str], profile: str, metric_definitions: 
     }
 
 
+def count_present_core_kpis(row: dict[str, Any]) -> int:
+    return sum(1 for field in CORE_KPI_FIELDS if has_value(row, field))
+
+
+def derive_fundamentals_data_quality(
+    row: dict[str, Any],
+    profile: str,
+    metric_definitions: dict[str, Any],
+) -> tuple[str, str]:
+    coverage = compute_kpi_coverage(row, profile, metric_definitions)
+    asset_type = safe_upper(row.get("asset_type"))
+    core_present_count = count_present_core_kpis(row)
+    required_missing_count = len(coverage["missing_required"])
+    profile_has_reason = has_company_type_profile_reason(row)
+
+    if asset_type == "STOCK" and profile == "OTHER" and not profile_has_reason:
+        if core_present_count > 0:
+            return "REVIEW", "company_type_profile=OTHER without explicit reason; SEC or evidence values exist but profile review is still required"
+        return "MISSING_DATA", "company_type_profile=OTHER without explicit reason and no applicable KPI coverage is available"
+
+    if asset_type == "STOCK" and profile == "OTHER" and profile_has_reason:
+        return "OK", "company_type_profile=OTHER is explicitly justified; no unsupported STANDARD KPI assumptions are applied"
+
+    if profile in {"STANDARD", "FINANCIAL", "REIT"} and not coverage["required"]:
+        return "REVIEW", f"profile={profile} has no required KPI definitions configured; manual review required"
+
+    if required_missing_count == 0 and coverage["required"]:
+        return "OK", f"all {len(coverage['required'])} required KPIs are present for profile {profile}"
+
+    if core_present_count > 0 or coverage["required_present"]:
+        return "REVIEW", (
+            f"partial KPI coverage under profile {profile}: required_present={len(coverage['required_present'])}, "
+            f"required_missing={required_missing_count}, core_present={core_present_count}"
+        )
+
+    return "MISSING_DATA", f"no relevant KPI coverage is available for profile {profile}"
+
+
 def join_list(values: list[str]) -> str:
     return "; ".join(sorted(values))
 
@@ -616,13 +658,19 @@ def build_fundamentals_coverage(
             "not_applicable": [],
             "optional_missing": [],
         }
+        derived_quality, derived_reason = (
+            derive_fundamentals_data_quality(matched_row, profile, definitions)
+            if matched_row
+            else ("MISSING_DATA", "no exact fundamentals master match is available")
+        )
+        core_present_count = count_present_core_kpis(matched_row) if matched_row else 0
         profile_warning_flag, profile_warning_reason = profile_classification_warning(holding, matched_row, profile)
 
         if match["match_status"] == "NO_MATCH":
             match_status = "NO_MATCH"
         elif match["match_status"] == "REVIEW":
             match_status = "REVIEW"
-        elif quality == "OK" and not kpi_coverage["missing_required"] and not profile_warning_flag:
+        elif derived_quality == "OK" and not kpi_coverage["missing_required"] and not profile_warning_flag:
             match_status = "COVERED"
         else:
             match_status = "PARTIAL"
@@ -637,7 +685,7 @@ def build_fundamentals_coverage(
         needs_research = (
             match_status != "COVERED"
             or bool(kpi_coverage["missing_required"])
-            or quality != "OK"
+            or derived_quality != "OK"
             or profile_warning_flag
         )
 
@@ -655,8 +703,12 @@ def build_fundamentals_coverage(
                 "matched_isin": str(matched_row.get("isin", "")).strip().upper(),
                 "match_conflict_flag": bool(match.get("match_conflict_flag")),
                 "data_quality_flag": quality,
+                "derived_data_quality_flag": derived_quality,
+                "derived_data_quality_reason": derived_reason,
+                "core_kpis_present_count": core_present_count,
                 "required_kpis_expected": len(kpi_coverage["required"]),
                 "required_kpis_present": len(kpi_coverage["required_present"]),
+                "required_kpis_missing_count": len(kpi_coverage["missing_required"]),
                 "missing_required_kpis": join_list(kpi_coverage["missing_required"]),
                 "not_applicable_kpis": join_list(kpi_coverage["not_applicable"]),
                 "optional_missing_kpis": join_list(kpi_coverage["optional_missing"]),

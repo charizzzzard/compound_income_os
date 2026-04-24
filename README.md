@@ -183,6 +183,11 @@ Leitplanken:
 - Nur `APPROVED`-Reviews werden in `personal_fundamentals_master_profiled.csv` projiziert; `PENDING` und `REJECTED` bleiben in Registry und Backlog sichtbar.
 - Die Projektion aendert nur `company_type_profile` plus einen nachvollziehbaren Notes-Hinweis; KPI-Werte, Overlays und andere Master-Felder bleiben unberuehrt.
 - In diesem Patch nutzen Downstream-Stages den profiled Master nicht automatisch. Erst `src.personal_run_engine --use-profiled-master` schaltet geeignete fundamentals-abhaengige Stages explizit auf `personal_fundamentals_master_profiled.csv`.
+- Fuer den SEC-/Evidence-Pfad kann derselbe Vertrag explizit auf dem bereits erzeugten Evidence+Identity-Master laufen. Der Operator uebergibt diesen Master direkt an `--fundamentals-master`; der Raw-Master bleibt dabei unveraendert.
+
+```powershell
+python -m src.fundamentals_profile_engine --fundamentals-master data/processed/personal_fundamentals_master_evidence_identity_applied.csv --profile-review-input data/raw/personal_fundamentals_profile_review.csv --registry-output data/processed/personal_fundamentals_profile_registry.csv --backlog-output data/processed/personal_fundamentals_profile_review_backlog.csv --profiled-master-output data/processed/personal_fundamentals_master_profiled.csv --template-output data/raw/personal_fundamentals_profile_review_template.csv
+```
 
 ## SEC CompanyFacts Snapshot Fetch
 
@@ -251,6 +256,50 @@ Review-Policies:
 `auto_safe` approved nur SEC-CompanyFacts-Staging-Zeilen mit exakter privater CIK-Identitaet, nicht leerem `reported_value` und KPI auf der engen Allowlist `revenue_cagr_5y`, `eps_cagr_5y`, `gross_margin`, `operating_margin`, `interest_coverage`, `share_count_cagr_5y`. Alles andere bleibt `PENDING` und geht in den bestehenden Snapshot-Review-Backlog. Die Raw-Review-Datei unter `data/raw/private/fundamentals/` wird nie ueberschrieben.
 
 Markdown-Dateien und die relevanten SEC-/Evidence-Header-Only-CSV-Templates sind per `.gitattributes` auf LF normalisiert; der README-Test blockt CRLF-/Trailing-Whitespace-Regressionen fuer diese Vertraege.
+
+## Fundamentals Gap Diagnostics / Operator Sequence
+
+`src.fundamentals_gap_diagnostics` ist ein read-only Diagnosepfad fuer die aktuell verbleibenden Fundamentals-Luecken. Das Modul liest nur bestehende processed Artefakte wie SEC-Fetch-Registry, Proposed Updates, Coverage und den aktuell verwendeten Master und erklaert transparent, warum eine Zeile weiter `REVIEW` oder `MISSING_DATA` bleibt. Es korrigiert keine Flags, schreibt nicht in den Raw-Master zurueck und imputiert keine fehlenden KPIs.
+
+```powershell
+python -m src.fundamentals_gap_diagnostics --master-input data/processed/personal_fundamentals_master_evidence_identity_applied.csv --coverage-input data/processed/personal_fundamentals_coverage.csv --fetch-registry-input data/processed/external_sec_fetch_registry.csv --proposed-updates-input data/processed/personal_fundamentals_proposed_updates.csv --profile-review-input data/raw/personal_fundamentals_profile_review.csv --diagnostics-output data/processed/personal_fundamentals_gap_diagnostics.csv --summary-output data/processed/personal_fundamentals_gap_summary.csv
+```
+
+Empfohlene Operator-Sequenz fuer den SEC-/Evidence-/Profile-Pfad:
+
+1. SEC refresh / evidence apply:
+
+```powershell
+python -m src.personal_sec_refresh_pipeline --allow-network --sec-user-agent "<Name Email>" --as-of-date YYYY-MM-DD
+```
+
+2. Profile seed pruefen:
+   `data/processed/personal_fundamentals_profile_review_seed_from_sec_identity.csv`
+3. Manuell gepruefte Profile in:
+   `data/raw/personal_fundamentals_profile_review.csv`
+4. Profiled Master auf Basis des Evidence+Identity-Masters erzeugen:
+
+```powershell
+python -m src.fundamentals_profile_engine --fundamentals-master data/processed/personal_fundamentals_master_evidence_identity_applied.csv --profile-review-input data/raw/personal_fundamentals_profile_review.csv --profiled-master-output data/processed/personal_fundamentals_master_profiled.csv
+```
+
+5. Downstream explizit mit profiled Master fahren:
+
+```powershell
+python -m src.personal_run_engine --stage coverage --stage scoring --stage watchlist --stage monthly --stage portfolio_review --use-profiled-master
+```
+
+6. Restluecken transparent diagnostizieren:
+
+```powershell
+python -m src.fundamentals_gap_diagnostics
+```
+
+Erwartung:
+
+- Keine `OK`-Flags ohne vollstaendige profilbezogene Pflicht-KPI-Coverage.
+- `REVIEW` statt `MISSING_DATA`, wenn belastbare Teil-Evidence vorhanden ist, aber Profil- oder Pflicht-KPI-Luecken bleiben.
+- Restluecken werden transparent nach Typ getrennt, z. B. fehlende Profile-Review, nur partielle SEC-Evidence, nicht aus SEC ableitbare Marktdaten oder Scope-Grenzen ausserhalb des aktuellen US-`STOCK`-Pfads.
 
 ## Lokaler Fundamentals Snapshot Ingest
 

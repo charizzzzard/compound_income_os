@@ -1012,6 +1012,43 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertEqual(coverage_inputs["metric_definitions"]["input_path"], DEFAULT_METRIC_DEFINITIONS_PATH)
         self.assertEqual(coverage_rows[0]["company_type_profile"], "STANDARD")
 
+    def test_profile_stage_can_build_profiled_master_from_explicit_evidence_identity_master(self) -> None:
+        options = self._core_options("profiled_explicit_master", ["import", "fundamentals_profile", "scoring", "coverage"])
+        options.use_profiled_master = True
+        explicit_master = self._path("_tmp_profiled_explicit_master_input.csv")
+        options.fundamentals_master = str(explicit_master)
+        explicit_row = self._personal_master_row(ticker="MSFT", isin="US5949181045", company_name="Microsoft")
+        explicit_row["ticker"] = "MSFT"
+        explicit_row["country"] = "US"
+        explicit_row["notes"] = "sec_identity_apply_ticker=MSFT; sec_identity_apply_country=US"
+        self._write_personal_master_rows(explicit_master, [explicit_row])
+        self._write_profile_review_rows(
+            Path(options.profile_review_input),
+            [self._profile_review_row(ticker="MSFT", isin="US5949181045", company_name="Microsoft", proposed_company_type_profile="STANDARD", profile_reason="operating company")],
+        )
+
+        manifest = run_personal_run_engine(options)
+
+        profile_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "fundamentals_profile")
+        scoring_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "scoring")
+        coverage_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "coverage")
+        used_input_rows = read_csv_rows(options.used_inputs_output)
+        profile_inputs = self._used_inputs_for_stage(used_input_rows, "fundamentals_profile")
+        scoring_inputs = self._used_inputs_for_stage(used_input_rows, "scoring")
+        coverage_inputs = self._used_inputs_for_stage(used_input_rows, "coverage")
+        profiled_rows = read_csv_rows(options.profiled_master_output)
+
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(profile_result["used_inputs"]["fundamentals_master"], str(explicit_master))
+        self.assertEqual(profile_inputs["fundamentals_master"]["input_path"], str(explicit_master))
+        self.assertEqual(profiled_rows[0]["company_type_profile"], "STANDARD")
+        self.assertEqual(scoring_result["used_inputs"]["fundamentals_master"], options.profiled_master_output)
+        self.assertEqual(coverage_result["used_inputs"]["fundamentals_master"], options.profiled_master_output)
+        self.assertEqual(scoring_inputs["fundamentals_master"]["input_path"], options.profiled_master_output)
+        self.assertEqual(coverage_inputs["fundamentals_master"]["input_path"], options.profiled_master_output)
+        self.assertIn("fundamentals_source_mode=PROFILED", scoring_inputs["fundamentals_master"]["notes"])
+        self.assertIn("fundamentals_source_mode=PROFILED", coverage_inputs["fundamentals_master"]["notes"])
+
     def test_use_profiled_master_routes_overlay_input_without_switching_to_applied(self) -> None:
         options = self._core_options("profiled_overlay", ["import", "fundamentals_seed", "fundamentals_profile", "fundamentals_overlay"])
         options.use_profiled_master = True

@@ -11,6 +11,7 @@ from src.fundamentals_master import (
     RESEARCH_PRIORITY_OUTPUT_FIELDS,
     build_fundamentals_coverage,
     build_research_priority_rows,
+    derive_fundamentals_data_quality,
     load_metric_definitions,
     validate_personal_fundamentals_master,
     validate_metric_definitions,
@@ -204,6 +205,40 @@ class FundamentalsMasterTests(unittest.TestCase):
             rows.append(coverage[0])
 
         self.assertEqual([row["profile_classification_warning_flag"] for row in rows], [False, False, False])
+
+    def test_derive_fundamentals_data_quality_all_required_present_is_ok(self) -> None:
+        definitions = load_metric_definitions()
+        quality, reason = derive_fundamentals_data_quality(master_row(profile="STANDARD", fill_kpis=True), "STANDARD", definitions)
+
+        self.assertEqual(quality, "OK")
+        self.assertIn("all", reason)
+
+    def test_derive_fundamentals_data_quality_partial_required_present_is_review(self) -> None:
+        definitions = load_metric_definitions()
+        row = master_row(profile="STANDARD", fill_kpis=False)
+        row["roic"] = "12"
+        row["revenue_cagr_5y"] = "5"
+
+        quality, reason = derive_fundamentals_data_quality(row, "STANDARD", definitions)
+
+        self.assertEqual(quality, "REVIEW")
+        self.assertIn("partial KPI coverage", reason)
+
+    def test_derive_fundamentals_data_quality_none_present_is_missing_data(self) -> None:
+        definitions = load_metric_definitions()
+        quality, reason = derive_fundamentals_data_quality(master_row(profile="STANDARD", fill_kpis=False), "STANDARD", definitions)
+
+        self.assertEqual(quality, "MISSING_DATA")
+        self.assertIn("no relevant KPI coverage", reason)
+
+    def test_derive_fundamentals_data_quality_stock_other_without_reason_is_never_ok(self) -> None:
+        definitions = load_metric_definitions()
+        row = master_row(profile="OTHER", fill_kpis=False)
+        row["revenue_cagr_5y"] = "7"
+
+        quality, _reason = derive_fundamentals_data_quality(row, "OTHER", definitions)
+
+        self.assertEqual(quality, "REVIEW")
 
     def test_research_priority_rows_sort_and_explain_profile_warning_first_by_value(self) -> None:
         positions = [
