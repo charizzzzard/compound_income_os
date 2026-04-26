@@ -19,6 +19,7 @@ website/**/playwright-report/
 website/**/test-results/
 website/**/.cache/
 website/**/ms-playwright/
+website/**/deploy_artifacts/
 website/**/.env
 website/**/.env.local
 website/**/.env.*.local
