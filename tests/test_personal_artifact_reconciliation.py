@@ -44,6 +44,7 @@ class PersonalArtifactReconciliationTests(unittest.TestCase):
         self.watchlist = self.tmp / "watchlist.csv"
         self.watchlist_gate_summary = self.tmp / "watchlist_gate_summary.csv"
         self.valuation_contract_summary = self.tmp / "valuation_contract_summary.csv"
+        self.core_kpi_closure_summary = self.tmp / "core_kpi_closure_summary.csv"
         self.used_inputs = self.tmp / "used_inputs.csv"
         self.manifest = self.tmp / "manifest.json"
         self.summary_output = self.tmp / "summary.csv"
@@ -154,6 +155,7 @@ class PersonalArtifactReconciliationTests(unittest.TestCase):
             watchlist_input=str(self.watchlist),
             watchlist_gate_summary_input=str(self.watchlist_gate_summary),
             valuation_contract_summary_input=str(self.valuation_contract_summary),
+            core_kpi_closure_summary_input=str(self.core_kpi_closure_summary),
             used_inputs_input=str(self.used_inputs),
             manifest_input=str(self.manifest),
             summary_output=str(self.summary_output),
@@ -284,6 +286,34 @@ class PersonalArtifactReconciliationTests(unittest.TestCase):
         self.assertIn("NO_IMPUTATION", row["reason_codes"])
         self.assertEqual(self.summary_value("valuation_contract_summary_available"), "True")
         self.assertEqual(self.summary_value("valuation_contract_input_file_status"), "MISSING")
+
+    def test_core_kpi_closure_summary_drives_precise_reasons(self) -> None:
+        self.write_base_inputs(delta_review_count="1")
+        write_csv(
+            self.core_kpi_closure_summary,
+            ["metric", "value", "notes"],
+            [
+                {"metric": "affected_standard_rows_count", "value": "1", "notes": ""},
+                {"metric": "queue_rows_count", "value": "1", "notes": ""},
+                {"metric": "sec_evidence_possible_count", "value": "1", "notes": ""},
+                {"metric": "manual_evidence_required_count", "value": "0", "notes": ""},
+                {"metric": "review_existing_evidence_count", "value": "0", "notes": ""},
+                {"metric": "source_unknown_count", "value": "0", "notes": ""},
+                {"metric": "no_value_changes_confirmed", "value": "True", "notes": ""},
+                {"metric": "required_core_kpis", "value": "revenue_cagr_5y; gross_margin", "notes": ""},
+                {"metric": "reason_codes", "value": "CORE_KPI_MISSING;NO_VALUE_CHANGES;REVIEW_CORE_DATA;SEC_IDENTITY_AVAILABLE", "notes": ""},
+            ],
+        )
+        self.run_reconciliation()
+
+        row = self.check_row("standard_core_review")
+        self.assertEqual(row["status"], "BLOCKED")
+        self.assertIn("REVIEW_CORE_DATA", row["reason_codes"])
+        self.assertIn("CORE_KPI_MISSING", row["reason_codes"])
+        self.assertIn("NO_VALUE_CHANGES", row["reason_codes"])
+        self.assertIn("SEC_IDENTITY_AVAILABLE", row["reason_codes"])
+        self.assertEqual(self.summary_value("core_kpi_closure_summary_available"), "True")
+        self.assertEqual(self.summary_value("core_kpi_closure_queue_rows_count"), "1")
 
     def test_report_is_deterministic_and_sanitized(self) -> None:
         self.write_base_inputs(delta_review_count="1", watchlist_path="data/raw/private/fundamentals/watchlist.csv")

@@ -23,6 +23,7 @@ DEFAULT_MONTHLY_ACTION_SUMMARY_INPUT = "data/processed/personal_monthly_action_c
 DEFAULT_WATCHLIST_INPUT = "data/processed/personal_watchlist_ranked.csv"
 DEFAULT_WATCHLIST_GATE_SUMMARY_INPUT = "data/processed/personal_watchlist_input_gate_summary.csv"
 DEFAULT_VALUATION_CONTRACT_SUMMARY_INPUT = "data/processed/personal_valuation_input_contract_summary.csv"
+DEFAULT_CORE_KPI_CLOSURE_SUMMARY_INPUT = "data/processed/personal_core_kpi_closure_summary.csv"
 DEFAULT_USED_INPUTS_INPUT = "data/processed/personal_run_used_inputs.csv"
 DEFAULT_MANIFEST_INPUT = "data/processed/personal_run_manifest.json"
 DEFAULT_SUMMARY_OUTPUT = "data/processed/personal_artifact_reconciliation_summary.csv"
@@ -175,6 +176,7 @@ def build_reconciliation(
     watchlist_rows: list[dict[str, str]],
     watchlist_gate_summary_rows: list[dict[str, str]],
     valuation_contract_summary_rows: list[dict[str, str]],
+    core_kpi_closure_summary_rows: list[dict[str, str]],
     used_input_rows: list[dict[str, str]],
     manifest: dict[str, Any],
     warnings: list[str],
@@ -190,6 +192,7 @@ def build_reconciliation(
     monthly_action_summary = summary_map(monthly_action_summary_rows)
     watchlist_gate_summary = summary_map(watchlist_gate_summary_rows)
     valuation_contract_summary = summary_map(valuation_contract_summary_rows)
+    core_kpi_closure_summary = summary_map(core_kpi_closure_summary_rows)
     missing_summary = summary_map(missing_kpi_summary_rows)
     delta_summary = summary_map(evidence_delta_summary_rows)
     freshness_summary = summary_map(artifact_freshness_summary_rows)
@@ -292,16 +295,39 @@ def build_reconciliation(
         evidence="personal_kpi_tier_coverage.csv",
         recommended_next_action="Add reviewed FCF/dividend evidence or keep rows in REVIEW." if dividend_missing_rows else "No action.",
     )
+    core_closure_reasons = {
+        reason for reason in str(core_kpi_closure_summary.get("reason_codes", "")).split(";") if reason
+    }
+    core_review_reason_codes = {"REVIEW_CORE_DATA"} if core_review_rows else set()
+    if core_review_rows and core_kpi_closure_summary:
+        core_review_reason_codes.update(core_closure_reasons.intersection({
+            "CORE_KPI_MISSING",
+            "CORE_KPI_PARTIAL",
+            "SEC_IDENTITY_AVAILABLE",
+            "SEC_IDENTITY_MISSING",
+            "EVIDENCE_REGISTRY_MISSING",
+            "EVIDENCE_APPLIED_VALUE_MISSING",
+            "MANUAL_EVIDENCE_REQUIRED",
+            "CORE_KPI_CONTRACT_UNKNOWN",
+            "NO_VALUE_CHANGES",
+        }))
     add_check(
         checks,
         check_id="standard_core_review",
         category="decision_readiness",
         status="BLOCKED" if core_review_rows else "PASS",
-        reason_codes={"REVIEW_CORE_DATA"} if core_review_rows else set(),
-        observed_value=f"{len(core_review_rows)} STANDARD rows with REVIEW_CORE_DATA",
+        reason_codes=core_review_reason_codes,
+        observed_value=(
+            f"{len(core_review_rows)} STANDARD rows with REVIEW_CORE_DATA; "
+            f"core_kpi_closure_available={bool(core_kpi_closure_summary)}; "
+            f"queue_rows={core_kpi_closure_summary.get('queue_rows_count', 'NOT_AVAILABLE')}; "
+            f"sec_evidence_possible={core_kpi_closure_summary.get('sec_evidence_possible_count', 'NOT_AVAILABLE')}; "
+            f"manual_evidence_required={core_kpi_closure_summary.get('manual_evidence_required_count', 'NOT_AVAILABLE')}; "
+            f"review_existing_evidence={core_kpi_closure_summary.get('review_existing_evidence_count', 'NOT_AVAILABLE')}"
+        ),
         expected_value="0 STANDARD rows with REVIEW_CORE_DATA before decision-ready ranking",
-        evidence="personal_kpi_tier_coverage.csv",
-        recommended_next_action="Close core-quality KPI evidence or keep blocked." if core_review_rows else "No action.",
+        evidence="personal_kpi_tier_coverage.csv; personal_core_kpi_closure_summary.csv",
+        recommended_next_action="Review SEC/manual core KPI closure queue; do not impute values." if core_review_rows else "No action.",
     )
 
     monthly_fields = set(monthly_rows[0].keys()) if monthly_rows else set()
@@ -454,6 +480,20 @@ def build_reconciliation(
             add_metric(f"valuation_contract_{metric}", valuation_contract_summary[metric], "Valuation input contract summary metric.")
     add_metric("standard_missing_dividend_fcf_required_rows_total", len(dividend_missing_rows), "STANDARD rows missing dividend/FCF-required data.")
     add_metric("standard_review_core_data_rows_total", len(core_review_rows), "STANDARD rows with resulting_monthly_action=REVIEW_CORE_DATA.")
+    add_metric("core_kpi_closure_summary_available", bool_text(bool(core_kpi_closure_summary)), "Core KPI closure summary was loaded.")
+    for metric in (
+        "affected_standard_rows_count",
+        "required_core_kpis",
+        "queue_rows_count",
+        "sec_evidence_possible_count",
+        "manual_evidence_required_count",
+        "review_existing_evidence_count",
+        "source_unknown_count",
+        "no_value_changes_confirmed",
+        "reason_codes",
+    ):
+        if metric in core_kpi_closure_summary:
+            add_metric(f"core_kpi_closure_{metric}", core_kpi_closure_summary[metric], "Core KPI closure summary metric.")
     for action, count in sorted(tier_action_counts.items()):
         add_metric(f"kpi_tier_resulting_monthly_action__{action}", count, "KPI tier resulting monthly action count.")
     add_metric("missing_kpi_closure_missing_required_kpi_total", missing_summary.get("missing_required_kpi_total", "NOT_AVAILABLE"), "Baseline from missing-KPI closure summary.")
@@ -614,6 +654,7 @@ def run_personal_artifact_reconciliation(
     watchlist_input: str = DEFAULT_WATCHLIST_INPUT,
     watchlist_gate_summary_input: str = DEFAULT_WATCHLIST_GATE_SUMMARY_INPUT,
     valuation_contract_summary_input: str = DEFAULT_VALUATION_CONTRACT_SUMMARY_INPUT,
+    core_kpi_closure_summary_input: str = DEFAULT_CORE_KPI_CLOSURE_SUMMARY_INPUT,
     used_inputs_input: str = DEFAULT_USED_INPUTS_INPUT,
     manifest_input: str = DEFAULT_MANIFEST_INPUT,
     summary_output: str = DEFAULT_SUMMARY_OUTPUT,
@@ -635,6 +676,7 @@ def run_personal_artifact_reconciliation(
         "watchlist": watchlist_input,
         "watchlist_gate_summary": watchlist_gate_summary_input,
         "valuation_contract_summary": valuation_contract_summary_input,
+        "core_kpi_closure_summary": core_kpi_closure_summary_input,
         "used_inputs": used_inputs_input,
     }
     loaded: dict[str, list[dict[str, str]]] = {}
@@ -659,6 +701,7 @@ def run_personal_artifact_reconciliation(
         watchlist_rows=loaded["watchlist"],
         watchlist_gate_summary_rows=loaded["watchlist_gate_summary"],
         valuation_contract_summary_rows=loaded["valuation_contract_summary"],
+        core_kpi_closure_summary_rows=loaded["core_kpi_closure_summary"],
         used_input_rows=loaded["used_inputs"],
         manifest=manifest,
         warnings=warnings,
@@ -698,6 +741,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--watchlist-input", default=DEFAULT_WATCHLIST_INPUT)
     parser.add_argument("--watchlist-gate-summary-input", default=DEFAULT_WATCHLIST_GATE_SUMMARY_INPUT)
     parser.add_argument("--valuation-contract-summary-input", default=DEFAULT_VALUATION_CONTRACT_SUMMARY_INPUT)
+    parser.add_argument("--core-kpi-closure-summary-input", default=DEFAULT_CORE_KPI_CLOSURE_SUMMARY_INPUT)
     parser.add_argument("--used-inputs-input", default=DEFAULT_USED_INPUTS_INPUT)
     parser.add_argument("--manifest-input", default=DEFAULT_MANIFEST_INPUT)
     parser.add_argument("--summary-output", default=DEFAULT_SUMMARY_OUTPUT)
@@ -722,6 +766,7 @@ def main() -> None:
         watchlist_input=args.watchlist_input,
         watchlist_gate_summary_input=args.watchlist_gate_summary_input,
         valuation_contract_summary_input=args.valuation_contract_summary_input,
+        core_kpi_closure_summary_input=args.core_kpi_closure_summary_input,
         used_inputs_input=args.used_inputs_input,
         manifest_input=args.manifest_input,
         summary_output=args.summary_output,

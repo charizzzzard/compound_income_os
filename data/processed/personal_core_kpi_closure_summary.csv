@@ -1,0 +1,20 @@
+metric,value,notes
+affected_standard_rows_count,4,STANDARD rows with REVIEW_CORE_DATA.
+closure_path__MANUAL_EVIDENCE_REQUIRED,0,Recommended closure path count.
+closure_path__PROFILE_NOT_STANDARD,0,Recommended closure path count.
+closure_path__REVIEW_EXISTING_EVIDENCE,0,Recommended closure path count.
+closure_path__SEC_EVIDENCE_POSSIBLE,4,Recommended closure path count.
+closure_path__SOURCE_UNKNOWN,0,Recommended closure path count.
+core_kpi_contract_status,OK,Core KPI contract status from metric definitions.
+manual_evidence_required_count,0,Rows requiring manual evidence or SEC identity review.
+no_value_changes_confirmed,True,"No master, score, or evidence-apply values were changed."
+not_applicable_rows_count,7,Non-STANDARD rows excluded from STANDARD core closure.
+ok_rows_count,0,Rows with no missing core KPIs in this closure queue.
+queue_rows_count,4,Rows in personal_core_kpi_closure_queue.csv.
+reason_codes,CORE_KPI_MISSING;NO_VALUE_CHANGES;PROFILE_NOT_STANDARD;REVIEW_CORE_DATA;SEC_IDENTITY_AVAILABLE,Union of core KPI closure reason codes.
+required_core_kpis,eps_cagr_5y; gross_margin; operating_margin; revenue_cagr_5y; share_count_cagr_5y,Core-quality KPI fields.
+review_existing_evidence_count,0,Rows with existing evidence/applied signals requiring review.
+review_rows_count,4,Rows still requiring core KPI review.
+sec_evidence_possible_count,4,Rows where SEC evidence workflow may close missing core KPIs.
+source_unknown_count,0,Rows with unknown source path.
+warnings_total,0,Missing input warnings.
