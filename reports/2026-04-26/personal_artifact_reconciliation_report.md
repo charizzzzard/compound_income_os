@@ -6,7 +6,7 @@ Generated: 2026-04-26
 
 - Demo readiness: `BLOCKED`
 - Decision readiness: `BLOCKED`
-- Reason codes: `ARTIFACT_DRIFT;MISSING_DIVIDEND_FCF_REQUIRED;MISSING_VALUATION_REQUIRED;MONTHLY_SCHEMA_DRIFT;PROVENANCE_INCOMPLETE;REVIEW_CORE_DATA;WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT`
+- Reason codes: `ARTIFACT_DRIFT;MISSING_DIVIDEND_FCF_REQUIRED;MISSING_VALUATION_REQUIRED;PROVENANCE_INCOMPLETE;REVIEW_CORE_DATA;WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT`
 - Scoring fundamentals source mode: `EVIDENCE_APPLIED`
 
 This report reconciles existing processed artifacts only. It does not change scores, formulas, fundamentals values, watchlist values, or monthly ranking outputs.
@@ -22,6 +22,7 @@ This report reconciles existing processed artifacts only. It does not change sco
 | missing_kpi_holdings | `data/processed/personal_missing_kpi_closure_holdings.csv` |
 | missing_kpi_summary | `data/processed/personal_missing_kpi_closure_summary.csv` |
 | monthly | `data/processed/personal_monthly_buy_ranking.csv` |
+| monthly_action_summary | `data/processed/personal_monthly_action_compatibility_summary.csv` |
 | score_audit | `data/processed/personal_score_audit.csv` |
 | scores | `data/processed/personal_company_scores.csv` |
 | used_inputs | `data/processed/personal_run_used_inputs.csv` |
@@ -44,17 +45,22 @@ This report reconciles existing processed artifacts only. It does not change sco
 | `kpi_tier_resulting_monthly_action__REVIEW_CORE_DATA` | `4` | KPI tier resulting monthly action count. |
 | `kpi_tier_resulting_monthly_action__WAIT_VALUATION` | `6` | KPI tier resulting monthly action count. |
 | `missing_kpi_closure_missing_required_kpi_total` | `10` | Baseline from missing-KPI closure summary. |
+| `monthly_action__NO_ACTION` | `1` | Neutral monthly_action count from compatibility summary. |
+| `monthly_action__WAIT_FOR_VALUATION` | `17` | Neutral monthly_action count from compatibility summary. |
+| `monthly_action_compatibility_available` | `True` | Neutral monthly_action compatibility artifact available. |
+| `monthly_action_forbidden_values_total` | `0` | Forbidden monthly_action values in compatibility summary. |
 | `monthly_has_allocation_status` | `True` | Schema check. |
 | `monthly_has_monthly_action` | `False` | Schema check. |
 | `monthly_has_target_action` | `True` | Schema check. |
 | `monthly_rows_total` | `18` | Rows in personal_monthly_buy_ranking.csv. |
+| `monthly_schema_drift_resolved` | `True` | Monthly schema drift check resolved by direct field or companion compatibility artifact. |
 | `monthly_target_action__DO_NOT_BUY` | `7` | Monthly target_action count. |
 | `monthly_target_action__HOLD_CASH` | `1` | Monthly target_action count. |
 | `monthly_target_action__REVIEW_CORE_DATA` | `4` | Monthly target_action count. |
 | `monthly_target_action__WAIT_VALUATION` | `6` | Monthly target_action count. |
 | `not_available_checks_total` | `0` | Checks with NOT_AVAILABLE status. |
-| `readiness_reason_codes` | `ARTIFACT_DRIFT;MISSING_DIVIDEND_FCF_REQUIRED;MISSING_VALUATION_REQUIRED;MONTHLY_SCHEMA_DRIFT;PROVENANCE_INCOMPLETE;REVIEW_CORE_DATA;WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT` | Union of BLOCKED/REVIEW/NOT_AVAILABLE reason codes. |
-| `review_checks_total` | `3` | Checks with REVIEW status. |
+| `readiness_reason_codes` | `ARTIFACT_DRIFT;MISSING_DIVIDEND_FCF_REQUIRED;MISSING_VALUATION_REQUIRED;PROVENANCE_INCOMPLETE;REVIEW_CORE_DATA;WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT` | Union of BLOCKED/REVIEW/NOT_AVAILABLE reason codes. |
+| `review_checks_total` | `2` | Checks with REVIEW status. |
 | `score_data_quality__BLOCKED` | `0` | Current score CSV data-quality count. |
 | `score_data_quality__MISSING_DATA` | `11` | Current score CSV data-quality count. |
 | `score_data_quality__OK` | `0` | Current score CSV data-quality count. |
@@ -77,7 +83,6 @@ This report reconciles existing processed artifacts only. It does not change sco
 
 | Check | Status | Reasons | Evidence |
 | --- | --- | --- | --- |
-| `monthly_schema_contract` | `REVIEW` | `MONTHLY_SCHEMA_DRIFT` | personal_monthly_buy_ranking.csv; current delta-style review artifacts expose monthly_action as derived output |
 | `per_kpi_provenance` | `REVIEW` | `PROVENANCE_INCOMPLETE` | personal_score_audit.csv exists, but per-KPI source-reference join is not fully materialized |
 | `score_vs_delta_data_quality` | `BLOCKED` | `ARTIFACT_DRIFT` | personal_company_scores.csv vs personal_evidence_applied_downstream_delta_summary.csv |
 | `standard_core_review` | `BLOCKED` | `REVIEW_CORE_DATA` | personal_kpi_tier_coverage.csv |
@@ -106,7 +111,6 @@ Decision readiness remains blocked while valuation-required data, core review da
 
 ## 8. Review Items
 
-- `monthly_schema_contract`: `MONTHLY_SCHEMA_DRIFT`. Add a compatibility alias or update report readers in a dedicated schema patch.
 - `per_kpi_provenance`: `PROVENANCE_INCOMPLETE`. Add a dedicated KPI provenance audit artifact.
 - `standard_dividend_fcf_required`: `MISSING_DIVIDEND_FCF_REQUIRED`. Add reviewed FCF/dividend evidence or keep rows in REVIEW.
 

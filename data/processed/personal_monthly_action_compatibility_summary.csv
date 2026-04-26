@@ -1,0 +1,20 @@
+metric,value,notes
+compatibility_rows_total,18,Rows written to compatibility artifact.
+forbidden_monthly_action_values_total,0,Forbidden advice/order action values in new monthly_action field.
+implementation_path,COMPANION_ADAPTER,Monthly output is not modified; neutral compatibility artifact is generated.
+legacy_allocation_status__NOT_ELIGIBLE,17,Legacy/internal allocation_status count from monthly ranking input.
+legacy_allocation_status__SELECTED_THIS_MONTH,1,Legacy/internal allocation_status count from monthly ranking input.
+legacy_target_action__DO_NOT_BUY,7,Legacy/internal target_action count from monthly ranking input.
+legacy_target_action__HOLD_CASH,1,Legacy/internal target_action count from monthly ranking input.
+legacy_target_action__REVIEW_CORE_DATA,4,Legacy/internal target_action count from monthly ranking input.
+legacy_target_action__WAIT_VALUATION,6,Legacy/internal target_action count from monthly ranking input.
+monthly_action__NO_ACTION,1,Neutral monthly_action count.
+monthly_action__WAIT_FOR_VALUATION,17,Neutral monthly_action count.
+monthly_action_compatibility_available,True,Neutral monthly_action is available via companion artifact.
+monthly_has_allocation_status,True,Existing monthly schema field.
+monthly_has_monthly_action,False,Existing monthly schema field.
+monthly_has_target_action,True,Existing monthly schema field.
+monthly_rows_total,18,Rows read from monthly ranking input.
+monthly_schema_drift_resolved,True,True when compatibility rows exist and monthly_action values are allowed.
+schema_review_rows_total,0,Compatibility rows that failed schema guardrail.
+warnings_total,0,Missing input warnings.

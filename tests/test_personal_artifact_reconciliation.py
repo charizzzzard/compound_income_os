@@ -39,6 +39,7 @@ class PersonalArtifactReconciliationTests(unittest.TestCase):
         self.delta_summary = self.tmp / "delta_summary.csv"
         self.delta_holdings = self.tmp / "delta_holdings.csv"
         self.monthly = self.tmp / "monthly.csv"
+        self.monthly_action_summary = self.tmp / "monthly_action_summary.csv"
         self.watchlist = self.tmp / "watchlist.csv"
         self.used_inputs = self.tmp / "used_inputs.csv"
         self.manifest = self.tmp / "manifest.json"
@@ -145,6 +146,7 @@ class PersonalArtifactReconciliationTests(unittest.TestCase):
             evidence_delta_summary_input=str(self.delta_summary),
             evidence_delta_holdings_input=str(self.delta_holdings),
             monthly_input=str(self.monthly),
+            monthly_action_summary_input=str(self.monthly_action_summary),
             watchlist_input=str(self.watchlist),
             used_inputs_input=str(self.used_inputs),
             manifest_input=str(self.manifest),
@@ -178,6 +180,26 @@ class PersonalArtifactReconciliationTests(unittest.TestCase):
         self.assertEqual(self.summary_value("monthly_has_target_action"), "True")
         self.assertEqual(self.summary_value("monthly_has_allocation_status"), "True")
         self.assertEqual(self.summary_value("monthly_has_monthly_action"), "False")
+
+    def test_monthly_schema_drift_resolves_with_neutral_compatibility_summary(self) -> None:
+        self.write_base_inputs(delta_review_count="1")
+        write_csv(
+            self.monthly_action_summary,
+            ["metric", "value", "notes"],
+            [
+                {"metric": "monthly_action_compatibility_available", "value": "True", "notes": ""},
+                {"metric": "monthly_schema_drift_resolved", "value": "True", "notes": ""},
+                {"metric": "forbidden_monthly_action_values_total", "value": "0", "notes": ""},
+                {"metric": "monthly_action__NOT_READY", "value": "1", "notes": ""},
+            ],
+        )
+        self.run_reconciliation()
+
+        row = self.check_row("monthly_schema_contract")
+        self.assertEqual(row["status"], "PASS")
+        self.assertNotIn("MONTHLY_SCHEMA_DRIFT", row["reason_codes"])
+        self.assertEqual(self.summary_value("monthly_schema_drift_resolved"), "True")
+        self.assertEqual(self.summary_value("monthly_action__NOT_READY"), "1")
 
     def test_sample_watchlist_blocks_readiness(self) -> None:
         self.write_base_inputs(delta_review_count="1")

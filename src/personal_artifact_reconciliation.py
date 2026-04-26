@@ -18,6 +18,7 @@ DEFAULT_MISSING_KPI_HOLDINGS_INPUT = "data/processed/personal_missing_kpi_closur
 DEFAULT_EVIDENCE_DELTA_SUMMARY_INPUT = "data/processed/personal_evidence_applied_downstream_delta_summary.csv"
 DEFAULT_EVIDENCE_DELTA_HOLDINGS_INPUT = "data/processed/personal_evidence_applied_downstream_delta_holdings.csv"
 DEFAULT_MONTHLY_INPUT = "data/processed/personal_monthly_buy_ranking.csv"
+DEFAULT_MONTHLY_ACTION_SUMMARY_INPUT = "data/processed/personal_monthly_action_compatibility_summary.csv"
 DEFAULT_WATCHLIST_INPUT = "data/processed/personal_watchlist_ranked.csv"
 DEFAULT_USED_INPUTS_INPUT = "data/processed/personal_run_used_inputs.csv"
 DEFAULT_MANIFEST_INPUT = "data/processed/personal_run_manifest.json"
@@ -166,6 +167,7 @@ def build_reconciliation(
     evidence_delta_summary_rows: list[dict[str, str]],
     evidence_delta_holdings_rows: list[dict[str, str]],
     monthly_rows: list[dict[str, str]],
+    monthly_action_summary_rows: list[dict[str, str]],
     watchlist_rows: list[dict[str, str]],
     used_input_rows: list[dict[str, str]],
     manifest: dict[str, Any],
@@ -179,6 +181,7 @@ def build_reconciliation(
     watchlist_status_counts = count_upper(watchlist_rows, "status")
     watchlist_quality_counts = count_upper(watchlist_rows, "data_quality_flag")
     monthly_target_counts = count_upper(monthly_rows, "target_action")
+    monthly_action_summary = summary_map(monthly_action_summary_rows)
     missing_summary = summary_map(missing_kpi_summary_rows)
     delta_summary = summary_map(evidence_delta_summary_rows)
     source_mode, scoring_master = extract_fundamentals_source_mode(used_input_rows, manifest)
@@ -249,17 +252,22 @@ def build_reconciliation(
     has_target_action = "target_action" in monthly_fields
     has_allocation_status = "allocation_status" in monthly_fields
     has_monthly_action = "monthly_action" in monthly_fields
-    monthly_schema_drift = has_target_action and has_allocation_status and not has_monthly_action
+    monthly_compat_available = monthly_action_summary.get("monthly_action_compatibility_available") == "True"
+    monthly_compat_resolved = monthly_action_summary.get("monthly_schema_drift_resolved") == "True"
+    monthly_compat_forbidden_total = int_value(monthly_action_summary.get("forbidden_monthly_action_values_total"))
+    monthly_schema_drift = has_target_action and has_allocation_status and not has_monthly_action and not (
+        monthly_compat_available and monthly_compat_resolved and monthly_compat_forbidden_total == 0
+    )
     add_check(
         checks,
         check_id="monthly_schema_contract",
         category="schema",
         status="REVIEW" if monthly_schema_drift else ("NOT_AVAILABLE" if not monthly_rows else "PASS"),
         reason_codes={"MONTHLY_SCHEMA_DRIFT"} if monthly_schema_drift else set(),
-        observed_value=f"fields={','.join(sorted(monthly_fields))}",
-        expected_value="Monthly ranking exposes a stable action field for downstream reports; current canonical fields are target_action/allocation_status",
-        evidence="personal_monthly_buy_ranking.csv; current delta-style review artifacts expose monthly_action as derived output",
-        recommended_next_action="Add a compatibility alias or update report readers in a dedicated schema patch." if monthly_schema_drift else "No action.",
+        observed_value=f"fields={','.join(sorted(monthly_fields))}; compatibility_available={monthly_compat_available}; compatibility_resolved={monthly_compat_resolved}; forbidden_monthly_action_values_total={monthly_compat_forbidden_total}",
+        expected_value="Monthly ranking exposes monthly_action directly or through a neutral compatibility summary",
+        evidence="personal_monthly_buy_ranking.csv; personal_monthly_action_compatibility_summary.csv",
+        recommended_next_action="Generate neutral monthly_action compatibility artifact or update report readers in a dedicated schema patch." if monthly_schema_drift else "No action.",
     )
 
     sample_watchlist = watchlist_path.replace("\\", "/") == "data/raw/sample_watchlist.csv"
@@ -363,6 +371,13 @@ def build_reconciliation(
     add_metric("monthly_has_target_action", bool_text(has_target_action), "Schema check.")
     add_metric("monthly_has_allocation_status", bool_text(has_allocation_status), "Schema check.")
     add_metric("monthly_has_monthly_action", bool_text(has_monthly_action), "Schema check.")
+    add_metric("monthly_action_compatibility_available", bool_text(monthly_compat_available), "Neutral monthly_action compatibility artifact available.")
+    add_metric("monthly_schema_drift_resolved", bool_text(not monthly_schema_drift and bool(monthly_rows)), "Monthly schema drift check resolved by direct field or companion compatibility artifact.")
+    add_metric("monthly_action_forbidden_values_total", monthly_compat_forbidden_total, "Forbidden monthly_action values in compatibility summary.")
+    for row in monthly_action_summary_rows:
+        metric = row.get("metric", "")
+        if metric.startswith("monthly_action__"):
+            add_metric(metric, row.get("value", "0"), "Neutral monthly_action count from compatibility summary.")
     for action, count in sorted(monthly_target_counts.items()):
         add_metric(f"monthly_target_action__{action}", count, "Monthly target_action count.")
     add_metric("watchlist_rows_total", len(watchlist_rows), "Rows in personal_watchlist_ranked.csv.")
@@ -494,6 +509,7 @@ def run_personal_artifact_reconciliation(
     evidence_delta_summary_input: str = DEFAULT_EVIDENCE_DELTA_SUMMARY_INPUT,
     evidence_delta_holdings_input: str = DEFAULT_EVIDENCE_DELTA_HOLDINGS_INPUT,
     monthly_input: str = DEFAULT_MONTHLY_INPUT,
+    monthly_action_summary_input: str = DEFAULT_MONTHLY_ACTION_SUMMARY_INPUT,
     watchlist_input: str = DEFAULT_WATCHLIST_INPUT,
     used_inputs_input: str = DEFAULT_USED_INPUTS_INPUT,
     manifest_input: str = DEFAULT_MANIFEST_INPUT,
@@ -511,6 +527,7 @@ def run_personal_artifact_reconciliation(
         "evidence_delta_summary": evidence_delta_summary_input,
         "evidence_delta_holdings": evidence_delta_holdings_input,
         "monthly": monthly_input,
+        "monthly_action_summary": monthly_action_summary_input,
         "watchlist": watchlist_input,
         "used_inputs": used_inputs_input,
     }
@@ -531,6 +548,7 @@ def run_personal_artifact_reconciliation(
         evidence_delta_summary_rows=loaded["evidence_delta_summary"],
         evidence_delta_holdings_rows=loaded["evidence_delta_holdings"],
         monthly_rows=loaded["monthly"],
+        monthly_action_summary_rows=loaded["monthly_action_summary"],
         watchlist_rows=loaded["watchlist"],
         used_input_rows=loaded["used_inputs"],
         manifest=manifest,
@@ -566,6 +584,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--evidence-delta-summary-input", default=DEFAULT_EVIDENCE_DELTA_SUMMARY_INPUT)
     parser.add_argument("--evidence-delta-holdings-input", default=DEFAULT_EVIDENCE_DELTA_HOLDINGS_INPUT)
     parser.add_argument("--monthly-input", default=DEFAULT_MONTHLY_INPUT)
+    parser.add_argument("--monthly-action-summary-input", default=DEFAULT_MONTHLY_ACTION_SUMMARY_INPUT)
     parser.add_argument("--watchlist-input", default=DEFAULT_WATCHLIST_INPUT)
     parser.add_argument("--used-inputs-input", default=DEFAULT_USED_INPUTS_INPUT)
     parser.add_argument("--manifest-input", default=DEFAULT_MANIFEST_INPUT)
@@ -586,6 +605,7 @@ def main() -> None:
         evidence_delta_summary_input=args.evidence_delta_summary_input,
         evidence_delta_holdings_input=args.evidence_delta_holdings_input,
         monthly_input=args.monthly_input,
+        monthly_action_summary_input=args.monthly_action_summary_input,
         watchlist_input=args.watchlist_input,
         used_inputs_input=args.used_inputs_input,
         manifest_input=args.manifest_input,
