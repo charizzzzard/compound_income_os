@@ -68,4 +68,16 @@ CTA URLs and shared site metadata live in:
 src/siteConfig.js
 ```
 
-Optional deployment overrides can be provided with `VITE_*` environment variables. Copy `.env.example` to a local `.env` file if needed. The app builds without these variables and falls back to placeholder `mailto:` links and `TBD` public links.
+Optional deployment overrides can be provided with `VITE_*` environment variables. Copy `.env.example` to a local `.env` file if needed. The app builds without these variables and renders honest pending states instead of placeholder email addresses or fake public links.
+
+## Public Launch Blockers
+
+This build is a private preview. The following items must be real and verified before any public deploy:
+
+- Imprint page (legal requirement in DE/EU); `VITE_IMPRINT_URL` must be set.
+- Privacy policy page; `VITE_PRIVACY_URL` must be set.
+- Real CTA targets: `VITE_SAMPLE_REPORT_URL`, `VITE_EARLY_ACCESS_URL`, `VITE_SETUP_SERVICE_URL`, `VITE_GITHUB_URL`.
+- Real pricing or scope for Pro Modules and Setup Service.
+- No public deploy has been performed.
+- All KPI and chart values shown are synthetic demo values.
+- The product is not investment, tax, or legal advice.
