@@ -7,8 +7,8 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from src.common import canonicalize_ticker, read_csv_rows, resolve_repo_path, safe_upper, write_csv_rows
-from src.fundamentals_master import VALID_COMPANY_TYPE_PROFILES
+from src.common import canonicalize_ticker, resolve_repo_path, safe_upper, write_csv_rows
+from src.fundamentals_master import DEFAULT_PERSONAL_MASTER_PATH, VALID_COMPANY_TYPE_PROFILES
 from src.fundamentals_profile_engine import PROFILE_REVIEW_INPUT_FIELDS, require_header_columns
 from src.personal_sec_profile_seed import DEFAULT_PROFILE_SEED_OUTPUT
 
@@ -47,9 +47,22 @@ class MaterializationResult:
     review_rows_total: int
     approved_rows_total: int
     review_required_rows_total: int
+    master_input_path: Path | None
+    master_rows_total: int
+    master_identity_matched_rows_total: int
+    master_identity_missing_rows_total: int
+    duplicate_master_isin_count: int
     output_path: Path
     report_path: Path | None
     warnings: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class MasterIdentityContext:
+    input_path: Path | None
+    rows_total: int
+    by_isin: dict[str, dict[str, str]]
+    duplicate_isin_count: int
 
 
 def read_csv_rows_with_header(path_value: str | Path) -> tuple[list[str], list[dict[str, str]]]:
@@ -69,6 +82,38 @@ def materialized_sort_key(row: dict[str, str]) -> tuple[str, str, str]:
         canonical_isin(row.get("isin", "")),
         str(row.get("company_name", "") or "").strip(),
     )
+
+
+def append_note_token(notes: str, token: str) -> str:
+    text = str(notes or "").strip()
+    if not token or token in text:
+        return text
+    return f"{text} {token}".strip()
+
+
+def build_master_identity_context(path_value: str | Path) -> MasterIdentityContext:
+    path = resolve_repo_path(path_value)
+    if not path.exists():
+        return MasterIdentityContext(input_path=path, rows_total=0, by_isin={}, duplicate_isin_count=0)
+
+    fieldnames, rows = read_csv_rows_with_header(path)
+    require_header_columns(fieldnames, ["ticker", "isin", "company_name"], f"personal fundamentals master ({path_value})")
+    by_isin: dict[str, dict[str, str]] = {}
+    duplicate_isins: set[str] = set()
+    for row in rows:
+        isin = canonical_isin(row.get("isin", ""))
+        if not isin:
+            continue
+        if isin in by_isin:
+            duplicate_isins.add(isin)
+            continue
+        by_isin[isin] = row
+    if duplicate_isins:
+        raise ValueError(
+            "personal fundamentals master has duplicate isin value(s); profile review materialization would be ambiguous: "
+            + ", ".join(sorted(duplicate_isins))
+        )
+    return MasterIdentityContext(input_path=path, rows_total=len(rows), by_isin=by_isin, duplicate_isin_count=len(duplicate_isins))
 
 
 def parse_optional_iso_date(value: Any, source_name: str, row_number: int) -> str:
@@ -183,11 +228,16 @@ def find_exact_map_entry(seed_row: dict[str, str], entries: list[ExactMapEntry],
     return matches[0]
 
 
-def seed_review_row(seed_row: dict[str, str]) -> dict[str, str]:
+def seed_review_row(seed_row: dict[str, str], master_row: dict[str, str] | None = None) -> dict[str, str]:
+    seed_ticker = canonicalize_ticker(seed_row.get("ticker", ""))
+    master_row = master_row or {}
+    notes = str(seed_row.get("notes", "") or "").strip()
+    if master_row and seed_ticker:
+        notes = append_note_token(notes, f"sec_identity_ticker={seed_ticker}")
     return {
-        "ticker": canonicalize_ticker(seed_row.get("ticker", "")),
-        "isin": canonical_isin(seed_row.get("isin", "")),
-        "company_name": str(seed_row.get("company_name", "") or "").strip(),
+        "ticker": canonicalize_ticker(master_row.get("ticker", "")) if master_row else seed_ticker,
+        "isin": canonical_isin(master_row.get("isin", "")) if master_row else canonical_isin(seed_row.get("isin", "")),
+        "company_name": str(master_row.get("company_name", "") or "").strip() or str(seed_row.get("company_name", "") or "").strip(),
         "proposed_company_type_profile": "",
         "profile_reason": "",
         "review_status": "REVIEW",
@@ -195,7 +245,7 @@ def seed_review_row(seed_row: dict[str, str]) -> dict[str, str]:
         "review_as_of_date": "",
         "source_name": "",
         "source_reference": "",
-        "notes": str(seed_row.get("notes", "") or "").strip(),
+        "notes": notes,
     }
 
 
@@ -213,21 +263,37 @@ def apply_exact_map(row: dict[str, str], entry: ExactMapEntry) -> dict[str, str]
         }
     )
     if entry.row["notes"]:
-        mapped["notes"] = entry.row["notes"]
+        sec_identity_ticker = ""
+        for part in str(row.get("notes", "") or "").split():
+            if part.startswith("sec_identity_ticker="):
+                sec_identity_ticker = part
+                break
+        mapped["notes"] = append_note_token(entry.row["notes"], sec_identity_ticker)
     return mapped
 
 
 def build_review_rows(
     seed_rows: list[dict[str, str]],
     exact_map_entries: list[ExactMapEntry],
-) -> tuple[list[dict[str, str]], int, tuple[str, ...]]:
+    master_context: MasterIdentityContext,
+) -> tuple[list[dict[str, str]], int, int, int, tuple[str, ...]]:
     warnings: list[str] = []
     mapped_entry_row_numbers: set[int] = set()
     output_rows: list[dict[str, str]] = []
     source_name = "personal profile review exact map"
+    master_identity_matched_rows_total = 0
+    master_identity_missing_rows_total = 0
 
     for seed_row in seed_rows:
-        row = seed_review_row(seed_row)
+        seed_isin = canonical_isin(seed_row.get("isin", ""))
+        master_row = master_context.by_isin.get(seed_isin) if seed_isin else None
+        if master_row is not None:
+            master_identity_matched_rows_total += 1
+        else:
+            master_identity_missing_rows_total += 1
+            if seed_isin:
+                warnings.append(f"master_identity_missing_for_isin={seed_isin}")
+        row = seed_review_row(seed_row, master_row)
         entry = find_exact_map_entry(seed_row, exact_map_entries, source_name)
         if entry is not None:
             row = apply_exact_map(row, entry)
@@ -242,7 +308,7 @@ def build_review_rows(
         )
 
     output_rows.sort(key=materialized_sort_key)
-    return output_rows, len(mapped_entry_row_numbers), tuple(warnings)
+    return output_rows, len(mapped_entry_row_numbers), master_identity_matched_rows_total, master_identity_missing_rows_total, tuple(warnings)
 
 
 def write_report(path_value: str | Path, result: MaterializationResult) -> Path:
@@ -254,6 +320,11 @@ def write_report(path_value: str | Path, result: MaterializationResult) -> Path:
         f"- review_rows_total: {result.review_rows_total}",
         f"- approved_rows_total: {result.approved_rows_total}",
         f"- review_required_rows_total: {result.review_required_rows_total}",
+        f"- master_input_path: {result.master_input_path or ''}",
+        f"- master_rows_total: {result.master_rows_total}",
+        f"- master_identity_matched_rows_total: {result.master_identity_matched_rows_total}",
+        f"- master_identity_missing_rows_total: {result.master_identity_missing_rows_total}",
+        f"- duplicate_master_isin_count: {result.duplicate_master_isin_count}",
         f"- output_path: {result.output_path}",
         "- warnings:",
     ]
@@ -270,6 +341,7 @@ def write_report(path_value: str | Path, result: MaterializationResult) -> Path:
 def run_personal_profile_review_materialize(
     *,
     seed_input: str = DEFAULT_PROFILE_SEED_OUTPUT,
+    fundamentals_master_input: str = DEFAULT_PERSONAL_MASTER_PATH,
     output: str = DEFAULT_REVIEW_OUTPUT,
     exact_map_input: str = DEFAULT_EXACT_MAP_INPUT,
     overwrite: bool = False,
@@ -282,8 +354,11 @@ def run_personal_profile_review_materialize(
 
     seed_fieldnames, seed_rows = read_csv_rows_with_header(seed_input)
     require_header_columns(seed_fieldnames, PROFILE_REVIEW_INPUT_FIELDS, f"profile review seed ({seed_input})")
+    master_context = build_master_identity_context(fundamentals_master_input)
 
     warnings: list[str] = []
+    if master_context.input_path and not master_context.input_path.exists():
+        warnings.append(f"optional_fundamentals_master_missing={master_context.input_path}")
     exact_map_path = resolve_repo_path(exact_map_input)
     exact_map_entries: list[ExactMapEntry] = []
     if exact_map_input and exact_map_path.exists():
@@ -291,7 +366,11 @@ def run_personal_profile_review_materialize(
     elif exact_map_input:
         warnings.append(f"optional_exact_map_missing={exact_map_path}")
 
-    review_rows, mapped_rows_total, row_warnings = build_review_rows(seed_rows, exact_map_entries)
+    review_rows, mapped_rows_total, master_matched_total, master_missing_total, row_warnings = build_review_rows(
+        seed_rows,
+        exact_map_entries,
+        master_context,
+    )
     warnings.extend(row_warnings)
 
     approved_rows_total = sum(1 for row in review_rows if safe_upper(row.get("review_status")) == "APPROVED")
@@ -306,6 +385,11 @@ def run_personal_profile_review_materialize(
         review_rows_total=len(review_rows),
         approved_rows_total=approved_rows_total,
         review_required_rows_total=review_required_rows_total,
+        master_input_path=master_context.input_path,
+        master_rows_total=master_context.rows_total,
+        master_identity_matched_rows_total=master_matched_total,
+        master_identity_missing_rows_total=master_missing_total,
+        duplicate_master_isin_count=master_context.duplicate_isin_count,
         output_path=output_path,
         report_path=None,
         warnings=tuple(warnings),
@@ -318,6 +402,11 @@ def run_personal_profile_review_materialize(
             review_rows_total=result.review_rows_total,
             approved_rows_total=result.approved_rows_total,
             review_required_rows_total=result.review_required_rows_total,
+            master_input_path=result.master_input_path,
+            master_rows_total=result.master_rows_total,
+            master_identity_matched_rows_total=result.master_identity_matched_rows_total,
+            master_identity_missing_rows_total=result.master_identity_missing_rows_total,
+            duplicate_master_isin_count=result.duplicate_master_isin_count,
             output_path=result.output_path,
             report_path=report_path,
             warnings=result.warnings,
@@ -330,6 +419,7 @@ def parse_args() -> argparse.Namespace:
         description="Materialize a review-first personal company_type_profile CSV from the SEC identity profile-review seed."
     )
     parser.add_argument("--seed-input", default=DEFAULT_PROFILE_SEED_OUTPUT, help="Processed SEC identity profile-review seed CSV.")
+    parser.add_argument("--fundamentals-master-input", default=DEFAULT_PERSONAL_MASTER_PATH, help="Personal fundamentals master used to write downstream-compatible review identifiers.")
     parser.add_argument("--output", default=DEFAULT_REVIEW_OUTPUT, help="Canonical raw personal profile review CSV output.")
     parser.add_argument("--exact-map-input", default=DEFAULT_EXACT_MAP_INPUT, help="Optional private exact ticker/isin review map CSV.")
     parser.add_argument("--overwrite", action="store_true", help="Allow replacing an existing output file.")
@@ -348,6 +438,7 @@ def main() -> None:
     report_output = args.report_output or (DEFAULT_REPORT_OUTPUT if args.write_report else None)
     run_personal_profile_review_materialize(
         seed_input=args.seed_input,
+        fundamentals_master_input=args.fundamentals_master_input,
         output=args.output,
         exact_map_input=args.exact_map_input,
         overwrite=args.overwrite,
