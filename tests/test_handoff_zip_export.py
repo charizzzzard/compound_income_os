@@ -108,6 +108,7 @@ class HandoffZipExportTests(unittest.TestCase):
             archive.writestr("website/compound-income-os-landing/.env", "blocked")
             archive.writestr("website/compound-income-os-landing/.env.production.local", "blocked")
             archive.writestr("website/compound-income-os-landing/.env.example", "allowed")
+            archive.writestr("website/compound-income-os-landing/deploy_artifacts/dist.zip", "blocked")
             archive.writestr("src/app.py", "allowed")
 
         matches = scan_forbidden_entries(zip_path)
@@ -124,6 +125,7 @@ class HandoffZipExportTests(unittest.TestCase):
         self.assertIn("website/compound-income-os-landing/.env", matches)
         self.assertIn("website/compound-income-os-landing/.env.production.local", matches)
         self.assertNotIn("website/compound-income-os-landing/.env.example", matches)
+        self.assertIn("website/compound-income-os-landing/deploy_artifacts/dist.zip", matches)
         self.assertNotIn("src/app.py", matches)
 
 
