@@ -1,0 +1,27 @@
+metric,value,notes
+audit_rows_total,476,Rows in personal_kpi_provenance_audit.csv.
+holdings_with_incomplete_provenance_total,10,"Distinct holdings with PARTIAL, MISSING, or AMBIGUOUS provenance."
+kpi_required_status__ADVANCED_OPTIONAL__MISSING,50,KPI tier by provenance status count.
+kpi_required_status__ADVANCED_OPTIONAL__NOT_APPLICABLE,35,KPI tier by provenance status count.
+kpi_required_status__CORE_QUALITY_REQUIRED__MISSING,22,KPI tier by provenance status count.
+kpi_required_status__CORE_QUALITY_REQUIRED__NOT_APPLICABLE,35,KPI tier by provenance status count.
+kpi_required_status__CORE_QUALITY_REQUIRED__TRUSTED,28,KPI tier by provenance status count.
+kpi_required_status__DIVIDEND_FCF_REQUIRED__MISSING,30,KPI tier by provenance status count.
+kpi_required_status__DIVIDEND_FCF_REQUIRED__NOT_APPLICABLE,21,KPI tier by provenance status count.
+kpi_required_status__UNKNOWN__MISSING,130,KPI tier by provenance status count.
+kpi_required_status__UNKNOWN__NOT_APPLICABLE,91,KPI tier by provenance status count.
+kpi_required_status__VALUATION_REQUIRED__MISSING,20,KPI tier by provenance status count.
+kpi_required_status__VALUATION_REQUIRED__NOT_APPLICABLE,14,KPI tier by provenance status count.
+provenance_incomplete_flag,True,Can feed future reconciliation PROVENANCE_INCOMPLETE.
+provenance_status__AMBIGUOUS,0,Provenance status count.
+provenance_status__MISSING,252,Provenance status count.
+provenance_status__NOT_APPLICABLE,196,Provenance status count.
+provenance_status__PARTIAL,0,Provenance status count.
+provenance_status__TRUSTED,28,Provenance status count.
+reason_code__EVIDENCE_APPLIED_VALUE_MISSING,252,Reason code count.
+reason_code__EVIDENCE_REGISTRY_MISSING,252,Reason code count.
+reason_code__PROFILE_NOT_STANDARD,196,Reason code count.
+reason_code__SOURCE_MATCHED,28,Reason code count.
+source_layer__EVIDENCE_REGISTRY,28,Source layer count.
+source_layer__NOT_FOUND,448,Source layer count.
+warnings_total,0,Missing input warnings.
