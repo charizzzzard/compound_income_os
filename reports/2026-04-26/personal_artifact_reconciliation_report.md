@@ -6,7 +6,7 @@ Generated: 2026-04-26
 
 - Demo readiness: `BLOCKED`
 - Decision readiness: `BLOCKED`
-- Reason codes: `MISSING_DIVIDEND_FCF_REQUIRED;MISSING_METADATA;MISSING_VALUATION_REQUIRED;PROVENANCE_INCOMPLETE;REVIEW_CORE_DATA;STALE_ARTIFACT;WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT`
+- Reason codes: `INPUT_FILE_MISSING;MISSING_DIVIDEND_FCF_REQUIRED;MISSING_METADATA;MISSING_VALUATION_REQUIRED;NO_IMPUTATION;PROVENANCE_INCOMPLETE;REVIEW_CORE_DATA;STALE_ARTIFACT;VALUATION_REQUIRED_MISSING;WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT`
 - Scoring fundamentals source mode: `EVIDENCE_APPLIED`
 
 This report reconciles existing processed artifacts only. It does not change scores, formulas, fundamentals values, watchlist values, or monthly ranking outputs.
@@ -27,6 +27,7 @@ This report reconciles existing processed artifacts only. It does not change sco
 | score_audit | `data/processed/personal_score_audit.csv` |
 | scores | `data/processed/personal_company_scores.csv` |
 | used_inputs | `data/processed/personal_run_used_inputs.csv` |
+| valuation_contract_summary | `data/processed/personal_valuation_input_contract_summary.csv` |
 | watchlist | `data/processed/personal_watchlist_ranked.csv` |
 | watchlist_gate_summary | `data/processed/personal_watchlist_input_gate_summary.csv` |
 
@@ -64,7 +65,7 @@ This report reconciles existing processed artifacts only. It does not change sco
 | `monthly_target_action__REVIEW_CORE_DATA` | `4` | Monthly target_action count. |
 | `monthly_target_action__WAIT_VALUATION` | `6` | Monthly target_action count. |
 | `not_available_checks_total` | `0` | Checks with NOT_AVAILABLE status. |
-| `readiness_reason_codes` | `MISSING_DIVIDEND_FCF_REQUIRED;MISSING_METADATA;MISSING_VALUATION_REQUIRED;PROVENANCE_INCOMPLETE;REVIEW_CORE_DATA;STALE_ARTIFACT;WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT` | Union of BLOCKED/REVIEW/NOT_AVAILABLE reason codes. |
+| `readiness_reason_codes` | `INPUT_FILE_MISSING;MISSING_DIVIDEND_FCF_REQUIRED;MISSING_METADATA;MISSING_VALUATION_REQUIRED;NO_IMPUTATION;PROVENANCE_INCOMPLETE;REVIEW_CORE_DATA;STALE_ARTIFACT;VALUATION_REQUIRED_MISSING;WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT` | Union of BLOCKED/REVIEW/NOT_AVAILABLE reason codes. |
 | `review_checks_total` | `3` | Checks with REVIEW status. |
 | `score_data_quality__BLOCKED` | `0` | Current score CSV data-quality count. |
 | `score_data_quality__MISSING_DATA` | `11` | Current score CSV data-quality count. |
@@ -79,6 +80,16 @@ This report reconciles existing processed artifacts only. It does not change sco
 | `standard_review_core_data_rows_total` | `4` | STANDARD rows with resulting_monthly_action=REVIEW_CORE_DATA. |
 | `standard_rows_total` | `10` | Rows in KPI tier coverage with company_type_profile=STANDARD. |
 | `unresolved_current_artifact_drift_total` | `0` | Current unexplained drift count from freshness summary. |
+| `valuation_contract_affected_standard_rows_count` | `10` | Valuation input contract summary metric. |
+| `valuation_contract_approved_rows_count` | `0` | Valuation input contract summary metric. |
+| `valuation_contract_input_file_status` | `MISSING` | Valuation input contract summary metric. |
+| `valuation_contract_invalid_rows_count` | `0` | Valuation input contract summary metric. |
+| `valuation_contract_missing_rows_count` | `10` | Valuation input contract summary metric. |
+| `valuation_contract_no_imputation_confirmed` | `True` | Valuation input contract summary metric. |
+| `valuation_contract_queue_rows_count` | `10` | Valuation input contract summary metric. |
+| `valuation_contract_reason_codes` | `INPUT_FILE_MISSING;NO_IMPUTATION;PROFILE_NOT_STANDARD;VALUATION_REQUIRED_MISSING` | Valuation input contract summary metric. |
+| `valuation_contract_review_rows_count` | `0` | Valuation input contract summary metric. |
+| `valuation_contract_summary_available` | `True` | Valuation input contract summary was loaded. |
 | `warnings_total` | `0` | Missing input warnings. |
 | `watchlist_data_quality__MISSING_DATA` | `8` | Watchlist data-quality count. |
 | `watchlist_data_status` | `MISSING_DATA` | Watchlist input gate summary metric. |
@@ -98,7 +109,7 @@ This report reconciles existing processed artifacts only. It does not change sco
 | `score_vs_delta_data_quality` | `REVIEW` | `MISSING_METADATA;STALE_ARTIFACT` | personal_company_scores.csv; personal_evidence_applied_downstream_delta_summary.csv; personal_artifact_freshness_summary.csv |
 | `standard_core_review` | `BLOCKED` | `REVIEW_CORE_DATA` | personal_kpi_tier_coverage.csv |
 | `standard_dividend_fcf_required` | `REVIEW` | `MISSING_DIVIDEND_FCF_REQUIRED` | personal_kpi_tier_coverage.csv |
-| `standard_valuation_required` | `BLOCKED` | `MISSING_VALUATION_REQUIRED` | personal_kpi_tier_coverage.csv |
+| `standard_valuation_required` | `BLOCKED` | `INPUT_FILE_MISSING;MISSING_VALUATION_REQUIRED;NO_IMPUTATION;VALUATION_REQUIRED_MISSING` | personal_kpi_tier_coverage.csv; personal_valuation_input_contract_summary.csv |
 | `watchlist_demo_decision_readiness` | `BLOCKED` | `WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT` | personal_run_used_inputs.csv; personal_watchlist_ranked.csv; personal_watchlist_input_gate_summary.csv |
 
 ## 5. Demo Readiness
@@ -116,7 +127,7 @@ Decision readiness remains blocked while valuation-required data, core review da
 ## 7. Blockers
 
 - `standard_core_review`: `REVIEW_CORE_DATA`. Close core-quality KPI evidence or keep blocked.
-- `standard_valuation_required`: `MISSING_VALUATION_REQUIRED`. Add reviewed valuation input contract or manual overlay; do not impute values.
+- `standard_valuation_required`: `INPUT_FILE_MISSING;MISSING_VALUATION_REQUIRED;NO_IMPUTATION;VALUATION_REQUIRED_MISSING`. Populate reviewed valuation input with approved values and source metadata; do not impute values.
 - `watchlist_demo_decision_readiness`: `WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT`. Use a reviewed watchlist input or label current output as sample/demo-only.
 
 ## 8. Review Items

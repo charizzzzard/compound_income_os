@@ -43,6 +43,7 @@ class PersonalArtifactReconciliationTests(unittest.TestCase):
         self.monthly_action_summary = self.tmp / "monthly_action_summary.csv"
         self.watchlist = self.tmp / "watchlist.csv"
         self.watchlist_gate_summary = self.tmp / "watchlist_gate_summary.csv"
+        self.valuation_contract_summary = self.tmp / "valuation_contract_summary.csv"
         self.used_inputs = self.tmp / "used_inputs.csv"
         self.manifest = self.tmp / "manifest.json"
         self.summary_output = self.tmp / "summary.csv"
@@ -152,6 +153,7 @@ class PersonalArtifactReconciliationTests(unittest.TestCase):
             monthly_action_summary_input=str(self.monthly_action_summary),
             watchlist_input=str(self.watchlist),
             watchlist_gate_summary_input=str(self.watchlist_gate_summary),
+            valuation_contract_summary_input=str(self.valuation_contract_summary),
             used_inputs_input=str(self.used_inputs),
             manifest_input=str(self.manifest),
             summary_output=str(self.summary_output),
@@ -255,6 +257,33 @@ class PersonalArtifactReconciliationTests(unittest.TestCase):
         self.assertIn("gate_input_status=SAMPLE_DEMO_ONLY", row["observed_value"])
         self.assertIn("WATCHLIST_SAMPLE_INPUT", row["reason_codes"])
         self.assertEqual(self.summary_value("watchlist_input_status"), "SAMPLE_DEMO_ONLY")
+
+    def test_valuation_contract_summary_drives_precise_reasons(self) -> None:
+        self.write_base_inputs(delta_review_count="1")
+        write_csv(
+            self.valuation_contract_summary,
+            ["metric", "value", "notes"],
+            [
+                {"metric": "input_file_status", "value": "MISSING", "notes": ""},
+                {"metric": "affected_standard_rows_count", "value": "1", "notes": ""},
+                {"metric": "queue_rows_count", "value": "1", "notes": ""},
+                {"metric": "approved_rows_count", "value": "0", "notes": ""},
+                {"metric": "review_rows_count", "value": "0", "notes": ""},
+                {"metric": "missing_rows_count", "value": "1", "notes": ""},
+                {"metric": "invalid_rows_count", "value": "0", "notes": ""},
+                {"metric": "no_imputation_confirmed", "value": "True", "notes": ""},
+                {"metric": "reason_codes", "value": "INPUT_FILE_MISSING;NO_IMPUTATION;VALUATION_REQUIRED_MISSING", "notes": ""},
+            ],
+        )
+        self.run_reconciliation()
+
+        row = self.check_row("standard_valuation_required")
+        self.assertEqual(row["status"], "BLOCKED")
+        self.assertIn("MISSING_VALUATION_REQUIRED", row["reason_codes"])
+        self.assertIn("INPUT_FILE_MISSING", row["reason_codes"])
+        self.assertIn("NO_IMPUTATION", row["reason_codes"])
+        self.assertEqual(self.summary_value("valuation_contract_summary_available"), "True")
+        self.assertEqual(self.summary_value("valuation_contract_input_file_status"), "MISSING")
 
     def test_report_is_deterministic_and_sanitized(self) -> None:
         self.write_base_inputs(delta_review_count="1", watchlist_path="data/raw/private/fundamentals/watchlist.csv")

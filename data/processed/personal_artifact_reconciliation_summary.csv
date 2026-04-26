@@ -29,7 +29,7 @@ monthly_target_action__HOLD_CASH,1,Monthly target_action count.
 monthly_target_action__REVIEW_CORE_DATA,4,Monthly target_action count.
 monthly_target_action__WAIT_VALUATION,6,Monthly target_action count.
 not_available_checks_total,0,Checks with NOT_AVAILABLE status.
-readiness_reason_codes,MISSING_DIVIDEND_FCF_REQUIRED;MISSING_METADATA;MISSING_VALUATION_REQUIRED;PROVENANCE_INCOMPLETE;REVIEW_CORE_DATA;STALE_ARTIFACT;WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT,Union of BLOCKED/REVIEW/NOT_AVAILABLE reason codes.
+readiness_reason_codes,INPUT_FILE_MISSING;MISSING_DIVIDEND_FCF_REQUIRED;MISSING_METADATA;MISSING_VALUATION_REQUIRED;NO_IMPUTATION;PROVENANCE_INCOMPLETE;REVIEW_CORE_DATA;STALE_ARTIFACT;VALUATION_REQUIRED_MISSING;WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT,Union of BLOCKED/REVIEW/NOT_AVAILABLE reason codes.
 review_checks_total,3,Checks with REVIEW status.
 score_data_quality__BLOCKED,0,Current score CSV data-quality count.
 score_data_quality__MISSING_DATA,11,Current score CSV data-quality count.
@@ -44,6 +44,16 @@ standard_missing_valuation_required_rows_total,10,STANDARD rows missing valuatio
 standard_review_core_data_rows_total,4,STANDARD rows with resulting_monthly_action=REVIEW_CORE_DATA.
 standard_rows_total,10,Rows in KPI tier coverage with company_type_profile=STANDARD.
 unresolved_current_artifact_drift_total,0,Current unexplained drift count from freshness summary.
+valuation_contract_affected_standard_rows_count,10,Valuation input contract summary metric.
+valuation_contract_approved_rows_count,0,Valuation input contract summary metric.
+valuation_contract_input_file_status,MISSING,Valuation input contract summary metric.
+valuation_contract_invalid_rows_count,0,Valuation input contract summary metric.
+valuation_contract_missing_rows_count,10,Valuation input contract summary metric.
+valuation_contract_no_imputation_confirmed,True,Valuation input contract summary metric.
+valuation_contract_queue_rows_count,10,Valuation input contract summary metric.
+valuation_contract_reason_codes,INPUT_FILE_MISSING;NO_IMPUTATION;PROFILE_NOT_STANDARD;VALUATION_REQUIRED_MISSING,Valuation input contract summary metric.
+valuation_contract_review_rows_count,0,Valuation input contract summary metric.
+valuation_contract_summary_available,True,Valuation input contract summary was loaded.
 warnings_total,0,Missing input warnings.
 watchlist_data_quality__MISSING_DATA,8,Watchlist data-quality count.
 watchlist_data_status,MISSING_DATA,Watchlist input gate summary metric.

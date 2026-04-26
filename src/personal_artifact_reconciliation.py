@@ -22,6 +22,7 @@ DEFAULT_MONTHLY_INPUT = "data/processed/personal_monthly_buy_ranking.csv"
 DEFAULT_MONTHLY_ACTION_SUMMARY_INPUT = "data/processed/personal_monthly_action_compatibility_summary.csv"
 DEFAULT_WATCHLIST_INPUT = "data/processed/personal_watchlist_ranked.csv"
 DEFAULT_WATCHLIST_GATE_SUMMARY_INPUT = "data/processed/personal_watchlist_input_gate_summary.csv"
+DEFAULT_VALUATION_CONTRACT_SUMMARY_INPUT = "data/processed/personal_valuation_input_contract_summary.csv"
 DEFAULT_USED_INPUTS_INPUT = "data/processed/personal_run_used_inputs.csv"
 DEFAULT_MANIFEST_INPUT = "data/processed/personal_run_manifest.json"
 DEFAULT_SUMMARY_OUTPUT = "data/processed/personal_artifact_reconciliation_summary.csv"
@@ -173,6 +174,7 @@ def build_reconciliation(
     monthly_action_summary_rows: list[dict[str, str]],
     watchlist_rows: list[dict[str, str]],
     watchlist_gate_summary_rows: list[dict[str, str]],
+    valuation_contract_summary_rows: list[dict[str, str]],
     used_input_rows: list[dict[str, str]],
     manifest: dict[str, Any],
     warnings: list[str],
@@ -187,6 +189,7 @@ def build_reconciliation(
     monthly_target_counts = count_upper(monthly_rows, "target_action")
     monthly_action_summary = summary_map(monthly_action_summary_rows)
     watchlist_gate_summary = summary_map(watchlist_gate_summary_rows)
+    valuation_contract_summary = summary_map(valuation_contract_summary_rows)
     missing_summary = summary_map(missing_kpi_summary_rows)
     delta_summary = summary_map(evidence_delta_summary_rows)
     freshness_summary = summary_map(artifact_freshness_summary_rows)
@@ -243,16 +246,40 @@ def build_reconciliation(
     valuation_missing_rows = [row for row in standard_rows if safe_upper(row.get("valuation_data_status", "")) in {"MISSING", "PARTIAL"}]
     dividend_missing_rows = [row for row in standard_rows if safe_upper(row.get("dividend_fcf_data_status", "")) in {"MISSING", "PARTIAL"}]
     core_review_rows = [row for row in standard_rows if safe_upper(row.get("resulting_monthly_action", "")) == "REVIEW_CORE_DATA"]
+    valuation_contract_reasons = {
+        reason for reason in str(valuation_contract_summary.get("reason_codes", "")).split(";") if reason
+    }
+    valuation_reason_codes = {"MISSING_VALUATION_REQUIRED"} if valuation_missing_rows else set()
+    if valuation_missing_rows and valuation_contract_summary:
+        valuation_reason_codes.update(valuation_contract_reasons.intersection({
+            "INPUT_FILE_MISSING",
+            "INPUT_SCHEMA_INVALID",
+            "NO_IMPUTATION",
+            "VALUATION_REQUIRED_MISSING",
+            "VALUATION_REVIEW_PENDING",
+            "VALUATION_SOURCE_REFERENCE_MISSING",
+            "VALUATION_SOURCE_DATE_MISSING",
+            "VALUATION_VALUE_INVALID",
+            "VALUATION_VALUE_OUT_OF_RANGE",
+        }))
     add_check(
         checks,
         check_id="standard_valuation_required",
         category="decision_readiness",
         status="BLOCKED" if valuation_missing_rows else "PASS",
-        reason_codes={"MISSING_VALUATION_REQUIRED"} if valuation_missing_rows else set(),
-        observed_value=f"{len(valuation_missing_rows)}/{len(standard_rows)} STANDARD rows missing valuation-required data",
+        reason_codes=valuation_reason_codes,
+        observed_value=(
+            f"{len(valuation_missing_rows)}/{len(standard_rows)} STANDARD rows missing valuation-required data; "
+            f"valuation_contract_available={bool(valuation_contract_summary)}; "
+            f"input_file_status={valuation_contract_summary.get('input_file_status', 'NOT_AVAILABLE')}; "
+            f"approved_rows={valuation_contract_summary.get('approved_rows_count', 'NOT_AVAILABLE')}; "
+            f"missing_rows={valuation_contract_summary.get('missing_rows_count', 'NOT_AVAILABLE')}; "
+            f"review_rows={valuation_contract_summary.get('review_rows_count', 'NOT_AVAILABLE')}; "
+            f"invalid_rows={valuation_contract_summary.get('invalid_rows_count', 'NOT_AVAILABLE')}"
+        ),
         expected_value="0 STANDARD rows missing valuation-required data before decision-ready ranking",
-        evidence="personal_kpi_tier_coverage.csv",
-        recommended_next_action="Add reviewed valuation input contract or manual overlay; do not impute values." if valuation_missing_rows else "No action.",
+        evidence="personal_kpi_tier_coverage.csv; personal_valuation_input_contract_summary.csv",
+        recommended_next_action="Populate reviewed valuation input with approved values and source metadata; do not impute values." if valuation_missing_rows else "No action.",
     )
     add_check(
         checks,
@@ -411,6 +438,20 @@ def build_reconciliation(
         add_metric("unresolved_current_artifact_drift_total", freshness_summary["unresolved_current_artifact_drift_total"], "Current unexplained drift count from freshness summary.")
     add_metric("standard_rows_total", len(standard_rows), "Rows in KPI tier coverage with company_type_profile=STANDARD.")
     add_metric("standard_missing_valuation_required_rows_total", len(valuation_missing_rows), "STANDARD rows missing valuation-required data.")
+    add_metric("valuation_contract_summary_available", bool_text(bool(valuation_contract_summary)), "Valuation input contract summary was loaded.")
+    for metric in (
+        "input_file_status",
+        "affected_standard_rows_count",
+        "queue_rows_count",
+        "approved_rows_count",
+        "review_rows_count",
+        "missing_rows_count",
+        "invalid_rows_count",
+        "no_imputation_confirmed",
+        "reason_codes",
+    ):
+        if metric in valuation_contract_summary:
+            add_metric(f"valuation_contract_{metric}", valuation_contract_summary[metric], "Valuation input contract summary metric.")
     add_metric("standard_missing_dividend_fcf_required_rows_total", len(dividend_missing_rows), "STANDARD rows missing dividend/FCF-required data.")
     add_metric("standard_review_core_data_rows_total", len(core_review_rows), "STANDARD rows with resulting_monthly_action=REVIEW_CORE_DATA.")
     for action, count in sorted(tier_action_counts.items()):
@@ -572,6 +613,7 @@ def run_personal_artifact_reconciliation(
     monthly_action_summary_input: str = DEFAULT_MONTHLY_ACTION_SUMMARY_INPUT,
     watchlist_input: str = DEFAULT_WATCHLIST_INPUT,
     watchlist_gate_summary_input: str = DEFAULT_WATCHLIST_GATE_SUMMARY_INPUT,
+    valuation_contract_summary_input: str = DEFAULT_VALUATION_CONTRACT_SUMMARY_INPUT,
     used_inputs_input: str = DEFAULT_USED_INPUTS_INPUT,
     manifest_input: str = DEFAULT_MANIFEST_INPUT,
     summary_output: str = DEFAULT_SUMMARY_OUTPUT,
@@ -592,6 +634,7 @@ def run_personal_artifact_reconciliation(
         "monthly_action_summary": monthly_action_summary_input,
         "watchlist": watchlist_input,
         "watchlist_gate_summary": watchlist_gate_summary_input,
+        "valuation_contract_summary": valuation_contract_summary_input,
         "used_inputs": used_inputs_input,
     }
     loaded: dict[str, list[dict[str, str]]] = {}
@@ -615,6 +658,7 @@ def run_personal_artifact_reconciliation(
         monthly_action_summary_rows=loaded["monthly_action_summary"],
         watchlist_rows=loaded["watchlist"],
         watchlist_gate_summary_rows=loaded["watchlist_gate_summary"],
+        valuation_contract_summary_rows=loaded["valuation_contract_summary"],
         used_input_rows=loaded["used_inputs"],
         manifest=manifest,
         warnings=warnings,
@@ -653,6 +697,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--monthly-action-summary-input", default=DEFAULT_MONTHLY_ACTION_SUMMARY_INPUT)
     parser.add_argument("--watchlist-input", default=DEFAULT_WATCHLIST_INPUT)
     parser.add_argument("--watchlist-gate-summary-input", default=DEFAULT_WATCHLIST_GATE_SUMMARY_INPUT)
+    parser.add_argument("--valuation-contract-summary-input", default=DEFAULT_VALUATION_CONTRACT_SUMMARY_INPUT)
     parser.add_argument("--used-inputs-input", default=DEFAULT_USED_INPUTS_INPUT)
     parser.add_argument("--manifest-input", default=DEFAULT_MANIFEST_INPUT)
     parser.add_argument("--summary-output", default=DEFAULT_SUMMARY_OUTPUT)
@@ -676,6 +721,7 @@ def main() -> None:
         monthly_action_summary_input=args.monthly_action_summary_input,
         watchlist_input=args.watchlist_input,
         watchlist_gate_summary_input=args.watchlist_gate_summary_input,
+        valuation_contract_summary_input=args.valuation_contract_summary_input,
         used_inputs_input=args.used_inputs_input,
         manifest_input=args.manifest_input,
         summary_output=args.summary_output,

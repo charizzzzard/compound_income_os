@@ -1,0 +1,15 @@
+metric,value,notes
+affected_standard_rows_count,10,STANDARD rows missing valuation-required KPIs.
+approved_rows_count,0,"Rows with approved, valid reviewed valuation input."
+input_file_status,MISSING,Optional reviewed valuation input status.
+invalid_rows_count,0,Rows with invalid valuation input.
+missing_rows_count,10,Rows missing valuation input.
+no_imputation_confirmed,True,Missing valuation values were not calculated or inferred.
+not_applicable_rows_count,7,Non-STANDARD rows are outside this valuation contract.
+queue_rows_count,10,Rows in personal_valuation_input_review_queue.csv.
+reason_codes,INPUT_FILE_MISSING;NO_IMPUTATION;PROFILE_NOT_STANDARD;VALUATION_REQUIRED_MISSING,Union of valuation contract reason codes.
+required_kpis,normalized_fcf_yield_pct; target_fcf_yield_pct,Valuation-required KPI fields.
+review_input_path,<private_path>,Expected optional private reviewed valuation input.
+review_rows_count,0,Rows requiring valuation review/source metadata.
+valuation_contract_available,True,Companion valuation input contract generated.
+warnings_total,0,Validation warnings.
