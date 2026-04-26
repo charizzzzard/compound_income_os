@@ -27,6 +27,7 @@ This report reconciles existing processed artifacts only. It does not change sco
 | scores | `data/processed/personal_company_scores.csv` |
 | used_inputs | `data/processed/personal_run_used_inputs.csv` |
 | watchlist | `data/processed/personal_watchlist_ranked.csv` |
+| watchlist_gate_summary | `data/processed/personal_watchlist_input_gate_summary.csv` |
 
 ## 3. Counter Reconciliation
 
@@ -75,8 +76,13 @@ This report reconciles existing processed artifacts only. It does not change sco
 | `standard_rows_total` | `10` | Rows in KPI tier coverage with company_type_profile=STANDARD. |
 | `warnings_total` | `0` | Missing input warnings. |
 | `watchlist_data_quality__MISSING_DATA` | `8` | Watchlist data-quality count. |
+| `watchlist_data_status` | `MISSING_DATA` | Watchlist input gate summary metric. |
 | `watchlist_input_path` | `data/raw/sample_watchlist.csv` | Observed watchlist input path from used inputs. |
+| `watchlist_input_status` | `SAMPLE_DEMO_ONLY` | Watchlist input gate summary metric. |
+| `watchlist_readiness_status` | `BLOCKED` | Watchlist input gate summary metric. |
+| `watchlist_review_or_missing_data_active` | `True` | Watchlist input gate summary metric. |
 | `watchlist_rows_total` | `8` | Rows in personal_watchlist_ranked.csv. |
+| `watchlist_sample_input_active` | `True` | Watchlist input gate summary metric. |
 | `watchlist_status__REVIEW` | `8` | Watchlist status count. |
 
 ## 4. Drift Findings
@@ -88,7 +94,7 @@ This report reconciles existing processed artifacts only. It does not change sco
 | `standard_core_review` | `BLOCKED` | `REVIEW_CORE_DATA` | personal_kpi_tier_coverage.csv |
 | `standard_dividend_fcf_required` | `REVIEW` | `MISSING_DIVIDEND_FCF_REQUIRED` | personal_kpi_tier_coverage.csv |
 | `standard_valuation_required` | `BLOCKED` | `MISSING_VALUATION_REQUIRED` | personal_kpi_tier_coverage.csv |
-| `watchlist_demo_decision_readiness` | `BLOCKED` | `WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT` | personal_run_used_inputs.csv; personal_watchlist_ranked.csv |
+| `watchlist_demo_decision_readiness` | `BLOCKED` | `WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT` | personal_run_used_inputs.csv; personal_watchlist_ranked.csv; personal_watchlist_input_gate_summary.csv |
 
 ## 5. Demo Readiness
 

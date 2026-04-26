@@ -1,0 +1,2 @@
+watchlist_input_path,watchlist_input_exists,watchlist_input_status,watchlist_data_status,watchlist_readiness_status,watchlist_rows_total,status_counts,data_quality_counts,reason_codes,recommended_next_action
+data/raw/sample_watchlist.csv,True,SAMPLE_DEMO_ONLY,MISSING_DATA,BLOCKED,8,REVIEW=8,MISSING_DATA=8,WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT,Use a reviewed personal watchlist input or keep outputs explicitly demo-only.

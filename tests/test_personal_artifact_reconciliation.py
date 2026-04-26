@@ -41,6 +41,7 @@ class PersonalArtifactReconciliationTests(unittest.TestCase):
         self.monthly = self.tmp / "monthly.csv"
         self.monthly_action_summary = self.tmp / "monthly_action_summary.csv"
         self.watchlist = self.tmp / "watchlist.csv"
+        self.watchlist_gate_summary = self.tmp / "watchlist_gate_summary.csv"
         self.used_inputs = self.tmp / "used_inputs.csv"
         self.manifest = self.tmp / "manifest.json"
         self.summary_output = self.tmp / "summary.csv"
@@ -148,6 +149,7 @@ class PersonalArtifactReconciliationTests(unittest.TestCase):
             monthly_input=str(self.monthly),
             monthly_action_summary_input=str(self.monthly_action_summary),
             watchlist_input=str(self.watchlist),
+            watchlist_gate_summary_input=str(self.watchlist_gate_summary),
             used_inputs_input=str(self.used_inputs),
             manifest_input=str(self.manifest),
             summary_output=str(self.summary_output),
@@ -209,6 +211,27 @@ class PersonalArtifactReconciliationTests(unittest.TestCase):
         self.assertEqual(row["status"], "BLOCKED")
         self.assertIn("WATCHLIST_SAMPLE_INPUT", row["reason_codes"])
         self.assertEqual(self.summary_value("decision_readiness_status"), "BLOCKED")
+
+    def test_watchlist_gate_summary_drives_watchlist_reasons(self) -> None:
+        self.write_base_inputs(delta_review_count="1")
+        write_csv(
+            self.watchlist_gate_summary,
+            ["metric", "value", "notes"],
+            [
+                {"metric": "watchlist_input_status", "value": "SAMPLE_DEMO_ONLY", "notes": ""},
+                {"metric": "watchlist_data_status", "value": "MISSING_DATA", "notes": ""},
+                {"metric": "watchlist_readiness_status", "value": "BLOCKED", "notes": ""},
+                {"metric": "watchlist_reason_codes", "value": "WATCHLIST_SAMPLE_INPUT;WATCHLIST_REVIEW_OR_MISSING_DATA", "notes": ""},
+                {"metric": "watchlist_sample_input_active", "value": "True", "notes": ""},
+            ],
+        )
+        self.run_reconciliation()
+
+        row = self.check_row("watchlist_demo_decision_readiness")
+        self.assertEqual(row["status"], "BLOCKED")
+        self.assertIn("gate_input_status=SAMPLE_DEMO_ONLY", row["observed_value"])
+        self.assertIn("WATCHLIST_SAMPLE_INPUT", row["reason_codes"])
+        self.assertEqual(self.summary_value("watchlist_input_status"), "SAMPLE_DEMO_ONLY")
 
     def test_report_is_deterministic_and_sanitized(self) -> None:
         self.write_base_inputs(delta_review_count="1", watchlist_path="data/raw/private/fundamentals/watchlist.csv")

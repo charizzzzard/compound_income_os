@@ -1,0 +1,10 @@
+metric,value,notes
+warnings_total,0,Missing input warnings.
+watchlist_data_status,MISSING_DATA,Classified watchlist row data status.
+watchlist_input_path,data/raw/sample_watchlist.csv,"Observed watchlist input path, private paths masked."
+watchlist_input_status,SAMPLE_DEMO_ONLY,Classified input status.
+watchlist_readiness_status,BLOCKED,Conservative watchlist readiness status.
+watchlist_reason_codes,WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT,Machine-readable reason codes.
+watchlist_review_or_missing_data_active,True,True when watchlist rows are all/partly REVIEW or MISSING_DATA.
+watchlist_rows_total,8,Rows in watchlist artifact.
+watchlist_sample_input_active,True,True when sample watchlist input is active.

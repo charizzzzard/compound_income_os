@@ -20,6 +20,7 @@ DEFAULT_EVIDENCE_DELTA_HOLDINGS_INPUT = "data/processed/personal_evidence_applie
 DEFAULT_MONTHLY_INPUT = "data/processed/personal_monthly_buy_ranking.csv"
 DEFAULT_MONTHLY_ACTION_SUMMARY_INPUT = "data/processed/personal_monthly_action_compatibility_summary.csv"
 DEFAULT_WATCHLIST_INPUT = "data/processed/personal_watchlist_ranked.csv"
+DEFAULT_WATCHLIST_GATE_SUMMARY_INPUT = "data/processed/personal_watchlist_input_gate_summary.csv"
 DEFAULT_USED_INPUTS_INPUT = "data/processed/personal_run_used_inputs.csv"
 DEFAULT_MANIFEST_INPUT = "data/processed/personal_run_manifest.json"
 DEFAULT_SUMMARY_OUTPUT = "data/processed/personal_artifact_reconciliation_summary.csv"
@@ -169,6 +170,7 @@ def build_reconciliation(
     monthly_rows: list[dict[str, str]],
     monthly_action_summary_rows: list[dict[str, str]],
     watchlist_rows: list[dict[str, str]],
+    watchlist_gate_summary_rows: list[dict[str, str]],
     used_input_rows: list[dict[str, str]],
     manifest: dict[str, Any],
     warnings: list[str],
@@ -182,6 +184,7 @@ def build_reconciliation(
     watchlist_quality_counts = count_upper(watchlist_rows, "data_quality_flag")
     monthly_target_counts = count_upper(monthly_rows, "target_action")
     monthly_action_summary = summary_map(monthly_action_summary_rows)
+    watchlist_gate_summary = summary_map(watchlist_gate_summary_rows)
     missing_summary = summary_map(missing_kpi_summary_rows)
     delta_summary = summary_map(evidence_delta_summary_rows)
     source_mode, scoring_master = extract_fundamentals_source_mode(used_input_rows, manifest)
@@ -270,25 +273,41 @@ def build_reconciliation(
         recommended_next_action="Generate neutral monthly_action compatibility artifact or update report readers in a dedicated schema patch." if monthly_schema_drift else "No action.",
     )
 
+    gate_reason_codes = {
+        reason for reason in str(watchlist_gate_summary.get("watchlist_reason_codes", "")).split(";") if reason
+    }
+    gate_status = watchlist_gate_summary.get("watchlist_readiness_status", "")
     sample_watchlist = watchlist_path.replace("\\", "/") == "data/raw/sample_watchlist.csv"
     watchlist_not_ready = bool(watchlist_rows) and (
         sum(watchlist_status_counts.get(status, 0) for status in ("REVIEW", "BLOCKED")) == len(watchlist_rows)
         or sum(watchlist_quality_counts.get(status, 0) for status in ("REVIEW", "MISSING_DATA", "BLOCKED")) == len(watchlist_rows)
     )
-    watchlist_reasons = set()
-    if sample_watchlist:
-        watchlist_reasons.add("WATCHLIST_SAMPLE_INPUT")
-    if watchlist_not_ready:
-        watchlist_reasons.add("WATCHLIST_REVIEW_OR_MISSING_DATA")
+    watchlist_reasons = set(gate_reason_codes)
+    if not watchlist_reasons:
+        if sample_watchlist:
+            watchlist_reasons.add("WATCHLIST_SAMPLE_INPUT")
+        if watchlist_not_ready:
+            watchlist_reasons.add("WATCHLIST_REVIEW_OR_MISSING_DATA")
+    if gate_status in {"BLOCKED", "REVIEW", "NOT_AVAILABLE", "PASS"}:
+        watchlist_status = gate_status
+    else:
+        watchlist_status = "BLOCKED" if sample_watchlist else ("REVIEW" if watchlist_not_ready else "PASS")
     add_check(
         checks,
         check_id="watchlist_demo_decision_readiness",
         category="watchlist",
-        status="BLOCKED" if sample_watchlist else ("REVIEW" if watchlist_not_ready else "PASS"),
+        status=watchlist_status,
         reason_codes=watchlist_reasons,
-        observed_value=f"watchlist_input={watchlist_path or 'NOT_AVAILABLE'}; status_counts={dict(sorted(watchlist_status_counts.items()))}; data_quality_counts={dict(sorted(watchlist_quality_counts.items()))}",
+        observed_value=(
+            f"watchlist_input={watchlist_path or 'NOT_AVAILABLE'}; "
+            f"gate_input_status={watchlist_gate_summary.get('watchlist_input_status', 'NOT_AVAILABLE')}; "
+            f"gate_data_status={watchlist_gate_summary.get('watchlist_data_status', 'NOT_AVAILABLE')}; "
+            f"gate_readiness_status={watchlist_gate_summary.get('watchlist_readiness_status', 'NOT_AVAILABLE')}; "
+            f"status_counts={dict(sorted(watchlist_status_counts.items()))}; "
+            f"data_quality_counts={dict(sorted(watchlist_quality_counts.items()))}"
+        ),
         expected_value="Reviewed non-sample watchlist with rows not all REVIEW/MISSING_DATA for product-like decision use",
-        evidence="personal_run_used_inputs.csv; personal_watchlist_ranked.csv",
+        evidence="personal_run_used_inputs.csv; personal_watchlist_ranked.csv; personal_watchlist_input_gate_summary.csv",
         recommended_next_action="Use a reviewed watchlist input or label current output as sample/demo-only." if watchlist_reasons else "No action.",
     )
 
@@ -382,6 +401,15 @@ def build_reconciliation(
         add_metric(f"monthly_target_action__{action}", count, "Monthly target_action count.")
     add_metric("watchlist_rows_total", len(watchlist_rows), "Rows in personal_watchlist_ranked.csv.")
     add_metric("watchlist_input_path", safe_display_path(watchlist_path or "NOT_AVAILABLE"), "Observed watchlist input path from used inputs.")
+    for metric in (
+        "watchlist_input_status",
+        "watchlist_data_status",
+        "watchlist_readiness_status",
+        "watchlist_sample_input_active",
+        "watchlist_review_or_missing_data_active",
+    ):
+        if metric in watchlist_gate_summary:
+            add_metric(metric, watchlist_gate_summary[metric], "Watchlist input gate summary metric.")
     for status, count in sorted(watchlist_status_counts.items()):
         add_metric(f"watchlist_status__{status}", count, "Watchlist status count.")
     for status, count in sorted(watchlist_quality_counts.items()):
@@ -511,6 +539,7 @@ def run_personal_artifact_reconciliation(
     monthly_input: str = DEFAULT_MONTHLY_INPUT,
     monthly_action_summary_input: str = DEFAULT_MONTHLY_ACTION_SUMMARY_INPUT,
     watchlist_input: str = DEFAULT_WATCHLIST_INPUT,
+    watchlist_gate_summary_input: str = DEFAULT_WATCHLIST_GATE_SUMMARY_INPUT,
     used_inputs_input: str = DEFAULT_USED_INPUTS_INPUT,
     manifest_input: str = DEFAULT_MANIFEST_INPUT,
     summary_output: str = DEFAULT_SUMMARY_OUTPUT,
@@ -529,6 +558,7 @@ def run_personal_artifact_reconciliation(
         "monthly": monthly_input,
         "monthly_action_summary": monthly_action_summary_input,
         "watchlist": watchlist_input,
+        "watchlist_gate_summary": watchlist_gate_summary_input,
         "used_inputs": used_inputs_input,
     }
     loaded: dict[str, list[dict[str, str]]] = {}
@@ -550,6 +580,7 @@ def run_personal_artifact_reconciliation(
         monthly_rows=loaded["monthly"],
         monthly_action_summary_rows=loaded["monthly_action_summary"],
         watchlist_rows=loaded["watchlist"],
+        watchlist_gate_summary_rows=loaded["watchlist_gate_summary"],
         used_input_rows=loaded["used_inputs"],
         manifest=manifest,
         warnings=warnings,
@@ -586,6 +617,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--monthly-input", default=DEFAULT_MONTHLY_INPUT)
     parser.add_argument("--monthly-action-summary-input", default=DEFAULT_MONTHLY_ACTION_SUMMARY_INPUT)
     parser.add_argument("--watchlist-input", default=DEFAULT_WATCHLIST_INPUT)
+    parser.add_argument("--watchlist-gate-summary-input", default=DEFAULT_WATCHLIST_GATE_SUMMARY_INPUT)
     parser.add_argument("--used-inputs-input", default=DEFAULT_USED_INPUTS_INPUT)
     parser.add_argument("--manifest-input", default=DEFAULT_MANIFEST_INPUT)
     parser.add_argument("--summary-output", default=DEFAULT_SUMMARY_OUTPUT)
@@ -607,6 +639,7 @@ def main() -> None:
         monthly_input=args.monthly_input,
         monthly_action_summary_input=args.monthly_action_summary_input,
         watchlist_input=args.watchlist_input,
+        watchlist_gate_summary_input=args.watchlist_gate_summary_input,
         used_inputs_input=args.used_inputs_input,
         manifest_input=args.manifest_input,
         summary_output=args.summary_output,
