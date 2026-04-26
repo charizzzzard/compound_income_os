@@ -6,7 +6,7 @@ Generated: 2026-04-26
 
 - Demo readiness: `BLOCKED`
 - Decision readiness: `BLOCKED`
-- Reason codes: `CORE_KPI_MISSING;INPUT_FILE_MISSING;MISSING_DIVIDEND_FCF_REQUIRED;MISSING_METADATA;MISSING_VALUATION_REQUIRED;NO_IMPUTATION;NO_VALUE_CHANGES;PROVENANCE_INCOMPLETE;REVIEW_CORE_DATA;SEC_IDENTITY_AVAILABLE;STALE_ARTIFACT;VALUATION_REQUIRED_MISSING;WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT`
+- Reason codes: `CORE_KPI_MISSING;DIVIDEND_FCF_REQUIRED_MISSING;INPUT_FILE_MISSING;MISSING_DIVIDEND_FCF_REQUIRED;MISSING_METADATA;MISSING_VALUATION_REQUIRED;NO_IMPUTATION;NO_VALUE_CHANGES;PROVENANCE_INCOMPLETE;REVIEW_CORE_DATA;SEC_IDENTITY_AVAILABLE;STALE_ARTIFACT;VALUATION_REQUIRED_MISSING;WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT`
 - Scoring fundamentals source mode: `EVIDENCE_APPLIED`
 
 This report reconciles existing processed artifacts only. It does not change scores, formulas, fundamentals values, watchlist values, or monthly ranking outputs.
@@ -17,6 +17,7 @@ This report reconciles existing processed artifacts only. It does not change sco
 | --- | --- |
 | artifact_freshness_summary | `data/processed/personal_artifact_freshness_summary.csv` |
 | core_kpi_closure_summary | `data/processed/personal_core_kpi_closure_summary.csv` |
+| dividend_fcf_contract_summary | `data/processed/personal_dividend_fcf_input_contract_summary.csv` |
 | evidence_delta_holdings | `data/processed/personal_evidence_applied_downstream_delta_holdings.csv` |
 | evidence_delta_summary | `data/processed/personal_evidence_applied_downstream_delta_summary.csv` |
 | kpi_tier | `data/processed/personal_kpi_tier_coverage.csv` |
@@ -57,6 +58,20 @@ This report reconciles existing processed artifacts only. It does not change sco
 | `delta_score_data_quality__OK` | `0` | Evidence-applied delta summary data-quality count. |
 | `delta_score_data_quality__REVIEW` | `0` | Evidence-applied delta summary data-quality count. |
 | `demo_readiness_status` | `BLOCKED` | Conservative status from reconciliation checks. |
+| `dividend_fcf_contract_affected_standard_rows_count` | `10` | Dividend/FCF input contract summary metric. |
+| `dividend_fcf_contract_approved_rows_count` | `0` | Dividend/FCF input contract summary metric. |
+| `dividend_fcf_contract_input_file_status` | `MISSING` | Dividend/FCF input contract summary metric. |
+| `dividend_fcf_contract_invalid_rows_count` | `0` | Dividend/FCF input contract summary metric. |
+| `dividend_fcf_contract_manual_evidence_required_count` | `0` | Dividend/FCF input contract summary metric. |
+| `dividend_fcf_contract_missing_rows_count` | `10` | Dividend/FCF input contract summary metric. |
+| `dividend_fcf_contract_no_imputation_confirmed` | `True` | Dividend/FCF input contract summary metric. |
+| `dividend_fcf_contract_queue_rows_count` | `10` | Dividend/FCF input contract summary metric. |
+| `dividend_fcf_contract_reason_codes` | `DIVIDEND_FCF_REQUIRED_MISSING;INPUT_FILE_MISSING;NO_IMPUTATION;PROFILE_NOT_STANDARD;SEC_IDENTITY_AVAILABLE` | Dividend/FCF input contract summary metric. |
+| `dividend_fcf_contract_review_existing_evidence_count` | `0` | Dividend/FCF input contract summary metric. |
+| `dividend_fcf_contract_review_rows_count` | `0` | Dividend/FCF input contract summary metric. |
+| `dividend_fcf_contract_sec_evidence_possible_count` | `10` | Dividend/FCF input contract summary metric. |
+| `dividend_fcf_contract_source_unknown_count` | `0` | Dividend/FCF input contract summary metric. |
+| `dividend_fcf_contract_summary_available` | `True` | Dividend/FCF input contract summary was loaded. |
 | `evidence_delta_current_missing_required_kpi_total` | `10` | Current missing required KPI count from evidence-applied delta summary. |
 | `kpi_tier_resulting_monthly_action__DO_NOT_BUY` | `7` | KPI tier resulting monthly action count. |
 | `kpi_tier_resulting_monthly_action__REVIEW_CORE_DATA` | `4` | KPI tier resulting monthly action count. |
@@ -76,7 +91,7 @@ This report reconciles existing processed artifacts only. It does not change sco
 | `monthly_target_action__REVIEW_CORE_DATA` | `4` | Monthly target_action count. |
 | `monthly_target_action__WAIT_VALUATION` | `6` | Monthly target_action count. |
 | `not_available_checks_total` | `0` | Checks with NOT_AVAILABLE status. |
-| `readiness_reason_codes` | `CORE_KPI_MISSING;INPUT_FILE_MISSING;MISSING_DIVIDEND_FCF_REQUIRED;MISSING_METADATA;MISSING_VALUATION_REQUIRED;NO_IMPUTATION;NO_VALUE_CHANGES;PROVENANCE_INCOMPLETE;REVIEW_CORE_DATA;SEC_IDENTITY_AVAILABLE;STALE_ARTIFACT;VALUATION_REQUIRED_MISSING;WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT` | Union of BLOCKED/REVIEW/NOT_AVAILABLE reason codes. |
+| `readiness_reason_codes` | `CORE_KPI_MISSING;DIVIDEND_FCF_REQUIRED_MISSING;INPUT_FILE_MISSING;MISSING_DIVIDEND_FCF_REQUIRED;MISSING_METADATA;MISSING_VALUATION_REQUIRED;NO_IMPUTATION;NO_VALUE_CHANGES;PROVENANCE_INCOMPLETE;REVIEW_CORE_DATA;SEC_IDENTITY_AVAILABLE;STALE_ARTIFACT;VALUATION_REQUIRED_MISSING;WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT` | Union of BLOCKED/REVIEW/NOT_AVAILABLE reason codes. |
 | `review_checks_total` | `3` | Checks with REVIEW status. |
 | `score_data_quality__BLOCKED` | `0` | Current score CSV data-quality count. |
 | `score_data_quality__MISSING_DATA` | `11` | Current score CSV data-quality count. |
@@ -119,7 +134,7 @@ This report reconciles existing processed artifacts only. It does not change sco
 | `per_kpi_provenance` | `REVIEW` | `PROVENANCE_INCOMPLETE` | personal_score_audit.csv exists, but per-KPI source-reference join is not fully materialized |
 | `score_vs_delta_data_quality` | `REVIEW` | `MISSING_METADATA;STALE_ARTIFACT` | personal_company_scores.csv; personal_evidence_applied_downstream_delta_summary.csv; personal_artifact_freshness_summary.csv |
 | `standard_core_review` | `BLOCKED` | `CORE_KPI_MISSING;NO_VALUE_CHANGES;REVIEW_CORE_DATA;SEC_IDENTITY_AVAILABLE` | personal_kpi_tier_coverage.csv; personal_core_kpi_closure_summary.csv |
-| `standard_dividend_fcf_required` | `REVIEW` | `MISSING_DIVIDEND_FCF_REQUIRED` | personal_kpi_tier_coverage.csv |
+| `standard_dividend_fcf_required` | `REVIEW` | `DIVIDEND_FCF_REQUIRED_MISSING;INPUT_FILE_MISSING;MISSING_DIVIDEND_FCF_REQUIRED;NO_IMPUTATION;SEC_IDENTITY_AVAILABLE` | personal_kpi_tier_coverage.csv; personal_dividend_fcf_input_contract_summary.csv |
 | `standard_valuation_required` | `BLOCKED` | `INPUT_FILE_MISSING;MISSING_VALUATION_REQUIRED;NO_IMPUTATION;VALUATION_REQUIRED_MISSING` | personal_kpi_tier_coverage.csv; personal_valuation_input_contract_summary.csv |
 | `watchlist_demo_decision_readiness` | `BLOCKED` | `WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT` | personal_run_used_inputs.csv; personal_watchlist_ranked.csv; personal_watchlist_input_gate_summary.csv |
 
@@ -145,7 +160,7 @@ Decision readiness remains blocked while valuation-required data, core review da
 
 - `per_kpi_provenance`: `PROVENANCE_INCOMPLETE`. Add a dedicated KPI provenance audit artifact.
 - `score_vs_delta_data_quality`: `MISSING_METADATA;STALE_ARTIFACT`. Add comparable metadata or regenerate stale derived delta; do not treat stale counters as current truth.
-- `standard_dividend_fcf_required`: `MISSING_DIVIDEND_FCF_REQUIRED`. Add reviewed FCF/dividend evidence or keep rows in REVIEW.
+- `standard_dividend_fcf_required`: `DIVIDEND_FCF_REQUIRED_MISSING;INPUT_FILE_MISSING;MISSING_DIVIDEND_FCF_REQUIRED;NO_IMPUTATION;SEC_IDENTITY_AVAILABLE`. Populate reviewed dividend/FCF input with approved values and source metadata; do not impute values.
 
 ## 9. Can Remain Review
 

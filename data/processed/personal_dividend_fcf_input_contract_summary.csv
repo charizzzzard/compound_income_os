@@ -1,0 +1,19 @@
+metric,value,notes
+affected_standard_rows_count,10,STANDARD rows missing dividend/FCF-required KPIs.
+approved_rows_count,0,"Rows with approved, valid reviewed dividend/FCF input."
+dividend_fcf_contract_status,OK,Dividend/FCF KPI contract status from metric definitions.
+input_file_status,MISSING,Optional private reviewed dividend/FCF input status.
+invalid_rows_count,0,Rows with invalid dividend/FCF input.
+manual_evidence_required_count,0,Rows requiring manual evidence or SEC identity review.
+missing_rows_count,10,Rows missing dividend/FCF input.
+no_imputation_confirmed,True,Missing dividend/FCF values were not calculated or inferred.
+not_applicable_rows_count,7,Non-STANDARD rows excluded from STANDARD dividend/FCF contract.
+queue_rows_count,10,Rows in personal_dividend_fcf_input_review_queue.csv.
+reason_codes,DIVIDEND_FCF_REQUIRED_MISSING;INPUT_FILE_MISSING;NO_IMPUTATION;PROFILE_NOT_STANDARD;SEC_IDENTITY_AVAILABLE,Union of dividend/FCF input contract reason codes.
+required_kpis,fcf_margin; fcf_per_share_cagr_5y; payout_ratio_fcf,Dividend/FCF-required KPI fields.
+review_existing_evidence_count,0,Rows with existing evidence/applied signals requiring review.
+review_input_path,<private_path>,Expected optional private reviewed dividend/FCF input.
+review_rows_count,0,Rows requiring dividend/FCF review/source metadata.
+sec_evidence_possible_count,10,Rows where SEC evidence workflow may close missing dividend/FCF KPIs.
+source_unknown_count,0,Rows with unknown source path.
+warnings_total,0,Validation warnings.

@@ -45,6 +45,7 @@ class PersonalArtifactReconciliationTests(unittest.TestCase):
         self.watchlist_gate_summary = self.tmp / "watchlist_gate_summary.csv"
         self.valuation_contract_summary = self.tmp / "valuation_contract_summary.csv"
         self.core_kpi_closure_summary = self.tmp / "core_kpi_closure_summary.csv"
+        self.dividend_fcf_contract_summary = self.tmp / "dividend_fcf_contract_summary.csv"
         self.used_inputs = self.tmp / "used_inputs.csv"
         self.manifest = self.tmp / "manifest.json"
         self.summary_output = self.tmp / "summary.csv"
@@ -156,6 +157,7 @@ class PersonalArtifactReconciliationTests(unittest.TestCase):
             watchlist_gate_summary_input=str(self.watchlist_gate_summary),
             valuation_contract_summary_input=str(self.valuation_contract_summary),
             core_kpi_closure_summary_input=str(self.core_kpi_closure_summary),
+            dividend_fcf_contract_summary_input=str(self.dividend_fcf_contract_summary),
             used_inputs_input=str(self.used_inputs),
             manifest_input=str(self.manifest),
             summary_output=str(self.summary_output),
@@ -314,6 +316,38 @@ class PersonalArtifactReconciliationTests(unittest.TestCase):
         self.assertIn("SEC_IDENTITY_AVAILABLE", row["reason_codes"])
         self.assertEqual(self.summary_value("core_kpi_closure_summary_available"), "True")
         self.assertEqual(self.summary_value("core_kpi_closure_queue_rows_count"), "1")
+
+    def test_dividend_fcf_contract_summary_drives_precise_reasons(self) -> None:
+        self.write_base_inputs(delta_review_count="1")
+        write_csv(
+            self.dividend_fcf_contract_summary,
+            ["metric", "value", "notes"],
+            [
+                {"metric": "input_file_status", "value": "MISSING", "notes": ""},
+                {"metric": "affected_standard_rows_count", "value": "1", "notes": ""},
+                {"metric": "queue_rows_count", "value": "1", "notes": ""},
+                {"metric": "approved_rows_count", "value": "0", "notes": ""},
+                {"metric": "review_rows_count", "value": "0", "notes": ""},
+                {"metric": "missing_rows_count", "value": "1", "notes": ""},
+                {"metric": "invalid_rows_count", "value": "0", "notes": ""},
+                {"metric": "sec_evidence_possible_count", "value": "1", "notes": ""},
+                {"metric": "manual_evidence_required_count", "value": "0", "notes": ""},
+                {"metric": "review_existing_evidence_count", "value": "0", "notes": ""},
+                {"metric": "source_unknown_count", "value": "0", "notes": ""},
+                {"metric": "no_imputation_confirmed", "value": "True", "notes": ""},
+                {"metric": "reason_codes", "value": "DIVIDEND_FCF_REQUIRED_MISSING;INPUT_FILE_MISSING;NO_IMPUTATION;SEC_IDENTITY_AVAILABLE", "notes": ""},
+            ],
+        )
+        self.run_reconciliation()
+
+        row = self.check_row("standard_dividend_fcf_required")
+        self.assertEqual(row["status"], "REVIEW")
+        self.assertIn("MISSING_DIVIDEND_FCF_REQUIRED", row["reason_codes"])
+        self.assertIn("DIVIDEND_FCF_REQUIRED_MISSING", row["reason_codes"])
+        self.assertIn("INPUT_FILE_MISSING", row["reason_codes"])
+        self.assertIn("NO_IMPUTATION", row["reason_codes"])
+        self.assertEqual(self.summary_value("dividend_fcf_contract_summary_available"), "True")
+        self.assertEqual(self.summary_value("dividend_fcf_contract_queue_rows_count"), "1")
 
     def test_report_is_deterministic_and_sanitized(self) -> None:
         self.write_base_inputs(delta_review_count="1", watchlist_path="data/raw/private/fundamentals/watchlist.csv")

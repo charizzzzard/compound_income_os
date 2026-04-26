@@ -20,6 +20,20 @@ delta_score_data_quality__MISSING_DATA,17,Evidence-applied delta summary data-qu
 delta_score_data_quality__OK,0,Evidence-applied delta summary data-quality count.
 delta_score_data_quality__REVIEW,0,Evidence-applied delta summary data-quality count.
 demo_readiness_status,BLOCKED,Conservative status from reconciliation checks.
+dividend_fcf_contract_affected_standard_rows_count,10,Dividend/FCF input contract summary metric.
+dividend_fcf_contract_approved_rows_count,0,Dividend/FCF input contract summary metric.
+dividend_fcf_contract_input_file_status,MISSING,Dividend/FCF input contract summary metric.
+dividend_fcf_contract_invalid_rows_count,0,Dividend/FCF input contract summary metric.
+dividend_fcf_contract_manual_evidence_required_count,0,Dividend/FCF input contract summary metric.
+dividend_fcf_contract_missing_rows_count,10,Dividend/FCF input contract summary metric.
+dividend_fcf_contract_no_imputation_confirmed,True,Dividend/FCF input contract summary metric.
+dividend_fcf_contract_queue_rows_count,10,Dividend/FCF input contract summary metric.
+dividend_fcf_contract_reason_codes,DIVIDEND_FCF_REQUIRED_MISSING;INPUT_FILE_MISSING;NO_IMPUTATION;PROFILE_NOT_STANDARD;SEC_IDENTITY_AVAILABLE,Dividend/FCF input contract summary metric.
+dividend_fcf_contract_review_existing_evidence_count,0,Dividend/FCF input contract summary metric.
+dividend_fcf_contract_review_rows_count,0,Dividend/FCF input contract summary metric.
+dividend_fcf_contract_sec_evidence_possible_count,10,Dividend/FCF input contract summary metric.
+dividend_fcf_contract_source_unknown_count,0,Dividend/FCF input contract summary metric.
+dividend_fcf_contract_summary_available,True,Dividend/FCF input contract summary was loaded.
 evidence_delta_current_missing_required_kpi_total,10,Current missing required KPI count from evidence-applied delta summary.
 kpi_tier_resulting_monthly_action__DO_NOT_BUY,7,KPI tier resulting monthly action count.
 kpi_tier_resulting_monthly_action__REVIEW_CORE_DATA,4,KPI tier resulting monthly action count.
@@ -39,7 +53,7 @@ monthly_target_action__HOLD_CASH,1,Monthly target_action count.
 monthly_target_action__REVIEW_CORE_DATA,4,Monthly target_action count.
 monthly_target_action__WAIT_VALUATION,6,Monthly target_action count.
 not_available_checks_total,0,Checks with NOT_AVAILABLE status.
-readiness_reason_codes,CORE_KPI_MISSING;INPUT_FILE_MISSING;MISSING_DIVIDEND_FCF_REQUIRED;MISSING_METADATA;MISSING_VALUATION_REQUIRED;NO_IMPUTATION;NO_VALUE_CHANGES;PROVENANCE_INCOMPLETE;REVIEW_CORE_DATA;SEC_IDENTITY_AVAILABLE;STALE_ARTIFACT;VALUATION_REQUIRED_MISSING;WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT,Union of BLOCKED/REVIEW/NOT_AVAILABLE reason codes.
+readiness_reason_codes,CORE_KPI_MISSING;DIVIDEND_FCF_REQUIRED_MISSING;INPUT_FILE_MISSING;MISSING_DIVIDEND_FCF_REQUIRED;MISSING_METADATA;MISSING_VALUATION_REQUIRED;NO_IMPUTATION;NO_VALUE_CHANGES;PROVENANCE_INCOMPLETE;REVIEW_CORE_DATA;SEC_IDENTITY_AVAILABLE;STALE_ARTIFACT;VALUATION_REQUIRED_MISSING;WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT,Union of BLOCKED/REVIEW/NOT_AVAILABLE reason codes.
 review_checks_total,3,Checks with REVIEW status.
 score_data_quality__BLOCKED,0,Current score CSV data-quality count.
 score_data_quality__MISSING_DATA,11,Current score CSV data-quality count.
