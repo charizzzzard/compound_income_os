@@ -53,6 +53,8 @@ class HandoffZipExportTests(unittest.TestCase):
         self.assertIn("ZIP_REPO_STATUS.txt", names)
         self.assertTrue(any(name.startswith("src/") for name in names))
         self.assertTrue(any(name.startswith("tests/") for name in names))
+        if (ROOT / "website").exists():
+            self.assertTrue(any(name.startswith("website/") for name in names))
         self.assertEqual(result.forbidden_matches, ())
         self.assertEqual(scan_forbidden_entries(result.zip_path), ())
 
@@ -60,7 +62,13 @@ class HandoffZipExportTests(unittest.TestCase):
         artifact_paths = [
             ROOT / "data" / "processed" / "personal_profile_review_unlock_summary.csv",
             ROOT / "data" / "processed" / "personal_profile_review_unlock_holdings.csv",
+            ROOT / "data" / "processed" / "personal_missing_kpi_closure_summary.csv",
+            ROOT / "data" / "processed" / "personal_missing_kpi_closure_holdings.csv",
+            ROOT / "data" / "processed" / "personal_evidence_applied_downstream_delta_summary.csv",
+            ROOT / "data" / "processed" / "personal_evidence_applied_downstream_delta_holdings.csv",
             ROOT / "reports" / "2099-01-01" / "personal_profile_review_unlock_report.md",
+            ROOT / "reports" / "2099-01-01" / "personal_missing_kpi_closure_report.md",
+            ROOT / "reports" / "2099-01-01" / "personal_evidence_applied_downstream_delta_report.md",
             ROOT / "reports" / "2099-01-01" / "historical_report.md",
         ]
         for path in artifact_paths:
@@ -75,7 +83,13 @@ class HandoffZipExportTests(unittest.TestCase):
 
         self.assertIn("data/processed/personal_profile_review_unlock_summary.csv", names)
         self.assertIn("data/processed/personal_profile_review_unlock_holdings.csv", names)
+        self.assertIn("data/processed/personal_missing_kpi_closure_summary.csv", names)
+        self.assertIn("data/processed/personal_missing_kpi_closure_holdings.csv", names)
+        self.assertIn("data/processed/personal_evidence_applied_downstream_delta_summary.csv", names)
+        self.assertIn("data/processed/personal_evidence_applied_downstream_delta_holdings.csv", names)
         self.assertIn("reports/2099-01-01/personal_profile_review_unlock_report.md", names)
+        self.assertIn("reports/2099-01-01/personal_missing_kpi_closure_report.md", names)
+        self.assertIn("reports/2099-01-01/personal_evidence_applied_downstream_delta_report.md", names)
         self.assertNotIn("reports/2099-01-01/historical_report.md", names)
         self.assertEqual(scan_forbidden_entries(result.zip_path), ())
 
@@ -85,6 +99,8 @@ class HandoffZipExportTests(unittest.TestCase):
             archive.writestr(".git/config", "blocked")
             archive.writestr("reports/run.md", "blocked")
             archive.writestr("reports/2026-04-26/personal_profile_review_unlock_report.md", "allowed")
+            archive.writestr("reports/2026-04-26/personal_missing_kpi_closure_report.md", "allowed")
+            archive.writestr("reports/2026-04-26/personal_evidence_applied_downstream_delta_report.md", "allowed")
             archive.writestr("data/raw/private/secret.csv", "blocked")
             archive.writestr("tests/_tmp_fixture.csv", "blocked")
             archive.writestr("src/__pycache__/module.pyc", "blocked")
@@ -96,6 +112,8 @@ class HandoffZipExportTests(unittest.TestCase):
         self.assertIn(".git/config", matches)
         self.assertIn("reports/run.md", matches)
         self.assertNotIn("reports/2026-04-26/personal_profile_review_unlock_report.md", matches)
+        self.assertNotIn("reports/2026-04-26/personal_missing_kpi_closure_report.md", matches)
+        self.assertNotIn("reports/2026-04-26/personal_evidence_applied_downstream_delta_report.md", matches)
         self.assertIn("data/raw/private/secret.csv", matches)
         self.assertIn("tests/_tmp_fixture.csv", matches)
         self.assertIn("src/__pycache__/module.pyc", matches)

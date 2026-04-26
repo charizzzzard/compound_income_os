@@ -11,16 +11,24 @@ from typing import Iterable
 
 from src.common import ROOT, resolve_repo_path
 
-INCLUDED_DIRS = ("src", "tests", "docs", "configs", "scripts")
+INCLUDED_DIRS = ("src", "tests", "docs", "configs", "scripts", "website")
 INCLUDED_ROOT_FILES = ("README.md", "AGENTS.md", "pyproject.toml", "requirements.txt")
 METADATA_FILES = ("ZIP_REPO_BRANCH.txt", "ZIP_REPO_HEAD.txt", "ZIP_REPO_STATUS.txt", "ZIP_REPO_EXPORT_NOTES.txt")
 EXPECTED_REQUIRED_PATHS = ("src", "tests", "docs", "configs", "README.md")
 HANDOFF_ARTIFACT_FILES = (
     "data/processed/personal_profile_review_unlock_summary.csv",
     "data/processed/personal_profile_review_unlock_holdings.csv",
+    "data/processed/personal_missing_kpi_closure_summary.csv",
+    "data/processed/personal_missing_kpi_closure_holdings.csv",
+    "data/processed/personal_evidence_applied_downstream_delta_summary.csv",
+    "data/processed/personal_evidence_applied_downstream_delta_holdings.csv",
+    "data/processed/personal_kpi_tier_coverage.csv",
 )
 HANDOFF_ARTIFACT_GLOBS = (
     "reports/*/personal_profile_review_unlock_report.md",
+    "reports/*/personal_missing_kpi_closure_report.md",
+    "reports/*/personal_evidence_applied_downstream_delta_report.md",
+    "reports/*/personal_kpi_tier_coverage_report.md",
 )
 LOCAL_ROOT_EXCLUDES = {"personal_sec_identity_map.csv", "personal_sec_scope_review_filled.csv", "lokales_Dashboard.txt"}
 FORBIDDEN_PREFIXES = (
@@ -30,11 +38,14 @@ FORBIDDEN_PREFIXES = (
     ".pytest_cache/",
     ".mypy_cache/",
     ".ruff_cache/",
+    "node_modules/",
+    "website/compound-income-os-landing/node_modules/",
+    "website/compound-income-os-landing/dist/",
     "reports/",
     "outputs/",
     "data/raw/private/",
 )
-FORBIDDEN_DIR_NAMES = {"__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache"}
+FORBIDDEN_DIR_NAMES = {"__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", "node_modules", "dist"}
 FIXED_ZIP_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
 
 
@@ -69,6 +80,12 @@ def is_allowed_handoff_artifact(entry_name: str) -> bool:
     if name in HANDOFF_ARTIFACT_FILES:
         return True
     if name.startswith("reports/") and name.endswith("/personal_profile_review_unlock_report.md"):
+        return len(name.split("/")) == 3
+    if name.startswith("reports/") and name.endswith("/personal_missing_kpi_closure_report.md"):
+        return len(name.split("/")) == 3
+    if name.startswith("reports/") and name.endswith("/personal_evidence_applied_downstream_delta_report.md"):
+        return len(name.split("/")) == 3
+    if name.startswith("reports/") and name.endswith("/personal_kpi_tier_coverage_report.md"):
         return len(name.split("/")) == 3
     return False
 
@@ -141,7 +158,7 @@ def write_metadata_files(repo_root: Path, *, branch: str, head: str, short_head:
         f"head={head}",
         f"short_head={short_head}",
         "included_paths=src/, tests/, docs/, configs/, scripts/ if present, README.md, AGENTS.md if present, pyproject.toml if present, requirements.txt if present, ZIP_REPO_*.txt, explicit handoff artifacts",
-        "handoff_artifacts=data/processed/personal_profile_review_unlock_summary.csv, data/processed/personal_profile_review_unlock_holdings.csv, reports/*/personal_profile_review_unlock_report.md",
+        "handoff_artifacts=data/processed/personal_profile_review_unlock_summary.csv, data/processed/personal_profile_review_unlock_holdings.csv, data/processed/personal_missing_kpi_closure_summary.csv, data/processed/personal_missing_kpi_closure_holdings.csv, data/processed/personal_evidence_applied_downstream_delta_summary.csv, data/processed/personal_evidence_applied_downstream_delta_holdings.csv, data/processed/personal_kpi_tier_coverage.csv, reports/*/personal_profile_review_unlock_report.md, reports/*/personal_missing_kpi_closure_report.md, reports/*/personal_evidence_applied_downstream_delta_report.md, reports/*/personal_kpi_tier_coverage_report.md",
         "excluded_paths=.git/, .venv/, venv/, __pycache__/, .pytest_cache/, .mypy_cache/, .ruff_cache/, reports/ except explicit handoff artifacts, outputs/, data/raw/private/, tests/_tmp*, *.zip, local root private files",
         f"MISSING_EXPECTED={', '.join(missing_expected) if missing_expected else 'none'}",
     ]

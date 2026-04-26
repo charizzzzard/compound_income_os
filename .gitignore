@@ -11,6 +11,15 @@ venv/
 .coverage
 tests/_tmp_rules.yaml
 
+# Frontend dependencies and build outputs
+node_modules/
+website/**/node_modules/
+website/**/dist/
+website/**/playwright-report/
+website/**/test-results/
+website/**/.cache/
+website/**/ms-playwright/
+
 # Generated artifacts
 data/processed/
 reports/

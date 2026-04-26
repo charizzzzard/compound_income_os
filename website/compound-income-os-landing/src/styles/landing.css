@@ -1,0 +1,178 @@
+@import "./design-tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  section[id],
+  [data-screenshot] {
+    scroll-margin-top: 96px;
+  }
+
+  body {
+    margin: 0;
+    background:
+      radial-gradient(circle at top left, rgba(216, 199, 166, 0.26), transparent 30rem),
+      linear-gradient(180deg, var(--paper-50) 0%, var(--paper-100) 52%, var(--paper-50) 100%);
+    color: var(--ink-800);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  a,
+  button,
+  input {
+    outline: none;
+  }
+
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible {
+    box-shadow: var(--shadow-focus);
+  }
+}
+
+@layer components {
+  .site-shell {
+    @apply min-h-screen overflow-hidden;
+  }
+
+  .section {
+    @apply px-5 py-20 sm:px-8 lg:px-10 lg:py-28;
+  }
+
+  .section-tight {
+    @apply px-5 py-16 sm:px-8 lg:px-10 lg:py-20;
+  }
+
+  .container-xl {
+    @apply mx-auto w-full max-w-7xl;
+  }
+
+  .eyebrow {
+    @apply font-mono text-[11px] font-semibold uppercase tracking-[0.18em];
+    color: var(--accent-600);
+  }
+
+  .section-title {
+    @apply mt-3 max-w-3xl text-3xl font-semibold leading-[1.06] tracking-[-0.035em] sm:text-4xl lg:text-5xl;
+    color: var(--ink-900);
+  }
+
+  .section-lede {
+    @apply mt-5 max-w-3xl text-base leading-7 sm:text-lg;
+    color: var(--ink-600);
+  }
+
+  .card {
+    @apply rounded-2xl border p-6 shadow-sm transition duration-200;
+    background: rgba(255, 255, 255, 0.72);
+    border-color: var(--paper-300);
+  }
+
+  .card:hover {
+    border-color: var(--ink-200);
+    box-shadow: var(--shadow-md);
+  }
+
+  .button {
+    @apply inline-flex items-center justify-center rounded-full border px-5 py-3 text-sm font-semibold transition duration-200;
+  }
+
+  .button-primary {
+    background: var(--ink-900);
+    border-color: var(--ink-900);
+    color: var(--paper-50);
+  }
+
+  .button-primary:hover {
+    background: var(--accent-700);
+    border-color: var(--accent-700);
+  }
+
+  .button-secondary {
+    background: rgba(255, 255, 255, 0.62);
+    border-color: var(--paper-400);
+    color: var(--ink-800);
+  }
+
+  .button-secondary:hover {
+    border-color: var(--accent-400);
+    color: var(--accent-700);
+  }
+
+  .button-quiet {
+    border-color: rgba(255, 255, 255, 0.16);
+    color: var(--dark-fg);
+  }
+
+  .pill {
+    @apply inline-flex items-center rounded-full border px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.12em];
+  }
+
+  .pill-ok {
+    background: var(--ok-bg);
+    border-color: var(--ok-border);
+    color: var(--ok-fg);
+  }
+
+  .pill-partial {
+    background: var(--partial-bg);
+    border-color: var(--partial-border);
+    color: var(--partial-fg);
+  }
+
+  .pill-review {
+    background: var(--review-bg);
+    border-color: var(--review-border);
+    color: var(--review-fg);
+  }
+
+  .pill-missing {
+    background: var(--missing-bg);
+    border-color: var(--missing-border);
+    color: var(--missing-fg);
+  }
+
+  .dark-panel {
+    background:
+      radial-gradient(circle at 20% 10%, rgba(127, 163, 204, 0.14), transparent 25rem),
+      radial-gradient(circle at 90% 30%, rgba(176, 138, 62, 0.11), transparent 20rem),
+      var(--dark-800);
+    border-color: var(--dark-600);
+    color: var(--dark-fg);
+    box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .artifact-strip {
+    @apply flex flex-wrap items-center gap-x-5 gap-y-2 border-t pt-4 font-mono text-[11px] tracking-[0.04em];
+  }
+
+  .dashboard-grid {
+    @apply grid gap-3 sm:grid-cols-2 lg:grid-cols-5;
+  }
+
+  .kpi-card {
+    @apply rounded-xl border p-4;
+    background: rgba(26, 35, 44, 0.86);
+    border-color: var(--dark-600);
+  }
+
+  .chart-line {
+    stroke: var(--dark-accent);
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
