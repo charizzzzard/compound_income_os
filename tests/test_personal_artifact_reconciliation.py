@@ -38,6 +38,7 @@ class PersonalArtifactReconciliationTests(unittest.TestCase):
         self.missing_holdings = self.tmp / "missing_holdings.csv"
         self.delta_summary = self.tmp / "delta_summary.csv"
         self.delta_holdings = self.tmp / "delta_holdings.csv"
+        self.freshness_summary = self.tmp / "freshness_summary.csv"
         self.monthly = self.tmp / "monthly.csv"
         self.monthly_action_summary = self.tmp / "monthly_action_summary.csv"
         self.watchlist = self.tmp / "watchlist.csv"
@@ -146,6 +147,7 @@ class PersonalArtifactReconciliationTests(unittest.TestCase):
             missing_kpi_holdings_input=str(self.missing_holdings),
             evidence_delta_summary_input=str(self.delta_summary),
             evidence_delta_holdings_input=str(self.delta_holdings),
+            artifact_freshness_summary_input=str(self.freshness_summary),
             monthly_input=str(self.monthly),
             monthly_action_summary_input=str(self.monthly_action_summary),
             watchlist_input=str(self.watchlist),
@@ -171,6 +173,27 @@ class PersonalArtifactReconciliationTests(unittest.TestCase):
         self.assertEqual(row["status"], "BLOCKED")
         self.assertIn("ARTIFACT_DRIFT", row["reason_codes"])
         self.assertEqual(self.summary_value("demo_readiness_status"), "BLOCKED")
+
+    def test_freshness_summary_replaces_artifact_drift_with_metadata_reason(self) -> None:
+        self.write_base_inputs(delta_review_count="0")
+        write_csv(
+            self.freshness_summary,
+            ["metric", "value", "notes"],
+            [
+                {"metric": "artifact_drift_active", "value": "False", "notes": ""},
+                {"metric": "freshness_reason_codes", "value": "MISSING_METADATA;STALE_DERIVED_ARTIFACT", "notes": ""},
+                {"metric": "unresolved_current_artifact_drift_total", "value": "0", "notes": ""},
+            ],
+        )
+        self.run_reconciliation()
+
+        row = self.check_row("score_vs_delta_data_quality")
+        self.assertEqual(row["status"], "REVIEW")
+        self.assertNotIn("ARTIFACT_DRIFT", row["reason_codes"])
+        self.assertIn("MISSING_METADATA", row["reason_codes"])
+        self.assertIn("STALE_ARTIFACT", row["reason_codes"])
+        self.assertEqual(self.summary_value("artifact_drift_active"), "False")
+        self.assertIn("MISSING_VALUATION_REQUIRED", self.summary_value("readiness_reason_codes"))
 
     def test_detects_monthly_schema_drift_without_migration(self) -> None:
         self.write_base_inputs(delta_review_count="1")

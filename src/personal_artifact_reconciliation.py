@@ -17,6 +17,7 @@ DEFAULT_MISSING_KPI_SUMMARY_INPUT = "data/processed/personal_missing_kpi_closure
 DEFAULT_MISSING_KPI_HOLDINGS_INPUT = "data/processed/personal_missing_kpi_closure_holdings.csv"
 DEFAULT_EVIDENCE_DELTA_SUMMARY_INPUT = "data/processed/personal_evidence_applied_downstream_delta_summary.csv"
 DEFAULT_EVIDENCE_DELTA_HOLDINGS_INPUT = "data/processed/personal_evidence_applied_downstream_delta_holdings.csv"
+DEFAULT_ARTIFACT_FRESHNESS_SUMMARY_INPUT = "data/processed/personal_artifact_freshness_summary.csv"
 DEFAULT_MONTHLY_INPUT = "data/processed/personal_monthly_buy_ranking.csv"
 DEFAULT_MONTHLY_ACTION_SUMMARY_INPUT = "data/processed/personal_monthly_action_compatibility_summary.csv"
 DEFAULT_WATCHLIST_INPUT = "data/processed/personal_watchlist_ranked.csv"
@@ -167,6 +168,7 @@ def build_reconciliation(
     missing_kpi_holdings_rows: list[dict[str, str]],
     evidence_delta_summary_rows: list[dict[str, str]],
     evidence_delta_holdings_rows: list[dict[str, str]],
+    artifact_freshness_summary_rows: list[dict[str, str]],
     monthly_rows: list[dict[str, str]],
     monthly_action_summary_rows: list[dict[str, str]],
     watchlist_rows: list[dict[str, str]],
@@ -187,6 +189,7 @@ def build_reconciliation(
     watchlist_gate_summary = summary_map(watchlist_gate_summary_rows)
     missing_summary = summary_map(missing_kpi_summary_rows)
     delta_summary = summary_map(evidence_delta_summary_rows)
+    freshness_summary = summary_map(artifact_freshness_summary_rows)
     source_mode, scoring_master = extract_fundamentals_source_mode(used_input_rows, manifest)
     watchlist_path = watchlist_input_path(used_input_rows)
 
@@ -201,16 +204,39 @@ def build_reconciliation(
         for key, delta_value in delta_score_counts.items()
         if int(score_counts.get(key, 0)) != delta_value
     }
+    freshness_reason_codes = {
+        reason for reason in str(freshness_summary.get("freshness_reason_codes", "")).split(";") if reason
+    }
+    artifact_drift_active = freshness_summary.get("artifact_drift_active") == "True"
+    freshness_explains_mismatch = bool(freshness_summary) and score_count_mismatches and not artifact_drift_active
+    score_delta_reason_codes: set[str] = set()
+    if score_count_mismatches:
+        if artifact_drift_active:
+            score_delta_reason_codes.add("ARTIFACT_DRIFT")
+        elif freshness_explains_mismatch:
+            if "MISSING_METADATA" in freshness_reason_codes:
+                score_delta_reason_codes.add("MISSING_METADATA")
+            if "STALE_DERIVED_ARTIFACT" in freshness_reason_codes or "RUN_ID_MISMATCH" in freshness_reason_codes:
+                score_delta_reason_codes.add("STALE_ARTIFACT")
+            if "DERIVED_ARTIFACT_DEFERRED" in freshness_reason_codes:
+                score_delta_reason_codes.add("DERIVED_ARTIFACT_DEFERRED")
+            if not score_delta_reason_codes:
+                score_delta_reason_codes.add("FRESHNESS_UNKNOWN")
+        else:
+            score_delta_reason_codes.add("ARTIFACT_DRIFT")
     add_check(
         checks,
         check_id="score_vs_delta_data_quality",
         category="counter_reconciliation",
-        status="BLOCKED" if score_count_mismatches else "PASS",
-        reason_codes={"ARTIFACT_DRIFT"} if score_count_mismatches else set(),
-        observed_value=f"scores={dict(sorted(score_counts.items()))}; delta={dict(sorted(delta_score_counts.items()))}",
+        status=("BLOCKED" if "ARTIFACT_DRIFT" in score_delta_reason_codes else "REVIEW") if score_count_mismatches else "PASS",
+        reason_codes=score_delta_reason_codes,
+        observed_value=(
+            f"scores={dict(sorted(score_counts.items()))}; delta={dict(sorted(delta_score_counts.items()))}; "
+            f"artifact_drift_active={artifact_drift_active}; freshness_reasons={joined_reasons(freshness_reason_codes)}"
+        ),
         expected_value="score CSV data_quality_flag counts match evidence-applied delta summary counts",
-        evidence="personal_company_scores.csv vs personal_evidence_applied_downstream_delta_summary.csv",
-        recommended_next_action="Regenerate evidence-applied delta after the current scoring/tiering run." if score_count_mismatches else "No action.",
+        evidence="personal_company_scores.csv; personal_evidence_applied_downstream_delta_summary.csv; personal_artifact_freshness_summary.csv",
+        recommended_next_action="Add comparable metadata or regenerate stale derived delta; do not treat stale counters as current truth." if score_count_mismatches else "No action.",
     )
 
     standard_rows = [row for row in kpi_tier_rows if safe_upper(row.get("company_type_profile", "")) == "STANDARD"]
@@ -378,6 +404,11 @@ def build_reconciliation(
         add_metric(f"score_data_quality__{status}", score_counts.get(status, 0), "Current score CSV data-quality count.")
         add_metric(f"delta_score_data_quality__{status}", delta_score_counts.get(status, 0), "Evidence-applied delta summary data-quality count.")
     add_metric("score_delta_mismatch_statuses", joined_reasons(score_count_mismatches), "Statuses whose score CSV and delta summary counts differ.")
+    add_metric("artifact_drift_active", bool_text(artifact_drift_active), "Observed from artifact freshness summary when present.")
+    add_metric("artifact_freshness_reason_codes", joined_reasons(freshness_reason_codes), "Freshness reason codes from artifact freshness summary.")
+    add_metric("artifact_freshness_summary_available", bool_text(bool(freshness_summary)), "Artifact freshness summary was loaded.")
+    if "unresolved_current_artifact_drift_total" in freshness_summary:
+        add_metric("unresolved_current_artifact_drift_total", freshness_summary["unresolved_current_artifact_drift_total"], "Current unexplained drift count from freshness summary.")
     add_metric("standard_rows_total", len(standard_rows), "Rows in KPI tier coverage with company_type_profile=STANDARD.")
     add_metric("standard_missing_valuation_required_rows_total", len(valuation_missing_rows), "STANDARD rows missing valuation-required data.")
     add_metric("standard_missing_dividend_fcf_required_rows_total", len(dividend_missing_rows), "STANDARD rows missing dividend/FCF-required data.")
@@ -536,6 +567,7 @@ def run_personal_artifact_reconciliation(
     missing_kpi_holdings_input: str = DEFAULT_MISSING_KPI_HOLDINGS_INPUT,
     evidence_delta_summary_input: str = DEFAULT_EVIDENCE_DELTA_SUMMARY_INPUT,
     evidence_delta_holdings_input: str = DEFAULT_EVIDENCE_DELTA_HOLDINGS_INPUT,
+    artifact_freshness_summary_input: str = DEFAULT_ARTIFACT_FRESHNESS_SUMMARY_INPUT,
     monthly_input: str = DEFAULT_MONTHLY_INPUT,
     monthly_action_summary_input: str = DEFAULT_MONTHLY_ACTION_SUMMARY_INPUT,
     watchlist_input: str = DEFAULT_WATCHLIST_INPUT,
@@ -555,6 +587,7 @@ def run_personal_artifact_reconciliation(
         "missing_kpi_holdings": missing_kpi_holdings_input,
         "evidence_delta_summary": evidence_delta_summary_input,
         "evidence_delta_holdings": evidence_delta_holdings_input,
+        "artifact_freshness_summary": artifact_freshness_summary_input,
         "monthly": monthly_input,
         "monthly_action_summary": monthly_action_summary_input,
         "watchlist": watchlist_input,
@@ -577,6 +610,7 @@ def run_personal_artifact_reconciliation(
         missing_kpi_holdings_rows=loaded["missing_kpi_holdings"],
         evidence_delta_summary_rows=loaded["evidence_delta_summary"],
         evidence_delta_holdings_rows=loaded["evidence_delta_holdings"],
+        artifact_freshness_summary_rows=loaded["artifact_freshness_summary"],
         monthly_rows=loaded["monthly"],
         monthly_action_summary_rows=loaded["monthly_action_summary"],
         watchlist_rows=loaded["watchlist"],
@@ -614,6 +648,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--missing-kpi-holdings-input", default=DEFAULT_MISSING_KPI_HOLDINGS_INPUT)
     parser.add_argument("--evidence-delta-summary-input", default=DEFAULT_EVIDENCE_DELTA_SUMMARY_INPUT)
     parser.add_argument("--evidence-delta-holdings-input", default=DEFAULT_EVIDENCE_DELTA_HOLDINGS_INPUT)
+    parser.add_argument("--artifact-freshness-summary-input", default=DEFAULT_ARTIFACT_FRESHNESS_SUMMARY_INPUT)
     parser.add_argument("--monthly-input", default=DEFAULT_MONTHLY_INPUT)
     parser.add_argument("--monthly-action-summary-input", default=DEFAULT_MONTHLY_ACTION_SUMMARY_INPUT)
     parser.add_argument("--watchlist-input", default=DEFAULT_WATCHLIST_INPUT)
@@ -636,6 +671,7 @@ def main() -> None:
         missing_kpi_holdings_input=args.missing_kpi_holdings_input,
         evidence_delta_summary_input=args.evidence_delta_summary_input,
         evidence_delta_holdings_input=args.evidence_delta_holdings_input,
+        artifact_freshness_summary_input=args.artifact_freshness_summary_input,
         monthly_input=args.monthly_input,
         monthly_action_summary_input=args.monthly_action_summary_input,
         watchlist_input=args.watchlist_input,

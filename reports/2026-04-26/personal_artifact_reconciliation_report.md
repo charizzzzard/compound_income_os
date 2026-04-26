@@ -6,7 +6,7 @@ Generated: 2026-04-26
 
 - Demo readiness: `BLOCKED`
 - Decision readiness: `BLOCKED`
-- Reason codes: `ARTIFACT_DRIFT;MISSING_DIVIDEND_FCF_REQUIRED;MISSING_VALUATION_REQUIRED;PROVENANCE_INCOMPLETE;REVIEW_CORE_DATA;WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT`
+- Reason codes: `MISSING_DIVIDEND_FCF_REQUIRED;MISSING_METADATA;MISSING_VALUATION_REQUIRED;PROVENANCE_INCOMPLETE;REVIEW_CORE_DATA;STALE_ARTIFACT;WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT`
 - Scoring fundamentals source mode: `EVIDENCE_APPLIED`
 
 This report reconciles existing processed artifacts only. It does not change scores, formulas, fundamentals values, watchlist values, or monthly ranking outputs.
@@ -15,6 +15,7 @@ This report reconciles existing processed artifacts only. It does not change sco
 
 | Label | Path |
 | --- | --- |
+| artifact_freshness_summary | `data/processed/personal_artifact_freshness_summary.csv` |
 | evidence_delta_holdings | `data/processed/personal_evidence_applied_downstream_delta_holdings.csv` |
 | evidence_delta_summary | `data/processed/personal_evidence_applied_downstream_delta_summary.csv` |
 | kpi_tier | `data/processed/personal_kpi_tier_coverage.csv` |
@@ -33,7 +34,10 @@ This report reconciles existing processed artifacts only. It does not change sco
 
 | Metric | Value | Notes |
 | --- | --- | --- |
-| `blocked_checks_total` | `4` | Checks with BLOCKED status. |
+| `artifact_drift_active` | `False` | Observed from artifact freshness summary when present. |
+| `artifact_freshness_reason_codes` | `MISSING_METADATA;STALE_DERIVED_ARTIFACT` | Freshness reason codes from artifact freshness summary. |
+| `artifact_freshness_summary_available` | `True` | Artifact freshness summary was loaded. |
+| `blocked_checks_total` | `3` | Checks with BLOCKED status. |
 | `checks_total` | `8` | Number of reconciliation checks. |
 | `decision_readiness_status` | `BLOCKED` | Conservative status from reconciliation checks. |
 | `delta_score_data_quality__BLOCKED` | `0` | Evidence-applied delta summary data-quality count. |
@@ -60,8 +64,8 @@ This report reconciles existing processed artifacts only. It does not change sco
 | `monthly_target_action__REVIEW_CORE_DATA` | `4` | Monthly target_action count. |
 | `monthly_target_action__WAIT_VALUATION` | `6` | Monthly target_action count. |
 | `not_available_checks_total` | `0` | Checks with NOT_AVAILABLE status. |
-| `readiness_reason_codes` | `ARTIFACT_DRIFT;MISSING_DIVIDEND_FCF_REQUIRED;MISSING_VALUATION_REQUIRED;PROVENANCE_INCOMPLETE;REVIEW_CORE_DATA;WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT` | Union of BLOCKED/REVIEW/NOT_AVAILABLE reason codes. |
-| `review_checks_total` | `2` | Checks with REVIEW status. |
+| `readiness_reason_codes` | `MISSING_DIVIDEND_FCF_REQUIRED;MISSING_METADATA;MISSING_VALUATION_REQUIRED;PROVENANCE_INCOMPLETE;REVIEW_CORE_DATA;STALE_ARTIFACT;WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT` | Union of BLOCKED/REVIEW/NOT_AVAILABLE reason codes. |
+| `review_checks_total` | `3` | Checks with REVIEW status. |
 | `score_data_quality__BLOCKED` | `0` | Current score CSV data-quality count. |
 | `score_data_quality__MISSING_DATA` | `11` | Current score CSV data-quality count. |
 | `score_data_quality__OK` | `0` | Current score CSV data-quality count. |
@@ -74,6 +78,7 @@ This report reconciles existing processed artifacts only. It does not change sco
 | `standard_missing_valuation_required_rows_total` | `10` | STANDARD rows missing valuation-required data. |
 | `standard_review_core_data_rows_total` | `4` | STANDARD rows with resulting_monthly_action=REVIEW_CORE_DATA. |
 | `standard_rows_total` | `10` | Rows in KPI tier coverage with company_type_profile=STANDARD. |
+| `unresolved_current_artifact_drift_total` | `0` | Current unexplained drift count from freshness summary. |
 | `warnings_total` | `0` | Missing input warnings. |
 | `watchlist_data_quality__MISSING_DATA` | `8` | Watchlist data-quality count. |
 | `watchlist_data_status` | `MISSING_DATA` | Watchlist input gate summary metric. |
@@ -90,7 +95,7 @@ This report reconciles existing processed artifacts only. It does not change sco
 | Check | Status | Reasons | Evidence |
 | --- | --- | --- | --- |
 | `per_kpi_provenance` | `REVIEW` | `PROVENANCE_INCOMPLETE` | personal_score_audit.csv exists, but per-KPI source-reference join is not fully materialized |
-| `score_vs_delta_data_quality` | `BLOCKED` | `ARTIFACT_DRIFT` | personal_company_scores.csv vs personal_evidence_applied_downstream_delta_summary.csv |
+| `score_vs_delta_data_quality` | `REVIEW` | `MISSING_METADATA;STALE_ARTIFACT` | personal_company_scores.csv; personal_evidence_applied_downstream_delta_summary.csv; personal_artifact_freshness_summary.csv |
 | `standard_core_review` | `BLOCKED` | `REVIEW_CORE_DATA` | personal_kpi_tier_coverage.csv |
 | `standard_dividend_fcf_required` | `REVIEW` | `MISSING_DIVIDEND_FCF_REQUIRED` | personal_kpi_tier_coverage.csv |
 | `standard_valuation_required` | `BLOCKED` | `MISSING_VALUATION_REQUIRED` | personal_kpi_tier_coverage.csv |
@@ -110,7 +115,6 @@ Decision readiness remains blocked while valuation-required data, core review da
 
 ## 7. Blockers
 
-- `score_vs_delta_data_quality`: `ARTIFACT_DRIFT`. Regenerate evidence-applied delta after the current scoring/tiering run.
 - `standard_core_review`: `REVIEW_CORE_DATA`. Close core-quality KPI evidence or keep blocked.
 - `standard_valuation_required`: `MISSING_VALUATION_REQUIRED`. Add reviewed valuation input contract or manual overlay; do not impute values.
 - `watchlist_demo_decision_readiness`: `WATCHLIST_REVIEW_OR_MISSING_DATA;WATCHLIST_SAMPLE_INPUT`. Use a reviewed watchlist input or label current output as sample/demo-only.
@@ -118,6 +122,7 @@ Decision readiness remains blocked while valuation-required data, core review da
 ## 8. Review Items
 
 - `per_kpi_provenance`: `PROVENANCE_INCOMPLETE`. Add a dedicated KPI provenance audit artifact.
+- `score_vs_delta_data_quality`: `MISSING_METADATA;STALE_ARTIFACT`. Add comparable metadata or regenerate stale derived delta; do not treat stale counters as current truth.
 - `standard_dividend_fcf_required`: `MISSING_DIVIDEND_FCF_REQUIRED`. Add reviewed FCF/dividend evidence or keep rows in REVIEW.
 
 ## 9. Can Remain Review

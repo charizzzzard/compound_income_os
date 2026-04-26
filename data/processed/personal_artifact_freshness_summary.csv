@@ -1,0 +1,9 @@
+metric,value,notes
+artifact_drift_active,False,True only for current unexplained drift.
+artifact_drift_explained_by_metadata,True,Counter mismatch explained by missing/stale metadata.
+artifact_drift_status__REVIEW,7,Artifact drift status count.
+artifact_freshness_status__MISSING_METADATA,7,Artifact freshness status count.
+freshness_checks_total,7,Rows in personal_artifact_freshness_checks.csv.
+freshness_reason_codes,MISSING_METADATA;STALE_DERIVED_ARTIFACT,Union of freshness reason codes.
+unresolved_current_artifact_drift_total,0,Current unexplained counter mismatches with comparable metadata.
+warnings_total,0,Missing input warnings.
