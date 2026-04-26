@@ -46,6 +46,7 @@ FORBIDDEN_PREFIXES = (
     "data/raw/private/",
 )
 FORBIDDEN_DIR_NAMES = {"__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", "node_modules", "dist"}
+FORBIDDEN_FILE_NAMES = {".env", ".env.local"}
 FIXED_ZIP_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
 
 
@@ -101,6 +102,10 @@ def is_forbidden_entry(entry_name: str) -> bool:
     if first_part in LOCAL_ROOT_EXCLUDES:
         return True
     if name.endswith(".zip"):
+        return True
+    if name.rsplit("/", 1)[-1] in FORBIDDEN_FILE_NAMES:
+        return True
+    if name.rsplit("/", 1)[-1].startswith(".env.") and name.endswith(".local"):
         return True
     if any(name.startswith(prefix) for prefix in FORBIDDEN_PREFIXES):
         return True
@@ -159,7 +164,7 @@ def write_metadata_files(repo_root: Path, *, branch: str, head: str, short_head:
         f"short_head={short_head}",
         "included_paths=src/, tests/, docs/, configs/, scripts/ if present, README.md, AGENTS.md if present, pyproject.toml if present, requirements.txt if present, ZIP_REPO_*.txt, explicit handoff artifacts",
         "handoff_artifacts=data/processed/personal_profile_review_unlock_summary.csv, data/processed/personal_profile_review_unlock_holdings.csv, data/processed/personal_missing_kpi_closure_summary.csv, data/processed/personal_missing_kpi_closure_holdings.csv, data/processed/personal_evidence_applied_downstream_delta_summary.csv, data/processed/personal_evidence_applied_downstream_delta_holdings.csv, data/processed/personal_kpi_tier_coverage.csv, reports/*/personal_profile_review_unlock_report.md, reports/*/personal_missing_kpi_closure_report.md, reports/*/personal_evidence_applied_downstream_delta_report.md, reports/*/personal_kpi_tier_coverage_report.md",
-        "excluded_paths=.git/, .venv/, venv/, __pycache__/, .pytest_cache/, .mypy_cache/, .ruff_cache/, reports/ except explicit handoff artifacts, outputs/, data/raw/private/, tests/_tmp*, *.zip, local root private files",
+        "excluded_paths=.git/, .venv/, venv/, __pycache__/, .pytest_cache/, .mypy_cache/, .ruff_cache/, reports/ except explicit handoff artifacts, outputs/, data/raw/private/, tests/_tmp*, *.zip, .env secrets, local root private files",
         f"MISSING_EXPECTED={', '.join(missing_expected) if missing_expected else 'none'}",
     ]
     (repo_root / "ZIP_REPO_EXPORT_NOTES.txt").write_text("\n".join(notes) + "\n", encoding="utf-8")

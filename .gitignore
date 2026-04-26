@@ -19,6 +19,10 @@ website/**/playwright-report/
 website/**/test-results/
 website/**/.cache/
 website/**/ms-playwright/
+website/**/.env
+website/**/.env.local
+website/**/.env.*.local
+!website/**/.env.example
 
 # Generated artifacts
 data/processed/

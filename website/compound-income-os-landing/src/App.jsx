@@ -1,5 +1,6 @@
 import wordmarkInk from './assets/wordmark-ink.svg'
 import wordmarkPaper from './assets/wordmark-paper.svg'
+import { siteConfig } from './siteConfig'
 
 const navItems = [
   ['Product', '#product'],
@@ -7,12 +8,6 @@ const navItems = [
   ['Evidence', '#evidence'],
   ['Access', '#access'],
 ]
-
-const ctaTargets = {
-  earlyAccess: 'mailto:early-access@example.invalid?subject=Compound%20Income%20OS%20Early%20Access',
-  githubAccess: 'mailto:early-access@example.invalid?subject=Compound%20Income%20OS%20GitHub%20Access',
-  setupService: 'mailto:early-access@example.invalid?subject=Compound%20Income%20OS%20Setup%20Service',
-}
 
 const dashboardKpis = [
   ['Portfolio Value', '€128,420', 'Synthetic demo value', 'ok', 'OK'],
@@ -74,25 +69,25 @@ const accessCards = [
     title: 'Open-Source Core',
     price: 'Core workflow',
     body: 'Local pipeline for positions, fundamentals, watchlist ranking, monthly ranking, reports, and dashboard artifacts.',
-    cta: 'Request GitHub Access',
+    ctaKey: 'githubAccess',
   },
   {
     title: 'Pro Modules',
     price: 'Optional extensions',
     body: 'Additional local workflows for deeper evidence review, dashboards, and scenario inspection where the module exists.',
-    cta: 'Join Early Access',
+    ctaKey: 'earlyAccess',
   },
   {
     title: 'Setup Service',
     price: 'Implementation help',
     body: 'Guided setup, local environment preparation, input mapping, and first reproducible run support.',
-    cta: 'Request Setup Service',
+    ctaKey: 'setupService',
   },
   {
     title: 'GitHub Sponsors / Early Access',
     price: 'Support channel',
     body: 'Follow build progress, support the project, and request access to the repository workflow.',
-    cta: 'Join Early Access',
+    ctaKey: 'earlyAccess',
   },
 ]
 
@@ -104,8 +99,8 @@ function Header() {
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-[color:var(--paper-300)] bg-[rgba(251,250,247,0.86)] px-5 py-3 backdrop-blur-xl sm:px-8">
       <nav className="mx-auto flex max-w-7xl items-center justify-between gap-4" aria-label="Main navigation">
-        <a href="#top" className="rounded-md" aria-label="Compound Income OS home">
-          <img src={wordmarkInk} alt="Compound Income OS wordmark" className="h-7 w-auto" />
+        <a href="#top" className="rounded-md" aria-label={`${siteConfig.productName} home`}>
+          <img src={wordmarkInk} alt={`${siteConfig.productName} wordmark`} className="h-7 w-auto" />
         </a>
         <div className="hidden items-center gap-7 md:flex">
           {navItems.map(([label, href]) => (
@@ -115,16 +110,16 @@ function Header() {
           ))}
         </div>
         <div className="hidden items-center gap-2 lg:flex">
-          <a className="button button-secondary px-4 py-2" href={ctaTargets.githubAccess}>
-            Request GitHub Access
+          <a className="button button-secondary px-4 py-2" href={siteConfig.ctas.githubAccess.href}>
+            {siteConfig.ctas.githubAccess.label}
           </a>
-          <a className="button button-primary px-4 py-2" href={ctaTargets.earlyAccess}>
-            Join Early Access
+          <a className="button button-primary px-4 py-2" href={siteConfig.ctas.earlyAccess.href}>
+            {siteConfig.ctas.earlyAccess.label}
           </a>
         </div>
-        <a className="button button-primary whitespace-nowrap px-4 py-2 text-xs md:hidden" href={ctaTargets.earlyAccess}>
-          <span className="sm:hidden">Join</span>
-          <span className="hidden sm:inline">Early Access</span>
+        <a className="button button-primary whitespace-nowrap px-4 py-2 text-xs md:hidden" href={siteConfig.ctas.earlyAccess.href}>
+          <span className="sm:hidden">{siteConfig.ctas.earlyAccess.shortLabel}</span>
+          <span className="hidden sm:inline">{siteConfig.ctas.earlyAccess.label.replace('Join ', '')}</span>
         </a>
       </nav>
     </header>
@@ -138,18 +133,18 @@ function Hero() {
         <div>
           <p className="eyebrow">Local-first portfolio research</p>
           <h1 className="mt-4 max-w-3xl text-5xl font-semibold leading-[1.02] tracking-[-0.055em] text-[color:var(--ink-900)] sm:text-6xl lg:text-7xl">
-            A local operating system for long-term investing.
+            {siteConfig.tagline}
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-[color:var(--ink-600)]">
             Compound Income OS turns your broker exports, fundamentals, and evidence files into reproducible rankings,
             dashboards, and monthly decision reports. Local-first. No broker execution. Not investment advice.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <a className="button button-primary" href={ctaTargets.earlyAccess}>
-              Join Early Access
+            <a className="button button-primary" href={siteConfig.ctas.earlyAccess.href}>
+              {siteConfig.ctas.earlyAccess.label}
             </a>
-            <a className="button button-secondary" href={ctaTargets.githubAccess}>
-              Request GitHub Access
+            <a className="button button-secondary" href={siteConfig.ctas.githubAccess.href}>
+              {siteConfig.ctas.githubAccess.label}
             </a>
           </div>
           <p className="mt-5 font-mono text-xs tracking-[0.04em] text-[color:var(--ink-500)]">
@@ -543,8 +538,8 @@ function Access() {
               <h3 className="text-xl font-semibold text-[color:var(--ink-900)]">{card.title}</h3>
               <div className="mt-2 font-mono text-sm text-[color:var(--gold-700)]">{card.price}</div>
               <p className="mt-4 flex-1 text-sm leading-6 text-[color:var(--ink-600)]">{card.body}</p>
-              <a className="button button-secondary mt-6" href={ctaHrefFor(card.cta)}>
-                {card.cta}
+              <a className="button button-secondary mt-6" href={siteConfig.ctas[card.ctaKey].href}>
+                {siteConfig.ctas[card.ctaKey].label}
               </a>
             </article>
           ))}
@@ -567,14 +562,14 @@ function FinalCtaFooter() {
             Join the early access list or request repository access to review the local-first workflow.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <a className="button button-primary" href={ctaTargets.earlyAccess}>
-              Join Early Access
+            <a className="button button-primary" href={siteConfig.ctas.earlyAccess.href}>
+              {siteConfig.ctas.earlyAccess.label}
             </a>
-            <a className="button button-quiet" href={ctaTargets.githubAccess}>
-              Request GitHub Access
+            <a className="button button-quiet" href={siteConfig.ctas.githubAccess.href}>
+              {siteConfig.ctas.githubAccess.label}
             </a>
-            <a className="button button-quiet" href={ctaTargets.setupService}>
-              Request Setup Service
+            <a className="button button-quiet" href={siteConfig.ctas.setupService.href}>
+              {siteConfig.ctas.setupService.label}
             </a>
           </div>
         </div>
@@ -583,30 +578,23 @@ function FinalCtaFooter() {
       <footer className="section-tight" data-screenshot="footer">
         <div className="container-xl">
           <div className="rounded-3xl border border-[color:var(--paper-300)] bg-white/60 p-6 text-sm leading-7 text-[color:var(--ink-600)]">
-            <strong className="text-[color:var(--ink-900)]">Compound Income OS</strong> is a research and
-            decision-support tool. It does not provide investment, tax, or legal advice, does not guarantee any return,
-            and does not execute orders or connect to brokerages. All decisions, risks, and outcomes remain solely with
-            the user. Past data does not predict future results. Illustrative figures shown throughout this page are
-            synthetic demo values for design purposes only.
+            {siteConfig.disclaimer.startsWith(siteConfig.productName) ? (
+              <>
+                <strong className="text-[color:var(--ink-900)]">{siteConfig.productName}</strong>
+                {siteConfig.disclaimer.slice(siteConfig.productName.length)}
+              </>
+            ) : (
+              siteConfig.disclaimer
+            )}
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-between gap-4 text-xs text-[color:var(--ink-500)]">
-            <img src={wordmarkInk} alt="Compound Income OS wordmark" className="h-6 w-auto" />
+            <img src={wordmarkInk} alt={`${siteConfig.productName} wordmark`} className="h-6 w-auto" />
             <span>No cloud account required. Core runs locally. No broker connection.</span>
           </div>
         </div>
       </footer>
     </>
   )
-}
-
-function ctaHrefFor(label) {
-  if (label === 'Request GitHub Access') {
-    return ctaTargets.githubAccess
-  }
-  if (label === 'Request Setup Service') {
-    return ctaTargets.setupService
-  }
-  return ctaTargets.earlyAccess
 }
 
 export default function App() {

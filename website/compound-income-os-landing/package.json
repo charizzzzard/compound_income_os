@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:host": "vite --host 127.0.0.1 --port 5173",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "preview:host": "vite preview --host 127.0.0.1 --port 4173",
     "screenshots": "node scripts/capture-screenshots.mjs"
   },
   "dependencies": {
