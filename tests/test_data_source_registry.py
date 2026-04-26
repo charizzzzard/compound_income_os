@@ -38,9 +38,11 @@ class DataSourceRegistryTests(unittest.TestCase):
     def test_registry_valid_happy_path_writes_status_and_resolved_outputs(self) -> None:
         config_path = self._path("_tmp_registry_config.yaml")
         master_path = self._path("_tmp_registry_master.csv")
+        watchlist_path = self._path("_tmp_registry_watchlist.csv")
         status_output = self._path("_tmp_registry_status.csv")
         resolved_output = self._path("_tmp_registry_resolved.csv")
         self._write_text(master_path, "ticker,company_name\nMSFT,Microsoft\n")
+        self._write_text(watchlist_path, "ticker,company_name\nMSFT,Microsoft\n")
         self._write_config(
             config_path,
             {
@@ -50,6 +52,13 @@ class DataSourceRegistryTests(unittest.TestCase):
                     "required": True,
                     "kind": "file",
                     "description": "unit test fundamentals master",
+                },
+                "watchlist_input": {
+                    "enabled": True,
+                    "path": str(watchlist_path),
+                    "required": False,
+                    "kind": "file",
+                    "description": "unit test watchlist input",
                 }
             },
         )
@@ -62,13 +71,17 @@ class DataSourceRegistryTests(unittest.TestCase):
             used_as_default_source_keys={"fundamentals_master"},
         )
 
-        self.assertEqual(set(records), {"fundamentals_master"})
+        self.assertEqual(set(records), {"fundamentals_master", "watchlist_input"})
         self.assertEqual(set(read_csv_rows(status_output)[0]), set(STATUS_FIELDS))
         self.assertEqual(set(read_csv_rows(resolved_output)[0]), set(RESOLVED_FIELDS))
         self.assertTrue(outputs["data_source_status"].exists())
         self.assertTrue(outputs["data_source_registry_resolved"].exists())
-        self.assertEqual(read_csv_rows(status_output)[0]["status"], "OK")
-        self.assertEqual(read_csv_rows(resolved_output)[0]["used_as_default_input"], "True")
+        status_rows = {row["source_key"]: row for row in read_csv_rows(status_output)}
+        resolved_rows = {row["source_key"]: row for row in read_csv_rows(resolved_output)}
+        self.assertEqual(status_rows["fundamentals_master"]["status"], "OK")
+        self.assertEqual(status_rows["watchlist_input"]["status"], "OK")
+        self.assertEqual(resolved_rows["fundamentals_master"]["used_as_default_input"], "True")
+        self.assertEqual(resolved_rows["watchlist_input"]["used_as_default_input"], "False")
 
     def test_registry_marks_required_missing_sources(self) -> None:
         config_path = self._path("_tmp_registry_missing.yaml")

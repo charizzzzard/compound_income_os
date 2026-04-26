@@ -43,6 +43,7 @@ SUPPORTED_SOURCE_KEYS = {
     "fundamentals_snapshot_review_input",
     "positions_raw_input",
     "profile_review_input",
+    "watchlist_input",
 }
 
 

@@ -28,6 +28,13 @@
       "kind": "file",
       "description": "Manual overlay input for fundamentals_overlay."
     },
+    "watchlist_input": {
+      "enabled": true,
+      "path": "data/raw/sample_watchlist.csv",
+      "required": false,
+      "kind": "file",
+      "description": "Default local watchlist candidates for watchlist when no explicit CLI input is supplied."
+    },
     "fundamentals_snapshot_input": {
       "enabled": false,
       "path": "data/raw/private/fundamentals/personal_fundamentals_snapshot.csv",

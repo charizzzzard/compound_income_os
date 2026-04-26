@@ -238,6 +238,7 @@ DATA_SOURCE_OPTION_FIELDS = {
     "cost_tax_ledger_input": "ledger",
     "positions_raw_input": "positions_raw_input",
     "cash_input": "cash_input",
+    "watchlist_input": "watchlist_input",
 }
 
 OPTION_FIELD_DEFAULTS = {
@@ -252,6 +253,7 @@ OPTION_FIELD_DEFAULTS = {
     "fundamentals_overlay_input": DEFAULT_PATHS["fundamentals_overlay_input"],
     "benchmark_input": "",
     "ledger": "",
+    "watchlist_input": "",
 }
 
 
@@ -1096,6 +1098,7 @@ def run_fundamentals_overlay_stage(options: PersonalRunOptions) -> StageResult:
 def run_watchlist_stage(options: PersonalRunOptions) -> StageResult:
     stage = "watchlist"
     fundamentals_path, fundamentals_source_mode, _fundamentals_required_input = resolve_fundamentals_source(options, stage, require_path_for_base=False)
+    maybe_raise_required_registry_source(options, "watchlist_input", stage)
     watchlist_path = require_existing_path(options.watchlist_input, "watchlist input", stage)
     scores_path = require_existing_path(options.scores_output, "personal company scores", stage)
     watchlist_config_path = watchlist_engine.DEFAULT_WATCHLIST_CONFIG
@@ -1137,6 +1140,7 @@ def run_watchlist_stage(options: PersonalRunOptions) -> StageResult:
             options,
             f"Watchlist ranked from personal scores; fundamentals_source_mode={fundamentals_source_mode}.",
             "fundamentals_master",
+            "watchlist_input",
         ),
     )
 
@@ -1726,6 +1730,13 @@ def finalize_run_outputs(
     notes: str,
 ) -> dict[str, Any]:
     run_finished_at = utc_now_text()
+    if options.data_source_registry_loaded:
+        write_data_source_outputs(
+            options.data_source_records,
+            status_output=options.data_source_status_output,
+            resolved_output=options.data_source_resolved_output,
+            used_as_default_source_keys=options.resolved_default_source_keys,
+        )
     used_input_rows = used_input_rows_from_stage_results(stage_results)
     write_csv_rows(options.used_inputs_output, USED_INPUT_FIELDS, used_input_rows)
     artifact_rows = artifact_rows_from_stage_results(stage_results)

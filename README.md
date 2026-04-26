@@ -752,10 +752,13 @@ Interpretation der persoenlichen Outputs:
 - `personal_fundamentals_master_applied.csv`: explizite Projektion aus Original-Master plus validierten Overlays; kein Ersatz fuer die Core-KPI-Source-of-Truth
 - `personal_fundamentals_overlay_review_backlog.csv`: faellige oder ueberfaellige Overlay-Reviews; keine automatische Overlay-Deaktivierung
 - `personal_run_used_inputs.csv`: flacher Input-Lineage-Index fuer den persoenlichen Orchestrator; keine Output-Artefakte und keine hypothetischen Inputs
+- `personal_profile_review_unlock_summary.csv`: kompakte Zaehler fuer Profile-Review-Unlock, verbleibende Gap-Typen, Score-/Watchlist-/Monthly-Auswirkung
+- `personal_profile_review_unlock_holdings.csv`: zeilenbezogene Next-Action-Tabelle aus vorhandenen Gap-, Score- und Monthly-Artefakten; keine neue Scoring-Logik
 - `personal_portfolio_holdings_action_table.csv`: operative Holdings-Aktionen `ADD`, `HOLD`, `WATCH`, `REDUCE`, `EXIT_REVIEW`; bei uebergebener Coverage werden offene Fundamentals-Luecken konservativ als Guardrail sichtbar
 - `personal_monthly_buy_ranking.csv`: Kauf-Ranking fuer den konfigurierten Monatszufluss; bei uebergebener Coverage werden bestehende Holdings mit offenen Fundamentals-Luecken nicht fuer frisches Kapital empfohlen
 - `personal_monthly_decision_report.md`: monatlicher Entscheidungsreport mit optional eingeblendeten Fundamentals-Research-Luecken
 - `personal_portfolio_review.md`: deutscher Review-Report fuer das persoenliche Depot
+- `reports/YYYY-MM-DD/personal_profile_review_unlock_report.md`: Markdown-Zusammenfassung der Profile-Review-Unlock-Wirkung fuer externe Review-/LLM-Handoffs
 
 Datenschutz:
 
@@ -763,8 +766,28 @@ Datenschutz:
 - Fuer persoenliche Dateien sind z. B. `data/raw/personal_depot.csv`, `data/raw/private_depot.csv` oder `data/raw/private/traderepublic/` vorgesehen und via `.gitignore` ausgeschlossen.
 - Der Trade-Republic-PDF-Pfad nutzt nur textbasierte lokale Extraktion; es wird keine OCR, API oder Umsatzhistorienmodellierung verwendet.
 - Wenn im privaten Export Fundamentals oder saubere Identifier fehlen, bleiben die betreffenden Positionen offen als `REVIEW` oder `MISSING_DATA` markiert.
-- ZIP- oder externe Exporte sollten nie aus dem vollen Arbeitsverzeichnis mit privaten Rohdaten erstellt werden. Fuer Teilen/Review nur Code und Sample-Daten exportieren oder private Rohdaten vorher entfernen.
+- ZIP- oder externe Exporte sollten nie aus dem vollen Arbeitsverzeichnis mit privaten Rohdaten erstellt werden. Fuer Teilen/Review den reproduzierbaren Handoff-Export nutzen und keine privaten Rohdaten aufnehmen.
 - Falls private Rohdaten bereits historisch committed wurden, reicht `.gitignore` nicht; dann muss die Git-Historie separat bereinigt werden.
+
+## Handoff-ZIP fuer externe LLM-Validierung
+
+Externe Reviews sollen nicht den vollen lokalen Arbeitsordner bekommen, sondern ein reproduzierbares Handoff-ZIP:
+
+```powershell
+python -m src.handoff_zip_export
+```
+
+Der Export enthaelt Code, Tests, Doku, Configs, Repo-Metadaten (`ZIP_REPO_*.txt`) und explizit erlaubte Patch-Evidenzartefakte. Dadurch kann ein externes LLM sowohl die Implementierung als auch die aktuelle Datenlage des Patches validieren.
+
+Erlaubte Handoff-Evidenzartefakte sind bewusst eng allowlisted, z. B.:
+
+- `data/processed/personal_profile_review_unlock_summary.csv`
+- `data/processed/personal_profile_review_unlock_holdings.csv`
+- `reports/YYYY-MM-DD/personal_profile_review_unlock_report.md`
+
+Nicht erlaubt bleiben `.git/`, Caches, Virtualenvs, alte ZIPs, `outputs/`, `data/raw/private/`, private lokale Root-Dateien und historische Reports ausserhalb der expliziten Handoff-Allowlist.
+
+Git-Commit-Hygiene und Handoff-Hygiene sind getrennte Vertraege: `data/processed/` und `reports/` sollen nicht pauschal in Patch-Commits landen, koennen aber als explizit freigegebene Evidenzartefakte im Handoff-ZIP enthalten sein.
 
 ## Testlauf
 

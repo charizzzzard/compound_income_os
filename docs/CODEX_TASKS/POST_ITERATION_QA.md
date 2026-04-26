@@ -34,6 +34,8 @@ Keine hypothetischen Problem-Listen ohne Repro oder Datei-Evidenz.
 
 - README-Pfade bleiben repo-portabel.
 - Keine privaten Rohdaten, Secrets, `.codex_tmp`, `data/processed/` oder `reports/` in Patch-Commits.
+- Handoff-ZIPs duerfen explizit allowlistete Patch-Evidenzartefakte aus `data/processed/` und `reports/YYYY-MM-DD/` enthalten, wenn sie fuer externe LLM-Validierung der Datenlage noetig sind; das ist keine Freigabe fuer pauschale Commit-Aufnahme oder historische Output-Ballastdateien.
+- Handoff-ZIPs muessen `ZIP_REPO_HEAD.txt`, `ZIP_REPO_STATUS.txt`, Code/Tests/Doku/Configs und die projektrelevanten Patch-Artefakte enthalten; private Raw-Daten, `.git/`, Caches, alte ZIPs und `data/raw/private/` bleiben verboten.
 - Fehlende Daten werden nicht erfunden.
 - Persoenliche Holdings fallen nicht still auf Sample-Fundamentals zurueck.
 - Reports werden aus verarbeiteten Artefakten gebaut.
@@ -74,3 +76,7 @@ Minimal Patch Prompt:
 ## Git-Spur
 
 QA selbst committen nur, wenn sie dokumentierte QA-Artefakte als Teil einer akzeptierten Governance-Aufgabe erstellt. Bugfix-Patches muessen getrennt bleiben und duerfen keine unrelated Dirty-Files aufnehmen.
+
+## Handoff-Spur
+
+Nach Patches, die externe LLM-Validierung oder reproduzierbare Uebergabe erfordern, muss ein frisches Handoff-ZIP erzeugt werden. Aeltere `compound_income_os_HANDOFF_*.zip` im Repo-Root sollen entfernt werden, sodass nur das aktuelle Handoff-Paket liegen bleibt. Der Export muss einen Forbidden-Entry-Scan mit `0` Treffern bestehen und alle explizit benoetigten Patch-Evidenzartefakte enthalten.

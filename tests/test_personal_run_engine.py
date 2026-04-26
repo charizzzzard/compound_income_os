@@ -1334,6 +1334,67 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertEqual(scoring_inputs["fundamentals_master"]["input_path"], str(registry_master))
         self.assertIn("data_source_registry_defaults=fundamentals_master", scoring_inputs["fundamentals_master"]["notes"])
 
+    def test_registry_default_watchlist_input_is_used_when_no_cli_override_exists(self) -> None:
+        options = self._core_options(
+            "watchlist_registry_default",
+            ["import", "fundamentals_seed", "scoring", "watchlist"],
+        )
+        registry_watchlist = self._path("_tmp_watchlist_registry_default_input.csv")
+        self._write_watchlist(registry_watchlist)
+        options.watchlist_input = None
+        self._write_data_sources_config(
+            Path(options.data_sources_config),
+            {
+                "watchlist_input": {
+                    "enabled": True,
+                    "path": str(registry_watchlist),
+                    "required": False,
+                    "kind": "file",
+                    "description": "registry watchlist should win when no explicit CLI path exists",
+                }
+            },
+        )
+
+        manifest = run_personal_run_engine(options)
+
+        watchlist_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "watchlist")
+        watchlist_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "watchlist")
+        status_rows = {row["source_key"]: row for row in read_csv_rows(options.data_source_status_output)}
+        resolved_rows = {row["source_key"]: row for row in read_csv_rows(options.data_source_resolved_output)}
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(watchlist_result["used_inputs"]["watchlist_input"], str(registry_watchlist))
+        self.assertEqual(watchlist_inputs["watchlist_input"]["input_path"], str(registry_watchlist))
+        self.assertIn("data_source_registry_defaults=watchlist_input", watchlist_inputs["watchlist_input"]["notes"])
+        self.assertEqual(status_rows["watchlist_input"]["status"], "OK")
+        self.assertEqual(resolved_rows["watchlist_input"]["used_as_default_input"], "True")
+
+    def test_explicit_cli_watchlist_input_wins_against_registry_default(self) -> None:
+        options = self._core_options("watchlist_registry_cli_priority", ["import", "fundamentals_seed", "scoring", "watchlist"])
+        explicit_watchlist = str(options.watchlist_input)
+        registry_watchlist = self._path("_tmp_watchlist_registry_cli_priority_input.csv")
+        self._write_watchlist(registry_watchlist)
+        self._write_data_sources_config(
+            Path(options.data_sources_config),
+            {
+                "watchlist_input": {
+                    "enabled": True,
+                    "path": str(registry_watchlist),
+                    "required": False,
+                    "kind": "file",
+                    "description": "registry watchlist should lose to explicit CLI path",
+                }
+            },
+        )
+
+        manifest = run_personal_run_engine(options)
+
+        watchlist_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "watchlist")
+        watchlist_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "watchlist")
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(watchlist_result["used_inputs"]["watchlist_input"], explicit_watchlist)
+        self.assertEqual(watchlist_inputs["watchlist_input"]["input_path"], explicit_watchlist)
+        self.assertNotIn("data_source_registry_defaults=watchlist_input", watchlist_inputs["watchlist_input"]["notes"])
+
     def test_cli_explicit_fundamentals_master_override_wins_against_registry_end_to_end(self) -> None:
         options = self._core_options("cli_registry_priority_e2e", ["data_sources_validate", "import", "scoring", "coverage"])
         explicit_master = self._path("_tmp_cli_registry_priority_explicit_master.csv")
