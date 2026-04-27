@@ -96,6 +96,19 @@ Before any private demo handoff, the website copy-freeze checks must pass or exp
 
 The freeze does not mean public launch readiness. Public launch still requires real CTA targets, imprint, privacy policy, pricing/scope review, hosting/rewrite validation, and final compliance review.
 
+### Private Preview Release Notes
+
+The private-preview release notes are a handoff aid only. They do not indicate public launch readiness.
+
+Public launch still requires:
+
+- real CTA targets
+- imprint URL
+- privacy policy URL
+- pricing/scope review
+- hosting and route-fallback validation
+- final compliance review.
+
 ## Public Launch Blockers
 
 The following items are required before any public deploy. Each blocker has both a legal/compliance and a credibility dimension.

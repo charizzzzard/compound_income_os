@@ -1,0 +1,36 @@
+item_type,item_name,path,status,included_in_handoff_expected,private_preview_safe,contains_private_data,contains_synthetic_or_sanitized_data,notes,reason_codes
+PAGE,Home,/,PASS,yes,yes,no,yes,A calmer way to run a long-term portfolio.,PAGE_INDEXED
+PAGE,Workflow,/workflow,PASS,yes,yes,no,yes,"Six stages, one monthly cadence.",PAGE_INDEXED
+PAGE,Evidence,/evidence,PASS,yes,yes,no,yes,See what's covered. See what's missing.,PAGE_INDEXED
+PAGE,Portfolio,/portfolio,PASS,yes,yes,no,yes,Four sleeves. Clear rules. Long-term focus.,PAGE_INDEXED
+PAGE,Dashboard,/dashboard,PASS,yes,yes,no,yes,One local dashboard. Five KPI groups.,PAGE_INDEXED
+PAGE,Manifesto,/manifesto,PASS,yes,yes,no,yes,Built for people who think for the long run.,PAGE_INDEXED
+PAGE,About alias,/about,PASS,yes,yes,no,yes,Alias to Manifesto.,PAGE_INDEXED
+SCREENSHOT,Home screenshot,website/compound-income-os-landing/review_screenshots/01_home_wayfinder.png,PASS,yes,yes,no,yes,Main private-preview page screenshot.,SCREENSHOT_INCLUDED
+SCREENSHOT,Workflow screenshot,website/compound-income-os-landing/review_screenshots/02_workflow_page.png,PASS,yes,yes,no,yes,Main private-preview page screenshot.,SCREENSHOT_INCLUDED
+SCREENSHOT,Evidence screenshot,website/compound-income-os-landing/review_screenshots/03_evidence_page.png,PASS,yes,yes,no,yes,Main private-preview page screenshot.,SCREENSHOT_INCLUDED
+SCREENSHOT,Portfolio screenshot,website/compound-income-os-landing/review_screenshots/04_portfolio_page.png,PASS,yes,yes,no,yes,Main private-preview page screenshot.,SCREENSHOT_INCLUDED
+SCREENSHOT,Dashboard screenshot,website/compound-income-os-landing/review_screenshots/05_dashboard_page.png,PASS,yes,yes,no,yes,Main private-preview page screenshot.,SCREENSHOT_INCLUDED
+SCREENSHOT,Manifesto screenshot,website/compound-income-os-landing/review_screenshots/06_manifesto_page.png,PASS,yes,yes,no,yes,Main private-preview page screenshot.,SCREENSHOT_INCLUDED
+QA_ARTIFACT,Route Matrix CSV,data/processed/website_private_preview_route_matrix.csv,PASS,yes,yes,no,no,Generated QA evidence artifact.,QA_ARTIFACT_INCLUDED
+QA_ARTIFACT,CTA Matrix CSV,data/processed/website_private_preview_cta_matrix.csv,PASS,yes,yes,no,no,Generated QA evidence artifact.,QA_ARTIFACT_INCLUDED
+QA_ARTIFACT,Copy Guardrails CSV,data/processed/website_private_preview_copy_guardrails.csv,PASS,yes,yes,no,no,Generated QA evidence artifact.,QA_ARTIFACT_INCLUDED
+QA_ARTIFACT,Route QA Summary CSV,data/processed/website_private_preview_qa_summary.csv,PASS,yes,yes,no,no,Generated QA evidence artifact.,QA_ARTIFACT_INCLUDED
+BUILD_QA,Static Build QA CSV,data/processed/website_static_build_package_qa.csv,PASS,yes,yes,no,no,Generated QA evidence artifact.,QA_ARTIFACT_INCLUDED
+BUILD_QA,Static Build Summary CSV,data/processed/website_static_build_package_summary.csv,PASS,yes,yes,no,no,Generated QA evidence artifact.,QA_ARTIFACT_INCLUDED
+QA_ARTIFACT,Copy Freeze Matrix CSV,data/processed/website_private_preview_copy_freeze_matrix.csv,PASS,yes,yes,no,no,Generated QA evidence artifact.,QA_ARTIFACT_INCLUDED
+QA_ARTIFACT,Copy Freeze Summary CSV,data/processed/website_private_preview_copy_freeze_summary.csv,PASS,yes,yes,no,no,Generated QA evidence artifact.,QA_ARTIFACT_INCLUDED
+QA_ARTIFACT,Route Matrix Report,reports/2026-04-27/website_private_preview_route_matrix_report.md,PASS,yes,yes,no,no,Generated QA evidence artifact.,QA_ARTIFACT_INCLUDED
+BUILD_QA,Static Build Report,reports/2026-04-27/website_static_build_package_report.md,PASS,yes,yes,no,no,Generated QA evidence artifact.,QA_ARTIFACT_INCLUDED
+QA_ARTIFACT,Copy Freeze Report,reports/2026-04-27/website_private_preview_copy_freeze_report.md,PASS,yes,yes,no,no,Generated QA evidence artifact.,QA_ARTIFACT_INCLUDED
+PAYLOAD,Sanitized readiness sample payload,website/compound-income-os-landing/public/demo/readiness_payload.sample.json,PASS,yes,yes,no,yes,Sanitized or processed readiness evidence for private preview review.,PAYLOAD_VALID
+PAYLOAD,Dashboard readiness payload,data/processed/dashboard_readiness_payload.json,PASS,yes,yes,no,yes,Sanitized or processed readiness evidence for private preview review.,PAYLOAD_VALID
+PAYLOAD,Dashboard readiness panel,data/processed/dashboard_readiness_panel.csv,PASS,yes,yes,no,yes,Sanitized or processed readiness evidence for private preview review.,PAYLOAD_VALID
+DOC,Website README,website/compound-income-os-landing/README.md,PASS,yes,yes,no,no,Reviewer-facing documentation or accepted strategy evidence.,DOC_INCLUDED
+DOC,Deployment Notes,website/compound-income-os-landing/DEPLOYMENT_NOTES.md,PASS,yes,yes,no,no,Reviewer-facing documentation or accepted strategy evidence.,DOC_INCLUDED
+DOC,Strategy Review Report,reports/2026-04-26/strategy_review_fundamentals_trust_scoring.md,PASS,yes,yes,no,no,Reviewer-facing documentation or accepted strategy evidence.,DOC_INCLUDED
+GUARDRAIL,No public deploy performed,data/processed,PASS,yes,yes,no,no,Public deployment remains blocked.,PUBLIC_DEPLOY_FALSE
+GUARDRAIL,No private data leak detected,data/processed,PASS,yes,yes,no,no,QA summaries report no private data leakage.,NO_PRIVATE_DATA_LEAK
+GUARDRAIL,No dummy claims detected,data/processed,PASS,yes,yes,no,no,QA summaries report no readiness or launch dummy claims.,NO_DUMMY_CLAIMS
+GUARDRAIL,No fake links detected,data/processed,PASS,yes,yes,no,no,CTA matrix reports no fake links.,NO_FAKE_LINKS
+GUARDRAIL,No forbidden action terms detected,data/processed,PASS,yes,yes,no,no,Copy guardrails report no CTA/display action-language violations.,NO_ACTION_LANGUAGE

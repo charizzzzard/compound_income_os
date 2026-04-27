@@ -131,6 +131,18 @@ The private-preview website copy is checked through a final copy-freeze review c
 
 The generated freeze artifacts live under `data/processed/` and `reports/`.
 
+## Private Preview Release Notes
+
+The current private-preview website handoff is indexed through generated release notes and a handoff index.
+
+Generated artifacts:
+
+- `data/processed/website_private_preview_handoff_index.csv`
+- `data/processed/website_private_preview_release_summary.csv`
+- `reports/2026-04-27/website_private_preview_release_notes.md`
+
+These artifacts summarize the included pages, screenshots, QA evidence, static build checks, copy-freeze status, and remaining public-launch blockers.
+
 ## Commands
 
 Install dependencies:
