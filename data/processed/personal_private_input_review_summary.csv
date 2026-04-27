@@ -1,0 +1,3 @@
+review_domain,input_file_status,queue_rows_count,input_rows_count,approved_rows_count,review_rows_count,missing_rows_count,invalid_rows_count,eligible_for_approved_apply_count,no_imputation_confirmed,private_values_sanitized,reason_codes
+VALUATION,MISSING,10,0,0,0,10,0,0,True,True,INPUT_FILE_MISSING;NO_IMPUTATION;VALUATION_REQUIRED_MISSING
+DIVIDEND_FCF,MISSING,10,0,0,0,10,0,0,True,True,DIVIDEND_FCF_REQUIRED_MISSING;INPUT_FILE_MISSING;NO_IMPUTATION
