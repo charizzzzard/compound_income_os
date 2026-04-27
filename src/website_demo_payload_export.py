@@ -123,6 +123,50 @@ WAVE_TWO_B_DASHBOARD_PAYLOAD: dict[str, Any] = {
     },
 }
 
+WAVE_THREE_PORTFOLIO_PAYLOAD: dict[str, Any] = {
+    "portfolio_page": {
+        "route": "/portfolio",
+        "page": "M4 Portfolio Model",
+        "product_mockup": "P4 Holdings & Sleeves Workspace",
+        "private_preview_only": True,
+        "public_deploy_ready": False,
+        "decision_readiness_claimed": False,
+        "synthetic_demo_values": True,
+        "not_personal_allocation_guidance": True,
+    },
+    "sleeves": [
+        {"name": "Core ETF", "example_band": "45-60%", "status": "illustrative rule band"},
+        {"name": "Dividend Quality ETF", "example_band": "10-25%", "status": "illustrative rule band"},
+        {"name": "Single Stock", "example_band": "20-35%", "status": "review required"},
+        {"name": "Cash", "example_band": "5-15%", "status": "rule-based reserve"},
+    ],
+    "portfolio_workspace": {
+        "title": "Holdings & Sleeves Workspace",
+        "contains_real_allocations": False,
+        "contains_private_values": False,
+        "risk_rules": [
+            "Max single position",
+            "Max top-10 weight",
+            "Max sector exposure",
+            "Minimum cash reserve",
+        ],
+    },
+    "readiness_connection": {
+        "decision": "BLOCKED",
+        "valuation_inputs": "missing",
+        "dividend_fcf_inputs": "missing",
+        "core_kpi_review": "open",
+        "provenance": "incomplete",
+        "watchlist": "sample input active",
+    },
+    "guardrails": {
+        "no_public_deploy": True,
+        "no_private_values": True,
+        "no_network": True,
+        "no_execution_signal": True,
+    },
+}
+
 
 @dataclass(frozen=True)
 class WebsiteDemoPayloadExportResult:
@@ -183,6 +227,7 @@ def build_sample_payload(source_payload: dict[str, Any], *, generated_from: str)
         "payload": source_payload,
         "website_mockup_wave_two": WAVE_TWO_EVIDENCE_PAYLOAD,
         "website_mockup_wave_two_b": WAVE_TWO_B_DASHBOARD_PAYLOAD,
+        "website_mockup_wave_three": WAVE_THREE_PORTFOLIO_PAYLOAD,
     }
 
 

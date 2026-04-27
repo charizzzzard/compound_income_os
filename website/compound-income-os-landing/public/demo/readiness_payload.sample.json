@@ -743,6 +743,65 @@
     "sample_type": "private_preview_readiness_payload",
     "synthetic_or_sanitized": true
   },
+  "website_mockup_wave_three": {
+    "guardrails": {
+      "no_execution_signal": true,
+      "no_network": true,
+      "no_private_values": true,
+      "no_public_deploy": true
+    },
+    "portfolio_page": {
+      "decision_readiness_claimed": false,
+      "not_personal_allocation_guidance": true,
+      "page": "M4 Portfolio Model",
+      "private_preview_only": true,
+      "product_mockup": "P4 Holdings & Sleeves Workspace",
+      "public_deploy_ready": false,
+      "route": "/portfolio",
+      "synthetic_demo_values": true
+    },
+    "portfolio_workspace": {
+      "contains_private_values": false,
+      "contains_real_allocations": false,
+      "risk_rules": [
+        "Max single position",
+        "Max top-10 weight",
+        "Max sector exposure",
+        "Minimum cash reserve"
+      ],
+      "title": "Holdings & Sleeves Workspace"
+    },
+    "readiness_connection": {
+      "core_kpi_review": "open",
+      "decision": "BLOCKED",
+      "dividend_fcf_inputs": "missing",
+      "provenance": "incomplete",
+      "valuation_inputs": "missing",
+      "watchlist": "sample input active"
+    },
+    "sleeves": [
+      {
+        "example_band": "45-60%",
+        "name": "Core ETF",
+        "status": "illustrative rule band"
+      },
+      {
+        "example_band": "10-25%",
+        "name": "Dividend Quality ETF",
+        "status": "illustrative rule band"
+      },
+      {
+        "example_band": "20-35%",
+        "name": "Single Stock",
+        "status": "review required"
+      },
+      {
+        "example_band": "5-15%",
+        "name": "Cash",
+        "status": "rule-based reserve"
+      }
+    ]
+  },
   "website_mockup_wave_two": {
     "coverage_tiers": [
       {

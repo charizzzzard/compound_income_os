@@ -37,7 +37,7 @@ export const siteConfig = {
     home: '/',
     workflow: '/workflow',
     evidence: '/evidence',
-    portfolioPending: '#planned-portfolio',
+    portfolio: '/portfolio',
     dashboard: '/dashboard',
     manifestoPending: '#manifesto-teaser',
   },

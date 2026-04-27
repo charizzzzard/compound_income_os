@@ -27,11 +27,11 @@ const screenshots = [
     mode: 'viewport',
   },
   {
-    filename: '02_dashboard_page_hero.png',
-    label: 'Dashboard page hero and local viewer',
+    filename: '02_portfolio_page_hero.png',
+    label: 'Portfolio page hero and allocation model',
     viewport: desktopViewport,
-    path: '/dashboard',
-    selector: '[data-screenshot="dashboard-hero"]',
+    path: '/portfolio',
+    selector: '[data-screenshot="portfolio-hero"]',
   },
   {
     filename: '03_mobile_home_hero.png',
@@ -54,11 +54,11 @@ const screenshots = [
     selector: '[data-screenshot="evidence-coverage"]',
   },
   {
-    filename: '06_dashboard_snowball.png',
-    label: 'Dashboard snowball and scenario section',
+    filename: '06_portfolio_workspace.png',
+    label: 'Portfolio holdings and sleeves workspace',
     viewport: desktopViewport,
-    path: '/dashboard',
-    selector: '[data-screenshot="dashboard-snowball"]',
+    path: '/portfolio',
+    selector: '[data-screenshot="portfolio-workspace"]',
   },
 ]
 

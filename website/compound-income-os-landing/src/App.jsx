@@ -7,7 +7,7 @@ import { siteConfig } from './siteConfig'
 const safeRoutes = [
   ['Workflow', '/workflow', false],
   ['Evidence', '/evidence', false],
-  ['Portfolio', '#planned-portfolio', true],
+  ['Portfolio', '/portfolio', false],
   ['Dashboard', '/dashboard', false],
   ['Manifesto', '#manifesto-teaser', true],
 ]
@@ -15,7 +15,7 @@ const safeRoutes = [
 const promises = [
   ['Workflow', 'One decision a month - same six stages, every month.', '/workflow', false],
   ['Evidence', 'Every KPI carries a status, and missing data remains visible.', '/evidence', false],
-  ['Portfolio', 'Four sleeves. One mandate. Visible rules.', '#planned-portfolio', true],
+  ['Portfolio', 'Four sleeves. One mandate. Visible rules.', '/portfolio', false],
   ['Dashboard', 'One local dashboard. Five KPI groups.', '/dashboard', false],
   ['Manifesto / Access', 'Open-source core. Builder-led. No venture capital.', '#manifesto-teaser', true],
 ]
@@ -70,6 +70,53 @@ const dashboardKpiGroups = [
   ['Benchmark / Performance', ['benchmark comparison', 'rolling return', 'drawdown', 'volatility'], 'Requires explicit local benchmark archive. Not a prediction.', 'INSUFFICIENT_HISTORY'],
   ['Cost / Tax', ['gross dividends', 'net dividends', 'withholding taxes', 'tax drag'], 'Requires explicit cost/tax ledger evidence.', 'REVIEW'],
   ['Data Quality / Methodology', ['coverage', 'partial', 'review', 'missing data', 'methodology notes'], 'readiness payload and blocker matrix', 'MISSING_DATA'],
+]
+
+const portfolioSleeves = [
+  ['Core ETF', 'Broad market foundation and long-term compounding base.', '45-60%', 'illustrative rule band', 'OK'],
+  ['Dividend Quality ETF', 'Income-oriented diversification with quality and durability constraints.', '10-25%', 'illustrative rule band', 'PARTIAL'],
+  ['Single Stock', 'Reviewed quality compounders and dividend-growth holdings with explicit evidence.', '20-35%', 'review required', 'REVIEW'],
+  ['Cash', 'Optionality, drawdown buffer, and monthly deployment discipline.', '5-15%', 'rule-based reserve', 'OK'],
+]
+
+const portfolioWorkspaceRows = [
+  ['Core ETF', 'synthetic', '45-60%', 'OK', 'within illustrative band'],
+  ['Dividend Quality ETF', 'synthetic', '10-25%', 'PARTIAL', 'income evidence review open'],
+  ['Single Stock', 'synthetic', '20-35%', 'REVIEW', 'valuation and evidence gates open'],
+  ['Cash', 'synthetic', '5-15%', 'MISSING_DATA', 'cash source not connected'],
+]
+
+const portfolioRiskRules = [
+  ['Max single position', 'illustrative limit', 'REVIEW'],
+  ['Max top-10 weight', 'concentration visible', 'PARTIAL'],
+  ['Max sector exposure', 'methodology gate', 'REVIEW'],
+  ['Minimum cash reserve', 'rule-based reserve', 'OK'],
+]
+
+const portfolioGuardrails = [
+  ['Concentration', 'Position and top-holding limits keep concentration visible.'],
+  ['Sleeve discipline', 'Every holding belongs to a sleeve, not a vague watchlist bucket.'],
+  ['Cash-aware decisions', 'Monthly candidate review considers cash context before any action is documented.'],
+  ['Evidence gates', 'A holding can look attractive and still remain blocked if required evidence is missing.'],
+  ['Review states', 'REVIEW, PARTIAL, and MISSING_DATA remain visible instead of being hidden behind a score.'],
+]
+
+const holdingStatuses = [
+  ['Core candidate', 'Potential long-term fit, pending evidence and valuation review.'],
+  ['Quality compounder', 'Strong business profile, but still subject to data quality and valuation gates.'],
+  ['Dividend growth', 'Income thesis visible, but Dividend/FCF evidence must be reviewed.'],
+  ['Too expensive', 'Good company, but valuation review blocks action.'],
+  ['Review', 'Needs more data or manual evidence before it can support a decision.'],
+  ['Reject', 'Does not meet the current rule set or evidence threshold. This is a review outcome, not an execution instruction.'],
+]
+
+const portfolioReadinessBlockers = [
+  ['Decision readiness', 'BLOCKED', 'missing'],
+  ['Valuation inputs', 'missing', 'missing'],
+  ['Dividend / FCF inputs', 'missing', 'missing'],
+  ['Core KPI review', 'open', 'review'],
+  ['Provenance', 'incomplete', 'partial'],
+  ['Watchlist', 'sample input active', 'missing'],
 ]
 
 const snowballMetrics = [
@@ -160,6 +207,9 @@ function currentRoute() {
   if (window.location.pathname === '/evidence') {
     return '/evidence'
   }
+  if (window.location.pathname === '/portfolio') {
+    return '/portfolio'
+  }
   if (window.location.pathname === '/dashboard') {
     return '/dashboard'
   }
@@ -174,7 +224,7 @@ function useRoute() {
     return () => window.removeEventListener('popstate', onPop)
   }, [])
   const navigate = (href) => {
-    if (href?.startsWith('/workflow') || href?.startsWith('/evidence') || href?.startsWith('/dashboard')) {
+    if (href?.startsWith('/workflow') || href?.startsWith('/evidence') || href?.startsWith('/portfolio') || href?.startsWith('/dashboard')) {
       const [path, hash] = href.split('#')
       window.history.pushState({}, '', href)
       setRoute(path)
@@ -387,7 +437,7 @@ function BuilderTeaser() {
         </div>
         <div className="rounded-2xl border border-[color:var(--paper-300)] bg-[color:var(--paper-50)] p-5">
           <div className="font-mono text-xs uppercase tracking-[0.14em] text-[color:var(--accent-600)]">planned in later wave</div>
-          <p className="mt-3 text-sm leading-6 text-[color:var(--ink-600)]">Evidence page, portfolio page, local dashboard page and manifesto page remain planned placeholders in Wave 1.</p>
+          <p className="mt-3 text-sm leading-6 text-[color:var(--ink-600)]">Manifesto and access details remain planned placeholders until public-launch requirements are reviewed.</p>
         </div>
       </div>
     </section>
@@ -640,9 +690,9 @@ function EvidencePage({ navigate }) {
               <SmartLink className="button button-primary" href={sampleHref} onNavigate={navigate}>
                 Read a sample monthly report
               </SmartLink>
-              <span className="button button-secondary is-disabled" aria-disabled="true" title="Portfolio page planned">
-                See the portfolio model - planned
-              </span>
+              <SmartLink className="button button-secondary" href="/portfolio" onNavigate={navigate}>
+                See the portfolio model
+              </SmartLink>
             </div>
             <div className="mt-8 flex flex-wrap gap-2">
               {['READ-ONLY SEC PATH', 'MANUAL IDENTITY REVIEW', 'NO SILENT OVERWRITES', 'SYNTHETIC DEMO VALUES'].map((tag) => (
@@ -926,6 +976,260 @@ function EvidenceHighlightBar() {
       <div className="container-xl">
         <div className="rounded-[1.35rem] bg-[color:var(--ink-900)] px-6 py-8 text-center text-3xl font-semibold tracking-[-0.03em] text-[color:var(--paper-50)] sm:text-4xl">
           IF A NUMBER IS MISSING, THE REPORT SAYS SO.
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function PortfolioPage({ navigate }) {
+  return (
+    <>
+      <section className="section pt-32 lg:pt-40" data-screenshot="portfolio-hero">
+        <div className="container-xl grid items-center gap-10 lg:grid-cols-[0.86fr_1.14fr]">
+          <div>
+            <p className="eyebrow hero-eyebrow">// PORTFOLIO MODEL</p>
+            <h1 className="mt-4 max-w-3xl text-5xl font-semibold leading-[1.02] tracking-[-0.055em] text-[color:var(--ink-900)] sm:text-6xl">
+              Four sleeves. Clear rules. Long-term focus.
+            </h1>
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-[color:var(--ink-600)]">
+              A rules-based portfolio model helps separate core exposure, dividend quality, single-stock conviction, and cash without turning the system into a brokerage app.
+            </p>
+            <div className="mt-6 inline-flex rounded-full border border-[color:var(--paper-300)] bg-white/70 px-4 py-2 font-mono text-xs uppercase tracking-[0.12em] text-[color:var(--ink-600)]">
+              Private preview - synthetic demo values - not portfolio allocation guidance
+            </div>
+          </div>
+          <PortfolioHeroPanel />
+        </div>
+      </section>
+      <FourSleevesSection />
+      <HoldingsSleevesMockup />
+      <PortfolioRulesSection />
+      <HoldingStatusModel />
+      <PortfolioReadinessBox navigate={navigate} />
+    </>
+  )
+}
+
+function PortfolioHeroPanel() {
+  return (
+    <aside className="dark-panel rounded-[1.35rem] border p-5 sm:p-6 lg:p-8" aria-label="Portfolio Allocation private preview">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-[color:var(--dark-600)] pb-4">
+        <div>
+          <div className="font-mono text-xs uppercase tracking-[0.14em] text-[color:var(--dark-fg-3)]">Portfolio Allocation</div>
+          <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-[color:var(--dark-fg)]">Sleeve operating model</h2>
+        </div>
+        <Pill tone="partial">synthetic demo values</Pill>
+      </div>
+      <div className="grid gap-3 md:grid-cols-3">
+        {[
+          ['Portfolio', 'REVIEW', 'review'],
+          ['Decision', 'BLOCKED', 'missing'],
+          ['Data Quality', 'PARTIAL', 'partial'],
+        ].map(([label, value, tone]) => (
+          <article className="kpi-card" key={label}>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--dark-fg-3)]">{label}</div>
+            <div className="mt-3 font-mono text-xl font-semibold text-[color:var(--dark-fg)]">{value}</div>
+            <div className="mt-4">
+              <Pill tone={tone}>{value}</Pill>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="mt-5 grid gap-3 sm:grid-cols-4">
+        {portfolioSleeves.map(([title, , band, , status]) => (
+          <article className="rounded-xl border border-[color:var(--dark-600)] bg-[rgba(26,35,44,0.72)] p-3" key={title}>
+            <div className="text-[11px] leading-5 text-[color:var(--dark-fg-2)]">{title}</div>
+            <div className="mt-2 font-mono text-lg font-semibold text-[color:var(--dark-fg)]">{band}</div>
+            <div className="mt-3">
+              <Pill tone={statusTone(status)}>{status}</Pill>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="artifact-strip mt-5 border-[color:var(--dark-600)] text-[color:var(--dark-fg-3)]">
+        <span>illustrative rule bands</span>
+        <span>review gates visible</span>
+        <span>no private allocation data</span>
+      </div>
+    </aside>
+  )
+}
+
+function FourSleevesSection() {
+  return (
+    <section className="section">
+      <div className="container-xl">
+        <p className="eyebrow">// FOUR SLEEVES</p>
+        <h2 className="section-title">Four sleeves. One operating model.</h2>
+        <p className="section-lede">The model separates portfolio roles so that every position has a job, a rule context, and a review state.</p>
+        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          {portfolioSleeves.map(([title, purpose, band, note, status], index) => (
+            <article className="card" key={title}>
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-mono text-sm text-[color:var(--accent-600)]">0{index + 1}</span>
+                <Pill tone={statusTone(status)}>{status}</Pill>
+              </div>
+              <h3 className="mt-4 text-xl font-semibold text-[color:var(--ink-900)]">{title}</h3>
+              <p className="mt-3 text-sm leading-6 text-[color:var(--ink-600)]">{purpose}</p>
+              <div className="mt-5 rounded-2xl border border-[color:var(--paper-300)] bg-[color:var(--paper-50)] p-4">
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--ink-400)]">example band</div>
+                <div className="mt-2 font-mono text-2xl font-semibold text-[color:var(--ink-900)]">{band}</div>
+                <p className="mt-2 text-xs leading-5 text-[color:var(--ink-500)]">{note}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+        <p className="mt-6 max-w-3xl text-sm leading-6 text-[color:var(--ink-500)]">
+          The bands are synthetic and illustrative. They describe how a rules view could work; they are not personal allocation guidance.
+        </p>
+      </div>
+    </section>
+  )
+}
+
+function HoldingsSleevesMockup() {
+  return (
+    <section className="section-tight bg-[color:var(--paper-100)]" data-screenshot="portfolio-workspace">
+      <div className="container-xl">
+        <div className="dark-panel rounded-[1.35rem] border p-5 sm:p-6 lg:p-8">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-[color:var(--dark-600)] pb-4">
+            <div>
+              <div className="font-mono text-xs uppercase tracking-[0.14em] text-[color:var(--dark-fg-3)]">Holdings & Sleeves Workspace</div>
+              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-[color:var(--dark-fg)]">Rule bands before review state</h2>
+            </div>
+            <Pill tone="partial">synthetic demo values</Pill>
+          </div>
+          <div className="grid gap-5 lg:grid-cols-[1.12fr_0.88fr]">
+            <div className="overflow-x-auto rounded-2xl border border-[color:var(--dark-600)] bg-[rgba(13,20,28,0.52)]">
+              <table className="workspace-table">
+                <thead>
+                  <tr>
+                    <th>sleeve</th>
+                    <th>current band</th>
+                    <th>rule band</th>
+                    <th>status</th>
+                    <th>review flag</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {portfolioWorkspaceRows.map(([sleeve, currentBand, ruleBand, status, flag]) => (
+                    <tr key={sleeve}>
+                      <td className="font-semibold text-[color:var(--dark-fg)]">{sleeve}</td>
+                      <td>{currentBand}</td>
+                      <td className="font-mono">{ruleBand}</td>
+                      <td>
+                        <Pill tone={statusTone(status)}>{status}</Pill>
+                      </td>
+                      <td>{flag}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+              {portfolioRiskRules.map(([title, body, status]) => (
+                <article className="kpi-card" key={title}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--dark-fg-3)]">{title}</div>
+                      <p className="mt-3 text-sm leading-6 text-[color:var(--dark-fg-2)]">{body}</p>
+                    </div>
+                    <Pill tone={statusTone(status)}>{status}</Pill>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+          <div className="artifact-strip mt-5 border-[color:var(--dark-600)] text-[color:var(--dark-fg-3)]">
+            <span>illustrative concentration rules</span>
+            <span>cash reserve visible</span>
+            <span>review state required</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function PortfolioRulesSection() {
+  return (
+    <section className="section">
+      <div className="container-xl">
+        <p className="eyebrow">// RULES AND GUARDRAILS</p>
+        <h2 className="section-title">Rules before opinions.</h2>
+        <p className="section-lede">Every portfolio view is constrained by declared rules. If a rule cannot be checked, the dashboard says so.</p>
+        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-5">
+          {portfolioGuardrails.map(([title, body], index) => (
+            <article className="card" key={title}>
+              <div className="font-mono text-sm text-[color:var(--accent-600)]">0{index + 1}</div>
+              <h3 className="mt-4 text-xl font-semibold text-[color:var(--ink-900)]">{title}</h3>
+              <p className="mt-3 text-sm leading-6 text-[color:var(--ink-600)]">{body}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function HoldingStatusModel() {
+  return (
+    <section className="section-tight bg-[color:var(--paper-100)]">
+      <div className="container-xl">
+        <p className="eyebrow">// HOLDING STATUS MODEL</p>
+        <h2 className="section-title">A status model for long-term operators.</h2>
+        <p className="section-lede">The system does not need an execution signal. It needs a clear review state.</p>
+        <div className="mt-10 grid gap-4 md:grid-cols-3">
+          {holdingStatuses.map(([title, body]) => (
+            <article className="card" key={title}>
+              <h3 className="text-xl font-semibold text-[color:var(--ink-900)]">{title}</h3>
+              <p className="mt-3 text-sm leading-6 text-[color:var(--ink-600)]">{body}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function PortfolioReadinessBox({ navigate }) {
+  return (
+    <section className="section">
+      <div className="container-xl">
+        <div className="grid gap-7 rounded-[1.35rem] border border-[color:var(--paper-300)] bg-white/75 p-6 shadow-sm lg:grid-cols-[0.9fr_1.1fr]">
+          <div>
+            <p className="eyebrow">// READINESS CONNECTION</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-[color:var(--ink-900)]">Why this portfolio view is not decision-ready yet.</h2>
+            <p className="mt-4 text-sm leading-6 text-[color:var(--ink-600)]">
+              The page shows the structural model only. The current readiness state remains blocked until missing inputs, evidence gaps, and sample watchlist blockers are resolved.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              {[
+                'Review private valuation inputs',
+                'Review dividend / FCF inputs',
+                'Inspect evidence gaps',
+              ].map((label) => (
+                <span className="button button-secondary is-disabled" aria-disabled="true" key={label}>
+                  {label}
+                </span>
+              ))}
+              <SmartLink className="button button-primary" href="/dashboard" onNavigate={navigate}>
+                Open local dashboard
+              </SmartLink>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {portfolioReadinessBlockers.map(([label, value, tone]) => (
+              <article className="rounded-2xl border border-[color:var(--paper-300)] bg-[color:var(--paper-50)] p-4" key={label}>
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--ink-400)]">{label}</div>
+                <div className="mt-3 text-lg font-semibold text-[color:var(--ink-900)]">{value}</div>
+                <div className="mt-4">
+                  <Pill tone={tone}>{value}</Pill>
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -1258,7 +1562,18 @@ function Footer({ navigate }) {
 
 export default function App() {
   const { route, navigate } = useRoute()
-  const page = route === '/workflow' ? <WorkflowPage navigate={navigate} /> : route === '/evidence' ? <EvidencePage navigate={navigate} /> : route === '/dashboard' ? <DashboardPage /> : <HomePage navigate={navigate} />
+  const page =
+    route === '/workflow' ? (
+      <WorkflowPage navigate={navigate} />
+    ) : route === '/evidence' ? (
+      <EvidencePage navigate={navigate} />
+    ) : route === '/portfolio' ? (
+      <PortfolioPage navigate={navigate} />
+    ) : route === '/dashboard' ? (
+      <DashboardPage />
+    ) : (
+      <HomePage navigate={navigate} />
+    )
   return (
     <div className="site-shell">
       <Header route={route} navigate={navigate} />

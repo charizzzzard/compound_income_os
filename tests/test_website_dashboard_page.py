@@ -19,7 +19,7 @@ class WebsiteDashboardPageTests(unittest.TestCase):
     def test_dashboard_route_and_nav_exist(self) -> None:
         self.assertIn("['Dashboard', '/dashboard', false]", self.app)
         self.assertIn("window.location.pathname === '/dashboard'", self.app)
-        self.assertIn("route === '/dashboard' ? <DashboardPage", self.app)
+        self.assertRegex(self.app, r"route === '/dashboard'\s+\?\s+\(\s+<DashboardPage")
         self.assertIn("dashboard: '/dashboard'", self.config)
 
     def test_dashboard_hero_copy_exists(self) -> None:

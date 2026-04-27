@@ -66,6 +66,19 @@ This private-preview build adds the M5 Local Dashboard page:
 
 The page is a private preview mockup. It does not imply decision readiness and does not provide investment, tax, or legal advice.
 
+## Mockup Master Plan v4 - Wave Three
+
+This private-preview build adds the M4 Portfolio Model page:
+
+- `/portfolio`
+- Four portfolio sleeves
+- rule-band mockups
+- holdings and sleeves workspace
+- concentration and cash-rule visualizations
+- review-state model
+
+The page is a private-preview mockup. It does not imply decision readiness and does not provide investment, tax, or legal advice.
+
 ## Commands
 
 Install dependencies:

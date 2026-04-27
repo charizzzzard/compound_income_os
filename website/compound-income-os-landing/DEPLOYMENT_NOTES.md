@@ -39,6 +39,18 @@ It must not be presented as:
 
 Before public launch, all CTA targets, imprint/privacy, pricing/scope, and payload privacy checks must be revalidated.
 
+### Wave Three - Portfolio Model page
+
+The `/portfolio` page is a private-preview marketing mockup. All allocations, rule bands, holding states, and concentration examples are synthetic or illustrative.
+
+It must not be presented as:
+- personal portfolio allocation guidance
+- investment advice
+- an execution signal
+- a brokerage interface
+
+Before public launch, all CTA targets, imprint/privacy, pricing/scope, and payload privacy checks must be revalidated.
+
 ## Public Launch Blockers
 
 The following items are required before any public deploy. Each blocker has both a legal/compliance and a credibility dimension.
