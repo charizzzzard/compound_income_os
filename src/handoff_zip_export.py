@@ -52,6 +52,10 @@ HANDOFF_ARTIFACT_FILES = (
     "data/processed/personal_sec_core_kpi_refresh_plan_summary.csv",
     "data/processed/personal_sec_refresh_preflight.csv",
     "data/processed/personal_sec_refresh_preflight_summary.csv",
+    "data/processed/personal_sec_core_refresh_execution_readiness.csv",
+    "data/processed/personal_sec_core_refresh_execution_readiness_summary.csv",
+    "data/processed/personal_sec_core_refresh_impact_summary.csv",
+    "data/processed/personal_sec_core_refresh_impact_holdings.csv",
     "data/processed/dashboard_readiness_panel.csv",
     "data/processed/dashboard_readiness_blockers.csv",
     "data/processed/dashboard_readiness_next_actions.csv",
@@ -89,6 +93,8 @@ HANDOFF_ARTIFACT_GLOBS = (
     "reports/*/personal_private_input_apply_candidates_report.md",
     "reports/*/personal_sec_core_kpi_refresh_plan_report.md",
     "reports/*/personal_sec_refresh_preflight_report.md",
+    "reports/*/personal_sec_core_refresh_execution_readiness_report.md",
+    "reports/*/personal_sec_core_refresh_impact_report.md",
     "reports/*/dashboard_readiness_panel_report.md",
     "reports/*/dashboard_readiness_payload_report.md",
     "reports/*/website_private_preview_route_matrix_report.md",
@@ -184,6 +190,10 @@ def is_allowed_handoff_artifact(entry_name: str) -> bool:
     if name.startswith("reports/") and name.endswith("/personal_sec_core_kpi_refresh_plan_report.md"):
         return len(name.split("/")) == 3
     if name.startswith("reports/") and name.endswith("/personal_sec_refresh_preflight_report.md"):
+        return len(name.split("/")) == 3
+    if name.startswith("reports/") and name.endswith("/personal_sec_core_refresh_execution_readiness_report.md"):
+        return len(name.split("/")) == 3
+    if name.startswith("reports/") and name.endswith("/personal_sec_core_refresh_impact_report.md"):
         return len(name.split("/")) == 3
     if name.startswith("reports/") and name.endswith("/dashboard_readiness_panel_report.md"):
         return len(name.split("/")) == 3
