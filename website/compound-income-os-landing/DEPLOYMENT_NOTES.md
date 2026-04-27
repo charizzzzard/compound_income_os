@@ -64,6 +64,17 @@ It must not be presented as:
 
 Before public launch, all CTA targets, imprint/privacy, pricing/scope, and payload privacy checks must be revalidated.
 
+### Private Preview Route Matrix QA
+
+The website route matrix must pass before any private demo handoff:
+
+- all main routes render
+- header navigation targets real routes or honest pending states
+- unset external CTAs do not become fake links
+- imprint/privacy remain pending unless configured
+- no private raw paths or values appear in website files
+- no page implies decision readiness or public launch readiness
+
 ## Public Launch Blockers
 
 The following items are required before any public deploy. Each blocker has both a legal/compliance and a credibility dimension.

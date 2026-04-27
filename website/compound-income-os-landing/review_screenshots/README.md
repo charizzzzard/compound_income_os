@@ -1,6 +1,6 @@
 # Landing Page Review Screenshots
 
-Generated: 2026-04-27T12:21:30.271Z
+Generated: 2026-04-27T12:50:11.247Z
 
 Generation command:
 
@@ -18,11 +18,11 @@ Viewport sizes:
 Screenshots:
 
 - 01_home_wayfinder.png: Desktop Home wayfinder hero
-- 02_portfolio_page_hero.png: Portfolio page hero and allocation model
-- 03_manifesto_page_hero.png: Manifesto page hero and principles panel
-- 04_workflow_page.png: Workflow page hero
-- 05_evidence_coverage.png: Evidence page hero and coverage table
-- 06_portfolio_workspace.png: Portfolio holdings and sleeves workspace
+- 02_workflow_page.png: Workflow page hero
+- 03_evidence_page.png: Evidence page hero and coverage table
+- 04_portfolio_page.png: Portfolio page hero and allocation model
+- 05_dashboard_page.png: Dashboard page hero and local viewer
+- 06_manifesto_page.png: Manifesto page hero and principles panel
 
 The values shown are synthetic demo values.
 These screenshots are review artifacts and do not contain private portfolio data.

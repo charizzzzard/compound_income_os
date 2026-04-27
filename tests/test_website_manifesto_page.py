@@ -87,7 +87,7 @@ class WebsiteManifestoPageTests(unittest.TestCase):
 
     def test_screenshot_and_handoff_paths_cover_manifesto(self) -> None:
         self.assertIn("/manifesto", self.screenshot_script)
-        self.assertIn("03_manifesto_page_hero.png", self.screenshot_script)
+        self.assertIn("06_manifesto_page.png", self.screenshot_script)
         handoff_export = HANDOFF_EXPORT.read_text(encoding="utf-8")
         self.assertIn('"website"', handoff_export)
         self.assertIn("INCLUDED_DIRS", handoff_export)

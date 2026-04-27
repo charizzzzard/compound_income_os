@@ -1,0 +1,2 @@
+routes_total,routes_pass,routes_review,routes_blocked,ctas_total,ctas_invalid,fake_links_count,advice_term_violations,private_path_violations,decision_ready_dummy_claims,public_launch_dummy_claims,screenshots_count,main_routes_screenshot_covered,private_preview_qa_status
+7,7,0,0,16,0,0,0,0,0,0,6,True,PASS

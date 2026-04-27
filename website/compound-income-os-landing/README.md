@@ -91,6 +91,19 @@ This private-preview build adds the M6 Manifesto / Access page:
 
 The page is a private-preview mockup. It does not imply public launch readiness, decision readiness, or investment advice.
 
+## Private Preview Route Matrix QA
+
+The private-preview website is checked through a route and CTA matrix covering:
+
+- Home
+- Workflow
+- Evidence
+- Portfolio
+- Dashboard
+- Manifesto / About
+
+The QA artifacts are generated under `data/processed/` and `reports/` and validate internal route coverage, pending CTA behavior, public-launch blockers, no-advice copy, and private-data guardrails.
+
 ## Commands
 
 Install dependencies:

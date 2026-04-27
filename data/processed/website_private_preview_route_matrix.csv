@@ -1,0 +1,8 @@
+route,route_exists,hero_check_status,nav_reachable,home_reachable,back_forward_supported,private_preview_label_present,synthetic_or_sanitized_label_present,not_advice_label_present,route_status,reason_codes
+/,True,PASS,True,True,True,True,True,True,PASS,ROUTE_OK
+/workflow,True,PASS,True,True,True,True,True,True,PASS,ROUTE_OK
+/evidence,True,PASS,True,True,True,True,True,True,PASS,ROUTE_OK
+/portfolio,True,PASS,True,True,True,True,True,True,PASS,ROUTE_OK
+/dashboard,True,PASS,True,True,True,True,True,True,PASS,ROUTE_OK
+/manifesto,True,PASS,True,True,True,True,True,True,PASS,ROUTE_OK
+/about,True,PASS,True,True,True,True,True,True,PASS,ABOUT_ALIAS_TO_MANIFESTO

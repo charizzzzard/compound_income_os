@@ -1,0 +1,17 @@
+source_route,cta_label,target,target_type,target_exists,fake_link_detected,pending_state_ok,advice_language_detected,cta_status,reason_codes
+/,Read a sample monthly report,/workflow#sample-report,ANCHOR,True,False,False,False,PASS,CTA_OK
+/,See the workflow,/workflow,INTERNAL_ROUTE,True,False,False,False,PASS,CTA_OK
+/,Read the manifesto,/manifesto,INTERNAL_ROUTE,True,False,False,False,PASS,CTA_OK
+/workflow,See the evidence layer,/evidence,INTERNAL_ROUTE,True,False,False,False,PASS,CTA_OK
+/workflow,Read a sample monthly report,/workflow#sample-report,ANCHOR,True,False,False,False,PASS,CTA_OK
+/evidence,Read a sample monthly report,/workflow#sample-report,ANCHOR,True,False,False,False,PASS,CTA_OK
+/evidence,See the portfolio model,/portfolio,INTERNAL_ROUTE,True,False,False,False,PASS,CTA_OK
+/portfolio,Open local dashboard,/dashboard,INTERNAL_ROUTE,True,False,False,False,PASS,CTA_OK
+/dashboard,Private preview status,/demo/readiness_payload.sample.json,INTERNAL_ROUTE,True,False,False,False,PASS,CTA_OK
+/manifesto,View the workflow,/workflow,INTERNAL_ROUTE,True,False,False,False,PASS,CTA_OK
+/manifesto,Request private preview,PENDING,PENDING_DISABLED,True,False,True,False,PASS,PENDING_STATE_OK
+/manifesto,Request setup,PENDING,PENDING_DISABLED,True,False,True,False,PASS,PENDING_STATE_OK
+/manifesto,See the workflow,/workflow,INTERNAL_ROUTE,True,False,False,False,PASS,CTA_OK
+/manifesto,Open local dashboard,/dashboard,INTERNAL_ROUTE,True,False,False,False,PASS,CTA_OK
+footer,Imprint pending,PENDING,PENDING_DISABLED,True,False,True,False,PASS,PENDING_STATE_OK
+footer,Privacy pending,PENDING,PENDING_DISABLED,True,False,True,False,PASS,PENDING_STATE_OK

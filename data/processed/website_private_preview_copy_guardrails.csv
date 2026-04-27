@@ -1,0 +1,6 @@
+scope,check_name,status,matches_count,allowed_legacy_matches_count,violating_matches_count,reason_codes
+website,forbidden_action_terms,PASS,6,9,0,ALLOWED_LEGACY_CONTEXTS_PRESENT|GUARDRAIL_OK
+website,private_path_or_identity_markers,PASS,0,0,0,GUARDRAIL_OK
+website,decision_ready_dummy_claims,PASS,0,0,0,GUARDRAIL_OK
+website,public_launch_dummy_claims,PASS,0,0,0,GUARDRAIL_OK
+website,brand_pivot_claims,PASS,0,0,0,GUARDRAIL_OK
