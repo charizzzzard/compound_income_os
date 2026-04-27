@@ -50,6 +50,8 @@ HANDOFF_ARTIFACT_FILES = (
     "data/processed/personal_private_input_apply_candidates_summary.csv",
     "data/processed/personal_sec_core_kpi_refresh_plan.csv",
     "data/processed/personal_sec_core_kpi_refresh_plan_summary.csv",
+    "data/processed/personal_sec_refresh_preflight.csv",
+    "data/processed/personal_sec_refresh_preflight_summary.csv",
 )
 HANDOFF_ARTIFACT_GLOBS = (
     "reports/*/personal_profile_review_unlock_report.md",
@@ -70,6 +72,7 @@ HANDOFF_ARTIFACT_GLOBS = (
     "reports/*/personal_private_input_review_report.md",
     "reports/*/personal_private_input_apply_candidates_report.md",
     "reports/*/personal_sec_core_kpi_refresh_plan_report.md",
+    "reports/*/personal_sec_refresh_preflight_report.md",
 )
 LOCAL_ROOT_EXCLUDES = {"personal_sec_identity_map.csv", "personal_sec_scope_review_filled.csv", "lokales_Dashboard.txt"}
 FORBIDDEN_PREFIXES = (
@@ -157,6 +160,8 @@ def is_allowed_handoff_artifact(entry_name: str) -> bool:
         return len(name.split("/")) == 3
     if name.startswith("reports/") and name.endswith("/personal_sec_core_kpi_refresh_plan_report.md"):
         return len(name.split("/")) == 3
+    if name.startswith("reports/") and name.endswith("/personal_sec_refresh_preflight_report.md"):
+        return len(name.split("/")) == 3
     return False
 
 
@@ -232,7 +237,7 @@ def write_metadata_files(repo_root: Path, *, branch: str, head: str, short_head:
         f"head={head}",
         f"short_head={short_head}",
         "included_paths=src/, tests/, docs/, configs/, scripts/ if present, README.md, AGENTS.md if present, pyproject.toml if present, requirements.txt if present, ZIP_REPO_*.txt, explicit handoff artifacts",
-        "handoff_artifacts=data/processed/personal_profile_review_unlock_summary.csv, data/processed/personal_profile_review_unlock_holdings.csv, data/processed/personal_missing_kpi_closure_summary.csv, data/processed/personal_missing_kpi_closure_holdings.csv, data/processed/personal_evidence_applied_downstream_delta_summary.csv, data/processed/personal_evidence_applied_downstream_delta_holdings.csv, data/processed/personal_kpi_tier_coverage.csv, data/processed/personal_artifact_reconciliation_summary.csv, data/processed/personal_artifact_reconciliation_checks.csv, data/processed/personal_kpi_provenance_audit.csv, data/processed/personal_kpi_provenance_summary.csv, data/processed/personal_score_audit_provenance.csv, data/processed/personal_score_audit_provenance_summary.csv, data/processed/personal_monthly_action_compatibility.csv, data/processed/personal_monthly_action_compatibility_summary.csv, data/processed/personal_watchlist_input_gate.csv, data/processed/personal_watchlist_input_gate_summary.csv, data/processed/personal_artifact_freshness_checks.csv, data/processed/personal_artifact_freshness_summary.csv, data/processed/personal_valuation_input_review_queue.csv, data/processed/personal_valuation_input_contract_summary.csv, data/processed/personal_core_kpi_closure_queue.csv, data/processed/personal_core_kpi_closure_summary.csv, data/processed/personal_dividend_fcf_input_review_queue.csv, data/processed/personal_dividend_fcf_input_contract_summary.csv, data/processed/personal_readiness_status_summary.csv, data/processed/personal_readiness_blockers.csv, data/processed/personal_readiness_next_actions.csv, data/processed/personal_private_input_review_validation.csv, data/processed/personal_private_input_review_summary.csv, data/processed/personal_private_input_apply_candidates_sanitized.csv, data/processed/personal_private_input_apply_candidates_summary.csv, data/processed/personal_sec_core_kpi_refresh_plan.csv, data/processed/personal_sec_core_kpi_refresh_plan_summary.csv, reports/*/personal_profile_review_unlock_report.md, reports/*/personal_missing_kpi_closure_report.md, reports/*/personal_evidence_applied_downstream_delta_report.md, reports/*/personal_kpi_tier_coverage_report.md, reports/*/strategy_review_fundamentals_trust_scoring.md, reports/*/personal_artifact_reconciliation_report.md, reports/*/personal_kpi_provenance_audit_report.md, reports/*/personal_score_audit_provenance_report.md, reports/*/personal_monthly_action_schema_report.md, reports/*/personal_watchlist_input_gate_report.md, reports/*/personal_artifact_freshness_report.md, reports/*/personal_valuation_input_contract_report.md, reports/*/personal_core_kpi_closure_report.md, reports/*/personal_dividend_fcf_input_contract_report.md, reports/*/personal_readiness_status_report.md, reports/*/personal_private_input_review_report.md, reports/*/personal_private_input_apply_candidates_report.md, reports/*/personal_sec_core_kpi_refresh_plan_report.md",
+        "handoff_artifacts=data/processed/personal_profile_review_unlock_summary.csv, data/processed/personal_profile_review_unlock_holdings.csv, data/processed/personal_missing_kpi_closure_summary.csv, data/processed/personal_missing_kpi_closure_holdings.csv, data/processed/personal_evidence_applied_downstream_delta_summary.csv, data/processed/personal_evidence_applied_downstream_delta_holdings.csv, data/processed/personal_kpi_tier_coverage.csv, data/processed/personal_artifact_reconciliation_summary.csv, data/processed/personal_artifact_reconciliation_checks.csv, data/processed/personal_kpi_provenance_audit.csv, data/processed/personal_kpi_provenance_summary.csv, data/processed/personal_score_audit_provenance.csv, data/processed/personal_score_audit_provenance_summary.csv, data/processed/personal_monthly_action_compatibility.csv, data/processed/personal_monthly_action_compatibility_summary.csv, data/processed/personal_watchlist_input_gate.csv, data/processed/personal_watchlist_input_gate_summary.csv, data/processed/personal_artifact_freshness_checks.csv, data/processed/personal_artifact_freshness_summary.csv, data/processed/personal_valuation_input_review_queue.csv, data/processed/personal_valuation_input_contract_summary.csv, data/processed/personal_core_kpi_closure_queue.csv, data/processed/personal_core_kpi_closure_summary.csv, data/processed/personal_dividend_fcf_input_review_queue.csv, data/processed/personal_dividend_fcf_input_contract_summary.csv, data/processed/personal_readiness_status_summary.csv, data/processed/personal_readiness_blockers.csv, data/processed/personal_readiness_next_actions.csv, data/processed/personal_private_input_review_validation.csv, data/processed/personal_private_input_review_summary.csv, data/processed/personal_private_input_apply_candidates_sanitized.csv, data/processed/personal_private_input_apply_candidates_summary.csv, data/processed/personal_sec_core_kpi_refresh_plan.csv, data/processed/personal_sec_core_kpi_refresh_plan_summary.csv, data/processed/personal_sec_refresh_preflight.csv, data/processed/personal_sec_refresh_preflight_summary.csv, reports/*/personal_profile_review_unlock_report.md, reports/*/personal_missing_kpi_closure_report.md, reports/*/personal_evidence_applied_downstream_delta_report.md, reports/*/personal_kpi_tier_coverage_report.md, reports/*/strategy_review_fundamentals_trust_scoring.md, reports/*/personal_artifact_reconciliation_report.md, reports/*/personal_kpi_provenance_audit_report.md, reports/*/personal_score_audit_provenance_report.md, reports/*/personal_monthly_action_schema_report.md, reports/*/personal_watchlist_input_gate_report.md, reports/*/personal_artifact_freshness_report.md, reports/*/personal_valuation_input_contract_report.md, reports/*/personal_core_kpi_closure_report.md, reports/*/personal_dividend_fcf_input_contract_report.md, reports/*/personal_readiness_status_report.md, reports/*/personal_private_input_review_report.md, reports/*/personal_private_input_apply_candidates_report.md, reports/*/personal_sec_core_kpi_refresh_plan_report.md, reports/*/personal_sec_refresh_preflight_report.md",
         "excluded_paths=.git/, .venv/, venv/, __pycache__/, .pytest_cache/, .mypy_cache/, .ruff_cache/, deploy_artifacts/, reports/ except explicit handoff artifacts, outputs/, data/raw/private/, tests/_tmp*, *.zip, .env secrets, local root private files",
         f"MISSING_EXPECTED={', '.join(missing_expected) if missing_expected else 'none'}",
     ]
@@ -246,9 +251,10 @@ def remove_metadata_files(repo_root: Path) -> None:
             path.unlink()
 
 
-def write_zip(zip_path: Path, repo_root: Path, files: Iterable[Path]) -> None:
+def write_zip(zip_path: Path, repo_root: Path, files: Iterable[Path], metadata_entries: dict[str, bytes] | None = None) -> None:
     if zip_path.exists():
         zip_path.unlink()
+    included_entries: set[str] = set()
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         for path in files:
             entry_name = normalize_entry_name(path.relative_to(repo_root).as_posix())
@@ -256,6 +262,14 @@ def write_zip(zip_path: Path, repo_root: Path, files: Iterable[Path]) -> None:
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o644 << 16
             archive.writestr(info, path.read_bytes())
+            included_entries.add(entry_name)
+        for rel_file, content in (metadata_entries or {}).items():
+            if is_forbidden_entry(rel_file) or rel_file in included_entries:
+                continue
+            info = zipfile.ZipInfo(rel_file, date_time=FIXED_ZIP_TIMESTAMP)
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.external_attr = 0o644 << 16
+            archive.writestr(info, content)
 
 
 def scan_forbidden_entries(zip_path: Path) -> tuple[str, ...]:
@@ -302,8 +316,13 @@ def export_handoff_zip(repo_root: str | Path = ROOT, output_dir: str | Path | No
 
     write_metadata_files(root, branch=branch, head=head, short_head=short_head, status_text=status_text, missing_expected=missing_expected)
     try:
+        metadata_entries = {
+            rel_file: (root / rel_file).read_bytes()
+            for rel_file in METADATA_FILES
+            if (root / rel_file).is_file()
+        }
         files = iter_included_files(root)
-        write_zip(zip_path, root, files)
+        write_zip(zip_path, root, files, metadata_entries=metadata_entries)
     finally:
         remove_metadata_files(root)
 
