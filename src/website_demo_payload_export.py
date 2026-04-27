@@ -32,6 +32,56 @@ PRIVATE_PATTERNS = (
     r"\bCIK[0-9A-Z_-]*\b",
 )
 
+WAVE_TWO_EVIDENCE_PAYLOAD: dict[str, Any] = {
+    "evidence_page": {
+        "route": "/evidence",
+        "page": "M3 Evidence & Data Quality",
+        "product_mockup": "P3 Evidence Workspace",
+        "private_preview_only": True,
+        "public_deploy_ready": False,
+        "synthetic_demo_values": True,
+    },
+    "coverage_tiers": [
+        {"holding": "MSFT", "profile": "STANDARD", "core": "OK", "valuation": "PARTIAL", "dividend_fcf": "COVERED", "advanced": "PARTIAL", "monthly_action": "WAIT_VALUATION"},
+        {"holding": "V", "profile": "STANDARD", "core": "COVERED", "valuation": "OK", "dividend_fcf": "COVERED", "advanced": "OK", "monthly_action": "READY"},
+        {"holding": "JNJ", "profile": "STANDARD", "core": "OK", "valuation": "REVIEW", "dividend_fcf": "PARTIAL", "advanced": "PARTIAL", "monthly_action": "REVIEW_CORE_DATA"},
+        {"holding": "KO", "profile": "DIVIDEND_QUALITY", "core": "COVERED", "valuation": "PARTIAL", "dividend_fcf": "COVERED", "advanced": "NOT_APPLICABLE", "monthly_action": "HOLD"},
+        {"holding": "LIN", "profile": "QUALITY_COMPOUNDER", "core": "OK", "valuation": "MISSING_DATA", "dividend_fcf": "PARTIAL", "advanced": "INSUFFICIENT_HISTORY", "monthly_action": "NOT_READY"},
+    ],
+    "sec_pipeline_stages": [
+        "Scope Prepare",
+        "Identity Resolve",
+        "Identity Export",
+        "CompanyFacts Fetch",
+        "Snapshot Ingest",
+        "Snapshot Review",
+        "Evidence Apply",
+    ],
+    "evidence_workspace": {
+        "run_id": "DEMO-20260427-EVIDENCE",
+        "source": "SEC CompanyFacts snapshot",
+        "apply_mode": "reviewed only",
+        "contains_real_values": False,
+        "network_performed": False,
+    },
+    "status_labels": [
+        "COVERED",
+        "OK",
+        "PARTIAL",
+        "REVIEW",
+        "NO_MATCH",
+        "MISSING_DATA",
+        "INSUFFICIENT_INPUTS",
+        "INSUFFICIENT_HISTORY",
+        "NOT_APPLICABLE",
+    ],
+    "master_layers": [
+        "Base Master",
+        "Profiled Master",
+        "Evidence-Applied Master",
+    ],
+}
+
 
 @dataclass(frozen=True)
 class WebsiteDemoPayloadExportResult:
@@ -90,6 +140,7 @@ def build_sample_payload(source_payload: dict[str, Any], *, generated_from: str)
             "intended_use": "private preview / local demo handoff only",
         },
         "payload": source_payload,
+        "website_mockup_wave_two": WAVE_TWO_EVIDENCE_PAYLOAD,
     }
 
 

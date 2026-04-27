@@ -36,7 +36,7 @@ export const siteConfig = {
   routes: {
     home: '/',
     workflow: '/workflow',
-    evidencePending: '#planned-evidence',
+    evidence: '/evidence',
     portfolioPending: '#planned-portfolio',
     dashboardPending: '#dashboard-viewer',
     manifestoPending: '#manifesto-teaser',

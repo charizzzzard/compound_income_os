@@ -1,6 +1,6 @@
 # Landing Page Review Screenshots
 
-Generated: 2026-04-27T09:25:22.585Z
+Generated: 2026-04-27T09:51:04.247Z
 
 Generation command:
 
@@ -21,8 +21,8 @@ Screenshots:
 - 02_local_dashboard_viewer.png: Local Dashboard Viewer mockup
 - 03_mobile_home_hero.png: Mobile Header + Hero
 - 04_workflow_page.png: Workflow page hero
-- 05_monthly_report_render.png: Monthly Decision Report render
-- 06_footer_cta.png: Footer CTA and private-preview status
+- 05_evidence_coverage.png: Evidence page hero and coverage table
+- 06_evidence_workspace.png: Evidence Workspace mockup
 
 The values shown are synthetic demo values.
 These screenshots are review artifacts and do not contain private portfolio data.

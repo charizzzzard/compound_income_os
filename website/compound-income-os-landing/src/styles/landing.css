@@ -202,4 +202,64 @@
     stroke-linecap: round;
     stroke-linejoin: round;
   }
+
+  .evidence-table-shell {
+    @apply overflow-x-auto rounded-3xl border shadow-sm;
+    border-color: var(--paper-300);
+    background: rgba(255, 255, 255, 0.74);
+  }
+
+  .evidence-table {
+    @apply min-w-[920px] w-full border-collapse text-left text-sm;
+  }
+
+  .evidence-table th {
+    @apply border-b px-4 py-3 font-mono text-[10px] uppercase tracking-[0.14em];
+    border-color: var(--paper-300);
+    color: var(--ink-500);
+  }
+
+  .evidence-table td {
+    @apply border-b px-4 py-4 align-middle;
+    border-color: var(--paper-200);
+    color: var(--ink-700);
+  }
+
+  .evidence-table tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .pipeline-card {
+    @apply rounded-2xl border p-4 shadow-sm;
+    background: rgba(255, 255, 255, 0.72);
+    border-color: var(--paper-300);
+  }
+
+  .workspace-table {
+    @apply min-w-[980px] w-full border-collapse text-left text-xs;
+  }
+
+  .workspace-table th {
+    @apply border-b px-3 py-3 font-mono uppercase tracking-[0.12em];
+    border-color: var(--dark-600);
+    color: var(--dark-fg-3);
+  }
+
+  .workspace-table td {
+    @apply border-b px-3 py-3 align-middle;
+    border-color: var(--dark-600);
+    color: var(--dark-fg-2);
+  }
+
+  .workspace-table tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .master-layer-card {
+    @apply rounded-3xl border p-6 shadow-sm;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(246, 244, 239, 0.82)),
+      var(--paper-50);
+    border-color: var(--paper-300);
+  }
 }

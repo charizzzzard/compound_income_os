@@ -32,6 +32,28 @@ The file is derived from local processed readiness artifacts and is intended for
 
 It must not contain private raw files, broker exports, private SEC identity maps, private input values, investment advice, or order/execution signals.
 
+## Website Mockup Wave Two
+
+Wave Two adds the `/evidence` private-preview page and the P3 Evidence Workspace mockup.
+
+Implemented:
+
+- M3 Evidence & Data Quality page.
+- P3 Evidence Workspace static product-UI mockup.
+- Coverage tier demo table with synthetic holdings.
+- 7-stage SEC pipeline visual.
+- 9 status labels with plain-English explanations.
+- Three-layer fundamentals master visual.
+
+Not implemented in this wave:
+
+- M4 Portfolio page.
+- M5 Dashboard page.
+- M6 Manifesto page.
+- Live SEC fetches.
+- Real portfolio values.
+- Public deployment.
+
 ## Commands
 
 Install dependencies:

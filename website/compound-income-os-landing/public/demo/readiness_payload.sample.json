@@ -742,5 +742,94 @@
     "public_deploy_ready": false,
     "sample_type": "private_preview_readiness_payload",
     "synthetic_or_sanitized": true
+  },
+  "website_mockup_wave_two": {
+    "coverage_tiers": [
+      {
+        "advanced": "PARTIAL",
+        "core": "OK",
+        "dividend_fcf": "COVERED",
+        "holding": "MSFT",
+        "monthly_action": "WAIT_VALUATION",
+        "profile": "STANDARD",
+        "valuation": "PARTIAL"
+      },
+      {
+        "advanced": "OK",
+        "core": "COVERED",
+        "dividend_fcf": "COVERED",
+        "holding": "V",
+        "monthly_action": "READY",
+        "profile": "STANDARD",
+        "valuation": "OK"
+      },
+      {
+        "advanced": "PARTIAL",
+        "core": "OK",
+        "dividend_fcf": "PARTIAL",
+        "holding": "JNJ",
+        "monthly_action": "REVIEW_CORE_DATA",
+        "profile": "STANDARD",
+        "valuation": "REVIEW"
+      },
+      {
+        "advanced": "NOT_APPLICABLE",
+        "core": "COVERED",
+        "dividend_fcf": "COVERED",
+        "holding": "KO",
+        "monthly_action": "HOLD",
+        "profile": "DIVIDEND_QUALITY",
+        "valuation": "PARTIAL"
+      },
+      {
+        "advanced": "INSUFFICIENT_HISTORY",
+        "core": "OK",
+        "dividend_fcf": "PARTIAL",
+        "holding": "LIN",
+        "monthly_action": "NOT_READY",
+        "profile": "QUALITY_COMPOUNDER",
+        "valuation": "MISSING_DATA"
+      }
+    ],
+    "evidence_page": {
+      "page": "M3 Evidence & Data Quality",
+      "private_preview_only": true,
+      "product_mockup": "P3 Evidence Workspace",
+      "public_deploy_ready": false,
+      "route": "/evidence",
+      "synthetic_demo_values": true
+    },
+    "evidence_workspace": {
+      "apply_mode": "reviewed only",
+      "contains_real_values": false,
+      "network_performed": false,
+      "run_id": "DEMO-20260427-EVIDENCE",
+      "source": "SEC CompanyFacts snapshot"
+    },
+    "master_layers": [
+      "Base Master",
+      "Profiled Master",
+      "Evidence-Applied Master"
+    ],
+    "sec_pipeline_stages": [
+      "Scope Prepare",
+      "Identity Resolve",
+      "Identity Export",
+      "CompanyFacts Fetch",
+      "Snapshot Ingest",
+      "Snapshot Review",
+      "Evidence Apply"
+    ],
+    "status_labels": [
+      "COVERED",
+      "OK",
+      "PARTIAL",
+      "REVIEW",
+      "NO_MATCH",
+      "MISSING_DATA",
+      "INSUFFICIENT_INPUTS",
+      "INSUFFICIENT_HISTORY",
+      "NOT_APPLICABLE"
+    ]
   }
 }

@@ -6,7 +6,7 @@ import { siteConfig } from './siteConfig'
 
 const safeRoutes = [
   ['Workflow', '/workflow', false],
-  ['Evidence', '#planned-evidence', true],
+  ['Evidence', '/evidence', false],
   ['Portfolio', '#planned-portfolio', true],
   ['Dashboard', '#dashboard-viewer', false],
   ['Manifesto', '#manifesto-teaser', true],
@@ -14,7 +14,7 @@ const safeRoutes = [
 
 const promises = [
   ['Workflow', 'One decision a month - same six stages, every month.', '/workflow', false],
-  ['Evidence', 'Nothing is silently filled.', '#planned-evidence', true],
+  ['Evidence', 'Every KPI carries a status, and missing data remains visible.', '/evidence', false],
   ['Portfolio', 'Four sleeves. One mandate. Visible rules.', '#planned-portfolio', true],
   ['Dashboard', 'One local dashboard. Five KPI groups.', '#dashboard-viewer', false],
   ['Manifesto / Access', 'Open-source core. Builder-led. No venture capital.', '#manifesto-teaser', true],
@@ -53,10 +53,60 @@ const readinessRows = [
   ['Handoff readiness', 'REVIEW', 'partial'],
 ]
 
+const coverageRows = [
+  ['MSFT', 'STANDARD', 'OK', 'PARTIAL', 'COVERED', 'PARTIAL', 'WAIT_VALUATION'],
+  ['V', 'STANDARD', 'COVERED', 'OK', 'COVERED', 'OK', 'READY'],
+  ['JNJ', 'STANDARD', 'OK', 'REVIEW', 'PARTIAL', 'PARTIAL', 'REVIEW_CORE_DATA'],
+  ['KO', 'DIVIDEND_QUALITY', 'COVERED', 'PARTIAL', 'COVERED', 'NOT_APPLICABLE', 'HOLD'],
+  ['LIN', 'QUALITY_COMPOUNDER', 'OK', 'MISSING_DATA', 'PARTIAL', 'INSUFFICIENT_HISTORY', 'NOT_READY'],
+]
+
+const secPipelineStages = [
+  ['01', 'Scope Prepare', 'Audit which holdings are in scope for SEC data.', 'personal_sec_scope_prepare', 'personal_sec_scope_review.csv', 'COVERED'],
+  ['02', 'Identity Resolve', 'Look up SEC tickers and filing identities.', 'manual review + identity map', 'reviewed identity map', 'REVIEW'],
+  ['03', 'Identity Export', 'Export reviewed identities into your private map.', 'personal_sec_identity_export', 'downstream-safe identity map', 'PARTIAL'],
+  ['04', 'CompanyFacts Fetch', "Read SEC filed numbers in a future explicit run.", 'external_sec_companyfacts_fetch', 'companyfacts snapshots', 'REVIEW'],
+  ['05', 'Snapshot Ingest', 'Match incoming data exactly to your master.', 'fundamentals_snapshot_ingestion', 'snapshot_ingest_review.csv', 'PARTIAL'],
+  ['06', 'Snapshot Review', 'You approve or reject each update.', 'fundamentals_snapshot_review', 'reviewed evidence updates', 'REVIEW'],
+  ['07', 'Evidence Apply', 'Approved updates project into a separate master.', 'fundamentals_evidence_apply', 'evidence_applied_master.csv', 'BLOCKED'],
+]
+
+const evidenceWorkspaceRows = [
+  ['MSFT', 'revenue_ttm', 'SEC CompanyFacts', 'COVERED', 'synthetic', 'STAGED', 'exact identity match'],
+  ['V', 'free_cash_flow', 'SEC CompanyFacts', 'REVIEW', 'synthetic', 'REVIEW', 'taxonomy mapping requires review'],
+  ['JNJ', 'dividend_payout_ratio', 'manual evidence', 'PARTIAL', 'synthetic', 'PENDING', 'manual evidence not applied'],
+  ['LIN', 'valuation_band', 'none', 'MISSING_DATA', '', 'BLOCKED', 'no reviewed evidence'],
+  ['KO', 'dividend_growth_5y', 'SEC + manual overlay', 'COVERED', 'synthetic', 'APPROVED', 'reviewed overlay present'],
+]
+
+const statusLabels = [
+  ['COVERED', 'Required evidence is present and current.'],
+  ['OK', 'Value is inside the current rule band.'],
+  ['PARTIAL', 'Some required fields are missing or stale.'],
+  ['REVIEW', 'Human decision pending before this can score.'],
+  ['NO_MATCH', 'Identity could not be linked to a filer.'],
+  ['MISSING_DATA', 'Field is not available; not silently filled.'],
+  ['INSUFFICIENT_INPUTS', 'Not enough fields to compute a meaningful score.'],
+  ['INSUFFICIENT_HISTORY', 'Not enough time series for this metric.'],
+  ['NOT_APPLICABLE', 'This metric does not apply to this profile or instrument.'],
+]
+
+const masterLayers = [
+  ['Base Master', 'Your original fundamentals input. Preserved as source material.', 'personal_fundamentals_master.csv'],
+  ['Profiled Master', 'Applicability and profile checks added. Missing or not-applicable fields become explicit.', 'personal_fundamentals_profiled_master.csv'],
+  ['Evidence-Applied Master', 'Only reviewed evidence updates are projected here. Downstream reports can opt in.', 'personal_fundamentals_evidence_applied_master.csv'],
+]
+
 const slogans = ['BUILT SLOW', 'USED MONTHLY', 'PRIVACY BY DEFAULT', 'NO HYPE', 'JUST SIGNAL', 'YOUR DATA', 'YOUR MACHINE']
 
 function currentRoute() {
-  return window.location.pathname === '/workflow' ? '/workflow' : '/'
+  if (window.location.pathname === '/workflow') {
+    return '/workflow'
+  }
+  if (window.location.pathname === '/evidence') {
+    return '/evidence'
+  }
+  return '/'
 }
 
 function useRoute() {
@@ -67,10 +117,10 @@ function useRoute() {
     return () => window.removeEventListener('popstate', onPop)
   }, [])
   const navigate = (href) => {
-    if (href?.startsWith('/workflow')) {
+    if (href?.startsWith('/workflow') || href?.startsWith('/evidence')) {
       const [path, hash] = href.split('#')
       window.history.pushState({}, '', href)
-      setRoute('/workflow')
+      setRoute(path)
       window.setTimeout(() => {
         if (hash) {
           document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth' })
@@ -93,6 +143,22 @@ function useRoute() {
 
 function Pill({ tone = 'partial', children }) {
   return <span className={`pill pill-${tone}`}>{children}</span>
+}
+
+function statusTone(status) {
+  if (['OK', 'COVERED', 'READY', 'APPROVED', 'STAGED'].includes(status)) {
+    return 'ok'
+  }
+  if (['PARTIAL', 'INSUFFICIENT_HISTORY', 'INSUFFICIENT_INPUTS', 'PENDING', 'HOLD'].includes(status)) {
+    return 'partial'
+  }
+  if (['REVIEW', 'WAIT_VALUATION', 'REVIEW_CORE_DATA'].includes(status)) {
+    return 'review'
+  }
+  if (['MISSING_DATA', 'NO_MATCH', 'BLOCKED', 'NOT_READY'].includes(status)) {
+    return 'missing'
+  }
+  return 'partial'
 }
 
 function SmartLink({ href, className, children, onNavigate, pending = false, ...props }) {
@@ -294,7 +360,7 @@ function PromiseGrid({ navigate }) {
   )
 }
 
-function WorkflowPage() {
+function WorkflowPage({ navigate }) {
   return (
     <>
       <section className="section pt-32 lg:pt-40" data-screenshot="workflow-hero">
@@ -307,6 +373,14 @@ function WorkflowPage() {
             <p className="mt-6 max-w-2xl text-lg leading-8 text-[color:var(--ink-600)]">
               The same six stages every month - so month 12 is just month 1, eleven times reviewed.
             </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <SmartLink className="button button-primary" href="/workflow#sample-report" onNavigate={navigate}>
+                Read a sample monthly report
+              </SmartLink>
+              <SmartLink className="button button-secondary" href="/evidence" onNavigate={navigate}>
+                See the evidence layer
+              </SmartLink>
+            </div>
           </div>
           <RunManifestMockup />
         </div>
@@ -491,6 +565,316 @@ function ArchiveBlock() {
   )
 }
 
+function EvidencePage({ navigate }) {
+  const sampleHref = siteConfig.ctas.sampleReport.href || '/workflow#sample-report'
+  return (
+    <>
+      <section className="section pt-32 lg:pt-40" data-screenshot="evidence-hero">
+        <div className="container-xl grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+          <div>
+            <p className="eyebrow hero-eyebrow">// EVIDENCE & DATA QUALITY</p>
+            <h1 className="mt-4 max-w-3xl text-5xl font-semibold leading-[1.02] tracking-[-0.055em] text-[color:var(--ink-900)] sm:text-6xl">
+              See what's covered. See what's missing.
+            </h1>
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-[color:var(--ink-600)]">
+              Most portfolio tools fill in the blanks. Compound Income OS shows you which blanks exist, where they came from, and what it would take to close them.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <SmartLink className="button button-primary" href={sampleHref} onNavigate={navigate}>
+                Read a sample monthly report
+              </SmartLink>
+              <span className="button button-secondary is-disabled" aria-disabled="true" title="Portfolio page planned">
+                See the portfolio model - planned
+              </span>
+            </div>
+            <div className="mt-8 flex flex-wrap gap-2">
+              {['READ-ONLY SEC PATH', 'MANUAL IDENTITY REVIEW', 'NO SILENT OVERWRITES', 'SYNTHETIC DEMO VALUES'].map((tag) => (
+                <span className="rounded-full border border-[color:var(--paper-300)] bg-white/60 px-3 py-1 font-mono text-[10px] tracking-[0.12em] text-[color:var(--ink-600)]" key={tag}>
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+          <EvidenceHeroCard />
+        </div>
+      </section>
+      <CoverageTierTable />
+      <SecPipeline />
+      <EvidenceWorkspaceMockup />
+      <StatusLabels />
+      <ThreeLayerMaster />
+      <EvidenceHighlightBar />
+    </>
+  )
+}
+
+function EvidenceHeroCard() {
+  return (
+    <aside className="rounded-[1.35rem] border border-[color:var(--paper-300)] bg-white/70 p-6 shadow-lg">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--paper-300)] pb-4">
+        <div>
+          <div className="font-mono text-xs uppercase tracking-[0.14em] text-[color:var(--accent-600)]">evidence status language</div>
+          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--ink-900)]">Every KPI carries a status.</h2>
+        </div>
+        <Pill tone="partial">synthetic demo values</Pill>
+      </div>
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        {[
+          ['Missing values', 'visible', 'missing'],
+          ['Identity review', 'manual', 'review'],
+          ['Evidence apply', 'reviewed only', 'partial'],
+          ['Raw master', 'preserved', 'ok'],
+        ].map(([label, value, tone]) => (
+          <article className="rounded-2xl border border-[color:var(--paper-300)] bg-[color:var(--paper-50)] p-4" key={label}>
+            <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--ink-400)]">{label}</div>
+            <div className="mt-3 text-xl font-semibold text-[color:var(--ink-900)]">{value}</div>
+            <div className="mt-4">
+              <Pill tone={tone}>{value}</Pill>
+            </div>
+          </article>
+        ))}
+      </div>
+      <p className="mt-5 text-sm leading-6 text-[color:var(--ink-600)]">
+        This page is a private-preview product mockup. It uses synthetic holdings and status examples only.
+      </p>
+    </aside>
+  )
+}
+
+function CoverageTierTable() {
+  return (
+    <section className="section-tight bg-[color:var(--paper-100)]" data-screenshot="evidence-coverage">
+      <div className="container-xl">
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="eyebrow">// COVERAGE TIERS</p>
+            <h2 className="section-title">Coverage is tracked by holding and KPI tier.</h2>
+            <p className="section-lede">Synthetic demo holdings show how core, valuation, dividend / FCF and advanced tiers stay explicit.</p>
+          </div>
+          <Pill tone="partial">synthetic demo values</Pill>
+        </div>
+        <div className="evidence-table-shell">
+          <table className="evidence-table">
+            <thead>
+              <tr>
+                {['Holding', 'Profile', 'Core', 'Valuation', 'Dividend FCF', 'Advanced', 'Monthly Action'].map((header) => (
+                  <th key={header}>{header}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {coverageRows.map(([holding, profile, core, valuation, dividendFcf, advanced, action]) => (
+                <tr key={holding}>
+                  <td className="font-mono text-[color:var(--ink-900)]">{holding}</td>
+                  <td>{profile}</td>
+                  {[core, valuation, dividendFcf, advanced, action].map((status, index) => (
+                    <td key={`${holding}-${index}`}>
+                      <Pill tone={statusTone(status)}>{status}</Pill>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-4 text-sm leading-6 text-[color:var(--ink-500)]">
+          Demo actions illustrate status handling only. They are not personalized guidance.
+        </p>
+      </div>
+    </section>
+  )
+}
+
+function SecPipeline() {
+  return (
+    <section className="section">
+      <div className="container-xl">
+        <div className="mb-10">
+          <p className="eyebrow">// SEC PIPELINE</p>
+          <h2 className="section-title">Seven stages from filer identity to applied evidence.</h2>
+          <p className="section-lede">
+            SEC CompanyFacts data only enters the decision layer after identity review, staging, and explicit apply. The raw master is never silently overwritten.
+          </p>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-7">
+          {secPipelineStages.map(([number, title, subtitle, engine, output, status]) => (
+            <article className="pipeline-card" key={title}>
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-mono text-sm text-[color:var(--accent-600)]">{number}</span>
+                <Pill tone={statusTone(status)}>{status}</Pill>
+              </div>
+              <h3 className="mt-4 font-semibold text-[color:var(--ink-900)]">{title}</h3>
+              <p className="mt-3 text-sm leading-6 text-[color:var(--ink-600)]">{subtitle}</p>
+              <div className="mt-4 space-y-2">
+                <PipelineMeta label="Engine" value={engine} />
+                <PipelineMeta label="Output" value={output} />
+              </div>
+            </article>
+          ))}
+        </div>
+        <div className="mt-6 flex flex-wrap gap-2">
+          {['read-only', 'reviewed', 'optional', 'no network in preview'].map((tag) => (
+            <span className="rounded-full border border-[color:var(--paper-300)] bg-white/70 px-3 py-1 font-mono text-xs text-[color:var(--ink-600)]" key={tag}>
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function PipelineMeta({ label, value }) {
+  return (
+    <div className="rounded-xl border border-[color:var(--paper-300)] bg-[color:var(--paper-50)] px-3 py-2">
+      <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--ink-400)]">{label}</div>
+      <div className="mt-1 font-mono text-xs text-[color:var(--ink-700)]">{value}</div>
+    </div>
+  )
+}
+
+function EvidenceWorkspaceMockup() {
+  return (
+    <section className="section-tight bg-[color:var(--paper-100)]" data-screenshot="evidence-workspace">
+      <div className="container-xl">
+        <div className="dark-panel rounded-[1.35rem] border p-5 sm:p-6 lg:p-8">
+          <div className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-[color:var(--dark-600)] pb-4">
+            <div>
+              <div className="font-mono text-xs uppercase tracking-[0.14em] text-[color:var(--dark-fg-3)]">Evidence Workspace</div>
+              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-[color:var(--dark-fg)]">synthetic demo values - private preview</h2>
+            </div>
+            <div className="space-y-1 text-right font-mono text-[11px] text-[color:var(--dark-fg-3)]">
+              <div>run_id DEMO-20260427-EVIDENCE</div>
+              <div>source SEC CompanyFacts snapshot</div>
+              <div>apply mode reviewed only</div>
+            </div>
+          </div>
+          <div className="grid gap-5 lg:grid-cols-[0.22fr_1fr]">
+            <aside className="rounded-2xl border border-[color:var(--dark-600)] bg-[rgba(26,35,44,0.76)] p-4">
+              <div className="font-mono text-xs uppercase tracking-[0.14em] text-[color:var(--dark-fg-3)]">Workspace</div>
+              <div className="mt-4 space-y-2">
+                {['Scope', 'Identity', 'Snapshots', 'Review Queue', 'Apply Log'].map((tab, index) => (
+                  <div className={`rounded-xl border px-3 py-2 text-sm ${index === 3 ? 'border-[color:var(--dark-accent)] text-[color:var(--dark-fg)]' : 'border-[color:var(--dark-600)] text-[color:var(--dark-fg-2)]'}`} key={tab}>
+                    {tab}
+                  </div>
+                ))}
+              </div>
+            </aside>
+            <div className="min-w-0">
+              <div className="grid gap-3 md:grid-cols-4">
+                {[
+                  ['Eligible US holdings', '12', 'COVERED'],
+                  ['Reviewed identities', '10 / 12', 'PARTIAL'],
+                  ['Proposed updates', '18', 'REVIEW'],
+                  ['Applied updates', '0 in demo', 'BLOCKED'],
+                ].map(([label, value, status]) => (
+                  <article className="kpi-card" key={label}>
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--dark-fg-3)]">{label}</div>
+                    <div className="mt-3 font-mono text-xl font-semibold text-[color:var(--dark-fg)]">{value}</div>
+                    <div className="mt-4">
+                      <Pill tone={statusTone(status)}>{status}</Pill>
+                    </div>
+                  </article>
+                ))}
+              </div>
+              <div className="mt-5 overflow-x-auto">
+                <table className="workspace-table">
+                  <thead>
+                    <tr>
+                      {['Holding', 'Evidence Field', 'Source', 'Current Status', 'Proposed Value', 'Action', 'Reason'].map((header) => (
+                        <th key={header}>{header}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {evidenceWorkspaceRows.map(([holding, field, source, status, proposed, action, reason]) => (
+                      <tr key={`${holding}-${field}`}>
+                        <td>{holding}</td>
+                        <td>{field}</td>
+                        <td>{source}</td>
+                        <td><Pill tone={statusTone(status)}>{status}</Pill></td>
+                        <td>{proposed || '-'}</td>
+                        <td><Pill tone={statusTone(action)}>{action}</Pill></td>
+                        <td>{reason}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="artifact-strip mt-5 border-[color:var(--dark-600)] text-[color:var(--dark-fg-3)]">
+                <span>No raw master overwrite</span>
+                <span>Applied values go to evidence-applied master</span>
+                <span>Missing data remains visible</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function StatusLabels() {
+  return (
+    <section className="section">
+      <div className="container-xl">
+        <p className="eyebrow">// STATUS LANGUAGE</p>
+        <h2 className="section-title">Nine status labels. No hidden blanks.</h2>
+        <p className="section-lede">Every KPI, evidence field, and monthly action can carry a status. These labels are product language, not debug noise.</p>
+        <div className="mt-10 grid gap-4 md:grid-cols-3">
+          {statusLabels.map(([status, meaning]) => (
+            <article className="card" key={status}>
+              <Pill tone={statusTone(status)}>{status}</Pill>
+              <p className="mt-4 text-sm leading-6 text-[color:var(--ink-600)]">{meaning}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function ThreeLayerMaster() {
+  return (
+    <section className="section-tight bg-[color:var(--paper-100)]" data-screenshot="evidence-master-layers">
+      <div className="container-xl">
+        <p className="eyebrow">// THREE-LAYER MASTER</p>
+        <h2 className="section-title">The raw master is never silently overwritten.</h2>
+        <p className="section-lede">
+          Evidence updates move through separate layers. The original input stays inspectable; reviewed updates project into an evidence-applied master for downstream reports.
+        </p>
+        <div className="mt-10 grid gap-5 lg:grid-cols-3">
+          {masterLayers.map(([title, body, artifact], index) => (
+            <article className="master-layer-card" key={title}>
+              <div className="font-mono text-sm text-[color:var(--accent-600)]">0{index + 1}</div>
+              <h3 className="mt-4 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--ink-900)]">{title}</h3>
+              <p className="mt-3 text-sm leading-6 text-[color:var(--ink-600)]">{body}</p>
+              <div className="mt-5 rounded-xl border border-[color:var(--paper-300)] bg-[color:var(--paper-50)] px-3 py-2 font-mono text-xs text-[color:var(--ink-600)]">
+                {artifact}
+              </div>
+            </article>
+          ))}
+        </div>
+        <div className="mt-6 rounded-2xl border border-[color:var(--paper-300)] bg-white/70 p-5 text-center font-mono text-xs uppercase tracking-[0.16em] text-[color:var(--ink-600)]">
+          base - profiled - evidence-applied | No raw input mutation. No silent imputation.
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function EvidenceHighlightBar() {
+  return (
+    <section className="section-tight">
+      <div className="container-xl">
+        <div className="rounded-[1.35rem] bg-[color:var(--ink-900)] px-6 py-8 text-center text-3xl font-semibold tracking-[-0.03em] text-[color:var(--paper-50)] sm:text-4xl">
+          IF A NUMBER IS MISSING, THE REPORT SAYS SO.
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function SloganBar() {
   return (
     <div className="border-y border-[color:var(--dark-600)] bg-[color:var(--dark-900)] px-5 py-5 text-center font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--dark-fg)]">
@@ -546,10 +930,11 @@ function Footer({ navigate }) {
 
 export default function App() {
   const { route, navigate } = useRoute()
+  const page = route === '/workflow' ? <WorkflowPage navigate={navigate} /> : route === '/evidence' ? <EvidencePage navigate={navigate} /> : <HomePage navigate={navigate} />
   return (
     <div className="site-shell">
       <Header route={route} navigate={navigate} />
-      <main>{route === '/workflow' ? <WorkflowPage /> : <HomePage navigate={navigate} />}</main>
+      <main>{page}</main>
       <Footer navigate={navigate} />
     </div>
   )

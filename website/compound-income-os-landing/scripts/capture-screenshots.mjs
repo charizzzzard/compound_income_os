@@ -46,19 +46,18 @@ const screenshots = [
     selector: '[data-screenshot="workflow-hero"]',
   },
   {
-    filename: '05_monthly_report_render.png',
-    label: 'Monthly Decision Report render',
+    filename: '05_evidence_coverage.png',
+    label: 'Evidence page hero and coverage table',
     viewport: desktopViewport,
-    path: '/workflow',
-    selector: '[data-screenshot="monthly-report-render"]',
+    path: '/evidence',
+    selector: '[data-screenshot="evidence-coverage"]',
   },
   {
-    filename: '06_footer_cta.png',
-    label: 'Footer CTA and private-preview status',
+    filename: '06_evidence_workspace.png',
+    label: 'Evidence Workspace mockup',
     viewport: desktopViewport,
-    path: '/',
-    selector: '[data-screenshot="footer-cta"]',
-    hideHeader: true,
+    path: '/evidence',
+    selector: '[data-screenshot="evidence-workspace"]',
   },
 ]
 

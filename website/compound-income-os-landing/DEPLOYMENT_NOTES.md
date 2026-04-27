@@ -20,6 +20,12 @@ Not yet fully implemented:
 
 The build remains blocked for public launch until real CTA targets, imprint, privacy policy, pricing/scope, and public-launch review are complete.
 
+## Wave Two Evidence Page
+
+The `/evidence` page is a private-preview marketing and product-UI mockup. All holdings, values, statuses, and proposed updates are synthetic demo values.
+
+The page does not perform SEC network access, does not expose private identity maps, and does not apply evidence updates. It visualizes the intended evidence workflow only.
+
 ## Public Launch Blockers
 
 The following items are required before any public deploy. Each blocker has both a legal/compliance and a credibility dimension.
