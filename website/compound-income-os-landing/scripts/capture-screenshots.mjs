@@ -21,40 +21,43 @@ const browserExecutableCandidates = [
 
 const screenshots = [
   {
-    filename: '01_desktop_hero_dashboard.png',
-    label: 'Desktop Hero + compact dashboard hero',
+    filename: '01_home_wayfinder.png',
+    label: 'Desktop Home wayfinder hero',
     viewport: desktopViewport,
     mode: 'viewport',
   },
   {
-    filename: '02_full_dashboard_preview.png',
-    label: 'Full Dashboard Preview',
+    filename: '02_local_dashboard_viewer.png',
+    label: 'Local Dashboard Viewer mockup',
     viewport: desktopViewport,
-    selector: '[data-screenshot="dashboard"]',
+    selector: '[data-screenshot="dashboard-viewer"]',
   },
   {
-    filename: '03_mobile_header_hero.png',
+    filename: '03_mobile_home_hero.png',
     label: 'Mobile Header + Hero',
     viewport: mobileViewport,
     mode: 'viewport',
   },
   {
-    filename: '04_dividend_snowball.png',
-    label: 'Dividend Snowball Analysis',
+    filename: '04_workflow_page.png',
+    label: 'Workflow page hero',
     viewport: desktopViewport,
-    selector: '[data-screenshot="dividend-snowball"]',
+    path: '/workflow',
+    selector: '[data-screenshot="workflow-hero"]',
   },
   {
-    filename: '05_sec_evidence_data_quality.png',
-    label: 'SEC Evidence / Data Quality Gates',
+    filename: '05_monthly_report_render.png',
+    label: 'Monthly Decision Report render',
     viewport: desktopViewport,
-    selector: '[data-screenshot="evidence-quality"]',
+    path: '/workflow',
+    selector: '[data-screenshot="monthly-report-render"]',
   },
   {
-    filename: '06_access_disclaimer.png',
-    label: 'Access Cards + Disclaimer',
+    filename: '06_footer_cta.png',
+    label: 'Footer CTA and private-preview status',
     viewport: desktopViewport,
-    selector: '[data-screenshot="access-disclaimer"]',
+    path: '/',
+    selector: '[data-screenshot="footer-cta"]',
     hideHeader: true,
   },
 ]
@@ -94,19 +97,19 @@ async function startServerIfNeeded() {
   return server
 }
 
-async function openPage(browser, viewport) {
+async function openPage(browser, viewport, path = '/') {
   const page = await browser.newPage({
     viewport,
     deviceScaleFactor: 1,
     colorScheme: 'light',
     reducedMotion: 'reduce',
   })
-  await page.goto(baseUrl, { waitUntil: 'networkidle' })
+  await page.goto(new URL(path, baseUrl).toString(), { waitUntil: 'networkidle' })
   return page
 }
 
 async function screenshotViewport(browser, spec) {
-  const page = await openPage(browser, spec.viewport)
+  const page = await openPage(browser, spec.viewport, spec.path)
   await page.evaluate(() => window.scrollTo(0, 0))
   await page.screenshot({
     path: resolve(outputDir, spec.filename),
@@ -117,7 +120,7 @@ async function screenshotViewport(browser, spec) {
 }
 
 async function screenshotSelector(browser, spec) {
-  const page = await openPage(browser, spec.viewport)
+  const page = await openPage(browser, spec.viewport, spec.path)
   const target = page.locator(spec.selector)
   if (spec.hideHeader) {
     await page.locator('header').evaluate((element) => {

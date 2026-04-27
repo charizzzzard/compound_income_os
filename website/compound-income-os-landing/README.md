@@ -4,6 +4,34 @@ This is an isolated React/Vite prototype for the Compound Income OS landing page
 
 The page is a marketing prototype only. It is not investment advice, does not execute orders, and does not connect to brokerages. All dashboard values shown in the page and screenshots are synthetic demo values.
 
+## Mockup Master Plan v4 - Wave 1
+
+This private-preview build implements the first website mockup wave:
+
+- M1 Home as a shorter wayfinder page.
+- M2 Workflow as a dedicated monthly-cadence page.
+- P2 Monthly Decision Report Render as a static product-UI mockup.
+- P5 Local Dashboard Viewer as a static product-UI mockup.
+
+The remaining planned pages are intentionally not fully implemented in this wave:
+
+- Evidence & Data Quality
+- Portfolio Model
+- Local Dashboard
+- Manifesto & Access
+
+All product UI values are synthetic, sanitized, or aggregated. The build does not imply decision readiness and does not provide investment advice.
+
+## Private Preview Readiness Payload
+
+This landing page can include a static, sanitized readiness sample payload for private demos:
+
+- `public/demo/readiness_payload.sample.json`
+
+The file is derived from local processed readiness artifacts and is intended for private preview/handoff review only.
+
+It must not contain private raw files, broker exports, private SEC identity maps, private input values, investment advice, or order/execution signals.
+
 ## Commands
 
 Install dependencies:

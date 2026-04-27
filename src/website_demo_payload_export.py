@@ -1,0 +1,170 @@
+from __future__ import annotations
+
+import argparse
+import json
+import re
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+from src.common import ensure_parent_dir, resolve_repo_path
+
+DEFAULT_SOURCE_PAYLOAD = "data/processed/dashboard_readiness_payload.json"
+DEFAULT_SAMPLE_OUTPUT = "website/compound-income-os-landing/public/demo/readiness_payload.sample.json"
+DEFAULT_README_OUTPUT = "website/compound-income-os-landing/public/demo/README.md"
+
+FORBIDDEN_DISPLAY_TERMS = (
+    "BUY",
+    "SELL",
+    "STRONG_BUY",
+    "STRONG_SELL",
+    "TRADE",
+    "EXECUTE",
+    "ORDER",
+    "RECOMMENDATION",
+    "DEPLOY CAPITAL",
+    "ADD NOW",
+)
+ALLOWED_INTERNAL_TERMS = ("monthly_buy_ranking.csv", "buy_score")
+PRIVATE_PATTERNS = (
+    r"data/raw/private",
+    r"personal_sec_identity_map",
+    r"\bCIK[0-9A-Z_-]*\b",
+)
+
+
+@dataclass(frozen=True)
+class WebsiteDemoPayloadExportResult:
+    sample_output: Path
+    readme_output: Path
+    decision_status: str
+    contains_private_data: bool
+    contains_investment_advice: bool
+
+
+def load_payload(path_value: str | Path) -> dict[str, Any]:
+    path = resolve_repo_path(path_value)
+    with path.open("r", encoding="utf-8") as handle:
+        payload = json.load(handle)
+    if not isinstance(payload, dict):
+        raise ValueError(f"Dashboard readiness payload must be a JSON object: {path}")
+    return payload
+
+
+def contains_private_marker(text: str) -> bool:
+    return any(re.search(pattern, text, re.IGNORECASE) for pattern in PRIVATE_PATTERNS)
+
+
+def contains_forbidden_display_term(text: str) -> bool:
+    filtered = text
+    for allowed in ALLOWED_INTERNAL_TERMS:
+        filtered = filtered.replace(allowed, "")
+    patterns = [re.escape(term).replace("\\ ", r"\s+") for term in FORBIDDEN_DISPLAY_TERMS]
+    return bool(re.search(r"(?<![A-Z0-9_])(" + "|".join(patterns) + r")(?![A-Z0-9_])", filtered.upper()))
+
+
+def assert_payload_safe(payload: dict[str, Any]) -> None:
+    encoded = json.dumps(payload, sort_keys=True)
+    if contains_private_marker(encoded):
+        raise ValueError("Refusing to export website demo payload: private marker detected.")
+    if contains_forbidden_display_term(encoded):
+        raise ValueError("Refusing to export website demo payload: restricted market-action wording detected.")
+    if payload.get("metadata", {}).get("private_data_included") is True:
+        raise ValueError("Refusing to export website demo payload: source metadata reports private data.")
+    if payload.get("metadata", {}).get("dummy_claims_included") is True:
+        raise ValueError("Refusing to export website demo payload: source metadata reports dummy claims.")
+    if payload.get("readiness", {}).get("decision", {}).get("status") == "PASS":
+        raise ValueError("Refusing to export website demo payload: decision readiness PASS is not expected for private preview.")
+
+
+def build_sample_payload(source_payload: dict[str, Any], *, generated_from: str) -> dict[str, Any]:
+    return {
+        "sample_metadata": {
+            "sample_type": "private_preview_readiness_payload",
+            "generated_from": generated_from,
+            "public_deploy_ready": False,
+            "contains_private_data": False,
+            "contains_real_portfolio_values": False,
+            "contains_investment_advice": False,
+            "synthetic_or_sanitized": True,
+            "intended_use": "private preview / local demo handoff only",
+        },
+        "payload": source_payload,
+    }
+
+
+def write_sample(path_value: str | Path, sample_payload: dict[str, Any]) -> Path:
+    path = ensure_parent_dir(path_value)
+    with path.open("w", encoding="utf-8", newline="\n") as handle:
+        json.dump(sample_payload, handle, ensure_ascii=True, indent=2, sort_keys=True)
+        handle.write("\n")
+    return path
+
+
+def write_readme(path_value: str | Path) -> Path:
+    path = ensure_parent_dir(path_value)
+    path.write_text(
+        "\n".join(
+            [
+                "# Private Preview Readiness Payload",
+                "",
+                "This directory contains a static, sanitized readiness sample payload for private demos:",
+                "",
+                "- `readiness_payload.sample.json`",
+                "",
+                "The file is derived from local processed readiness artifacts and is intended for private preview/handoff review only.",
+                "",
+                "It must not contain private raw files, broker exports, private SEC identity maps, private input values, investment advice, or order/execution signals.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return path
+
+
+def run_website_demo_payload_export(
+    *,
+    source_payload: str = DEFAULT_SOURCE_PAYLOAD,
+    sample_output: str = DEFAULT_SAMPLE_OUTPUT,
+    readme_output: str = DEFAULT_README_OUTPUT,
+) -> WebsiteDemoPayloadExportResult:
+    payload = load_payload(source_payload)
+    assert_payload_safe(payload)
+    sample_payload = build_sample_payload(payload, generated_from=source_payload)
+    sample_text = json.dumps(sample_payload, sort_keys=True)
+    if contains_private_marker(sample_text) or contains_forbidden_display_term(sample_text):
+        raise ValueError("Refusing to export website demo payload: sample payload failed sanitization.")
+    sample_path = write_sample(sample_output, sample_payload)
+    readme_path = write_readme(readme_output)
+    return WebsiteDemoPayloadExportResult(
+        sample_output=sample_path,
+        readme_output=readme_path,
+        decision_status=str(payload.get("readiness", {}).get("decision", {}).get("status", "NOT_AVAILABLE")),
+        contains_private_data=False,
+        contains_investment_advice=False,
+    )
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Export a sanitized website demo readiness payload.")
+    parser.add_argument("--source-payload", default=DEFAULT_SOURCE_PAYLOAD)
+    parser.add_argument("--sample-output", default=DEFAULT_SAMPLE_OUTPUT)
+    parser.add_argument("--readme-output", default=DEFAULT_README_OUTPUT)
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+    result = run_website_demo_payload_export(
+        source_payload=args.source_payload,
+        sample_output=args.sample_output,
+        readme_output=args.readme_output,
+    )
+    print(f"sample_output={result.sample_output}")
+    print(f"readme_output={result.readme_output}")
+    print(f"decision_readiness={result.decision_status}")
+
+
+if __name__ == "__main__":
+    main()

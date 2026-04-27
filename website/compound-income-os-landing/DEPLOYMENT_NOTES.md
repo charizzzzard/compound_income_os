@@ -2,6 +2,24 @@
 
 This page is currently a **private preview build**. It is intended for internal review and limited demo handoffs only. It is **not** ready for public deployment.
 
+### Mockup Master Plan v4 - Wave 1
+
+This private-preview build contains only the first implementation wave of the website mockup plan. It is not a full public marketing site.
+
+Implemented:
+- Home wayfinder
+- Workflow page
+- Monthly Decision Report mockup
+- Local Dashboard Viewer mockup
+
+Not yet fully implemented:
+- Evidence page
+- Portfolio page
+- Dashboard page
+- Manifesto / Access page
+
+The build remains blocked for public launch until real CTA targets, imprint, privacy policy, pricing/scope, and public-launch review are complete.
+
 ## Public Launch Blockers
 
 The following items are required before any public deploy. Each blocker has both a legal/compliance and a credibility dimension.

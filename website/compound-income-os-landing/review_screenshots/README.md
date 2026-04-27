@@ -1,6 +1,6 @@
 # Landing Page Review Screenshots
 
-Generated: 2026-04-26T19:47:16.868Z
+Generated: 2026-04-27T09:25:22.585Z
 
 Generation command:
 
@@ -17,12 +17,12 @@ Viewport sizes:
 
 Screenshots:
 
-- 01_desktop_hero_dashboard.png: Desktop Hero + compact dashboard hero
-- 02_full_dashboard_preview.png: Full Dashboard Preview
-- 03_mobile_header_hero.png: Mobile Header + Hero
-- 04_dividend_snowball.png: Dividend Snowball Analysis
-- 05_sec_evidence_data_quality.png: SEC Evidence / Data Quality Gates
-- 06_access_disclaimer.png: Access Cards + Disclaimer
+- 01_home_wayfinder.png: Desktop Home wayfinder hero
+- 02_local_dashboard_viewer.png: Local Dashboard Viewer mockup
+- 03_mobile_home_hero.png: Mobile Header + Hero
+- 04_workflow_page.png: Workflow page hero
+- 05_monthly_report_render.png: Monthly Decision Report render
+- 06_footer_cta.png: Footer CTA and private-preview status
 
 The values shown are synthetic demo values.
 These screenshots are review artifacts and do not contain private portfolio data.
