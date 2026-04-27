@@ -1,0 +1,734 @@
+{
+  "guardrails": {
+    "no_advice_language": true,
+    "no_master_mutation": true,
+    "no_network": true,
+    "no_private_values": true,
+    "no_score_mutation": true
+  },
+  "metadata": {
+    "dummy_claims_included": false,
+    "generated_at": "2026-04-27",
+    "private_data_included": false,
+    "schema_version": "1",
+    "source_artifacts": [
+      "data/processed/dashboard_readiness_panel.csv",
+      "data/processed/dashboard_readiness_blockers.csv",
+      "data/processed/dashboard_readiness_next_actions.csv"
+    ],
+    "warnings": []
+  },
+  "readiness": {
+    "dashboard": {
+      "reason_codes": [
+        "WATCHLIST_REVIEW_OR_MISSING_DATA"
+      ],
+      "status": "REVIEW"
+    },
+    "decision": {
+      "reason_codes": [
+        "CORE_KPI_MISSING",
+        "DIVIDEND_FCF_REQUIRED_MISSING",
+        "INPUT_FILE_MISSING",
+        "NO_IMPUTATION",
+        "NO_VALUE_CHANGES",
+        "PROFILE_NOT_STANDARD",
+        "PROVENANCE_INCOMPLETE",
+        "REVIEW_CORE_DATA",
+        "SEC_IDENTITY_AVAILABLE",
+        "VALUATION_REQUIRED_MISSING",
+        "WATCHLIST_REVIEW_OR_MISSING_DATA",
+        "WATCHLIST_SAMPLE_INPUT"
+      ],
+      "status": "BLOCKED"
+    },
+    "demo": {
+      "reason_codes": [
+        "SYNTHETIC_OR_SAMPLE_DATA_VISIBLE",
+        "WATCHLIST_SAMPLE_INPUT"
+      ],
+      "status": "BLOCKED"
+    },
+    "handoff": {
+      "reason_codes": [
+        "MISSING_METADATA",
+        "STALE_DERIVED_ARTIFACT"
+      ],
+      "status": "REVIEW"
+    }
+  },
+  "sections": {
+    "blockers": [
+      {
+        "cta_label": "Open readiness report",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_payload_report.md",
+        "description": "6 active blocker rows with severity P0_BLOCKER.",
+        "id": "active_p0_blocker_count",
+        "is_safe_action": true,
+        "label": "Active P0_BLOCKER count",
+        "reason_codes": [
+          "CORE_KPI_MISSING",
+          "DIVIDEND_FCF_REQUIRED_MISSING",
+          "INPUT_FILE_MISSING",
+          "MISSING_METADATA",
+          "NO_IMPUTATION",
+          "NO_VALUE_CHANGES",
+          "PROFILE_NOT_STANDARD",
+          "PROVENANCE_INCOMPLETE",
+          "REVIEW_CORE_DATA",
+          "SEC_IDENTITY_AVAILABLE",
+          "STALE_DERIVED_ARTIFACT",
+          "SYNTHETIC_OR_SAMPLE_DATA_VISIBLE",
+          "VALUATION_REQUIRED_MISSING",
+          "WATCHLIST_REVIEW_OR_MISSING_DATA",
+          "WATCHLIST_SAMPLE_INPUT"
+        ],
+        "severity": "P0_BLOCKER",
+        "source_artifact": "data/processed/personal_readiness_blockers.csv",
+        "status": "BLOCKED",
+        "value": "6"
+      },
+      {
+        "cta_label": "Open readiness report",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_payload_report.md",
+        "description": "4 active blocker rows with severity P1_REVIEW.",
+        "id": "active_p1_review_count",
+        "is_safe_action": true,
+        "label": "Active P1_REVIEW count",
+        "reason_codes": [
+          "CORE_KPI_MISSING",
+          "DIVIDEND_FCF_REQUIRED_MISSING",
+          "INPUT_FILE_MISSING",
+          "MISSING_METADATA",
+          "NO_IMPUTATION",
+          "NO_VALUE_CHANGES",
+          "PROFILE_NOT_STANDARD",
+          "PROVENANCE_INCOMPLETE",
+          "REVIEW_CORE_DATA",
+          "SEC_IDENTITY_AVAILABLE",
+          "STALE_DERIVED_ARTIFACT",
+          "SYNTHETIC_OR_SAMPLE_DATA_VISIBLE",
+          "VALUATION_REQUIRED_MISSING",
+          "WATCHLIST_REVIEW_OR_MISSING_DATA",
+          "WATCHLIST_SAMPLE_INPUT"
+        ],
+        "severity": "P1_REVIEW",
+        "source_artifact": "data/processed/personal_readiness_blockers.csv",
+        "status": "REVIEW",
+        "value": "4"
+      },
+      {
+        "cta_label": "Open readiness report",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_payload_report.md",
+        "description": "0 active blocker rows with severity P2_BACKLOG.",
+        "id": "active_p2_backlog_count",
+        "is_safe_action": true,
+        "label": "Active P2_BACKLOG count",
+        "reason_codes": [
+          "CORE_KPI_MISSING",
+          "DIVIDEND_FCF_REQUIRED_MISSING",
+          "INPUT_FILE_MISSING",
+          "MISSING_METADATA",
+          "NO_IMPUTATION",
+          "NO_VALUE_CHANGES",
+          "PROFILE_NOT_STANDARD",
+          "PROVENANCE_INCOMPLETE",
+          "REVIEW_CORE_DATA",
+          "SEC_IDENTITY_AVAILABLE",
+          "STALE_DERIVED_ARTIFACT",
+          "SYNTHETIC_OR_SAMPLE_DATA_VISIBLE",
+          "VALUATION_REQUIRED_MISSING",
+          "WATCHLIST_REVIEW_OR_MISSING_DATA",
+          "WATCHLIST_SAMPLE_INPUT"
+        ],
+        "severity": "INFO",
+        "source_artifact": "data/processed/personal_readiness_blockers.csv",
+        "status": "INFO",
+        "value": "0"
+      },
+      {
+        "cta_label": "Open readiness report",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_payload_report.md",
+        "description": "Resolved blockers are shown separately from active blockers.",
+        "id": "resolved_blocker_count",
+        "is_safe_action": true,
+        "label": "Resolved blocker count",
+        "reason_codes": [
+          "ARTIFACT_DRIFT",
+          "MONTHLY_SCHEMA_DRIFT"
+        ],
+        "severity": "INFO",
+        "source_artifact": "data/processed/personal_readiness_blockers.csv",
+        "status": "INFO",
+        "value": "2"
+      },
+      {
+        "cta_label": "Review dividend / FCF inputs",
+        "cta_target": "data/processed/personal_dividend_fcf_input_contract_summary.csv",
+        "description": "Active blocker for DECISION scope.",
+        "id": "blocker_1_MISSING_DIVIDEND_FCF_REQUIRED",
+        "is_safe_action": true,
+        "label": "Dividend / FCF inputs missing",
+        "reason_codes": [
+          "MISSING_DIVIDEND_FCF_REQUIRED"
+        ],
+        "severity": "P0_BLOCKER",
+        "source_artifact": "data/processed/personal_dividend_fcf_input_contract_summary.csv",
+        "status": "BLOCKED",
+        "value": "ACTIVE"
+      },
+      {
+        "cta_label": "Review private valuation inputs",
+        "cta_target": "data/processed/personal_valuation_input_contract_summary.csv",
+        "description": "Active blocker for DECISION scope.",
+        "id": "blocker_2_MISSING_VALUATION_REQUIRED",
+        "is_safe_action": true,
+        "label": "Valuation inputs missing",
+        "reason_codes": [
+          "MISSING_VALUATION_REQUIRED"
+        ],
+        "severity": "P0_BLOCKER",
+        "source_artifact": "data/processed/personal_valuation_input_contract_summary.csv",
+        "status": "BLOCKED",
+        "value": "ACTIVE"
+      },
+      {
+        "cta_label": "Inspect provenance gaps",
+        "cta_target": "data/processed/personal_score_audit_provenance_summary.csv",
+        "description": "Active blocker for DECISION scope.",
+        "id": "blocker_3_PROVENANCE_INCOMPLETE",
+        "is_safe_action": true,
+        "label": "Source provenance incomplete",
+        "reason_codes": [
+          "PROVENANCE_INCOMPLETE"
+        ],
+        "severity": "P0_BLOCKER",
+        "source_artifact": "data/processed/personal_score_audit_provenance_summary.csv",
+        "status": "BLOCKED",
+        "value": "ACTIVE"
+      },
+      {
+        "cta_label": "Prepare explicit SEC refresh",
+        "cta_target": "data/processed/personal_core_kpi_closure_summary.csv",
+        "description": "Active blocker for DECISION scope.",
+        "id": "blocker_4_REVIEW_CORE_DATA",
+        "is_safe_action": true,
+        "label": "Core KPI review open",
+        "reason_codes": [
+          "REVIEW_CORE_DATA"
+        ],
+        "severity": "P0_BLOCKER",
+        "source_artifact": "data/processed/personal_core_kpi_closure_summary.csv",
+        "status": "BLOCKED",
+        "value": "ACTIVE"
+      },
+      {
+        "cta_label": "Replace sample watchlist",
+        "cta_target": "data/processed/personal_watchlist_input_gate_summary.csv",
+        "description": "Active blocker for DECISION scope.",
+        "id": "blocker_5_WATCHLIST_SAMPLE_INPUT",
+        "is_safe_action": true,
+        "label": "Sample watchlist active",
+        "reason_codes": [
+          "WATCHLIST_SAMPLE_INPUT"
+        ],
+        "severity": "P0_BLOCKER",
+        "source_artifact": "data/processed/personal_watchlist_input_gate_summary.csv",
+        "status": "BLOCKED",
+        "value": "ACTIVE"
+      },
+      {
+        "cta_label": "Replace sample watchlist",
+        "cta_target": "data/processed/personal_watchlist_input_gate_summary.csv",
+        "description": "Active blocker for DEMO scope.",
+        "id": "blocker_6_WATCHLIST_SAMPLE_INPUT",
+        "is_safe_action": true,
+        "label": "Sample watchlist active",
+        "reason_codes": [
+          "WATCHLIST_SAMPLE_INPUT"
+        ],
+        "severity": "P0_BLOCKER",
+        "source_artifact": "data/processed/personal_watchlist_input_gate_summary.csv",
+        "status": "BLOCKED",
+        "value": "ACTIVE"
+      },
+      {
+        "cta_label": "Open readiness report",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_payload_report.md",
+        "description": "Active blocker for HANDOFF scope.",
+        "id": "blocker_7_MISSING_METADATA",
+        "is_safe_action": true,
+        "label": "Metadata review open",
+        "reason_codes": [
+          "MISSING_METADATA"
+        ],
+        "severity": "P1_REVIEW",
+        "source_artifact": "data/processed/personal_artifact_freshness_summary.csv",
+        "status": "REVIEW",
+        "value": "ACTIVE"
+      },
+      {
+        "cta_label": "Open readiness report",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_payload_report.md",
+        "description": "Active blocker for HANDOFF scope.",
+        "id": "blocker_8_STALE_ARTIFACT",
+        "is_safe_action": true,
+        "label": "Stale artifact review open",
+        "reason_codes": [
+          "STALE_ARTIFACT"
+        ],
+        "severity": "P1_REVIEW",
+        "source_artifact": "data/processed/personal_artifact_freshness_summary.csv",
+        "status": "REVIEW",
+        "value": "ACTIVE"
+      },
+      {
+        "cta_label": "Open readiness report",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_payload_report.md",
+        "description": "Active blocker for DASHBOARD scope.",
+        "id": "blocker_9_WATCHLIST_REVIEW_OR_MISSING_DATA",
+        "is_safe_action": true,
+        "label": "Watchlist review or missing data",
+        "reason_codes": [
+          "WATCHLIST_REVIEW_OR_MISSING_DATA"
+        ],
+        "severity": "P1_REVIEW",
+        "source_artifact": "data/processed/personal_watchlist_input_gate_summary.csv",
+        "status": "REVIEW",
+        "value": "ACTIVE"
+      },
+      {
+        "cta_label": "Open readiness report",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_payload_report.md",
+        "description": "Active blocker for DECISION scope.",
+        "id": "blocker_10_WATCHLIST_REVIEW_OR_MISSING_DATA",
+        "is_safe_action": true,
+        "label": "Watchlist review or missing data",
+        "reason_codes": [
+          "WATCHLIST_REVIEW_OR_MISSING_DATA"
+        ],
+        "severity": "P1_REVIEW",
+        "source_artifact": "data/processed/personal_watchlist_input_gate_summary.csv",
+        "status": "REVIEW",
+        "value": "ACTIVE"
+      },
+      {
+        "cta_label": "Open readiness report",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_payload_report.md",
+        "description": "Active blocker for DEMO scope.",
+        "id": "blocker_11_SAMPLE_OR_SYNTHETIC_DEMO_DATA",
+        "is_safe_action": true,
+        "label": "Sample or demo data visible",
+        "reason_codes": [
+          "SAMPLE_OR_SYNTHETIC_DEMO_DATA"
+        ],
+        "severity": "INFO",
+        "source_artifact": "website/compound-income-os-landing/DEPLOYMENT_NOTES.md;data/processed/personal_watchlist_input_gate_summary.csv",
+        "status": "REVIEW",
+        "value": "ACTIVE"
+      },
+      {
+        "cta_label": "Open readiness report",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_payload_report.md",
+        "description": "Resolved blocker for HANDOFF scope.",
+        "id": "blocker_12_ARTIFACT_DRIFT",
+        "is_safe_action": true,
+        "label": "Artifact drift resolved",
+        "reason_codes": [
+          "ARTIFACT_DRIFT"
+        ],
+        "severity": "INFO",
+        "source_artifact": "data/processed/personal_artifact_freshness_summary.csv",
+        "status": "PASS",
+        "value": "RESOLVED"
+      },
+      {
+        "cta_label": "Open readiness report",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_payload_report.md",
+        "description": "Resolved blocker for DASHBOARD scope.",
+        "id": "blocker_13_MONTHLY_SCHEMA_DRIFT",
+        "is_safe_action": true,
+        "label": "Monthly schema drift resolved",
+        "reason_codes": [
+          "MONTHLY_SCHEMA_DRIFT"
+        ],
+        "severity": "INFO",
+        "source_artifact": "data/processed/personal_monthly_action_compatibility_summary.csv",
+        "status": "PASS",
+        "value": "RESOLVED"
+      },
+      {
+        "cta_label": "Open readiness report",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_payload_report.md",
+        "description": "Deferred blocker for HANDOFF scope.",
+        "id": "blocker_14_NO_IMPRINT_PRIVACY",
+        "is_safe_action": true,
+        "label": "Public legal links deferred",
+        "reason_codes": [
+          "NO_IMPRINT_PRIVACY"
+        ],
+        "severity": "P1_REVIEW",
+        "source_artifact": "website/compound-income-os-landing/.env.example",
+        "status": "REVIEW",
+        "value": "DEFERRED"
+      },
+      {
+        "cta_label": "Open readiness report",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_payload_report.md",
+        "description": "Deferred blocker for HANDOFF scope.",
+        "id": "blocker_15_NO_REAL_CTA_TARGETS",
+        "is_safe_action": true,
+        "label": "Public call-to-action targets deferred",
+        "reason_codes": [
+          "NO_REAL_CTA_TARGETS"
+        ],
+        "severity": "P1_REVIEW",
+        "source_artifact": "website/compound-income-os-landing/.env.example",
+        "status": "REVIEW",
+        "value": "DEFERRED"
+      },
+      {
+        "cta_label": "Open readiness report",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_payload_report.md",
+        "description": "Deferred blocker for HANDOFF scope.",
+        "id": "blocker_16_PUBLIC_LAUNCH_BLOCKERS",
+        "is_safe_action": true,
+        "label": "Public launch blockers deferred",
+        "reason_codes": [
+          "PUBLIC_LAUNCH_BLOCKERS"
+        ],
+        "severity": "P1_REVIEW",
+        "source_artifact": "website/compound-income-os-landing/DEPLOYMENT_NOTES.md",
+        "status": "REVIEW",
+        "value": "DEFERRED"
+      }
+    ],
+    "handoff": [
+      {
+        "cta_label": "Review handoff package",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_panel_report.md",
+        "description": "Handoff remains separate from decision readiness and is based on packaged evidence status.",
+        "id": "handoff_readiness",
+        "is_safe_action": true,
+        "label": "Handoff readiness",
+        "reason_codes": [
+          "MISSING_METADATA",
+          "STALE_DERIVED_ARTIFACT"
+        ],
+        "severity": "P1_REVIEW",
+        "source_artifact": "data/processed/personal_readiness_status_summary.csv",
+        "status": "REVIEW",
+        "value": "REVIEW"
+      }
+    ],
+    "next_actions": [
+      {
+        "cta_label": "Review private valuation inputs",
+        "cta_target": "data/processed/personal_valuation_input_contract_summary.csv",
+        "description": "Fill reviewed private valuation input or keep readiness blocked.",
+        "id": "next_action_1_MISSING_VALUATION_REQUIRED",
+        "is_safe_action": true,
+        "label": "Review private valuation inputs",
+        "reason_codes": [
+          "MISSING_VALUATION_REQUIRED"
+        ],
+        "severity": "P0_BLOCKER",
+        "source_artifact": "data/processed/personal_valuation_input_contract_summary.csv",
+        "status": "REVIEW",
+        "value": "P0_BLOCKER"
+      },
+      {
+        "cta_label": "Review dividend / FCF inputs",
+        "cta_target": "data/processed/personal_dividend_fcf_input_contract_summary.csv",
+        "description": "Fill reviewed private dividend/fcf input or use the reviewed SEC evidence path.",
+        "id": "next_action_2_MISSING_DIVIDEND_FCF_REQUIRED",
+        "is_safe_action": true,
+        "label": "Review dividend / FCF inputs",
+        "reason_codes": [
+          "MISSING_DIVIDEND_FCF_REQUIRED"
+        ],
+        "severity": "P0_BLOCKER",
+        "source_artifact": "data/processed/personal_dividend_fcf_input_contract_summary.csv",
+        "status": "REVIEW",
+        "value": "P0_BLOCKER"
+      },
+      {
+        "cta_label": "Prepare explicit SEC refresh",
+        "cta_target": "data/processed/personal_core_kpi_closure_summary.csv",
+        "description": "Review core KPI closure queue through SEC or manual evidence; do not impute values.",
+        "id": "next_action_3_REVIEW_CORE_DATA",
+        "is_safe_action": true,
+        "label": "Prepare explicit SEC refresh",
+        "reason_codes": [
+          "REVIEW_CORE_DATA"
+        ],
+        "severity": "P0_BLOCKER",
+        "source_artifact": "data/processed/personal_core_kpi_closure_summary.csv",
+        "status": "REVIEW",
+        "value": "P0_BLOCKER"
+      },
+      {
+        "cta_label": "Inspect provenance gaps",
+        "cta_target": "data/processed/personal_score_audit_provenance_summary.csv",
+        "description": "Increase source metadata coverage through the reviewed evidence registry and apply path.",
+        "id": "next_action_4_PROVENANCE_INCOMPLETE",
+        "is_safe_action": true,
+        "label": "Inspect provenance gaps",
+        "reason_codes": [
+          "PROVENANCE_INCOMPLETE"
+        ],
+        "severity": "P0_BLOCKER",
+        "source_artifact": "data/processed/personal_score_audit_provenance_summary.csv",
+        "status": "REVIEW",
+        "value": "P0_BLOCKER"
+      },
+      {
+        "cta_label": "Replace sample watchlist",
+        "cta_target": "data/processed/personal_watchlist_input_gate_summary.csv",
+        "description": "Replace sample watchlist with reviewed personal watchlist input or keep demo-only gate.",
+        "id": "next_action_5_WATCHLIST_SAMPLE_INPUT",
+        "is_safe_action": true,
+        "label": "Replace sample watchlist",
+        "reason_codes": [
+          "WATCHLIST_SAMPLE_INPUT"
+        ],
+        "severity": "P0_BLOCKER",
+        "source_artifact": "data/processed/personal_watchlist_input_gate_summary.csv",
+        "status": "REVIEW",
+        "value": "P0_BLOCKER"
+      }
+    ],
+    "private_inputs": [
+      {
+        "cta_label": "Review private valuation inputs",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_panel_report.md",
+        "description": "Approved rows: 0; missing rows: 10.",
+        "id": "valuation_private_input_status",
+        "is_safe_action": true,
+        "label": "Valuation private input",
+        "reason_codes": [
+          "INPUT_FILE_MISSING",
+          "NO_IMPUTATION",
+          "VALUATION_REQUIRED_MISSING"
+        ],
+        "severity": "P0_BLOCKER",
+        "source_artifact": "data/processed/personal_private_input_review_summary.csv",
+        "status": "BLOCKED",
+        "value": "MISSING"
+      },
+      {
+        "cta_label": "Review dividend / FCF inputs",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_panel_report.md",
+        "description": "Approved rows: 0; missing rows: 10.",
+        "id": "dividend_fcf_private_input_status",
+        "is_safe_action": true,
+        "label": "Dividend Fcf private input",
+        "reason_codes": [
+          "DIVIDEND_FCF_REQUIRED_MISSING",
+          "INPUT_FILE_MISSING",
+          "NO_IMPUTATION"
+        ],
+        "severity": "P0_BLOCKER",
+        "source_artifact": "data/processed/personal_private_input_review_summary.csv",
+        "status": "BLOCKED",
+        "value": "MISSING"
+      },
+      {
+        "cta_label": "Open readiness report",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_payload_report.md",
+        "description": "Public outputs are sanitized and candidate values remain private.",
+        "id": "valuation_candidate_rows",
+        "is_safe_action": true,
+        "label": "Valuation apply candidates",
+        "reason_codes": [
+          "INPUT_FILE_MISSING",
+          "NO_APPROVED_INPUTS",
+          "NO_IMPUTATION",
+          "NO_MASTER_MUTATION",
+          "NO_SCORE_MUTATION",
+          "PUBLIC_OUTPUT_SANITIZED",
+          "VALUATION_REQUIRED_MISSING"
+        ],
+        "severity": "P1_REVIEW",
+        "source_artifact": "data/processed/personal_private_input_apply_candidates_summary.csv",
+        "status": "REVIEW",
+        "value": "0"
+      },
+      {
+        "cta_label": "Open readiness report",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_payload_report.md",
+        "description": "Public outputs are sanitized and candidate values remain private.",
+        "id": "dividend_fcf_candidate_rows",
+        "is_safe_action": true,
+        "label": "Dividend Fcf apply candidates",
+        "reason_codes": [
+          "DIVIDEND_FCF_REQUIRED_MISSING",
+          "INPUT_FILE_MISSING",
+          "NO_APPROVED_INPUTS",
+          "NO_IMPUTATION",
+          "NO_MASTER_MUTATION",
+          "NO_SCORE_MUTATION",
+          "PUBLIC_OUTPUT_SANITIZED"
+        ],
+        "severity": "P1_REVIEW",
+        "source_artifact": "data/processed/personal_private_input_apply_candidates_summary.csv",
+        "status": "REVIEW",
+        "value": "0"
+      }
+    ],
+    "readiness_overview": [
+      {
+        "cta_label": "Open readiness report",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_payload_report.md",
+        "description": "Demo readiness is BLOCKED; this panel does not claim decision readiness.",
+        "id": "demo_readiness",
+        "is_safe_action": true,
+        "label": "Demo readiness",
+        "reason_codes": [
+          "SYNTHETIC_OR_SAMPLE_DATA_VISIBLE",
+          "WATCHLIST_SAMPLE_INPUT"
+        ],
+        "severity": "P0_BLOCKER",
+        "source_artifact": "data/processed/personal_readiness_status_summary.csv",
+        "status": "BLOCKED",
+        "value": "BLOCKED"
+      },
+      {
+        "cta_label": "Open readiness report",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_payload_report.md",
+        "description": "Decision readiness is BLOCKED; this panel does not claim decision readiness.",
+        "id": "decision_readiness",
+        "is_safe_action": true,
+        "label": "Decision readiness",
+        "reason_codes": [
+          "CORE_KPI_MISSING",
+          "DIVIDEND_FCF_REQUIRED_MISSING",
+          "INPUT_FILE_MISSING",
+          "NO_IMPUTATION",
+          "NO_VALUE_CHANGES",
+          "PROFILE_NOT_STANDARD",
+          "PROVENANCE_INCOMPLETE",
+          "REVIEW_CORE_DATA",
+          "SEC_IDENTITY_AVAILABLE",
+          "VALUATION_REQUIRED_MISSING",
+          "WATCHLIST_REVIEW_OR_MISSING_DATA",
+          "WATCHLIST_SAMPLE_INPUT"
+        ],
+        "severity": "P0_BLOCKER",
+        "source_artifact": "data/processed/personal_readiness_status_summary.csv",
+        "status": "BLOCKED",
+        "value": "BLOCKED"
+      },
+      {
+        "cta_label": "Open readiness report",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_payload_report.md",
+        "description": "Dashboard readiness is REVIEW; this panel does not claim decision readiness.",
+        "id": "dashboard_readiness",
+        "is_safe_action": true,
+        "label": "Dashboard readiness",
+        "reason_codes": [
+          "WATCHLIST_REVIEW_OR_MISSING_DATA"
+        ],
+        "severity": "P1_REVIEW",
+        "source_artifact": "data/processed/personal_readiness_status_summary.csv",
+        "status": "REVIEW",
+        "value": "REVIEW"
+      },
+      {
+        "cta_label": "Open readiness report",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_payload_report.md",
+        "description": "Handoff readiness is REVIEW; this panel does not claim decision readiness.",
+        "id": "handoff_readiness",
+        "is_safe_action": true,
+        "label": "Handoff readiness",
+        "reason_codes": [
+          "MISSING_METADATA",
+          "STALE_DERIVED_ARTIFACT"
+        ],
+        "severity": "P1_REVIEW",
+        "source_artifact": "data/processed/personal_readiness_status_summary.csv",
+        "status": "REVIEW",
+        "value": "REVIEW"
+      }
+    ],
+    "sec_preflight": [
+      {
+        "cta_label": "Prepare explicit SEC refresh",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_panel_report.md",
+        "description": "SEC refresh remains gated; no network or fetch was performed.",
+        "id": "sec_preflight_status",
+        "is_safe_action": true,
+        "label": "SEC preflight",
+        "reason_codes": [
+          "ALLOW_NETWORK_REQUIRED_FOR_FUTURE_REFRESH",
+          "FETCH_MODULE_AVAILABLE",
+          "NO_EVIDENCE_APPLY",
+          "NO_FETCH_PERFORMED",
+          "NO_MASTER_MUTATION",
+          "NO_NETWORK_BY_DEFAULT",
+          "NO_NETWORK_PERFORMED",
+          "NO_RAW_SEC_SNAPSHOT_WRITTEN",
+          "NO_SCORE_MUTATION",
+          "REFRESH_CLI_AVAILABLE",
+          "REVIEW_REQUIRED",
+          "SEC_IDENTITY_MAP_PRESENT",
+          "SEC_REFRESH_PLAN_READY",
+          "SEC_USER_AGENT_MISSING"
+        ],
+        "severity": "P1_REVIEW",
+        "source_artifact": "data/processed/personal_sec_refresh_preflight_summary.csv",
+        "status": "REVIEW",
+        "value": "USER_AGENT_MISSING"
+      },
+      {
+        "cta_label": "Open readiness report",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_payload_report.md",
+        "description": "Rows are structurally ready for a future explicit SEC refresh after gates are satisfied.",
+        "id": "sec_core_plan_ready_rows",
+        "is_safe_action": true,
+        "label": "SEC core KPI plan-ready rows",
+        "reason_codes": [
+          "ALLOW_NETWORK_REQUIRED_FOR_FUTURE_REFRESH",
+          "CORE_KPI_MISSING",
+          "NO_EVIDENCE_APPLY",
+          "NO_MASTER_MUTATION",
+          "NO_NETWORK_BY_DEFAULT",
+          "NO_SCORE_MUTATION",
+          "NO_VALUE_FETCH",
+          "READY_FOR_EXPLICIT_SEC_REFRESH",
+          "SEC_IDENTITY_AVAILABLE",
+          "SEC_USER_AGENT_REQUIRED_FOR_FUTURE_REFRESH"
+        ],
+        "severity": "INFO",
+        "source_artifact": "data/processed/personal_sec_core_kpi_refresh_plan_summary.csv",
+        "status": "INFO",
+        "value": "4"
+      }
+    ],
+    "watchlist": [
+      {
+        "cta_label": "Replace sample watchlist",
+        "cta_target": "reports/2026-04-27/dashboard_readiness_panel_report.md",
+        "description": "Input status: SAMPLE_DEMO_ONLY; data status: MISSING_DATA.",
+        "id": "watchlist_readiness_status",
+        "is_safe_action": true,
+        "label": "Watchlist readiness",
+        "reason_codes": [
+          "WATCHLIST_REVIEW_OR_MISSING_DATA",
+          "WATCHLIST_SAMPLE_INPUT"
+        ],
+        "severity": "P0_BLOCKER",
+        "source_artifact": "data/processed/personal_watchlist_input_gate_summary.csv",
+        "status": "BLOCKED",
+        "value": "BLOCKED"
+      }
+    ]
+  },
+  "summary": {
+    "active_blockers_count": 11,
+    "next_actions_count": 5,
+    "p0_blockers_count": 6,
+    "p1_review_count": 4,
+    "resolved_blockers_count": 2
+  }
+}

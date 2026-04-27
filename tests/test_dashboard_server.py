@@ -18,6 +18,7 @@ from src.dashboard_server import (
     build_server,
     load_csv_table,
     load_holdings,
+    load_json_payload,
     load_kpis,
     load_sections,
     load_summary,
@@ -67,6 +68,7 @@ class DashboardServerTests(unittest.TestCase):
             "cost_tax_ledger": self._path("_tmp_dashboard_server_ledger.csv"),
             "portfolio_timeseries": self._path("_tmp_dashboard_server_portfolio_timeseries.csv"),
             "benchmark_timeseries": self._path("_tmp_dashboard_server_benchmark_timeseries.csv"),
+            "readiness_payload": self._path("_tmp_dashboard_server_readiness_payload.json"),
         }
 
     def _write_fixture_sources(self, *, weighted_buy_score: str = "70.84", history_points: int = 2) -> DashboardPaths:
@@ -640,6 +642,19 @@ class DashboardServerTests(unittest.TestCase):
             ],
             benchmark_rows,
         )
+        paths["readiness_payload"].write_text(
+            json.dumps(
+                {
+                    "metadata": {"schema_version": "1", "private_data_included": False, "dummy_claims_included": False},
+                    "readiness": {"decision": {"status": "BLOCKED", "reason_codes": ["UNIT_FIXTURE"]}},
+                    "summary": {"active_blockers_count": 1},
+                    "sections": {},
+                    "guardrails": {"no_advice_language": True, "no_private_values": True},
+                },
+                sort_keys=True,
+            ),
+            encoding="utf-8",
+        )
         return DashboardPaths(**{key: str(path) for key, path in paths.items()})
 
     def _start_server(self, paths: DashboardPaths) -> tuple[object, threading.Thread, int]:
@@ -661,7 +676,7 @@ class DashboardServerTests(unittest.TestCase):
 
     def test_extended_dashboard_paths_include_decision_artifacts(self) -> None:
         paths = DashboardPaths()
-        self.assertEqual(len(paths.all_paths()), 13)
+        self.assertEqual(len(paths.all_paths()), 14)
         self.assertIn(paths.positions, paths.all_paths())
         self.assertIn(paths.holdings, paths.all_paths())
         self.assertIn(paths.monthly_buy_ranking, paths.all_paths())
@@ -672,11 +687,17 @@ class DashboardServerTests(unittest.TestCase):
         self.assertIn(paths.cost_tax_ledger, paths.all_paths())
         self.assertIn(paths.portfolio_timeseries, paths.all_paths())
         self.assertIn(paths.benchmark_timeseries, paths.all_paths())
+        self.assertIn(paths.readiness_payload, paths.all_paths())
 
     def test_extended_csv_loaders_return_not_available_for_missing_optional_sources(self) -> None:
         missing = load_csv_table(self._path("_tmp_dashboard_server_missing_optional.csv"), ["ticker"], "optional dashboard table")
         self.assertEqual(missing["status"], "NOT_AVAILABLE")
         self.assertTrue(missing["path"].endswith("_tmp_dashboard_server_missing_optional.csv"))
+
+    def test_readiness_payload_loader_returns_not_available_for_missing_json(self) -> None:
+        missing = load_json_payload(self._path("_tmp_dashboard_server_missing_readiness.json"))
+        self.assertEqual(missing["status"], "NOT_AVAILABLE")
+        self.assertTrue(missing["path"].endswith("_tmp_dashboard_server_missing_readiness.json"))
 
     def test_history_status_blocks_chart_below_min_points(self) -> None:
         status = build_history_status(
@@ -813,6 +834,8 @@ class DashboardServerTests(unittest.TestCase):
             "/api/research-priority.json",
             "/api/cost-tax-ledger.json",
             "/api/history-status.json",
+            "/api/readiness.json",
+            "/api/readiness",
             "/api/kpis.json",
             "/api/sections.json",
             "/api/summary.json",
@@ -823,6 +846,9 @@ class DashboardServerTests(unittest.TestCase):
             self.assertEqual(headers["Content-Type"], "application/json; charset=utf-8")
             self.assertIn("X-Dashboard-Data-Mtime", headers)
             self.assertTrue(payload)
+
+        _status, _headers, readiness = self._request_json(port, "/api/readiness.json")
+        self.assertEqual(readiness["readiness"]["decision"]["status"], "BLOCKED")
 
     def test_live_server_serves_html_and_history_gate_without_chart(self) -> None:
         paths = self._write_fixture_sources(history_points=2)

@@ -37,6 +37,7 @@ DEFAULT_RESEARCH_PRIORITY_OUTPUT = "data/processed/personal_research_priority.cs
 DEFAULT_COST_TAX_LEDGER_OUTPUT = "data/processed/cost_tax_ledger_normalized.csv"
 DEFAULT_PORTFOLIO_TIMESERIES_OUTPUT = "data/processed/portfolio_timeseries.csv"
 DEFAULT_BENCHMARK_TIMESERIES_OUTPUT = "data/processed/benchmark_timeseries_normalized.csv"
+DEFAULT_READINESS_PAYLOAD_OUTPUT = "data/processed/dashboard_readiness_payload.json"
 
 POSITIONS_FIELDS = [
     "portfolio_date",
@@ -164,6 +165,7 @@ class DashboardPaths:
     cost_tax_ledger: str = DEFAULT_COST_TAX_LEDGER_OUTPUT
     portfolio_timeseries: str = DEFAULT_PORTFOLIO_TIMESERIES_OUTPUT
     benchmark_timeseries: str = DEFAULT_BENCHMARK_TIMESERIES_OUTPUT
+    readiness_payload: str = DEFAULT_READINESS_PAYLOAD_OUTPUT
 
     def all_paths(self) -> list[str]:
         return [
@@ -180,6 +182,7 @@ class DashboardPaths:
             self.cost_tax_ledger,
             self.portfolio_timeseries,
             self.benchmark_timeseries,
+            self.readiness_payload,
         ]
 
 
@@ -235,6 +238,17 @@ def load_csv_table(
             label = source_name or "CSV"
             raise ValueError(f"{label} ({resolved}) missing required columns: {', '.join(missing)}")
     return rows
+
+
+def load_json_payload(path_value: str | Path) -> dict[str, Any]:
+    resolved = resolve_repo_path(path_value)
+    if not resolved.exists():
+        return not_available_payload(path_value)
+    with resolved.open("r", encoding="utf-8") as handle:
+        payload = json.load(handle)
+    if not isinstance(payload, dict):
+        raise ValueError(f"JSON payload ({resolved}) must contain an object.")
+    return payload
 
 
 def load_kpis(path_value: str | Path) -> list[dict[str, str]] | dict[str, str]:
@@ -1235,6 +1249,12 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
             if parsed.path == "/api/history-status.json":
                 self._serve_json(self._history_status_payload(), data_mtime)
                 return
+            if parsed.path in {"/api/readiness", "/api/readiness.json"}:
+                self._serve_json(
+                    self.server.artifact_cache.get(self.server.dashboard_paths.readiness_payload, load_json_payload),
+                    data_mtime,
+                )
+                return
             if parsed.path == "/healthz":
                 self._serve_json({"status": "OK"}, data_mtime)
                 return
@@ -1327,6 +1347,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cost-tax-ledger", default=DEFAULT_COST_TAX_LEDGER_OUTPUT, help="Cost tax ledger CSV.")
     parser.add_argument("--portfolio-timeseries", default=DEFAULT_PORTFOLIO_TIMESERIES_OUTPUT, help="Portfolio timeseries CSV.")
     parser.add_argument("--benchmark-timeseries", default=DEFAULT_BENCHMARK_TIMESERIES_OUTPUT, help="Benchmark timeseries CSV.")
+    parser.add_argument("--readiness-payload", default=DEFAULT_READINESS_PAYLOAD_OUTPUT, help="Dashboard readiness payload JSON.")
     parser.add_argument("--host", default="127.0.0.1", help="Local bind host. Only 127.0.0.1 is allowed.")
     parser.add_argument("--port", type=int, default=8765, help="Local bind port.")
     return parser.parse_args()
@@ -1349,6 +1370,7 @@ def main() -> None:
         cost_tax_ledger=args.cost_tax_ledger,
         portfolio_timeseries=args.portfolio_timeseries,
         benchmark_timeseries=args.benchmark_timeseries,
+        readiness_payload=args.readiness_payload,
     )
     server = build_server(host, args.port, paths)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
