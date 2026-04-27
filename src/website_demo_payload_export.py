@@ -82,6 +82,47 @@ WAVE_TWO_EVIDENCE_PAYLOAD: dict[str, Any] = {
     ],
 }
 
+WAVE_TWO_B_DASHBOARD_PAYLOAD: dict[str, Any] = {
+    "dashboard_page": {
+        "route": "/dashboard",
+        "page": "M5 The Local Dashboard",
+        "private_preview_only": True,
+        "public_deploy_ready": False,
+        "decision_readiness_claimed": False,
+        "synthetic_demo_values": True,
+    },
+    "readiness_strip": {
+        "demo": "BLOCKED",
+        "decision": "BLOCKED",
+        "dashboard": "REVIEW",
+        "handoff": "REVIEW",
+        "active_blockers": 11,
+        "p0_blockers": 6,
+        "p1_reviews": 4,
+        "next_actions": 5,
+    },
+    "kpi_groups": [
+        "Portfolio / Structure",
+        "Score / Fundamentals",
+        "Benchmark / Performance",
+        "Cost / Tax",
+        "Data Quality / Methodology",
+    ],
+    "scenario_sections": [
+        "Dividend Snowball Analysis",
+        "Reinvest Comparison",
+        "Cashflow Calendar",
+        "Multi-Benchmark Context",
+        "Cost / Tax Ledger",
+    ],
+    "guardrails": {
+        "no_public_deploy": True,
+        "no_private_values": True,
+        "no_network": True,
+        "not_a_prediction": True,
+    },
+}
+
 
 @dataclass(frozen=True)
 class WebsiteDemoPayloadExportResult:
@@ -141,6 +182,7 @@ def build_sample_payload(source_payload: dict[str, Any], *, generated_from: str)
         },
         "payload": source_payload,
         "website_mockup_wave_two": WAVE_TWO_EVIDENCE_PAYLOAD,
+        "website_mockup_wave_two_b": WAVE_TWO_B_DASHBOARD_PAYLOAD,
     }
 
 

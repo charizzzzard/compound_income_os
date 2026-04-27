@@ -831,5 +831,45 @@
       "INSUFFICIENT_HISTORY",
       "NOT_APPLICABLE"
     ]
+  },
+  "website_mockup_wave_two_b": {
+    "dashboard_page": {
+      "decision_readiness_claimed": false,
+      "page": "M5 The Local Dashboard",
+      "private_preview_only": true,
+      "public_deploy_ready": false,
+      "route": "/dashboard",
+      "synthetic_demo_values": true
+    },
+    "guardrails": {
+      "no_network": true,
+      "no_private_values": true,
+      "no_public_deploy": true,
+      "not_a_prediction": true
+    },
+    "kpi_groups": [
+      "Portfolio / Structure",
+      "Score / Fundamentals",
+      "Benchmark / Performance",
+      "Cost / Tax",
+      "Data Quality / Methodology"
+    ],
+    "readiness_strip": {
+      "active_blockers": 11,
+      "dashboard": "REVIEW",
+      "decision": "BLOCKED",
+      "demo": "BLOCKED",
+      "handoff": "REVIEW",
+      "next_actions": 5,
+      "p0_blockers": 6,
+      "p1_reviews": 4
+    },
+    "scenario_sections": [
+      "Dividend Snowball Analysis",
+      "Reinvest Comparison",
+      "Cashflow Calendar",
+      "Multi-Benchmark Context",
+      "Cost / Tax Ledger"
+    ]
   }
 }

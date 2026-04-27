@@ -27,10 +27,11 @@ const screenshots = [
     mode: 'viewport',
   },
   {
-    filename: '02_local_dashboard_viewer.png',
-    label: 'Local Dashboard Viewer mockup',
+    filename: '02_dashboard_page_hero.png',
+    label: 'Dashboard page hero and local viewer',
     viewport: desktopViewport,
-    selector: '[data-screenshot="dashboard-viewer"]',
+    path: '/dashboard',
+    selector: '[data-screenshot="dashboard-hero"]',
   },
   {
     filename: '03_mobile_home_hero.png',
@@ -53,11 +54,11 @@ const screenshots = [
     selector: '[data-screenshot="evidence-coverage"]',
   },
   {
-    filename: '06_evidence_workspace.png',
-    label: 'Evidence Workspace mockup',
+    filename: '06_dashboard_snowball.png',
+    label: 'Dashboard snowball and scenario section',
     viewport: desktopViewport,
-    path: '/evidence',
-    selector: '[data-screenshot="evidence-workspace"]',
+    path: '/dashboard',
+    selector: '[data-screenshot="dashboard-snowball"]',
   },
 ]
 

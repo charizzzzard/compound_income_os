@@ -262,4 +262,19 @@
       var(--paper-50);
     border-color: var(--paper-300);
   }
+
+  .dashboard-kpi-panel {
+    @apply rounded-3xl border p-5 shadow-sm;
+    background: rgba(255, 255, 255, 0.72);
+    border-color: var(--paper-300);
+  }
+
+  .calendar-cell {
+    @apply rounded-2xl border p-4 text-center shadow-sm;
+    min-height: 7.5rem;
+    background:
+      radial-gradient(circle at top, rgba(176, 138, 62, 0.12), transparent 4rem),
+      rgba(255, 255, 255, 0.72);
+    border-color: var(--paper-300);
+  }
 }

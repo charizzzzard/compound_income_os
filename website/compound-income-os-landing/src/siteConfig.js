@@ -38,7 +38,7 @@ export const siteConfig = {
     workflow: '/workflow',
     evidence: '/evidence',
     portfolioPending: '#planned-portfolio',
-    dashboardPending: '#dashboard-viewer',
+    dashboard: '/dashboard',
     manifestoPending: '#manifesto-teaser',
   },
   demoReadinessPayloadPath: '/demo/readiness_payload.sample.json',

@@ -8,7 +8,7 @@ const safeRoutes = [
   ['Workflow', '/workflow', false],
   ['Evidence', '/evidence', false],
   ['Portfolio', '#planned-portfolio', true],
-  ['Dashboard', '#dashboard-viewer', false],
+  ['Dashboard', '/dashboard', false],
   ['Manifesto', '#manifesto-teaser', true],
 ]
 
@@ -16,7 +16,7 @@ const promises = [
   ['Workflow', 'One decision a month - same six stages, every month.', '/workflow', false],
   ['Evidence', 'Every KPI carries a status, and missing data remains visible.', '/evidence', false],
   ['Portfolio', 'Four sleeves. One mandate. Visible rules.', '#planned-portfolio', true],
-  ['Dashboard', 'One local dashboard. Five KPI groups.', '#dashboard-viewer', false],
+  ['Dashboard', 'One local dashboard. Five KPI groups.', '/dashboard', false],
   ['Manifesto / Access', 'Open-source core. Builder-led. No venture capital.', '#manifesto-teaser', true],
 ]
 
@@ -51,6 +51,60 @@ const readinessRows = [
   ['Decision readiness', 'BLOCKED', 'missing'],
   ['Dashboard readiness', 'REVIEW', 'review'],
   ['Handoff readiness', 'REVIEW', 'partial'],
+]
+
+const dashboardReadinessMetrics = [
+  ['Demo', 'BLOCKED', 'missing'],
+  ['Decision', 'BLOCKED', 'missing'],
+  ['Dashboard', 'REVIEW', 'review'],
+  ['Handoff', 'REVIEW', 'partial'],
+  ['Active blockers', '11', 'missing'],
+  ['P0 blockers', '6', 'missing'],
+  ['P1 reviews', '4', 'review'],
+  ['Next actions', '5', 'partial'],
+]
+
+const dashboardKpiGroups = [
+  ['Portfolio / Structure', ['total assets', 'cash weight', 'top-5 weight', 'sleeve weights'], 'synthetic / illustrative', 'PARTIAL'],
+  ['Score / Fundamentals', ['business score', 'valuation status', 'quality flag', 'missing KPI blockers'], 'review gates visible', 'REVIEW'],
+  ['Benchmark / Performance', ['benchmark comparison', 'rolling return', 'drawdown', 'volatility'], 'Requires explicit local benchmark archive. Not a prediction.', 'INSUFFICIENT_HISTORY'],
+  ['Cost / Tax', ['gross dividends', 'net dividends', 'withholding taxes', 'tax drag'], 'Requires explicit cost/tax ledger evidence.', 'REVIEW'],
+  ['Data Quality / Methodology', ['coverage', 'partial', 'review', 'missing data', 'methodology notes'], 'readiness payload and blocker matrix', 'MISSING_DATA'],
+]
+
+const snowballMetrics = [
+  ['Current Dividend Income TTM', 'synthetic scenario', 'PARTIAL'],
+  ['Candidate contribution', 'review pending', 'REVIEW'],
+  ['Cash deployment assumption', 'declared input', 'PARTIAL'],
+  ['Data quality', 'review pending', 'PARTIAL'],
+]
+
+const cashflowMonths = [
+  ['Jan', 'Known'],
+  ['Feb', 'Estimated'],
+  ['Mar', 'Known'],
+  ['Apr', 'Review'],
+  ['May', 'Missing'],
+  ['Jun', 'Known'],
+  ['Jul', 'Estimated'],
+  ['Aug', 'Review'],
+  ['Sep', 'Known'],
+  ['Oct', 'Missing'],
+  ['Nov', 'Estimated'],
+  ['Dec', 'Known'],
+]
+
+const benchmarkRows = [
+  ['Local portfolio series', 'synthetic index', 'PARTIAL'],
+  ['MSCI World archive', 'local benchmark required', 'INSUFFICIENT_HISTORY'],
+  ['FTSE All-World archive', 'local benchmark required', 'INSUFFICIENT_HISTORY'],
+]
+
+const costTaxRows = [
+  ['Gross dividends', 'ledger evidence required', 'REVIEW'],
+  ['Net dividends', 'ledger evidence required', 'REVIEW'],
+  ['Withholding taxes', 'documentation required', 'INSUFFICIENT_DOCUMENTATION'],
+  ['Fee drag', 'documentation required', 'INSUFFICIENT_DOCUMENTATION'],
 ]
 
 const coverageRows = [
@@ -106,6 +160,9 @@ function currentRoute() {
   if (window.location.pathname === '/evidence') {
     return '/evidence'
   }
+  if (window.location.pathname === '/dashboard') {
+    return '/dashboard'
+  }
   return '/'
 }
 
@@ -117,7 +174,7 @@ function useRoute() {
     return () => window.removeEventListener('popstate', onPop)
   }, [])
   const navigate = (href) => {
-    if (href?.startsWith('/workflow') || href?.startsWith('/evidence')) {
+    if (href?.startsWith('/workflow') || href?.startsWith('/evidence') || href?.startsWith('/dashboard')) {
       const [path, hash] = href.split('#')
       window.history.pushState({}, '', href)
       setRoute(path)
@@ -155,7 +212,7 @@ function statusTone(status) {
   if (['REVIEW', 'WAIT_VALUATION', 'REVIEW_CORE_DATA'].includes(status)) {
     return 'review'
   }
-  if (['MISSING_DATA', 'NO_MATCH', 'BLOCKED', 'NOT_READY'].includes(status)) {
+  if (['MISSING_DATA', 'NO_MATCH', 'BLOCKED', 'NOT_READY', 'INSUFFICIENT_DOCUMENTATION'].includes(status)) {
     return 'missing'
   }
   return 'partial'
@@ -875,6 +932,277 @@ function EvidenceHighlightBar() {
   )
 }
 
+function DashboardPage() {
+  return (
+    <>
+      <section className="section pt-32 lg:pt-40" data-screenshot="dashboard-hero">
+        <div className="container-xl grid items-center gap-10 lg:grid-cols-[0.82fr_1.18fr]">
+          <div>
+            <p className="eyebrow hero-eyebrow">// THE LOCAL DASHBOARD</p>
+            <h1 className="mt-4 max-w-3xl text-5xl font-semibold leading-[1.02] tracking-[-0.055em] text-[color:var(--ink-900)] sm:text-6xl">
+              One local dashboard. Five KPI groups.
+            </h1>
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-[color:var(--ink-600)]">
+              After each run, the local dashboard server consolidates processed artifacts into one view: portfolio structure, scores, performance, cost & tax, and data quality. Read-only. Localhost. No cloud.
+            </p>
+            <div className="mt-6 inline-flex rounded-full border border-[color:var(--paper-300)] bg-white/70 px-4 py-2 font-mono text-xs uppercase tracking-[0.12em] text-[color:var(--ink-600)]">
+              Private preview - synthetic demo values - decision readiness currently blocked
+            </div>
+          </div>
+          <DashboardPageHeroPanel />
+        </div>
+      </section>
+      <DashboardReadinessStrip />
+      <DashboardKpiGroups />
+      <DividendSnowballSection />
+      <ReinvestComparisonSection />
+      <CashflowCalendarSection />
+      <BenchmarkCompareSection />
+      <CostTaxLedgerSection />
+    </>
+  )
+}
+
+function DashboardPageHeroPanel() {
+  return (
+    <aside className="dark-panel rounded-[1.35rem] border p-5 sm:p-6 lg:p-8" aria-label="Local Dashboard Viewer private preview">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-[color:var(--dark-600)] pb-4">
+        <div>
+          <div className="font-mono text-xs uppercase tracking-[0.14em] text-[color:var(--dark-fg-3)]">Local Dashboard Viewer</div>
+          <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-[color:var(--dark-fg)]">Latest local run overview</h2>
+        </div>
+        <Pill tone="partial">synthetic demo values</Pill>
+      </div>
+      <div className="grid gap-3 md:grid-cols-3">
+        {[
+          ['Dashboard', 'REVIEW', 'review'],
+          ['Decision', 'BLOCKED', 'missing'],
+          ['Handoff', 'REVIEW', 'partial'],
+        ].map(([label, value, tone]) => (
+          <article className="kpi-card" key={label}>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--dark-fg-3)]">{label}</div>
+            <div className="mt-3 font-mono text-xl font-semibold text-[color:var(--dark-fg)]">{value}</div>
+            <div className="mt-4">
+              <Pill tone={tone}>{value}</Pill>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="mt-5 grid gap-3 sm:grid-cols-5">
+        {dashboardKpiGroups.map(([title, , , status]) => (
+          <article className="rounded-xl border border-[color:var(--dark-600)] bg-[rgba(26,35,44,0.72)] p-3" key={title}>
+            <div className="text-[11px] leading-5 text-[color:var(--dark-fg-2)]">{title}</div>
+            <div className="mt-3">
+              <Pill tone={statusTone(status)}>{status}</Pill>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="artifact-strip mt-5 border-[color:var(--dark-600)] text-[color:var(--dark-fg-3)]">
+        <span>source - readiness_payload.sample.json</span>
+        <span>localhost view only</span>
+        <span>no cloud account</span>
+      </div>
+    </aside>
+  )
+}
+
+function DashboardReadinessStrip() {
+  return (
+    <section className="section-tight bg-[color:var(--paper-100)]">
+      <div className="container-xl">
+        <p className="eyebrow">// READINESS STRIP</p>
+        <div className="mt-6 grid gap-3 md:grid-cols-4 xl:grid-cols-8">
+          {dashboardReadinessMetrics.map(([label, value, tone]) => (
+            <article className="rounded-2xl border border-[color:var(--paper-300)] bg-white/70 p-4" key={label}>
+              <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--ink-400)]">{label}</div>
+              <div className="mt-3 font-mono text-xl font-semibold text-[color:var(--ink-900)]">{value}</div>
+              <div className="mt-4">
+                <Pill tone={tone}>{value}</Pill>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function DashboardKpiGroups() {
+  return (
+    <section className="section" data-screenshot="dashboard-kpi-groups">
+      <div className="container-xl">
+        <p className="eyebrow">// KPI GROUPS</p>
+        <h2 className="section-title">Five KPI groups. One local view.</h2>
+        <p className="section-lede">The dashboard is not a prediction engine. It is a local artifact viewer that shows what the latest run can and cannot support.</p>
+        <div className="mt-10 grid gap-5 lg:grid-cols-5">
+          {dashboardKpiGroups.map(([title, examples, note, status], index) => (
+            <article className="dashboard-kpi-panel" key={title}>
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-mono text-sm text-[color:var(--accent-600)]">0{index + 1}</span>
+                <Pill tone={statusTone(status)}>{status}</Pill>
+              </div>
+              <h3 className="mt-4 text-xl font-semibold text-[color:var(--ink-900)]">{title}</h3>
+              <ul className="mt-4 space-y-2 text-sm leading-6 text-[color:var(--ink-600)]">
+                {examples.map((item) => (
+                  <li key={item}>- {item}</li>
+                ))}
+              </ul>
+              <p className="mt-5 text-xs leading-5 text-[color:var(--ink-500)]">{note}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function DividendSnowballSection() {
+  return (
+    <section className="section-tight bg-[color:var(--paper-100)]" data-screenshot="dashboard-snowball">
+      <div className="container-xl grid gap-8 lg:grid-cols-[0.86fr_1.14fr]">
+        <div>
+          <p className="eyebrow">// DIVIDEND SNOWBALL ANALYSIS</p>
+          <h2 className="section-title">Your dividend snowball, modeled honestly.</h2>
+          <p className="section-lede">
+            Run reproducible income scenarios from your own holdings, your own assumptions, and your own concentration caps. Every assumption is declared. Nothing is predicted.
+          </p>
+          <div className="mt-6">
+            <Pill tone="partial">Illustrative scenario - not a forecast</Pill>
+          </div>
+        </div>
+        <div className="rounded-[1.35rem] border border-[color:var(--paper-300)] bg-white/75 p-5 shadow-sm">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {snowballMetrics.map(([label, value, status]) => (
+              <article className="rounded-2xl border border-[color:var(--paper-300)] bg-[color:var(--paper-50)] p-4" key={label}>
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--ink-400)]">{label}</div>
+                <div className="mt-3 text-lg font-semibold text-[color:var(--ink-900)]">{value}</div>
+                <div className="mt-4">
+                  <Pill tone={statusTone(status)}>{status}</Pill>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function ReinvestComparisonSection() {
+  return (
+    <section className="section">
+      <div className="container-xl">
+        <p className="eyebrow">// REINVEST COMPARISON</p>
+        <h2 className="section-title">Two scenarios. Same starting point.</h2>
+        <p className="section-lede">Compare declared assumptions with and without reinvestment. The output is illustrative, not a forecast.</p>
+        <div className="mt-8 grid gap-5 md:grid-cols-2">
+          {[
+            ['Cash income path', 'Declared cash withdrawals stay separate from reinvest assumptions.', 'PARTIAL'],
+            ['Reinvested path', 'Compounding effect is shown as a scenario, never as a promised result.', 'REVIEW'],
+          ].map(([title, body, status]) => (
+            <article className="card" key={title}>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-xl font-semibold text-[color:var(--ink-900)]">{title}</h3>
+                <Pill tone={statusTone(status)}>{status}</Pill>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-[color:var(--ink-600)]">{body}</p>
+            </article>
+          ))}
+        </div>
+        <div className="mt-8 rounded-[1.35rem] bg-[color:var(--ink-900)] px-6 py-7 text-center text-2xl font-semibold tracking-[-0.03em] text-[color:var(--paper-50)] sm:text-3xl">
+          REINVESTMENT CAN CHANGE THE INCOME PATH - IN THIS ILLUSTRATIVE SCENARIO.
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function CashflowCalendarSection() {
+  return (
+    <section className="section-tight bg-[color:var(--paper-100)]" data-screenshot="dashboard-calendar">
+      <div className="container-xl">
+        <p className="eyebrow">// CASHFLOW CALENDAR</p>
+        <h2 className="section-title">See your dividend rhythm before it happens.</h2>
+        <p className="section-lede">A calendar view can show declared dividend timing assumptions and known payment rhythm. Missing or unverified data stays visible.</p>
+        <div className="mt-10 grid gap-3 md:grid-cols-6 xl:grid-cols-12">
+          {cashflowMonths.map(([month, status]) => (
+            <article className="calendar-cell" key={month}>
+              <div className="font-mono text-xs text-[color:var(--ink-500)]">{month}</div>
+              <div className="mt-4">
+                <Pill tone={statusTone(status === 'Known' ? 'OK' : status === 'Estimated' ? 'PARTIAL' : status === 'Review' ? 'REVIEW' : 'MISSING_DATA')}>{status}</Pill>
+              </div>
+            </article>
+          ))}
+        </div>
+        <div className="mt-5 flex flex-wrap gap-2">
+          {['Known', 'Estimated', 'Missing', 'Review'].map((label) => (
+            <span className="rounded-full border border-[color:var(--paper-300)] bg-white/70 px-3 py-1 font-mono text-xs text-[color:var(--ink-600)]" key={label}>
+              {label}
+            </span>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function BenchmarkCompareSection() {
+  return (
+    <section className="section">
+      <div className="container-xl grid gap-8 lg:grid-cols-[0.82fr_1.18fr]">
+        <div>
+          <p className="eyebrow">// MULTI-BENCHMARK CONTEXT</p>
+          <h2 className="section-title">Compare against local benchmark archives.</h2>
+          <p className="section-lede">Benchmark views only become meaningful when enough local history exists. Until then, the dashboard says so.</p>
+          <div className="mt-6">
+            <Pill tone="partial">Requires explicit local benchmark archive - not a prediction</Pill>
+          </div>
+        </div>
+        <div className="rounded-[1.35rem] border border-[color:var(--paper-300)] bg-white/75 p-5 shadow-sm">
+          {benchmarkRows.map(([label, value, status]) => (
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--paper-200)] py-4 last:border-b-0" key={label}>
+              <div>
+                <div className="font-semibold text-[color:var(--ink-900)]">{label}</div>
+                <div className="mt-1 text-sm text-[color:var(--ink-500)]">{value}</div>
+              </div>
+              <Pill tone={statusTone(status)}>{status}</Pill>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function CostTaxLedgerSection() {
+  return (
+    <section className="section-tight bg-[color:var(--paper-100)]">
+      <div className="container-xl">
+        <p className="eyebrow">// COST / TAX LEDGER</p>
+        <h2 className="section-title">Costs and taxes stay in the ledger.</h2>
+        <p className="section-lede">
+          Gross dividends, withholding taxes, realized PnL, tax drag, and fee drag require explicit local evidence. Missing documentation is not silently filled.
+        </p>
+        <div className="mt-6">
+          <Pill tone="review">Requires explicit cost/tax ledger evidence</Pill>
+        </div>
+        <div className="mt-8 grid gap-4 md:grid-cols-4">
+          {costTaxRows.map(([label, value, status]) => (
+            <article className="card" key={label}>
+              <h3 className="text-lg font-semibold text-[color:var(--ink-900)]">{label}</h3>
+              <p className="mt-3 text-sm leading-6 text-[color:var(--ink-600)]">{value}</p>
+              <div className="mt-5">
+                <Pill tone={statusTone(status)}>{status}</Pill>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function SloganBar() {
   return (
     <div className="border-y border-[color:var(--dark-600)] bg-[color:var(--dark-900)] px-5 py-5 text-center font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--dark-fg)]">
@@ -930,7 +1258,7 @@ function Footer({ navigate }) {
 
 export default function App() {
   const { route, navigate } = useRoute()
-  const page = route === '/workflow' ? <WorkflowPage navigate={navigate} /> : route === '/evidence' ? <EvidencePage navigate={navigate} /> : <HomePage navigate={navigate} />
+  const page = route === '/workflow' ? <WorkflowPage navigate={navigate} /> : route === '/evidence' ? <EvidencePage navigate={navigate} /> : route === '/dashboard' ? <DashboardPage /> : <HomePage navigate={navigate} />
   return (
     <div className="site-shell">
       <Header route={route} navigate={navigate} />

@@ -26,6 +26,19 @@ The `/evidence` page is a private-preview marketing and product-UI mockup. All h
 
 The page does not perform SEC network access, does not expose private identity maps, and does not apply evidence updates. It visualizes the intended evidence workflow only.
 
+### Wave Two-B - Local Dashboard page
+
+The `/dashboard` page is a private-preview marketing mockup backed by sanitized local readiness artifacts and synthetic demo visuals.
+
+It must not be presented as:
+- a live public portfolio dashboard
+- investment advice
+- tax advice
+- a forecast
+- a brokerage or order execution interface
+
+Before public launch, all CTA targets, imprint/privacy, pricing/scope, and payload privacy checks must be revalidated.
+
 ## Public Launch Blockers
 
 The following items are required before any public deploy. Each blocker has both a legal/compliance and a credibility dimension.

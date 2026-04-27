@@ -54,6 +54,18 @@ Not implemented in this wave:
 - Real portfolio values.
 - Public deployment.
 
+## Mockup Master Plan v4 - Wave Two-B
+
+This private-preview build adds the M5 Local Dashboard page:
+
+- `/dashboard`
+- Five KPI groups
+- static Local Dashboard Viewer mockup
+- readiness strip from sanitized local artifacts
+- Dividend Snowball, Reinvest Comparison, Cashflow Calendar, Benchmark, and Cost/Tax sections
+
+The page is a private preview mockup. It does not imply decision readiness and does not provide investment, tax, or legal advice.
+
 ## Commands
 
 Install dependencies:
