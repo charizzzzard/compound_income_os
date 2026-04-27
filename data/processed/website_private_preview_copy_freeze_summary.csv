@@ -1,0 +1,2 @@
+routes_total,routes_covered_by_screenshots,brand_consistency_status,readiness_claim_status,advice_language_status,cta_safety_status,privacy_guardrail_status,public_launch_framing_status,static_build_qa_status,copy_freeze_status,p0_blockers_count,p1_review_count,public_deploy_performed,private_data_leak_detected,dummy_claims_detected,reason_codes
+7,6,PASS,PASS,PASS,PASS,PASS,PASS,PASS,PASS,0,0,False,False,False,COPY_FREEZE_PASS

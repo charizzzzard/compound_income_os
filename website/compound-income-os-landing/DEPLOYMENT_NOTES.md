@@ -90,6 +90,12 @@ Before any public deployment:
 
 No public deployment is performed by the build or QA process.
 
+### Private Preview Copy Freeze
+
+Before any private demo handoff, the website copy-freeze checks must pass or explicitly document review items.
+
+The freeze does not mean public launch readiness. Public launch still requires real CTA targets, imprint, privacy policy, pricing/scope review, hosting/rewrite validation, and final compliance review.
+
 ## Public Launch Blockers
 
 The following items are required before any public deploy. Each blocker has both a legal/compliance and a credibility dimension.
@@ -112,7 +118,7 @@ The following items are required before any public deploy. Each blocker has both
 - `VITE_EARLY_ACCESS_URL` - destination for "Request private preview" on the Pro Modules card.
 - `VITE_SETUP_SERVICE_URL` - destination for "Request setup" on the Setup Service card.
 - `VITE_GITHUB_URL` - repository link for header, secondary final CTA, and Open-Source Core card.
-- The current build **never** falls back to `mailto:early-access@example.invalid` or any other placeholder address. Unset URLs render as honest pending states.
+- The current build **never** falls back to placeholder email addresses or fake public links. Unset URLs render as honest pending states.
 
 ### 4. Pricing and scope
 

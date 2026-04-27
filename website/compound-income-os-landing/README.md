@@ -117,6 +117,20 @@ The QA checks verify:
 - no public deploy has been performed
 - the build remains private-preview only
 
+## Private Preview Copy Freeze
+
+The private-preview website copy is checked through a final copy-freeze review covering:
+
+- brand consistency
+- route and screenshot coverage
+- CTA safety
+- no-advice language
+- no private-data leakage
+- public-launch blocker visibility
+- static build QA linkage
+
+The generated freeze artifacts live under `data/processed/` and `reports/`.
+
 ## Commands
 
 Install dependencies:

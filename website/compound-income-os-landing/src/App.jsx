@@ -403,7 +403,7 @@ function HomePage({ navigate }) {
               A calmer way to run a long-term portfolio.
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-[color:var(--ink-600)]">
-              Compound Income OS turns your broker exports, fundamentals and SEC evidence into one monthly decision you can trust.
+              Compound Income OS turns your broker exports, fundamentals and SEC evidence into a monthly report you can re-open in a year.
             </p>
             <div className="mt-6 space-y-2 text-sm text-[color:var(--ink-700)]">
               {['Research. Rank. Decide. Track.', 'Local-first. Private by default.', 'Built for dividend-growth and quality compounders.'].map((item) => (
