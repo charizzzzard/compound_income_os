@@ -41,7 +41,7 @@
 | `direct_url_route_risk_documented` | `PASS` | Direct static URL fallback requires host rewrite support for SPA routes; documented as private-preview review item. |
 | `public_launch_blockers_documented` | `PASS` | True |
 | `no_public_deploy_performed` | `PASS` | No deploy command, hosting config, DNS change, or CI/CD publication was performed by this QA. |
-| `static_package_created` | `PASS` | C:\Users\sc_mprinsen\Documents\compound_income_os\website\compound-income-os-landing\deploy_artifacts\compound-income-os-landing-private-preview-dist_20260427_26f1356.zip |
+| `static_package_created` | `PASS` | C:\Users\sc_mprinsen\Documents\compound_income_os\website\compound-income-os-landing\deploy_artifacts\compound-income-os-landing-private-preview-dist_20260427_1bb6a1a.zip |
 | `static_package_forbidden_entries` | `PASS` | 0 |
 
 ## Route / SPA Fallback Review
@@ -57,7 +57,7 @@
 
 ## Static Review Package
 
-- Package path: `C:\Users\sc_mprinsen\Documents\compound_income_os\website\compound-income-os-landing\deploy_artifacts\compound-income-os-landing-private-preview-dist_20260427_26f1356.zip`
+- Package path: `C:\Users\sc_mprinsen\Documents\compound_income_os\website\compound-income-os-landing\deploy_artifacts\compound-income-os-landing-private-preview-dist_20260427_1bb6a1a.zip`
 - Package SHA256: `DB55D3E9883B02D9A3FEE8EF2B548D4F08BAC72F5710C4532A8EC58B52F7CEFF`
 - Package file count: `6`
 - Package forbidden entries: `0`

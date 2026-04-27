@@ -109,6 +109,12 @@ Public launch still requires:
 - hosting and route-fallback validation
 - final compliance review.
 
+### Private Preview Final Handoff QA
+
+The final handoff QA validates the private-preview ZIP contents. It does not indicate public launch readiness.
+
+Public launch still requires real CTA targets, imprint/privacy URLs, pricing/scope review, production hosting route fallback validation, and final compliance review.
+
 ## Public Launch Blockers
 
 The following items are required before any public deploy. Each blocker has both a legal/compliance and a credibility dimension.

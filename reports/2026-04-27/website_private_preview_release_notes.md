@@ -3,7 +3,7 @@
 ## Executive Summary
 
 - Release scope: `PRIVATE_PREVIEW_WEBSITE`
-- Source head: `26f1356`
+- Source head: `1bb6a1a`
 - Handoff release status: `PASS`
 - Pages indexed: `7` / `7`
 - Screenshots indexed: `6`

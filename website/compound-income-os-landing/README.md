@@ -143,6 +143,18 @@ Generated artifacts:
 
 These artifacts summarize the included pages, screenshots, QA evidence, static build checks, copy-freeze status, and remaining public-launch blockers.
 
+## Private Preview Final Handoff QA
+
+The final private-preview handoff is checked through a ZIP content index and handoff QA summary.
+
+Generated artifacts:
+
+- `data/processed/website_private_preview_handoff_zip_content_index.csv`
+- `data/processed/website_private_preview_handoff_qa_summary.csv`
+- `reports/2026-04-27/website_private_preview_handoff_qa_report.md`
+
+The QA verifies required website files, screenshots, release notes, static build QA, copy freeze QA, route matrix QA, forbidden entries, and private-data guardrails.
+
 ## Commands
 
 Install dependencies:
