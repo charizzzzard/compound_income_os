@@ -60,6 +60,8 @@ HANDOFF_ARTIFACT_FILES = (
     "data/processed/website_private_preview_cta_matrix.csv",
     "data/processed/website_private_preview_copy_guardrails.csv",
     "data/processed/website_private_preview_qa_summary.csv",
+    "data/processed/website_static_build_package_qa.csv",
+    "data/processed/website_static_build_package_summary.csv",
 )
 HANDOFF_ARTIFACT_GLOBS = (
     "reports/*/personal_profile_review_unlock_report.md",
@@ -84,6 +86,7 @@ HANDOFF_ARTIFACT_GLOBS = (
     "reports/*/dashboard_readiness_panel_report.md",
     "reports/*/dashboard_readiness_payload_report.md",
     "reports/*/website_private_preview_route_matrix_report.md",
+    "reports/*/website_static_build_package_report.md",
 )
 LOCAL_ROOT_EXCLUDES = {"personal_sec_identity_map.csv", "personal_sec_scope_review_filled.csv", "lokales_Dashboard.txt"}
 FORBIDDEN_PREFIXES = (
@@ -178,6 +181,8 @@ def is_allowed_handoff_artifact(entry_name: str) -> bool:
     if name.startswith("reports/") and name.endswith("/dashboard_readiness_payload_report.md"):
         return len(name.split("/")) == 3
     if name.startswith("reports/") and name.endswith("/website_private_preview_route_matrix_report.md"):
+        return len(name.split("/")) == 3
+    if name.startswith("reports/") and name.endswith("/website_static_build_package_report.md"):
         return len(name.split("/")) == 3
     return False
 

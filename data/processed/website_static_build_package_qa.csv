@@ -1,0 +1,17 @@
+check_name,status,details,source_path,reason_codes
+dist_exists,PASS,True,website/compound-income-os-landing/dist,DIST_EXISTS
+dist_index_exists,PASS,True,website/compound-income-os-landing/dist/index.html,DIST_INDEX_EXISTS
+asset_paths_static_safe,PASS,Asset paths are relative/static handoff-safe,website/compound-income-os-landing/dist/index.html,ASSET_PATHS_RELATIVE
+no_dev_entry_in_dist,PASS,True,website/compound-income-os-landing/dist,NO_DEV_ENTRY
+no_env_files_in_dist,PASS,0,website/compound-income-os-landing/dist,NO_ENV_FILES
+no_node_modules_in_dist,PASS,0,website/compound-income-os-landing/dist,NO_NODE_MODULES
+no_private_raw_paths_in_dist,PASS,True,website/compound-income-os-landing/dist,NO_PRIVATE_RAW_PATHS
+no_private_sec_identity_markers_in_dist,PASS,True,website/compound-income-os-landing/dist,NO_PRIVATE_SEC_IDENTITY_MARKERS
+no_private_values_in_dist,PASS,True,website/compound-income-os-landing/dist,NO_PRIVATE_VALUES_DETECTED
+sample_payload_in_dist,PASS,True,website/compound-income-os-landing/dist/demo/readiness_payload.sample.json,SAMPLE_PAYLOAD_IN_DIST
+main_routes_build_safe,PASS,SPA route tokens present in built bundle,website/compound-income-os-landing/dist,SPA_ROUTE_TOKENS_PRESENT
+direct_url_route_risk_documented,PASS,Direct static URL fallback requires host rewrite support for SPA routes; documented as private-preview review item.,website/compound-income-os-landing,DIRECT_URL_RISK_DOCUMENTED
+public_launch_blockers_documented,PASS,True,website/compound-income-os-landing,PUBLIC_LAUNCH_BLOCKERS_DOCUMENTED
+no_public_deploy_performed,PASS,"No deploy command, hosting config, DNS change, or CI/CD publication was performed by this QA.",website/compound-income-os-landing,NO_PUBLIC_DEPLOY
+static_package_created,PASS,C:\Users\sc_mprinsen\Documents\compound_income_os\website\compound-income-os-landing\deploy_artifacts\compound-income-os-landing-private-preview-dist_20260427_738e0ab.zip,website/compound-income-os-landing/deploy_artifacts,STATIC_PACKAGE_CREATED
+static_package_forbidden_entries,PASS,0,C:\Users\sc_mprinsen\Documents\compound_income_os\website\compound-income-os-landing\deploy_artifacts\compound-income-os-landing-private-preview-dist_20260427_738e0ab.zip,NO_FORBIDDEN_PACKAGE_ENTRIES

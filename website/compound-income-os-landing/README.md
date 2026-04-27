@@ -104,6 +104,19 @@ The private-preview website is checked through a route and CTA matrix covering:
 
 The QA artifacts are generated under `data/processed/` and `reports/` and validate internal route coverage, pending CTA behavior, public-launch blockers, no-advice copy, and private-data guardrails.
 
+## Static Build Package QA
+
+The private-preview website can be built as a static package for local review.
+
+The QA checks verify:
+
+- `dist/` is generated successfully
+- static assets are referenced safely
+- private files and environment files are excluded
+- public launch blockers remain documented
+- no public deploy has been performed
+- the build remains private-preview only
+
 ## Commands
 
 Install dependencies:

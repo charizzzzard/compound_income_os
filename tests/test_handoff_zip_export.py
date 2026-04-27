@@ -103,6 +103,8 @@ class HandoffZipExportTests(unittest.TestCase):
             ROOT / "data" / "processed" / "website_private_preview_cta_matrix.csv",
             ROOT / "data" / "processed" / "website_private_preview_copy_guardrails.csv",
             ROOT / "data" / "processed" / "website_private_preview_qa_summary.csv",
+            ROOT / "data" / "processed" / "website_static_build_package_qa.csv",
+            ROOT / "data" / "processed" / "website_static_build_package_summary.csv",
             ROOT / "reports" / "2099-01-01" / "personal_profile_review_unlock_report.md",
             ROOT / "reports" / "2099-01-01" / "personal_missing_kpi_closure_report.md",
             ROOT / "reports" / "2099-01-01" / "personal_evidence_applied_downstream_delta_report.md",
@@ -124,6 +126,7 @@ class HandoffZipExportTests(unittest.TestCase):
             ROOT / "reports" / "2099-01-01" / "dashboard_readiness_panel_report.md",
             ROOT / "reports" / "2099-01-01" / "dashboard_readiness_payload_report.md",
             ROOT / "reports" / "2099-01-01" / "website_private_preview_route_matrix_report.md",
+            ROOT / "reports" / "2099-01-01" / "website_static_build_package_report.md",
             ROOT / "reports" / "2099-01-01" / "historical_report.md",
         ]
         for path in artifact_paths:
@@ -179,6 +182,8 @@ class HandoffZipExportTests(unittest.TestCase):
         self.assertIn("data/processed/website_private_preview_cta_matrix.csv", names)
         self.assertIn("data/processed/website_private_preview_copy_guardrails.csv", names)
         self.assertIn("data/processed/website_private_preview_qa_summary.csv", names)
+        self.assertIn("data/processed/website_static_build_package_qa.csv", names)
+        self.assertIn("data/processed/website_static_build_package_summary.csv", names)
         self.assertIn("reports/2099-01-01/personal_profile_review_unlock_report.md", names)
         self.assertIn("reports/2099-01-01/personal_missing_kpi_closure_report.md", names)
         self.assertIn("reports/2099-01-01/personal_evidence_applied_downstream_delta_report.md", names)
@@ -200,6 +205,7 @@ class HandoffZipExportTests(unittest.TestCase):
         self.assertIn("reports/2099-01-01/dashboard_readiness_panel_report.md", names)
         self.assertIn("reports/2099-01-01/dashboard_readiness_payload_report.md", names)
         self.assertIn("reports/2099-01-01/website_private_preview_route_matrix_report.md", names)
+        self.assertIn("reports/2099-01-01/website_static_build_package_report.md", names)
         self.assertNotIn("reports/2099-01-01/historical_report.md", names)
         self.assertEqual(scan_forbidden_entries(result.zip_path), ())
 
@@ -229,6 +235,7 @@ class HandoffZipExportTests(unittest.TestCase):
             archive.writestr("reports/2026-04-26/dashboard_readiness_panel_report.md", "allowed")
             archive.writestr("reports/2026-04-26/dashboard_readiness_payload_report.md", "allowed")
             archive.writestr("reports/2026-04-26/website_private_preview_route_matrix_report.md", "allowed")
+            archive.writestr("reports/2026-04-26/website_static_build_package_report.md", "allowed")
             archive.writestr("data/raw/private/secret.csv", "blocked")
             archive.writestr("tests/_tmp_fixture.csv", "blocked")
             archive.writestr("src/__pycache__/module.pyc", "blocked")
@@ -264,6 +271,7 @@ class HandoffZipExportTests(unittest.TestCase):
         self.assertNotIn("reports/2026-04-26/dashboard_readiness_panel_report.md", matches)
         self.assertNotIn("reports/2026-04-26/dashboard_readiness_payload_report.md", matches)
         self.assertNotIn("reports/2026-04-26/website_private_preview_route_matrix_report.md", matches)
+        self.assertNotIn("reports/2026-04-26/website_static_build_package_report.md", matches)
         self.assertIn("data/raw/private/secret.csv", matches)
         self.assertIn("tests/_tmp_fixture.csv", matches)
         self.assertIn("src/__pycache__/module.pyc", matches)

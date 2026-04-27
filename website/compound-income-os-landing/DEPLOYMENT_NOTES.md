@@ -75,6 +75,21 @@ The website route matrix must pass before any private demo handoff:
 - no private raw paths or values appear in website files
 - no page implies decision readiness or public launch readiness
 
+### Static build package QA
+
+The static build can be used for private review only.
+
+Before any public deployment:
+
+- verify imprint and privacy URLs
+- verify real CTA targets
+- verify pricing/scope language
+- verify route fallback behavior for direct URLs
+- verify no private raw data or environment files are included
+- verify no page implies decision readiness or investment advice
+
+No public deployment is performed by the build or QA process.
+
 ## Public Launch Blockers
 
 The following items are required before any public deploy. Each blocker has both a legal/compliance and a credibility dimension.
