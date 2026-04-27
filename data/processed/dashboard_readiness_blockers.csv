@@ -1,0 +1,17 @@
+blocker_code,blocker_status,blocker_severity,readiness_scope,display_title,display_description,source_artifact,safe_next_action,dashboard_priority,show_on_dashboard
+MISSING_DIVIDEND_FCF_REQUIRED,ACTIVE,P0_BLOCKER,DECISION,Dividend / FCF inputs missing,Active blocker for DECISION scope.,data/processed/personal_dividend_fcf_input_contract_summary.csv,Review dividend / FCF inputs,10,yes
+MISSING_VALUATION_REQUIRED,ACTIVE,P0_BLOCKER,DECISION,Valuation inputs missing,Active blocker for DECISION scope.,data/processed/personal_valuation_input_contract_summary.csv,Review private valuation inputs,10,yes
+PROVENANCE_INCOMPLETE,ACTIVE,P0_BLOCKER,DECISION,Source provenance incomplete,Active blocker for DECISION scope.,data/processed/personal_score_audit_provenance_summary.csv,Inspect provenance gaps,10,yes
+REVIEW_CORE_DATA,ACTIVE,P0_BLOCKER,DECISION,Core KPI review open,Active blocker for DECISION scope.,data/processed/personal_core_kpi_closure_summary.csv,Prepare explicit SEC refresh,10,yes
+WATCHLIST_SAMPLE_INPUT,ACTIVE,P0_BLOCKER,DECISION,Sample watchlist active,Active blocker for DECISION scope.,data/processed/personal_watchlist_input_gate_summary.csv,Replace sample watchlist,10,yes
+WATCHLIST_SAMPLE_INPUT,ACTIVE,P0_BLOCKER,DEMO,Sample watchlist active,Active blocker for DEMO scope.,data/processed/personal_watchlist_input_gate_summary.csv,Replace sample watchlist,10,yes
+MISSING_METADATA,ACTIVE,P1_REVIEW,HANDOFF,Metadata review open,Active blocker for HANDOFF scope.,data/processed/personal_artifact_freshness_summary.csv,Inspect metadata gaps,20,yes
+STALE_ARTIFACT,ACTIVE,P1_REVIEW,HANDOFF,Stale artifact review open,Active blocker for HANDOFF scope.,data/processed/personal_artifact_freshness_summary.csv,Review stale artifacts,20,yes
+WATCHLIST_REVIEW_OR_MISSING_DATA,ACTIVE,P1_REVIEW,DASHBOARD,Watchlist review or missing data,Active blocker for DASHBOARD scope.,data/processed/personal_watchlist_input_gate_summary.csv,Review watchlist data status,20,yes
+WATCHLIST_REVIEW_OR_MISSING_DATA,ACTIVE,P1_REVIEW,DECISION,Watchlist review or missing data,Active blocker for DECISION scope.,data/processed/personal_watchlist_input_gate_summary.csv,Review watchlist data status,20,yes
+SAMPLE_OR_SYNTHETIC_DEMO_DATA,ACTIVE,INFO,DEMO,Sample or demo data visible,Active blocker for DEMO scope.,website/compound-income-os-landing/DEPLOYMENT_NOTES.md;data/processed/personal_watchlist_input_gate_summary.csv,Keep sample and synthetic data labels visible in demos.,30,yes
+ARTIFACT_DRIFT,RESOLVED,INFO,HANDOFF,Artifact drift resolved,Resolved blocker for HANDOFF scope.,data/processed/personal_artifact_freshness_summary.csv,No action.,80,yes
+MONTHLY_SCHEMA_DRIFT,RESOLVED,INFO,DASHBOARD,Monthly schema drift resolved,Resolved blocker for DASHBOARD scope.,data/processed/personal_monthly_action_compatibility_summary.csv,No action.,80,yes
+NO_IMPRINT_PRIVACY,DEFERRED,P1_REVIEW,HANDOFF,Public legal links deferred,Deferred blocker for HANDOFF scope.,website/compound-income-os-landing/.env.example,Configure verified imprint and privacy URLs before public launch.,90,yes
+NO_REAL_CTA_TARGETS,DEFERRED,P1_REVIEW,HANDOFF,Public call-to-action targets deferred,Deferred blocker for HANDOFF scope.,website/compound-income-os-landing/.env.example,Configure real CTA targets before public launch.,90,yes
+PUBLIC_LAUNCH_BLOCKERS,DEFERRED,P1_REVIEW,HANDOFF,Public launch blockers deferred,Deferred blocker for HANDOFF scope.,website/compound-income-os-landing/DEPLOYMENT_NOTES.md,"Keep public launch deferred until legal pages, real targets, and scope are verified.",90,yes
