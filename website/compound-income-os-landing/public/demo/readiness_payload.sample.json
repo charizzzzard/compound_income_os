@@ -743,6 +743,52 @@
     "sample_type": "private_preview_readiness_payload",
     "synthetic_or_sanitized": true
   },
+  "website_mockup_wave_four": {
+    "access_cards": [
+      {
+        "name": "Open-Source Core",
+        "status": "Free - Open-source"
+      },
+      {
+        "name": "Pro Modules",
+        "status": "Pricing TBD - Private preview"
+      },
+      {
+        "name": "Setup Service",
+        "status": "Pricing on request - Private preview"
+      }
+    ],
+    "guardrails": {
+      "no_fake_cta_links": true,
+      "no_network": true,
+      "no_private_values": true,
+      "no_public_deploy": true
+    },
+    "manifesto_page": {
+      "about_alias": "/about",
+      "decision_readiness_claimed": false,
+      "not_investment_guidance": true,
+      "page": "M6 Manifesto / Access",
+      "private_preview_only": true,
+      "public_deploy_ready": false,
+      "route": "/manifesto"
+    },
+    "principles": [
+      "Local-first",
+      "Evidence-only",
+      "Process over impulse",
+      "Decisions, not brokerage actions",
+      "Privacy by default",
+      "Reproducible by design"
+    ],
+    "public_launch_blockers": [
+      "Imprint",
+      "Privacy Policy",
+      "Real CTA targets",
+      "Pricing and scope",
+      "Readiness state"
+    ]
+  },
   "website_mockup_wave_three": {
     "guardrails": {
       "no_execution_signal": true,

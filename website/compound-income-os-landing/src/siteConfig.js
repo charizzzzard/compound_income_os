@@ -39,7 +39,8 @@ export const siteConfig = {
     evidence: '/evidence',
     portfolio: '/portfolio',
     dashboard: '/dashboard',
-    manifestoPending: '#manifesto-teaser',
+    manifesto: '/manifesto',
+    about: '/manifesto',
   },
   demoReadinessPayloadPath: '/demo/readiness_payload.sample.json',
   links: {

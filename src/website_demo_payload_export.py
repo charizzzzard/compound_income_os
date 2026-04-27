@@ -167,6 +167,44 @@ WAVE_THREE_PORTFOLIO_PAYLOAD: dict[str, Any] = {
     },
 }
 
+WAVE_FOUR_MANIFESTO_PAYLOAD: dict[str, Any] = {
+    "manifesto_page": {
+        "route": "/manifesto",
+        "about_alias": "/about",
+        "page": "M6 Manifesto / Access",
+        "private_preview_only": True,
+        "public_deploy_ready": False,
+        "decision_readiness_claimed": False,
+        "not_investment_guidance": True,
+    },
+    "principles": [
+        "Local-first",
+        "Evidence-only",
+        "Process over impulse",
+        "Decisions, not brokerage actions",
+        "Privacy by default",
+        "Reproducible by design",
+    ],
+    "access_cards": [
+        {"name": "Open-Source Core", "status": "Free - Open-source"},
+        {"name": "Pro Modules", "status": "Pricing TBD - Private preview"},
+        {"name": "Setup Service", "status": "Pricing on request - Private preview"},
+    ],
+    "public_launch_blockers": [
+        "Imprint",
+        "Privacy Policy",
+        "Real CTA targets",
+        "Pricing and scope",
+        "Readiness state",
+    ],
+    "guardrails": {
+        "no_public_deploy": True,
+        "no_fake_cta_links": True,
+        "no_private_values": True,
+        "no_network": True,
+    },
+}
+
 
 @dataclass(frozen=True)
 class WebsiteDemoPayloadExportResult:
@@ -228,6 +266,7 @@ def build_sample_payload(source_payload: dict[str, Any], *, generated_from: str)
         "website_mockup_wave_two": WAVE_TWO_EVIDENCE_PAYLOAD,
         "website_mockup_wave_two_b": WAVE_TWO_B_DASHBOARD_PAYLOAD,
         "website_mockup_wave_three": WAVE_THREE_PORTFOLIO_PAYLOAD,
+        "website_mockup_wave_four": WAVE_FOUR_MANIFESTO_PAYLOAD,
     }
 
 

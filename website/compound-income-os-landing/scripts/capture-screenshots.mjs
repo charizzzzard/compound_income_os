@@ -34,10 +34,11 @@ const screenshots = [
     selector: '[data-screenshot="portfolio-hero"]',
   },
   {
-    filename: '03_mobile_home_hero.png',
-    label: 'Mobile Header + Hero',
-    viewport: mobileViewport,
-    mode: 'viewport',
+    filename: '03_manifesto_page_hero.png',
+    label: 'Manifesto page hero and principles panel',
+    viewport: desktopViewport,
+    path: '/manifesto',
+    selector: '[data-screenshot="manifesto-hero"]',
   },
   {
     filename: '04_workflow_page.png',

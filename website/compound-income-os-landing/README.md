@@ -79,6 +79,18 @@ This private-preview build adds the M4 Portfolio Model page:
 
 The page is a private-preview mockup. It does not imply decision readiness and does not provide investment, tax, or legal advice.
 
+## Mockup Master Plan v4 - Wave Four
+
+This private-preview build adds the M6 Manifesto / Access page:
+
+- `/manifesto`
+- manifesto principles
+- built-for / not-built-for positioning
+- private-preview access cards
+- public-launch blockers
+
+The page is a private-preview mockup. It does not imply public launch readiness, decision readiness, or investment advice.
+
 ## Commands
 
 Install dependencies:

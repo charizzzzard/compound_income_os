@@ -1,6 +1,6 @@
 # Landing Page Review Screenshots
 
-Generated: 2026-04-27T12:05:37.815Z
+Generated: 2026-04-27T12:21:30.271Z
 
 Generation command:
 
@@ -19,7 +19,7 @@ Screenshots:
 
 - 01_home_wayfinder.png: Desktop Home wayfinder hero
 - 02_portfolio_page_hero.png: Portfolio page hero and allocation model
-- 03_mobile_home_hero.png: Mobile Header + Hero
+- 03_manifesto_page_hero.png: Manifesto page hero and principles panel
 - 04_workflow_page.png: Workflow page hero
 - 05_evidence_coverage.png: Evidence page hero and coverage table
 - 06_portfolio_workspace.png: Portfolio holdings and sleeves workspace

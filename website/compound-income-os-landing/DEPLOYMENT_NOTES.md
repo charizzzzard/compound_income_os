@@ -51,6 +51,19 @@ It must not be presented as:
 
 Before public launch, all CTA targets, imprint/privacy, pricing/scope, and payload privacy checks must be revalidated.
 
+### Wave Four - Manifesto / Access page
+
+The `/manifesto` page is a private-preview marketing page. It frames the product principles, audience, access model, and public-launch blockers.
+
+It must not be presented as:
+- a public launch
+- a legal/compliance-complete website
+- investment advice
+- a brokerage or order execution interface
+- a finished SaaS pricing page
+
+Before public launch, all CTA targets, imprint/privacy, pricing/scope, and payload privacy checks must be revalidated.
+
 ## Public Launch Blockers
 
 The following items are required before any public deploy. Each blocker has both a legal/compliance and a credibility dimension.

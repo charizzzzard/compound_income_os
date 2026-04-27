@@ -9,7 +9,7 @@ const safeRoutes = [
   ['Evidence', '/evidence', false],
   ['Portfolio', '/portfolio', false],
   ['Dashboard', '/dashboard', false],
-  ['Manifesto', '#manifesto-teaser', true],
+  ['Manifesto', '/manifesto', false],
 ]
 
 const promises = [
@@ -17,7 +17,7 @@ const promises = [
   ['Evidence', 'Every KPI carries a status, and missing data remains visible.', '/evidence', false],
   ['Portfolio', 'Four sleeves. One mandate. Visible rules.', '/portfolio', false],
   ['Dashboard', 'One local dashboard. Five KPI groups.', '/dashboard', false],
-  ['Manifesto / Access', 'Open-source core. Builder-led. No venture capital.', '#manifesto-teaser', true],
+  ['Manifesto / Access', 'Open-source core. Builder-led. No venture capital.', '/manifesto', false],
 ]
 
 const workflowStages = [
@@ -119,6 +119,40 @@ const portfolioReadinessBlockers = [
   ['Watchlist', 'sample input active', 'missing'],
 ]
 
+const manifestoPrinciples = [
+  ['Local-first', 'Runs from local files and emits local artifacts you can inspect.'],
+  ['Evidence-only', 'Missing data stays visible. Values are never guessed or silently filled.'],
+  ['Process over impulse', 'The monthly workflow matters more than a one-off opinion.'],
+  ['Decisions, not brokerage actions', 'The system documents, ranks, and reports. It never connects to a brokerage.'],
+  ['Privacy by default', 'Raw portfolio inputs remain under user control and outside public handoffs.'],
+  ['Reproducible by design', 'Runs leave manifests, reports, and artifacts that can be reviewed later.'],
+]
+
+const builtForCards = [
+  ['Dividend-growth investors', 'You care about a multi-year compounding thesis, not a quarterly speculation idea.'],
+  ['Quality-compounder investors', 'You want evidence-led conviction on fewer, higher-quality positions.'],
+  ['Independent operators', 'You run your own research and want a deterministic, local workflow.'],
+  ['Private portfolio builders', 'You want a monthly review system that respects your data and your machine.'],
+]
+
+const notBuiltForItems = [
+  'intraday speculation workflows',
+  'options speculation',
+  'leveraged or crypto-driven strategies',
+  'signal subscriptions',
+  'hot tips',
+  'brokerage connectivity',
+  'personalized allocation guidance',
+]
+
+const publicLaunchBlockers = [
+  ['Imprint', 'Required before public launch. Pending until VITE_IMPRINT_URL is configured.'],
+  ['Privacy Policy', 'Required before public launch. Pending until VITE_PRIVACY_URL is configured.'],
+  ['Real CTA targets', 'Sample report, private preview, setup, and GitHub targets must be real before public launch.'],
+  ['Pricing and scope', 'Pro Modules and Setup Service need real scope before any public sales surface.'],
+  ['Readiness state', 'Decision readiness is currently blocked in the sample payload. The page must not imply otherwise.'],
+]
+
 const snowballMetrics = [
   ['Current Dividend Income TTM', 'synthetic scenario', 'PARTIAL'],
   ['Candidate contribution', 'review pending', 'REVIEW'],
@@ -213,6 +247,9 @@ function currentRoute() {
   if (window.location.pathname === '/dashboard') {
     return '/dashboard'
   }
+  if (window.location.pathname === '/manifesto' || window.location.pathname === '/about') {
+    return '/manifesto'
+  }
   return '/'
 }
 
@@ -224,10 +261,10 @@ function useRoute() {
     return () => window.removeEventListener('popstate', onPop)
   }, [])
   const navigate = (href) => {
-    if (href?.startsWith('/workflow') || href?.startsWith('/evidence') || href?.startsWith('/portfolio') || href?.startsWith('/dashboard')) {
+    if (href?.startsWith('/workflow') || href?.startsWith('/evidence') || href?.startsWith('/portfolio') || href?.startsWith('/dashboard') || href?.startsWith('/manifesto') || href?.startsWith('/about')) {
       const [path, hash] = href.split('#')
       window.history.pushState({}, '', href)
-      setRoute(path)
+      setRoute(path === '/about' ? '/manifesto' : path)
       window.setTimeout(() => {
         if (hash) {
           document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth' })
@@ -394,7 +431,7 @@ function HomePage({ navigate }) {
       </section>
       <ProblemCards />
       <DashboardViewerMockup compact />
-      <BuilderTeaser />
+      <BuilderTeaser navigate={navigate} />
       <PromiseGrid navigate={navigate} />
     </>
   )
@@ -424,7 +461,7 @@ function ProblemCards() {
   )
 }
 
-function BuilderTeaser() {
+function BuilderTeaser({ navigate }) {
   return (
     <section id="manifesto-teaser" className="section-tight bg-[color:var(--paper-100)]">
       <div className="container-xl grid gap-6 rounded-3xl border border-[color:var(--paper-300)] bg-white/60 p-7 lg:grid-cols-[1fr_0.7fr]">
@@ -432,12 +469,17 @@ function BuilderTeaser() {
           <p className="eyebrow">// BUILDER NOTE</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-[color:var(--ink-900)]">Open-source core. Builder-led. No venture capital.</h2>
           <p className="mt-4 max-w-3xl leading-7 text-[color:var(--ink-600)]">
-            The full manifesto and access page is intentionally deferred. This private preview keeps pending public-launch items visible instead of pretending they are complete.
+            The manifesto and access page keeps pending public-launch items visible instead of pretending they are complete.
           </p>
+          <div className="mt-6">
+            <SmartLink className="button button-secondary" href="/manifesto" onNavigate={navigate}>
+              Read the manifesto
+            </SmartLink>
+          </div>
         </div>
         <div className="rounded-2xl border border-[color:var(--paper-300)] bg-[color:var(--paper-50)] p-5">
-          <div className="font-mono text-xs uppercase tracking-[0.14em] text-[color:var(--accent-600)]">planned in later wave</div>
-          <p className="mt-3 text-sm leading-6 text-[color:var(--ink-600)]">Manifesto and access details remain planned placeholders until public-launch requirements are reviewed.</p>
+          <div className="font-mono text-xs uppercase tracking-[0.14em] text-[color:var(--accent-600)]">private preview access</div>
+          <p className="mt-3 text-sm leading-6 text-[color:var(--ink-600)]">Access cards use honest pending states until real private-preview targets are configured.</p>
         </div>
       </div>
     </section>
@@ -1236,6 +1278,202 @@ function PortfolioReadinessBox({ navigate }) {
   )
 }
 
+function ManifestoPage({ navigate }) {
+  return (
+    <>
+      <section className="section pt-32 lg:pt-40" data-screenshot="manifesto-hero">
+        <div className="container-xl grid items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+          <div>
+            <p className="eyebrow hero-eyebrow">// OUR PROMISE</p>
+            <h1 className="mt-4 max-w-3xl text-5xl font-semibold leading-[1.02] tracking-[-0.055em] text-[color:var(--ink-900)] sm:text-6xl">
+              Built for people who think for the long run.
+            </h1>
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-[color:var(--ink-600)]">
+              No hype. No black box. No shortcuts. Just a local system that earns your trust month after month.
+            </p>
+            <div className="mt-6 inline-flex rounded-full border border-[color:var(--paper-300)] bg-white/70 px-4 py-2 font-mono text-xs uppercase tracking-[0.12em] text-[color:var(--ink-600)]">
+              Private preview - research and decision-support only - not investment guidance
+            </div>
+          </div>
+          <ManifestoHeroPanel />
+        </div>
+      </section>
+      <ManifestoPrinciples />
+      <BuiltForSection />
+      <AccessSection navigate={navigate} />
+      <PublicLaunchBlockers />
+      <ManifestoFinalCta navigate={navigate} />
+    </>
+  )
+}
+
+function ManifestoHeroPanel() {
+  return (
+    <aside className="dark-panel rounded-[1.35rem] border p-5 sm:p-6 lg:p-8" aria-label="Compound Income OS manifesto private preview">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-[color:var(--dark-600)] pb-4">
+        <div>
+          <div className="font-mono text-xs uppercase tracking-[0.14em] text-[color:var(--dark-fg-3)]">The Compound Income OS Manifesto</div>
+          <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-[color:var(--dark-fg)]">Operating principles</h2>
+        </div>
+        <Pill tone="partial">private preview</Pill>
+      </div>
+      <div className="grid gap-3">
+        {['Clarity over noise.', 'Evidence over opinion.', 'Process over impulse.', 'Discipline over emotion.', 'Long-term over short-term.', 'You decide. We support.'].map((line) => (
+          <div className="rounded-2xl border border-[color:var(--dark-600)] bg-[rgba(26,35,44,0.72)] px-4 py-3 text-[color:var(--dark-fg)]" key={line}>
+            {line}
+          </div>
+        ))}
+      </div>
+      <div className="artifact-strip mt-5 border-[color:var(--dark-600)] text-[color:var(--dark-fg-3)]">
+        <span>local-first</span>
+        <span>evidence-only</span>
+        <span>pending states visible</span>
+      </div>
+    </aside>
+  )
+}
+
+function ManifestoPrinciples() {
+  return (
+    <section className="section">
+      <div className="container-xl">
+        <p className="eyebrow">// OPERATING PRINCIPLES</p>
+        <h2 className="section-title">Principles before features.</h2>
+        <p className="section-lede">
+          Compound Income OS is built around a simple idea: every long-term investment decision should be reproducible, reviewable, and honest about its data gaps.
+        </p>
+        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {manifestoPrinciples.map(([title, body], index) => (
+            <article className="card" key={title}>
+              <div className="font-mono text-sm text-[color:var(--accent-600)]">0{index + 1}</div>
+              <h3 className="mt-4 text-xl font-semibold text-[color:var(--ink-900)]">{title}</h3>
+              <p className="mt-3 text-sm leading-6 text-[color:var(--ink-600)]">{body}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function BuiltForSection() {
+  return (
+    <section className="section-tight bg-[color:var(--paper-100)]" data-screenshot="manifesto-built-for">
+      <div className="container-xl">
+        <p className="eyebrow">// BUILT FOR</p>
+        <h2 className="section-title">Built for independent operators.</h2>
+        <p className="section-lede">This is not a signal product. It is an operating workflow for people who want to own their process.</p>
+        <div className="mt-10 grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="grid gap-4 md:grid-cols-2">
+            {builtForCards.map(([title, body]) => (
+              <article className="card" key={title}>
+                <h3 className="text-xl font-semibold text-[color:var(--ink-900)]">{title}</h3>
+                <p className="mt-3 text-sm leading-6 text-[color:var(--ink-600)]">{body}</p>
+              </article>
+            ))}
+          </div>
+          <aside className="rounded-[1.35rem] border border-[color:var(--paper-300)] bg-[color:var(--ink-900)] p-6 text-[color:var(--paper-50)]">
+            <div className="font-mono text-xs uppercase tracking-[0.14em] text-[color:var(--dark-accent)]">Not built for</div>
+            <div className="mt-5 grid gap-3">
+              {notBuiltForItems.map((item) => (
+                <div className="rounded-xl border border-[color:var(--dark-600)] bg-[rgba(26,35,44,0.72)] px-4 py-3 text-sm text-[color:var(--dark-fg-2)]" key={item}>
+                  {item}
+                </div>
+              ))}
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function AccessSection({ navigate }) {
+  const accessCards = [
+    ['Open-Source Core', 'Free - Open-source', 'Local pipeline for positions, fundamentals, watchlist ranking, monthly ranking, reports, and dashboard artifacts.', 'View the workflow', '/workflow', false, ''],
+    ['Pro Modules', 'Pricing TBD - Private preview', 'Optional local extensions for deeper evidence review, scenario inspection, and additional dashboards.', siteConfig.ctas.earlyAccess.label, siteConfig.ctas.earlyAccess.href, !siteConfig.ctas.earlyAccess.href, siteConfig.ctas.earlyAccess.pendingPill],
+    ['Setup Service', 'Pricing on request - Private preview', 'Guided setup, local environment preparation, input mapping, and first reproducible run support.', siteConfig.ctas.setupService.label, siteConfig.ctas.setupService.href, !siteConfig.ctas.setupService.href, siteConfig.ctas.setupService.pendingPill],
+  ]
+  return (
+    <section className="section" data-screenshot="manifesto-access">
+      <div className="container-xl">
+        <p className="eyebrow">// ACCESS MODEL</p>
+        <h2 className="section-title">Open-source core. Optional help around the workflow.</h2>
+        <p className="section-lede">
+          The core system is local and artifact-driven. Optional support can help with setup, review workflows, and private-preview extensions without turning the product into a brokerage or guidance service.
+        </p>
+        <div className="mt-10 grid gap-5 lg:grid-cols-3">
+          {accessCards.map(([title, price, body, label, href, pending, pendingLabel]) => (
+            <article className="card flex min-h-80 flex-col" key={title}>
+              <div className="flex items-start justify-between gap-3">
+                <h3 className="text-2xl font-semibold tracking-[-0.03em] text-[color:var(--ink-900)]">{title}</h3>
+                <Pill tone={pending ? 'review' : 'ok'}>{pending ? 'pending' : 'available'}</Pill>
+              </div>
+              <div className="mt-5 rounded-2xl border border-[color:var(--paper-300)] bg-[color:var(--paper-50)] p-4 font-mono text-sm text-[color:var(--ink-700)]">{price}</div>
+              <p className="mt-5 flex-1 text-sm leading-6 text-[color:var(--ink-600)]">{body}</p>
+              <SmartLink
+                className="button button-secondary mt-6"
+                href={href || '#'}
+                pending={pending}
+                onNavigate={href?.startsWith('/') ? navigate : undefined}
+                title={pending ? 'Private preview request target pending' : undefined}
+              >
+                {pending ? pendingLabel : label}
+              </SmartLink>
+            </article>
+          ))}
+        </div>
+        <p className="mt-6 font-mono text-xs uppercase tracking-[0.14em] text-[color:var(--ink-500)]">Pending access is shown clearly. No fake checkout flow.</p>
+      </div>
+    </section>
+  )
+}
+
+function PublicLaunchBlockers() {
+  return (
+    <section className="section-tight bg-[color:var(--paper-100)]">
+      <div className="container-xl">
+        <p className="eyebrow">// PUBLIC LAUNCH STATUS</p>
+        <h2 className="section-title">Still private preview.</h2>
+        <p className="section-lede">This page is intentionally honest about what is not ready for public launch.</p>
+        <div className="mt-10 grid gap-4 md:grid-cols-5">
+          {publicLaunchBlockers.map(([title, body]) => (
+            <article className="card" key={title}>
+              <Pill tone="review">pending</Pill>
+              <h3 className="mt-4 text-xl font-semibold text-[color:var(--ink-900)]">{title}</h3>
+              <p className="mt-3 text-sm leading-6 text-[color:var(--ink-600)]">{body}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function ManifestoFinalCta({ navigate }) {
+  return (
+    <section className="section">
+      <div className="container-xl rounded-[1.35rem] border border-[color:var(--paper-300)] bg-white/75 p-7 text-center shadow-sm">
+        <p className="eyebrow">// START WITH THE SYSTEM</p>
+        <h2 className="mx-auto mt-3 max-w-3xl text-4xl font-semibold tracking-[-0.04em] text-[color:var(--ink-900)] sm:text-5xl">
+          One reproducible decision a month. Locally. With evidence.
+        </h2>
+        <p className="mx-auto mt-5 max-w-2xl text-sm leading-6 text-[color:var(--ink-600)]">
+          Start with the workflow, then inspect the evidence, portfolio model, and local dashboard.
+        </p>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <SmartLink className="button button-primary" href="/workflow" onNavigate={navigate}>
+            See the workflow
+          </SmartLink>
+          <SmartLink className="button button-secondary" href="/dashboard" onNavigate={navigate}>
+            Open local dashboard
+          </SmartLink>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function DashboardPage() {
   return (
     <>
@@ -1571,6 +1809,8 @@ export default function App() {
       <PortfolioPage navigate={navigate} />
     ) : route === '/dashboard' ? (
       <DashboardPage />
+    ) : route === '/manifesto' ? (
+      <ManifestoPage navigate={navigate} />
     ) : (
       <HomePage navigate={navigate} />
     )

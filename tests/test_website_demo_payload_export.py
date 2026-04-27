@@ -89,6 +89,11 @@ class WebsiteDemoPayloadExportTests(unittest.TestCase):
         self.assertFalse(sample["website_mockup_wave_three"]["portfolio_page"]["decision_readiness_claimed"])
         self.assertEqual(sample["website_mockup_wave_three"]["readiness_connection"]["decision"], "BLOCKED")
         self.assertIn("Core ETF", [row["name"] for row in sample["website_mockup_wave_three"]["sleeves"]])
+        self.assertEqual(sample["website_mockup_wave_four"]["manifesto_page"]["route"], "/manifesto")
+        self.assertEqual(sample["website_mockup_wave_four"]["manifesto_page"]["about_alias"], "/about")
+        self.assertFalse(sample["website_mockup_wave_four"]["manifesto_page"]["decision_readiness_claimed"])
+        self.assertEqual(len(sample["website_mockup_wave_four"]["access_cards"]), 3)
+        self.assertIn("Imprint", sample["website_mockup_wave_four"]["public_launch_blockers"])
 
     def test_private_raw_path_is_blocked(self) -> None:
         self.write_payload({"metadata": {"private_data_included": False, "dummy_claims_included": False, "source_artifacts": ["data/raw/private/secret.csv"]}})
