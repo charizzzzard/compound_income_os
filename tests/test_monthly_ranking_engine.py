@@ -448,6 +448,101 @@ class MonthlyRankingEngineTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "watchlist input contains duplicate tickers: AAA"):
             build_monthly_ranking(positions, scores, watchlist)
 
+    def test_valuation_tier_gap_blocks_buy_candidate_as_wait_valuation(self) -> None:
+        positions = [
+            {"ticker": "EUR-CASH", "company_name": "Cash", "asset_type": "CASH", "sleeve": "CASH", "sector": "Cash", "market_value_eur": "5000"},
+        ]
+        scores = [
+            {
+                "ticker": "AAA",
+                "company_name": "Alpha",
+                "sector": "Tech",
+                "sleeve": "SINGLE_STOCK",
+                "held_in_portfolio": "false",
+                "company_type_profile": "STANDARD",
+                "business_score": "85",
+                "valuation_score": "70",
+                "buy_score": "80",
+                "margin_of_safety_pct": "10",
+                "classification": "BUY_CANDIDATE",
+                "has_hard_risk_flag": "false",
+                "data_quality_flag": "REVIEW",
+                "core_quality_data_status": "OK",
+                "valuation_data_status": "MISSING",
+                "dividend_fcf_data_status": "OK",
+                "valuation_comment": "Needs valuation.",
+                "mandate_fit_score": "90",
+            }
+        ]
+        watchlist = [{"ticker": "AAA", "company_name": "Alpha", "sector": "Tech", "sleeve": "SINGLE_STOCK", "status": "QUALITY_COMPOUNDER_CANDIDATE"}]
+        ranking, _ = build_monthly_ranking(positions, scores, watchlist)
+        aaa = next(row for row in ranking if row["ticker"] == "AAA")
+        self.assertEqual(aaa["target_action"], "WAIT_VALUATION")
+        self.assertEqual(aaa["suggested_buy_amount_eur"], 0.0)
+        self.assertIn("valuation_data_status_MISSING", aaa["constraint_checks"])
+
+    def test_dividend_fcf_gap_blocks_as_review_fcf_data(self) -> None:
+        positions = [
+            {"ticker": "EUR-CASH", "company_name": "Cash", "asset_type": "CASH", "sleeve": "CASH", "sector": "Cash", "market_value_eur": "5000"},
+        ]
+        scores = [
+            {
+                "ticker": "AAA",
+                "company_name": "Alpha",
+                "sector": "Tech",
+                "sleeve": "SINGLE_STOCK",
+                "held_in_portfolio": "false",
+                "company_type_profile": "STANDARD",
+                "business_score": "85",
+                "valuation_score": "70",
+                "buy_score": "80",
+                "margin_of_safety_pct": "10",
+                "classification": "BUY_CANDIDATE",
+                "has_hard_risk_flag": "false",
+                "data_quality_flag": "REVIEW",
+                "core_quality_data_status": "OK",
+                "valuation_data_status": "OK",
+                "dividend_fcf_data_status": "MISSING",
+                "valuation_comment": "Needs FCF.",
+                "mandate_fit_score": "90",
+            }
+        ]
+        watchlist = [{"ticker": "AAA", "company_name": "Alpha", "sector": "Tech", "sleeve": "SINGLE_STOCK", "status": "QUALITY_COMPOUNDER_CANDIDATE"}]
+        ranking, _ = build_monthly_ranking(positions, scores, watchlist)
+        aaa = next(row for row in ranking if row["ticker"] == "AAA")
+        self.assertEqual(aaa["target_action"], "REVIEW_FCF_DATA")
+        self.assertEqual(aaa["suggested_buy_amount_eur"], 0.0)
+
+    def test_financial_profile_is_not_standard_core_blocked(self) -> None:
+        positions = [
+            {"ticker": "EUR-CASH", "company_name": "Cash", "asset_type": "CASH", "sleeve": "CASH", "sector": "Cash", "market_value_eur": "5000"},
+        ]
+        scores = [
+            {
+                "ticker": "BANK",
+                "company_name": "Bank",
+                "sector": "Financials",
+                "sleeve": "SINGLE_STOCK",
+                "held_in_portfolio": "false",
+                "company_type_profile": "FINANCIAL",
+                "business_score": "85",
+                "valuation_score": "70",
+                "buy_score": "80",
+                "margin_of_safety_pct": "10",
+                "classification": "BUY_CANDIDATE",
+                "has_hard_risk_flag": "false",
+                "data_quality_flag": "OK",
+                "core_quality_data_status": "NOT_APPLICABLE",
+                "valuation_data_status": "NOT_APPLICABLE",
+                "dividend_fcf_data_status": "NOT_APPLICABLE",
+                "valuation_comment": "Ok.",
+                "mandate_fit_score": "90",
+            }
+        ]
+        watchlist = [{"ticker": "BANK", "company_name": "Bank", "sector": "Financials", "sleeve": "SINGLE_STOCK", "status": "QUALITY_COMPOUNDER_CANDIDATE"}]
+        ranking, _ = build_monthly_ranking(positions, scores, watchlist)
+        self.assertNotEqual(ranking[0]["target_action"], "REVIEW_CORE_DATA")
+
 
 if __name__ == "__main__":
     unittest.main()

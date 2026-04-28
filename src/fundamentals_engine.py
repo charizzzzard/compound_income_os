@@ -4,6 +4,7 @@ from typing import Any
 
 from src.common import canonicalize_ticker, clamp, load_yaml_config, require_non_blank_fields, round2, safe_upper, to_float
 from src.fundamentals_master import validate_personal_fundamentals_master
+from src.fundamentals_master import compute_kpi_tier_coverage, load_metric_definitions, tier_list_text, tiered_score_data_quality
 
 DEFAULT_SCHEMA_PATH = "configs/fundamentals_schema.yaml"
 DEFAULT_SCORE_RULES_PATH = "configs/fundamentals_score_rules.yaml"
@@ -108,6 +109,14 @@ ENRICHED_OUTPUT_FIELDS = [
     "fundamentals_input_format",
     "missing_kpi_count",
     "missing_kpis",
+    "missing_core_quality_kpis",
+    "missing_valuation_kpis",
+    "missing_dividend_fcf_kpis",
+    "missing_advanced_optional_kpis",
+    "core_quality_data_status",
+    "valuation_data_status",
+    "dividend_fcf_data_status",
+    "advanced_data_status",
     "not_applicable_kpis",
     "quality_score_inputs",
     "dividend_score_inputs",
@@ -148,6 +157,14 @@ SCORE_AUDIT_FIELDS = [
     "fair_value_estimate",
     "margin_of_safety_pct",
     "data_quality_flag",
+    "core_quality_data_status",
+    "valuation_data_status",
+    "dividend_fcf_data_status",
+    "advanced_data_status",
+    "missing_core_quality_kpis",
+    "missing_valuation_kpis",
+    "missing_dividend_fcf_kpis",
+    "missing_advanced_optional_kpis",
     "missing_kpi_count",
     "missing_kpis",
     "not_applicable_kpis",
@@ -352,10 +369,23 @@ def derive_raw_fundamental_row(row: dict[str, str], rules: dict[str, Any], input
             missing_kpis.extend(missing)
 
     unique_missing = sorted(set(missing_kpis))
+    tier_coverage = compute_kpi_tier_coverage(enriched, profile, load_metric_definitions())
     enriched["missing_kpi_count"] = len(unique_missing)
     enriched["missing_kpis"] = "; ".join(unique_missing)
+    enriched["missing_core_quality_kpis"] = tier_list_text(tier_coverage, "missing_core_quality_kpis")
+    enriched["missing_valuation_kpis"] = tier_list_text(tier_coverage, "missing_valuation_kpis")
+    enriched["missing_dividend_fcf_kpis"] = tier_list_text(tier_coverage, "missing_dividend_fcf_kpis")
+    enriched["missing_advanced_optional_kpis"] = tier_list_text(tier_coverage, "missing_advanced_optional_kpis")
+    enriched["core_quality_data_status"] = tier_coverage["core_quality_data_status"]
+    enriched["valuation_data_status"] = tier_coverage["valuation_data_status"]
+    enriched["dividend_fcf_data_status"] = tier_coverage["dividend_fcf_data_status"]
+    enriched["advanced_data_status"] = tier_coverage["advanced_data_status"]
     enriched["not_applicable_kpis"] = "; ".join(sorted(set(not_applicable_kpis)))
-    enriched["data_quality_flag"] = merge_data_quality(str(row.get("data_quality_flag", "OK")), len(unique_missing), rules)
+    merged_quality = merge_data_quality(str(row.get("data_quality_flag", "OK")), len(unique_missing), rules)
+    if input_format == "personal" and profile == "STANDARD":
+        enriched["data_quality_flag"] = tiered_score_data_quality(str(row.get("data_quality_flag", "OK")), profile, tier_coverage)
+    else:
+        enriched["data_quality_flag"] = merged_quality
     return enriched
 
 
@@ -370,6 +400,14 @@ def enrich_legacy_fundamental_row(row: dict[str, str]) -> dict[str, Any]:
     enriched["fundamentals_input_format"] = "legacy"
     enriched["missing_kpi_count"] = ""
     enriched["missing_kpis"] = ""
+    enriched["missing_core_quality_kpis"] = ""
+    enriched["missing_valuation_kpis"] = ""
+    enriched["missing_dividend_fcf_kpis"] = ""
+    enriched["missing_advanced_optional_kpis"] = ""
+    enriched["core_quality_data_status"] = ""
+    enriched["valuation_data_status"] = ""
+    enriched["dividend_fcf_data_status"] = ""
+    enriched["advanced_data_status"] = ""
     enriched["not_applicable_kpis"] = ""
     for key, value in row.items():
         if key not in enriched:
@@ -450,6 +488,14 @@ def build_score_audit_rows(
                 "fair_value_estimate": score_row.get("fair_value_estimate", ""),
                 "margin_of_safety_pct": score_row.get("margin_of_safety_pct", ""),
                 "data_quality_flag": score_row.get("data_quality_flag", source_row.get("data_quality_flag", "")),
+                "core_quality_data_status": score_row.get("core_quality_data_status", source_row.get("core_quality_data_status", "")),
+                "valuation_data_status": score_row.get("valuation_data_status", source_row.get("valuation_data_status", "")),
+                "dividend_fcf_data_status": score_row.get("dividend_fcf_data_status", source_row.get("dividend_fcf_data_status", "")),
+                "advanced_data_status": score_row.get("advanced_data_status", source_row.get("advanced_data_status", "")),
+                "missing_core_quality_kpis": source_row.get("missing_core_quality_kpis", ""),
+                "missing_valuation_kpis": source_row.get("missing_valuation_kpis", ""),
+                "missing_dividend_fcf_kpis": source_row.get("missing_dividend_fcf_kpis", ""),
+                "missing_advanced_optional_kpis": source_row.get("missing_advanced_optional_kpis", ""),
                 "missing_kpi_count": source_row.get("missing_kpi_count", ""),
                 "missing_kpis": source_row.get("missing_kpis", ""),
                 "not_applicable_kpis": source_row.get("not_applicable_kpis", ""),

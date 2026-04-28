@@ -132,6 +132,25 @@ def coverage_guardrail_applies(coverage_row: dict[str, Any] | None) -> bool:
     )
 
 
+def tier_guardrail_action(score_row: dict[str, Any]) -> tuple[str, str]:
+    profile = safe_upper(score_row.get("company_type_profile"))
+    if profile and profile != "STANDARD":
+        return "", ""
+    core_status = safe_upper(score_row.get("core_quality_data_status"))
+    valuation_status = safe_upper(score_row.get("valuation_data_status"))
+    dividend_fcf_status = safe_upper(score_row.get("dividend_fcf_data_status"))
+    data_quality = safe_upper(score_row.get("data_quality_flag")) or "OK"
+    if core_status == "MISSING":
+        return "REVIEW_CORE_DATA", "kpi_tier_guardrail=core_quality_data_status_MISSING"
+    if valuation_status and valuation_status != "OK":
+        return "WAIT_VALUATION", f"kpi_tier_guardrail=valuation_data_status_{valuation_status}"
+    if dividend_fcf_status == "MISSING":
+        return "REVIEW_FCF_DATA", "kpi_tier_guardrail=dividend_fcf_data_status_MISSING"
+    if data_quality in {"MISSING_DATA", "BLOCKED"}:
+        return "DO_NOT_BUY", f"kpi_tier_guardrail=score_data_quality_flag_{data_quality}"
+    return "", ""
+
+
 def read_coverage_rows(path_value: str) -> list[dict[str, str]]:
     path = resolve_repo_path(path_value)
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
@@ -247,10 +266,13 @@ def evaluate_candidate(
     coverage_blocked = coverage_guardrail_applies(coverage_row)
     if coverage_blocked:
         eligible = False
+    guardrail_action, guardrail_reason = tier_guardrail_action(score_row)
+    if guardrail_action:
+        eligible = False
 
     target_action = "TOP_UP" if current_value > 0.0 else "BUY"
     if not eligible:
-        target_action = "DO_NOT_BUY"
+        target_action = guardrail_action or "DO_NOT_BUY"
 
     rationale = (
         f"Business={round2(business_score)} Bewertung={round2(valuation_score)} Buy-Score={round2(buy_score)} "
@@ -279,6 +301,9 @@ def evaluate_candidate(
             f"needs_research={needs_research}"
         )
         rationale = f"{rationale} Fundamentals-Coverage-Guardrail blockiert frisches Kapital fuer bestehende Holding."
+    if guardrail_action:
+        constraint_checks = f"{constraint_checks}; {guardrail_reason}"
+        rationale = f"{rationale} KPI-Tier-Guardrail blockiert frisches Kapital bis die Datenlage ausreichend ist."
 
     return {
         "ticker": ticker,

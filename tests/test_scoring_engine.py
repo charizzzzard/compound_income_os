@@ -16,6 +16,7 @@ from src.scoring_engine import (
     find_unique_name_match,
 )
 from src.common import load_yaml_config
+from src.fundamentals_master import PERSONAL_MASTER_FIELDS
 from src.portfolio_rules import load_portfolio_rules
 from src.valuation_engine import compute_valuation_metrics
 
@@ -39,6 +40,49 @@ class ScoringEngineTests(unittest.TestCase):
                 "portfolio_fit_score": 0.0675,
             },
         }
+
+    def personal_row(self, ticker: str, values: dict[str, str]) -> dict[str, str]:
+        row = {field: "" for field in PERSONAL_MASTER_FIELDS}
+        row.update(
+            {
+                "ticker": ticker,
+                "isin": "US0000000001",
+                "company_name": f"{ticker} Corp",
+                "currency": "USD",
+                "sector": "Technology",
+                "country": "US",
+                "asset_type": "STOCK",
+                "company_type_profile": "STANDARD",
+                "source_name": "unit_test",
+                "source_as_of_date": "2026-04-26",
+                "data_quality_flag": "OK",
+                "sleeve": "SINGLE_STOCK",
+                "current_price_eur": "100",
+                "mandate_fit_score": "90",
+                "thesis_robustness": "ROBUST",
+                "has_hard_risk_flag": "false",
+                "drawdown_from_high_pct": "10",
+                "expected_return_pct": "8",
+            }
+        )
+        row.update(values)
+        return row
+
+    def score_single_personal_row(self, values: dict[str, str]) -> dict[str, object]:
+        positions = [
+            {
+                "ticker": "AAA",
+                "isin": "US0000000001",
+                "company_name": "AAA Corp",
+                "asset_type": "STOCK",
+                "sleeve": "SINGLE_STOCK",
+                "sector": "Technology",
+                "country": "US",
+                "market_value_eur": "100",
+            }
+        ]
+        scores = build_scores(positions, [self.personal_row("AAA", values)], fundamentals_format="personal")
+        return next(row for row in scores if row["ticker"] == "AAA")
 
     def test_business_score_formula(self) -> None:
         row = {
@@ -334,6 +378,75 @@ class ScoringEngineTests(unittest.TestCase):
         )
         self.assertEqual(readiness["purchase_state"], "REVIEW")
         self.assertFalse(readiness["eligible_for_purchase"])
+
+    def test_core_quality_complete_missing_valuation_is_review_not_missing_data(self) -> None:
+        row = self.score_single_personal_row(
+            {
+                "revenue_cagr_5y": "8",
+                "eps_cagr_5y": "7",
+                "gross_margin": "50",
+                "operating_margin": "25",
+                "share_count_cagr_5y": "-1",
+                "fcf_margin": "20",
+                "payout_ratio_fcf": "50",
+                "fcf_per_share_cagr_5y": "6",
+            }
+        )
+        self.assertEqual(row["core_quality_data_status"], "OK")
+        self.assertEqual(row["valuation_data_status"], "MISSING")
+        self.assertEqual(row["data_quality_flag"], "REVIEW")
+        self.assertNotEqual(row["classification"], "BUY_CANDIDATE")
+
+    def test_zero_core_quality_kpis_remains_missing_data(self) -> None:
+        row = self.score_single_personal_row(
+            {
+                "normalized_fcf_yield_pct": "5",
+                "target_fcf_yield_pct": "4",
+                "fcf_margin": "20",
+                "payout_ratio_fcf": "50",
+                "fcf_per_share_cagr_5y": "6",
+            }
+        )
+        self.assertEqual(row["core_quality_data_status"], "MISSING")
+        self.assertEqual(row["data_quality_flag"], "MISSING_DATA")
+
+    def test_three_of_five_core_quality_kpis_is_partial_review(self) -> None:
+        row = self.score_single_personal_row(
+            {
+                "revenue_cagr_5y": "8",
+                "eps_cagr_5y": "7",
+                "gross_margin": "50",
+                "normalized_fcf_yield_pct": "5",
+                "target_fcf_yield_pct": "4",
+                "fcf_margin": "20",
+                "payout_ratio_fcf": "50",
+                "fcf_per_share_cagr_5y": "6",
+            }
+        )
+        self.assertEqual(row["core_quality_data_status"], "PARTIAL")
+        self.assertEqual(row["data_quality_flag"], "REVIEW")
+
+    def test_missing_advanced_optional_kpis_do_not_block_core_score(self) -> None:
+        row = self.score_single_personal_row(
+            {
+                "revenue_cagr_5y": "8",
+                "eps_cagr_5y": "7",
+                "gross_margin": "50",
+                "operating_margin": "25",
+                "share_count_cagr_5y": "-1",
+                "normalized_fcf_yield_pct": "5",
+                "target_fcf_yield_pct": "4",
+                "fcf_margin": "20",
+                "payout_ratio_fcf": "50",
+                "fcf_per_share_cagr_5y": "6",
+                "pe_current": "20",
+                "pe_hist": "22",
+                "ev_ebit_current": "15",
+                "ev_ebit_hist": "16",
+            }
+        )
+        self.assertEqual(row["advanced_data_status"], "MISSING")
+        self.assertEqual(row["data_quality_flag"], "OK")
 
 
 if __name__ == "__main__":

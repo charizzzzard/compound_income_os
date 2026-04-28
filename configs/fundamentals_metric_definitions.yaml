@@ -14,6 +14,7 @@
       "required_for_profiles": ["STANDARD"],
       "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
       "invalid_negative_handling": "allowed when business cyclicality supports it; keep numeric and flag via analyst review when needed",
+      "kpi_tier": "CORE_QUALITY_REQUIRED",
       "coverage_required": true
     },
     "eps_cagr_5y": {
@@ -23,6 +24,7 @@
       "required_for_profiles": ["STANDARD"],
       "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
       "invalid_negative_handling": "allowed for cyclicality or turnarounds; conservative score downstream",
+      "kpi_tier": "CORE_QUALITY_REQUIRED",
       "coverage_required": true
     },
     "fcf_per_share_cagr_5y": {
@@ -32,6 +34,7 @@
       "required_for_profiles": ["STANDARD"],
       "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
       "invalid_negative_handling": "allowed; conservative score downstream",
+      "kpi_tier": "DIVIDEND_FCF_REQUIRED",
       "coverage_required": true
     },
     "roic": {
@@ -41,6 +44,7 @@
       "required_for_profiles": ["STANDARD"],
       "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
       "invalid_negative_handling": "negative values are valid but weak; do not replace",
+      "kpi_tier": "ADVANCED_OPTIONAL",
       "coverage_required": true
     },
     "roce": {
@@ -50,6 +54,7 @@
       "required_for_profiles": ["STANDARD"],
       "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
       "invalid_negative_handling": "negative values are valid but weak; do not replace",
+      "kpi_tier": "ADVANCED_OPTIONAL",
       "coverage_required": true
     },
     "gross_margin": {
@@ -59,6 +64,7 @@
       "required_for_profiles": ["STANDARD"],
       "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
       "invalid_negative_handling": "negative values are valid for stressed businesses; do not replace",
+      "kpi_tier": "CORE_QUALITY_REQUIRED",
       "coverage_required": true
     },
     "operating_margin": {
@@ -68,6 +74,7 @@
       "required_for_profiles": ["STANDARD"],
       "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
       "invalid_negative_handling": "negative values are valid for loss-making companies; do not replace",
+      "kpi_tier": "CORE_QUALITY_REQUIRED",
       "coverage_required": true
     },
     "fcf_margin": {
@@ -77,6 +84,7 @@
       "required_for_profiles": ["STANDARD"],
       "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
       "invalid_negative_handling": "negative values are valid; conservative score downstream",
+      "kpi_tier": "DIVIDEND_FCF_REQUIRED",
       "coverage_required": true
     },
     "net_debt_to_ebitda": {
@@ -86,6 +94,7 @@
       "required_for_profiles": ["STANDARD"],
       "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
       "invalid_negative_handling": "negative values may indicate net cash and are allowed",
+      "kpi_tier": "ADVANCED_OPTIONAL",
       "coverage_required": true
     },
     "interest_coverage": {
@@ -95,6 +104,7 @@
       "required_for_profiles": ["STANDARD"],
       "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
       "invalid_negative_handling": "negative values are valid for loss-making issuers; do not replace",
+      "kpi_tier": "ADVANCED_OPTIONAL",
       "coverage_required": true
     },
     "dividend_yield_current_pct": {
@@ -149,6 +159,7 @@
       "required_for_profiles": ["STANDARD"],
       "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
       "invalid_negative_handling": "negative values can occur with negative FCF and require REVIEW",
+      "kpi_tier": "DIVIDEND_FCF_REQUIRED",
       "coverage_required": true
     },
     "share_count_cagr_5y": {
@@ -158,6 +169,7 @@
       "required_for_profiles": ["STANDARD"],
       "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
       "invalid_negative_handling": "negative values are valid and may indicate buybacks",
+      "kpi_tier": "CORE_QUALITY_REQUIRED",
       "coverage_required": true
     },
     "buyback_yield": {
@@ -167,6 +179,7 @@
       "required_for_profiles": ["STANDARD"],
       "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
       "invalid_negative_handling": "negative values indicate net issuance and are allowed",
+      "kpi_tier": "ADVANCED_OPTIONAL",
       "coverage_required": true
     },
     "pe_current": {
@@ -230,6 +243,7 @@
       "required_for_profiles": ["STANDARD"],
       "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
       "invalid_negative_handling": "negative values are valid but weak; do not replace",
+      "kpi_tier": "VALUATION_REQUIRED",
       "coverage_required": true
     },
     "target_fcf_yield_pct": {
@@ -239,6 +253,7 @@
       "required_for_profiles": ["STANDARD"],
       "missing_handling": "MISSING_REQUIRED_KPI for STANDARD, NOT_APPLICABLE otherwise",
       "invalid_negative_handling": "negative or zero values are invalid for valuation and require REVIEW",
+      "kpi_tier": "VALUATION_REQUIRED",
       "coverage_required": true
     },
     "drawdown_from_high_pct": {

@@ -216,14 +216,15 @@ class FundamentalsEvidenceEngineTests(unittest.TestCase):
         row = read_csv_rows(backlog_path)[0]
         self.assertEqual(row["research_priority"], "HIGH")
         self.assertEqual(row["needs_research_flag"], "True")
-        self.assertIn("roic", row["missing_required_evidence_kpis"])
+        self.assertIn("revenue_cagr_5y", row["missing_required_evidence_kpis"])
 
     def test_weak_verification_is_visible_without_hiding_required_evidence(self) -> None:
         definitions = load_metric_definitions()
         required = required_kpis_for_profile("STANDARD", definitions)
         evidence_rows = []
+        weak_required_kpi = required[0]
         for kpi_name in required:
-            if kpi_name == "roic":
+            if kpi_name == weak_required_kpi:
                 evidence_rows.append(evidence_row(kpi_name=kpi_name, verification_status="REVIEW", data_quality_flag="REVIEW"))
             else:
                 evidence_rows.append(evidence_row(kpi_name=kpi_name))
@@ -237,7 +238,7 @@ class FundamentalsEvidenceEngineTests(unittest.TestCase):
         row = read_csv_rows(backlog_path)[0]
         self.assertEqual(row["missing_required_evidence_kpis"], "")
         self.assertEqual(row["research_priority"], "MEDIUM")
-        self.assertIn("roic", row["weak_verification_kpis"])
+        self.assertIn(weak_required_kpi, row["weak_verification_kpis"])
 
     def test_template_output_is_header_only_contract(self) -> None:
         template_path = self._path("_tmp_evidence_template_only.csv")

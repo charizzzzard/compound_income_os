@@ -86,6 +86,10 @@ OUTPUT_FIELDS = [
     "thesis_summary",
     "main_risks",
     "data_quality_flag",
+    "core_quality_data_status",
+    "valuation_data_status",
+    "dividend_fcf_data_status",
+    "advanced_data_status",
     "source_name",
     "source_as_of_date",
     "has_hard_risk_flag",
@@ -514,6 +518,14 @@ def build_scores_with_audit(
         has_hard_risk_flag = to_bool(row.get("has_hard_risk_flag"))
         thesis_robustness = str(row.get("thesis_robustness", "REVIEW")).strip().upper()
         data_quality_flag = str(valuation_metrics["data_quality_flag"]).upper()
+        if str(row.get("fundamentals_input_format", "")).lower() == "personal" and safe_upper(row.get("company_type_profile")) == "STANDARD":
+            core_status = safe_upper(row.get("core_quality_data_status")) or "MISSING"
+            valuation_status = safe_upper(row.get("valuation_data_status")) or "MISSING"
+            dividend_fcf_status = safe_upper(row.get("dividend_fcf_data_status")) or "MISSING"
+            if core_status == "MISSING":
+                data_quality_flag = "MISSING_DATA"
+            elif valuation_status != "OK" or dividend_fcf_status == "MISSING" or data_quality_flag != "OK":
+                data_quality_flag = "REVIEW"
         if ticker in position_index and ticker not in fundamentals_index:
             data_quality_flag = "MISSING_DATA"
             valuation_metrics["valuation_comment"] = "Fundamentaldaten fuer die gehaltene Position fehlen; manuelle Pruefung erforderlich."
@@ -576,6 +588,10 @@ def build_scores_with_audit(
                 "thesis_summary": row.get("thesis_summary", ""),
                 "main_risks": row.get("main_risks", ""),
                 "data_quality_flag": data_quality_flag,
+                "core_quality_data_status": row.get("core_quality_data_status", ""),
+                "valuation_data_status": row.get("valuation_data_status", ""),
+                "dividend_fcf_data_status": row.get("dividend_fcf_data_status", ""),
+                "advanced_data_status": row.get("advanced_data_status", ""),
                 "source_name": row.get("source_name", ""),
                 "source_as_of_date": row.get("source_as_of_date", ""),
                 "has_hard_risk_flag": has_hard_risk_flag,

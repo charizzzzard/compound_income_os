@@ -27,6 +27,40 @@ DEFAULT_RESEARCH_PRIORITY_OUTPUT = "data/processed/personal_research_priority.cs
 
 VALID_COMPANY_TYPE_PROFILES = {"STANDARD", "FINANCIAL", "REIT", "OTHER"}
 VALID_DATA_QUALITY_FLAGS = {"OK", "REVIEW", "MISSING_DATA"}
+VALID_KPI_TIERS = {
+    "CORE_QUALITY_REQUIRED",
+    "DECISION_REQUIRED",
+    "VALUATION_REQUIRED",
+    "DIVIDEND_FCF_REQUIRED",
+    "ADVANCED_OPTIONAL",
+    "PROFILE_SPECIFIC",
+}
+DEFAULT_STANDARD_KPI_TIERS = {
+    "CORE_QUALITY_REQUIRED": [
+        "revenue_cagr_5y",
+        "eps_cagr_5y",
+        "gross_margin",
+        "operating_margin",
+        "share_count_cagr_5y",
+    ],
+    "VALUATION_REQUIRED": [
+        "normalized_fcf_yield_pct",
+        "target_fcf_yield_pct",
+    ],
+    "DIVIDEND_FCF_REQUIRED": [
+        "fcf_margin",
+        "payout_ratio_fcf",
+        "fcf_per_share_cagr_5y",
+    ],
+    "ADVANCED_OPTIONAL": [
+        "buyback_yield",
+        "interest_coverage",
+        "net_debt_to_ebitda",
+        "roce",
+        "roic",
+    ],
+}
+MIN_CORE_QUALITY_PRESENT_FOR_SCORING = 3
 PROFILE_REASON_MARKERS = (
     "company_type_profile_reason=",
     "profile_reason=",
@@ -130,6 +164,14 @@ COVERAGE_OUTPUT_FIELDS = [
     "required_kpis_present",
     "required_kpis_missing_count",
     "missing_required_kpis",
+    "missing_core_quality_kpis",
+    "missing_valuation_kpis",
+    "missing_dividend_fcf_kpis",
+    "missing_advanced_optional_kpis",
+    "core_quality_data_status",
+    "valuation_data_status",
+    "dividend_fcf_data_status",
+    "advanced_data_status",
     "not_applicable_kpis",
     "optional_missing_kpis",
     "profile_classification_warning_flag",
@@ -185,6 +227,14 @@ PERSONAL_ENRICHED_OUTPUT_FIELDS = [
     "fundamentals_input_format",
     "needs_research_flag",
     "missing_required_kpis",
+    "missing_core_quality_kpis",
+    "missing_valuation_kpis",
+    "missing_dividend_fcf_kpis",
+    "missing_advanced_optional_kpis",
+    "core_quality_data_status",
+    "valuation_data_status",
+    "dividend_fcf_data_status",
+    "advanced_data_status",
     "not_applicable_kpis",
     "optional_missing_kpis",
     "coverage_notes",
@@ -397,11 +447,112 @@ def validate_metric_definitions(metric_definitions: dict[str, Any]) -> None:
     missing = [kpi for kpi in CORE_KPI_FIELDS if kpi not in metric_definitions]
     if missing:
         raise ValueError(f"fundamentals metric definitions missing KPI definition(s): {', '.join(sorted(missing))}")
+    invalid_tiers = [
+        f"{kpi}={definition.get('kpi_tier')}"
+        for kpi, definition in metric_definitions.items()
+        if str(definition.get("kpi_tier", "") or "").strip()
+        and safe_upper(definition.get("kpi_tier")) not in VALID_KPI_TIERS
+    ]
+    if invalid_tiers:
+        raise ValueError(f"fundamentals metric definitions contain invalid KPI tier(s): {', '.join(sorted(invalid_tiers))}")
+
+
+def default_kpi_tier(kpi: str) -> str:
+    for tier, kpis in DEFAULT_STANDARD_KPI_TIERS.items():
+        if kpi in kpis:
+            return tier
+    return "PROFILE_SPECIFIC"
+
+
+def kpi_tier(kpi: str, metric_definitions: dict[str, Any]) -> str:
+    configured = safe_upper(metric_definitions.get(kpi, {}).get("kpi_tier"))
+    return configured if configured in VALID_KPI_TIERS else default_kpi_tier(kpi)
+
+
+def kpis_for_tier(tier: str, metric_definitions: dict[str, Any]) -> list[str]:
+    tier = safe_upper(tier)
+    return sorted(kpi for kpi in CORE_KPI_FIELDS if kpi_tier(kpi, metric_definitions) == tier)
+
+
+def tier_status(expected: list[str], present: list[str], *, min_present_for_partial: int = 1) -> str:
+    if not expected:
+        return "NOT_APPLICABLE"
+    if len(present) == len(expected):
+        return "OK"
+    if len(present) >= min_present_for_partial:
+        return "PARTIAL"
+    return "MISSING"
+
+
+def compute_kpi_tier_coverage(row: dict[str, Any], profile: str, metric_definitions: dict[str, Any]) -> dict[str, Any]:
+    validate_metric_definitions(metric_definitions)
+    normalized_profile = safe_upper(profile) or "OTHER"
+    result: dict[str, Any] = {
+        "missing_core_quality_kpis": [],
+        "missing_valuation_kpis": [],
+        "missing_dividend_fcf_kpis": [],
+        "missing_advanced_optional_kpis": [],
+        "core_quality_data_status": "NOT_APPLICABLE",
+        "valuation_data_status": "NOT_APPLICABLE",
+        "dividend_fcf_data_status": "NOT_APPLICABLE",
+        "advanced_data_status": "NOT_APPLICABLE",
+        "core_quality_present_count": 0,
+        "core_quality_expected_count": 0,
+    }
+    if normalized_profile != "STANDARD":
+        return result
+
+    tier_specs = [
+        ("CORE_QUALITY_REQUIRED", "missing_core_quality_kpis", "core_quality_data_status"),
+        ("VALUATION_REQUIRED", "missing_valuation_kpis", "valuation_data_status"),
+        ("DIVIDEND_FCF_REQUIRED", "missing_dividend_fcf_kpis", "dividend_fcf_data_status"),
+        ("ADVANCED_OPTIONAL", "missing_advanced_optional_kpis", "advanced_data_status"),
+    ]
+    for tier_name, missing_field, status_field in tier_specs:
+        expected = kpis_for_tier(tier_name, metric_definitions)
+        present = [kpi for kpi in expected if has_value(row, kpi)]
+        missing = [kpi for kpi in expected if kpi not in present]
+        result[missing_field] = missing
+        result[status_field] = tier_status(
+            expected,
+            present,
+            min_present_for_partial=MIN_CORE_QUALITY_PRESENT_FOR_SCORING if tier_name == "CORE_QUALITY_REQUIRED" else 1,
+        )
+        if tier_name == "CORE_QUALITY_REQUIRED":
+            result["core_quality_present_count"] = len(present)
+            result["core_quality_expected_count"] = len(expected)
+    return result
+
+
+def tier_list_text(tier_coverage: dict[str, Any], field: str) -> str:
+    return join_list([str(item) for item in tier_coverage.get(field, [])])
+
+
+def tiered_score_data_quality(existing_flag: str, profile: str, tier_coverage: dict[str, Any]) -> str:
+    existing = safe_upper(existing_flag) or "OK"
+    if safe_upper(profile) != "STANDARD":
+        return existing
+    core_present = int(tier_coverage.get("core_quality_present_count") or 0)
+    core_expected = int(tier_coverage.get("core_quality_expected_count") or 0)
+    if core_expected and core_present < MIN_CORE_QUALITY_PRESENT_FOR_SCORING:
+        return "MISSING_DATA"
+    if core_expected and core_present >= MIN_CORE_QUALITY_PRESENT_FOR_SCORING:
+        if (
+            tier_coverage.get("core_quality_data_status") == "OK"
+            and tier_coverage.get("valuation_data_status") == "OK"
+            and tier_coverage.get("dividend_fcf_data_status") == "OK"
+            and existing == "OK"
+        ):
+            return "OK"
+        return "REVIEW"
+    return existing
 
 
 def kpi_applicability(kpi_definition: dict[str, Any], profile: str) -> str:
     applicable = set(kpi_definition.get("applicable_profiles", []))
     required = set(kpi_definition.get("required_for_profiles", []))
+    if safe_upper(kpi_definition.get("kpi_tier")) == "ADVANCED_OPTIONAL" and profile in applicable:
+        return "OPTIONAL"
     if profile in required:
         return "REQUIRED"
     if profile in applicable:
@@ -450,6 +601,7 @@ def derive_fundamentals_data_quality(
     metric_definitions: dict[str, Any],
 ) -> tuple[str, str]:
     coverage = compute_kpi_coverage(row, profile, metric_definitions)
+    tier_coverage = compute_kpi_tier_coverage(row, profile, metric_definitions)
     asset_type = safe_upper(row.get("asset_type"))
     core_present_count = count_present_core_kpis(row)
     required_missing_count = len(coverage["missing_required"])
@@ -465,6 +617,24 @@ def derive_fundamentals_data_quality(
 
     if profile in {"STANDARD", "FINANCIAL", "REIT"} and not coverage["required"]:
         return "REVIEW", f"profile={profile} has no required KPI definitions configured; manual review required"
+
+    if profile == "STANDARD":
+        core_present = int(tier_coverage.get("core_quality_present_count") or 0)
+        core_expected = int(tier_coverage.get("core_quality_expected_count") or 0)
+        if core_expected and core_present < MIN_CORE_QUALITY_PRESENT_FOR_SCORING:
+            return (
+                "MISSING_DATA",
+                f"insufficient CORE_QUALITY_REQUIRED KPI coverage for STANDARD: present={core_present}, expected={core_expected}",
+            )
+        if required_missing_count > 0:
+            return (
+                "REVIEW",
+                "tiered STANDARD KPI coverage is sufficient for core scoring but incomplete for full decision quality: "
+                f"core_quality={tier_coverage['core_quality_data_status']}, "
+                f"valuation={tier_coverage['valuation_data_status']}, "
+                f"dividend_fcf={tier_coverage['dividend_fcf_data_status']}, "
+                f"advanced={tier_coverage['advanced_data_status']}",
+            )
 
     if required_missing_count == 0 and coverage["required"]:
         return "OK", f"all {len(coverage['required'])} required KPIs are present for profile {profile}"
@@ -658,6 +828,16 @@ def build_fundamentals_coverage(
             "not_applicable": [],
             "optional_missing": [],
         }
+        tier_coverage = compute_kpi_tier_coverage(matched_row, profile, definitions) if matched_row else {
+            "missing_core_quality_kpis": [],
+            "missing_valuation_kpis": [],
+            "missing_dividend_fcf_kpis": [],
+            "missing_advanced_optional_kpis": [],
+            "core_quality_data_status": "NOT_APPLICABLE",
+            "valuation_data_status": "NOT_APPLICABLE",
+            "dividend_fcf_data_status": "NOT_APPLICABLE",
+            "advanced_data_status": "NOT_APPLICABLE",
+        }
         derived_quality, derived_reason = (
             derive_fundamentals_data_quality(matched_row, profile, definitions)
             if matched_row
@@ -710,6 +890,14 @@ def build_fundamentals_coverage(
                 "required_kpis_present": len(kpi_coverage["required_present"]),
                 "required_kpis_missing_count": len(kpi_coverage["missing_required"]),
                 "missing_required_kpis": join_list(kpi_coverage["missing_required"]),
+                "missing_core_quality_kpis": tier_list_text(tier_coverage, "missing_core_quality_kpis"),
+                "missing_valuation_kpis": tier_list_text(tier_coverage, "missing_valuation_kpis"),
+                "missing_dividend_fcf_kpis": tier_list_text(tier_coverage, "missing_dividend_fcf_kpis"),
+                "missing_advanced_optional_kpis": tier_list_text(tier_coverage, "missing_advanced_optional_kpis"),
+                "core_quality_data_status": tier_coverage["core_quality_data_status"],
+                "valuation_data_status": tier_coverage["valuation_data_status"],
+                "dividend_fcf_data_status": tier_coverage["dividend_fcf_data_status"],
+                "advanced_data_status": tier_coverage["advanced_data_status"],
                 "not_applicable_kpis": join_list(kpi_coverage["not_applicable"]),
                 "optional_missing_kpis": join_list(kpi_coverage["optional_missing"]),
                 "profile_classification_warning_flag": profile_warning_flag,
@@ -816,6 +1004,14 @@ def build_personal_enriched_rows(
             "match_conflict_flag": coverage.get("match_conflict_flag", ""),
             "needs_research_flag": coverage.get("needs_research_flag", ""),
             "missing_required_kpis": coverage.get("missing_required_kpis", ""),
+            "missing_core_quality_kpis": coverage.get("missing_core_quality_kpis", ""),
+            "missing_valuation_kpis": coverage.get("missing_valuation_kpis", ""),
+            "missing_dividend_fcf_kpis": coverage.get("missing_dividend_fcf_kpis", ""),
+            "missing_advanced_optional_kpis": coverage.get("missing_advanced_optional_kpis", ""),
+            "core_quality_data_status": coverage.get("core_quality_data_status", ""),
+            "valuation_data_status": coverage.get("valuation_data_status", ""),
+            "dividend_fcf_data_status": coverage.get("dividend_fcf_data_status", ""),
+            "advanced_data_status": coverage.get("advanced_data_status", ""),
             "not_applicable_kpis": coverage.get("not_applicable_kpis", ""),
             "optional_missing_kpis": coverage.get("optional_missing_kpis", ""),
             "fundamentals_input_format": score.get("fundamentals_input_format", "personal"),

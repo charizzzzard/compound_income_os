@@ -216,20 +216,21 @@ class FundamentalsMasterTests(unittest.TestCase):
     def test_derive_fundamentals_data_quality_partial_required_present_is_review(self) -> None:
         definitions = load_metric_definitions()
         row = master_row(profile="STANDARD", fill_kpis=False)
-        row["roic"] = "12"
         row["revenue_cagr_5y"] = "5"
+        row["eps_cagr_5y"] = "4"
+        row["gross_margin"] = "45"
 
         quality, reason = derive_fundamentals_data_quality(row, "STANDARD", definitions)
 
         self.assertEqual(quality, "REVIEW")
-        self.assertIn("partial KPI coverage", reason)
+        self.assertIn("tiered STANDARD KPI coverage", reason)
 
     def test_derive_fundamentals_data_quality_none_present_is_missing_data(self) -> None:
         definitions = load_metric_definitions()
         quality, reason = derive_fundamentals_data_quality(master_row(profile="STANDARD", fill_kpis=False), "STANDARD", definitions)
 
         self.assertEqual(quality, "MISSING_DATA")
-        self.assertIn("no relevant KPI coverage", reason)
+        self.assertIn("insufficient CORE_QUALITY_REQUIRED", reason)
 
     def test_derive_fundamentals_data_quality_stock_other_without_reason_is_never_ok(self) -> None:
         definitions = load_metric_definitions()
