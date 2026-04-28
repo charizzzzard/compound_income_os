@@ -15,9 +15,12 @@ from src.handoff_bundle import (
     scan_forbidden_entries,
     sanitize_path_for_external,
     sha256_file,
+    upload_bundle_id_from_context,
     validate_handoff_archive,
     validate_latest_handoff,
+    validate_upload_ready_handoff,
     write_latest_handoff_files,
+    write_upload_ready_handoff_files,
 )
 
 
@@ -287,6 +290,67 @@ class HandoffBundleTests(unittest.TestCase):
         self.assertEqual(sha256_file(latest_zip), before_sha)
         details = validate_latest_handoff(latest_zip.parent, archive_zip_path=good.zip_path)
         self.assertEqual(details["bundle_name"], "unit_good_latest")
+
+    def test_upload_ready_trio_is_unique_and_matches_latest_and_archive(self) -> None:
+        result = export_handoff_bundle(
+            profile="patch",
+            bundle_name="unit_upload_ready",
+            repo_root=ROOT,
+            output_dir=self.fixture,
+            include_paths=[self.safe_file],
+        )
+        with zipfile.ZipFile(result.zip_path, "r") as archive:
+            context = archive.read("HANDOFF_CONTEXT.md")
+        repo_root = self.fixture / "upload_repo"
+        write_latest_handoff_files(result.zip_path, repo_root, context, result.sha256)
+        upload_dir = write_upload_ready_handoff_files(result.zip_path, repo_root, context, result.sha256)
+        bundle_id = upload_bundle_id_from_context(context, result.sha256)
+        upload_zip = upload_dir / f"{bundle_id}.zip"
+        upload_context = upload_dir / f"{bundle_id}_CONTEXT.md"
+        upload_sha = upload_dir / f"{bundle_id}.sha256"
+        latest_zip = repo_root / "outputs" / "handoffs" / "latest" / "HANDOFF_LATEST.zip"
+
+        self.assertTrue(upload_zip.exists())
+        self.assertTrue(upload_context.exists())
+        self.assertTrue(upload_sha.exists())
+        self.assertIn("patch", bundle_id)
+        self.assertIn("unit_upload_ready", bundle_id)
+        self.assertIn(result.short_head, bundle_id)
+        self.assertTrue(bundle_id.endswith(result.sha256[:8].upper()))
+        self.assertEqual(sha256_file(upload_zip), sha256_file(latest_zip))
+        self.assertEqual(upload_context.read_bytes(), context)
+        self.assertIn(upload_zip.name, upload_sha.read_text(encoding="utf-8"))
+        details = validate_upload_ready_handoff(upload_dir, archive_zip_path=result.zip_path)
+        self.assertEqual(details["bundle_name"], "unit_upload_ready")
+
+    def test_upload_ready_is_not_written_when_latest_archive_validation_fails(self) -> None:
+        good = export_handoff_bundle(
+            profile="patch",
+            bundle_name="unit_upload_good",
+            repo_root=ROOT,
+            output_dir=self.fixture,
+            include_paths=[self.safe_file],
+        )
+        with zipfile.ZipFile(good.zip_path, "r") as archive:
+            good_context = archive.read("HANDOFF_CONTEXT.md")
+        repo_root = self.fixture / "blocked_upload_repo"
+        write_latest_handoff_files(good.zip_path, repo_root, good_context, good.sha256)
+
+        bad = export_handoff_bundle(
+            profile="patch",
+            bundle_name="unit_upload_bad",
+            repo_root=ROOT,
+            output_dir=self.fixture,
+            include_paths=[self.safe_file],
+        )
+        with zipfile.ZipFile(bad.zip_path, "r") as archive:
+            bad_context = archive.read("HANDOFF_CONTEXT.md")
+        bad_id = upload_bundle_id_from_context(bad_context, bad.sha256)
+
+        with self.assertRaisesRegex(ValueError, "archive copy hash"):
+            write_upload_ready_handoff_files(bad.zip_path, repo_root, bad_context, bad.sha256)
+
+        self.assertFalse((repo_root / "outputs" / "handoffs" / "upload_ready" / bad_id).exists())
 
 
 if __name__ == "__main__":

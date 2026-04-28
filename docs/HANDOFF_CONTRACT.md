@@ -12,6 +12,9 @@ updates:
 - `outputs/handoffs/latest/HANDOFF_LATEST.zip`
 - `outputs/handoffs/latest/HANDOFF_LATEST.sha256`
 - `outputs/handoffs/latest/HANDOFF_LATEST_CONTEXT.md`
+- `outputs/handoffs/upload_ready/<upload_bundle_id>/<upload_bundle_id>.zip`
+- `outputs/handoffs/upload_ready/<upload_bundle_id>/<upload_bundle_id>_CONTEXT.md`
+- `outputs/handoffs/upload_ready/<upload_bundle_id>/<upload_bundle_id>.sha256`
 
 Root-level ZIP output is only allowed through an explicit `--output-path`.
 
@@ -74,6 +77,8 @@ The latest lifecycle is part of the contract:
 - `outputs/handoffs/latest/HANDOFF_LATEST.sha256` must match the latest ZIP.
 - `outputs/handoffs/latest/HANDOFF_LATEST_CONTEXT.md` must match the newest
   bundle context.
+- `outputs/handoffs/upload_ready/<upload_bundle_id>/` stores the uniquely named
+  upload artifact trio for external LLM conversations.
 
 Latest publishing is atomic at the contract level. The exporter must build the
 archive ZIP first, validate it, stage the latest ZIP/context/SHA files, validate
@@ -93,3 +98,23 @@ Latest validation must confirm:
 
 Validation must reject forbidden/private entries, nested ZIP files, raw private
 data, identity maps, user-agent files, build outputs and cache/log files.
+
+## Upload-Ready Artifacts
+
+`latest` is for local automation. `archive` is the immutable historical record.
+`upload_ready` is the recommended folder for external LLM uploads.
+
+Do not upload generic `HANDOFF_LATEST.zip` when multiple handoffs exist. Upload
+all three uniquely named files from the newest `upload_ready/<upload_bundle_id>/`
+directory:
+
+- `<upload_bundle_id>.zip`
+- `<upload_bundle_id>_CONTEXT.md`
+- `<upload_bundle_id>.sha256`
+
+The `upload_bundle_id` includes project name, `HANDOFF`, profile, bundle name,
+normalized run timestamp, short HEAD and the first eight characters of the ZIP
+SHA256. The upload-ready ZIP must be byte-identical to
+`outputs/handoffs/latest/HANDOFF_LATEST.zip`, the upload-ready context must match
+the internal `HANDOFF_CONTEXT.md`, and the upload-ready SHA256 file must refer to
+the unique ZIP filename rather than `HANDOFF_LATEST.zip`.

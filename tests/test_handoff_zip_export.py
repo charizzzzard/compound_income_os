@@ -147,6 +147,16 @@ class HandoffZipExportTests(unittest.TestCase):
         self.assertIn("website/compound-income-os-landing/.env.example", matches)
         self.assertNotIn("src/app.py", matches)
 
+    def test_docs_describe_upload_ready_handoff_usage(self) -> None:
+        contract_text = (ROOT / "docs" / "HANDOFF_CONTRACT.md").read_text(encoding="utf-8")
+        readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
+        combined = "\n".join([contract_text, readme_text]).lower()
+
+        self.assertIn("upload_ready", combined)
+        self.assertIn("handoff_latest.zip", combined)
+        self.assertIn("unique", combined)
+        self.assertIn("external llm", combined)
+
 
 if __name__ == "__main__":
     unittest.main()

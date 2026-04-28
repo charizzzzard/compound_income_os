@@ -82,6 +82,7 @@ class HandoffBundleResult:
     forbidden_matches: tuple[str, ...]
     included_entries: tuple[str, ...]
     omitted_rows: tuple[dict[str, str], ...]
+    upload_ready_dir: Path | None = None
 
 
 def normalize_entry_name(path_value: str | Path) -> str:
@@ -529,6 +530,33 @@ def parse_validation_metadata(validation_text_value: str) -> dict[str, str]:
     return metadata
 
 
+def safe_handoff_component(value: str) -> str:
+    safe = "".join(char if char.isalnum() or char in {"-", "_"} else "_" for char in value).strip("_")
+    return safe or "handoff"
+
+
+def normalized_context_timestamp(created_at_utc: str) -> str:
+    try:
+        parsed = datetime.fromisoformat(created_at_utc.replace("Z", "+00:00"))
+        return parsed.strftime("%Y%m%d-%H%M%S")
+    except ValueError:
+        digits = "".join(char for char in created_at_utc if char.isdigit())
+        if len(digits) >= 14:
+            return f"{digits[:8]}-{digits[8:14]}"
+    return "unknown-time"
+
+
+def upload_bundle_id_from_context(context_bytes: bytes, zip_sha256: str) -> str:
+    context = parse_context_metadata(context_bytes.decode("utf-8"))
+    project_name = safe_handoff_component(context.get("project_name", "compound_income_os"))
+    profile = safe_handoff_component(context.get("profile", "profile"))
+    bundle_name = safe_handoff_component(context.get("bundle_name", "bundle"))
+    created_at = normalized_context_timestamp(context.get("created_at_utc", ""))
+    short_head = safe_handoff_component(context.get("head", "unknown")[:7])
+    short_sha = zip_sha256[:8].upper()
+    return f"{project_name}_HANDOFF_{profile}_{bundle_name}_{created_at}_{short_head}_{short_sha}"
+
+
 def _zip_validation_details(zip_path: Path, *, expected_context_bytes: bytes | None = None) -> dict[str, str]:
     with zipfile.ZipFile(zip_path, "r") as archive:
         bad_entry = archive.testzip()
@@ -614,6 +642,40 @@ def validate_latest_handoff(latest_dir: str | Path, *, archive_zip_path: str | P
     return details
 
 
+def validate_upload_ready_handoff(upload_dir: str | Path, *, archive_zip_path: str | Path | None = None) -> dict[str, str]:
+    upload = Path(upload_dir)
+    bundle_id = upload.name
+    zip_path = upload / f"{bundle_id}.zip"
+    if not zip_path.exists():
+        zip_candidates = sorted(upload.glob("*.zip"))
+        if len(zip_candidates) == 1:
+            zip_path = zip_candidates[0]
+            bundle_id = zip_path.stem
+    context_path = upload / f"{bundle_id}_CONTEXT.md"
+    sha_path = upload / f"{bundle_id}.sha256"
+    missing = [path.name for path in (zip_path, context_path, sha_path) if not path.exists()]
+    if missing:
+        raise ValueError(f"handoff upload-ready missing required files: {', '.join(missing)}")
+
+    actual_sha = sha256_file(zip_path)
+    sha_text = sha_path.read_text(encoding="utf-8").strip()
+    parts = sha_text.split()
+    reported_sha = parts[0] if parts else ""
+    reported_name = parts[1] if len(parts) > 1 else ""
+    if reported_sha.upper() != actual_sha.upper():
+        raise ValueError("handoff upload-ready SHA256 file does not match upload ZIP")
+    if reported_name != zip_path.name:
+        raise ValueError("handoff upload-ready SHA256 file does not reference the unique ZIP filename")
+
+    details = validate_handoff_archive(zip_path, expected_context_bytes=context_path.read_bytes())
+    if archive_zip_path is not None:
+        archive_sha = sha256_file(Path(archive_zip_path))
+        if archive_sha.upper() != actual_sha.upper():
+            raise ValueError("handoff archive copy hash does not match upload-ready ZIP hash")
+    details["sha256"] = actual_sha
+    return details
+
+
 def write_latest_handoff_files(zip_path: Path, repo_root: Path, context_bytes: bytes, zip_sha256: str) -> None:
     latest_dir = repo_root / "outputs" / "handoffs" / "latest"
     latest_dir.mkdir(parents=True, exist_ok=True)
@@ -645,6 +707,41 @@ def write_latest_handoff_files(zip_path: Path, repo_root: Path, context_bytes: b
     finally:
         if staging_dir.exists():
             shutil.rmtree(staging_dir)
+
+
+def write_upload_ready_handoff_files(zip_path: Path, repo_root: Path, context_bytes: bytes, zip_sha256: str) -> Path:
+    latest_dir = repo_root / "outputs" / "handoffs" / "latest"
+    validate_latest_handoff(latest_dir, archive_zip_path=zip_path)
+    validate_handoff_archive(zip_path, expected_context_bytes=context_bytes)
+    bundle_id = upload_bundle_id_from_context(context_bytes, zip_sha256)
+    upload_root = repo_root / "outputs" / "handoffs" / "upload_ready"
+    upload_root.mkdir(parents=True, exist_ok=True)
+    staging_dir = upload_root / f".staging_{bundle_id}"
+    final_dir = upload_root / bundle_id
+    if staging_dir.exists():
+        shutil.rmtree(staging_dir)
+    staging_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        zip_name = f"{bundle_id}.zip"
+        context_name = f"{bundle_id}_CONTEXT.md"
+        sha_name = f"{bundle_id}.sha256"
+        staged_zip = staging_dir / zip_name
+        staged_context = staging_dir / context_name
+        staged_sha = staging_dir / sha_name
+        shutil.copyfile(zip_path, staged_zip)
+        staged_context.write_bytes(context_bytes)
+        staged_sha.write_text(f"{sha256_file(staged_zip)}  {zip_name}\n", encoding="utf-8")
+        validate_upload_ready_handoff(staging_dir, archive_zip_path=zip_path)
+
+        final_dir.mkdir(parents=True, exist_ok=True)
+        staged_zip.replace(final_dir / zip_name)
+        staged_context.replace(final_dir / context_name)
+        staged_sha.replace(final_dir / sha_name)
+        validate_upload_ready_handoff(final_dir, archive_zip_path=zip_path)
+    finally:
+        if staging_dir.exists():
+            shutil.rmtree(staging_dir)
+    return final_dir
 
 
 def external_review_checklist() -> bytes:
@@ -801,8 +898,10 @@ def export_handoff_bundle(
         raise ValueError(f"handoff ZIP contains forbidden entries: {', '.join(forbidden)}")
     with zipfile.ZipFile(zip_path, "r") as archive:
         names = tuple(sorted(archive.namelist()))
+    upload_ready_dir: Path | None = None
     if lifecycle_enabled:
         write_latest_handoff_files(zip_path, root, metadata_entries["HANDOFF_CONTEXT.md"], sha256)
+        upload_ready_dir = write_upload_ready_handoff_files(zip_path, root, metadata_entries["HANDOFF_CONTEXT.md"], sha256)
     return HandoffBundleResult(
         zip_path=zip_path,
         profile=profile,
@@ -816,6 +915,7 @@ def export_handoff_bundle(
         forbidden_matches=forbidden,
         included_entries=names,
         omitted_rows=tuple(omitted_rows),
+        upload_ready_dir=upload_ready_dir,
     )
 
 

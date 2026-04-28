@@ -91,6 +91,10 @@ muss zum ZIP passen und `HANDOFF_VALIDATION.txt` muss Validation Provenance mit
 Command-Status oder `self_validation_only`, `file_count`, `forbidden_count`,
 `nested_zip_count`, `context_match`, `latest_archive_hash_match` und
 `validation_status` enthalten.
+Fuer externe LLM-Uploads ist `outputs/handoffs/upload_ready/<upload_bundle_id>/`
+die empfohlene Quelle. Nicht das generische `HANDOFF_LATEST.zip` hochladen, wenn
+mehrere Handoffs existieren; stattdessen immer das eindeutig benannte Trio aus
+ZIP, `_CONTEXT.md` und `.sha256` verwenden.
 
 Fixture-/Sample-Pipeline:
 
