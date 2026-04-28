@@ -40,6 +40,9 @@ Die getrackten Tests liegen unter `tests/test_*.py` und nutzen `unittest`. Sie p
 8. Cost/Tax: `src.cost_tax_archive_engine` kann belegte manuelle oder Dokumentdaten in ein persistentes normalisiertes Archiv mergen; `src.cost_tax_engine` erzeugt daraus bzw. aus direkten Inputs Ledger-, Summary-, KPI- und Report-Artefakte.
 9. Dashboard: `src.dashboard_engine` konsolidiert verarbeitete Artefakte in KPI-, Section-, Summary- und Markdown-Ausgaben; `src.dashboard_server` stellt diese Dashboard-CSVs plus bestehende processed Decision-/Coverage-/Ledger-/Timeseries-Artefakte read-only als lokalen localhost-Viewer bereit, ohne neue Finanzlogik, ohne Imputation und mit einem expliziten History-Gate unter 12 Punkten.
 10. Persoenlicher Orchestrator: `src.personal_run_engine` fuehrt nur explizit angeforderte Stages in kanonischer Reihenfolge aus und protokolliert Run-Status, Inputs, Outputs, Warnings und Stage-Ergebnisse in Manifest-/Artefakt-Outputs.
+11. KPI Tier Guardrails: Fundamentals-, Scoring- und Monthly-Ranking-Pfade unterscheiden Core-Quality-, Valuation-, Dividend-FCF- und Advanced-Datenqualitaet. Fehlende Tier-Daten bleiben sichtbar und werden konservativ in Score-/Monthly-Guardrails verarbeitet.
+12. SEC-derived KPI Governance: Der lokale CompanyFacts-Pfad retained private Snapshots nur nach explizitem Fetch, exportiert approved Facts in processed Artefakte, erzeugt derived KPI Proposals, Evidence-Proposals, reviewed evidence-applied Master-Projektionen, Closure-Impact, Gap Queue, Period-Selection Review, Concept-Coverage-Diagnostics, Alias-Review, Human-Approval-Input und eine approved Alias Map. Review-/Alias-Layer sind read-only fuer Raw-Master und Scores; die Alias Map bleibt inaktiv fuer Period Selection bis ein spaeterer expliziter Patch sie integriert.
+13. Handoff und Docs Drift: `src.handoff_zip_export` erzeugt standardisierte `outputs/handoffs/archive/`, `outputs/handoffs/latest/`- und `outputs/handoffs/upload_ready/`-Pakete fuer externe Review ohne private Daten. Docs-Drift wird ueber `docs/DOCUMENTATION_MAINTENANCE.md`, `docs/CODEX_TASKS/DOCS_DRIFT_CHECKLIST.md` und den lokalen Drift-Report sichtbar gemacht.
 
 ## ROADMAP / Spaeter
 
@@ -47,6 +50,8 @@ Die getrackten Tests liegen unter `tests/test_*.py` und nutzen `unittest`. Sie p
 - Den operativen Pfad `SEC refresh -> profile seed -> manuelle profile review -> profiled master -> downstream -> gap diagnostics` nur ueber bestehende read-only / auditierbare Zwischenartefakte ausbauen.
 - Dashboard-Runbooks nur erweitern, wenn sie aus bestehenden verarbeiteten Artefakten gespeist werden und keine neue Fachlogik einfuehren.
 - Performance- und Cost-/Tax-Abdeckung nur dort vertiefen, wo passende Zeitreihen- oder Event-Evidenz vorhanden ist.
+- SEC-Alias-Map erst in Period Selection integrieren, wenn Human Approval, Inaktivitaets-Guardrail und No-Value-Apply-Vertrag separat validiert sind.
+- Website-Mockups und Claude-Designmaterial unter `website/compound-income-os-landing/mockup/` als Referenzmaterial erhalten; Produktion bleibt unter `website/compound-income-os-landing/src/`.
 
 ## Definition Of Done fuer Patch-Arbeit
 
