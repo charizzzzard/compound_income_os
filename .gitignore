@@ -48,3 +48,10 @@ data/raw/private_*
 # Personal generated artifacts
 data/processed/personal_*
 reports/*/personal_*
+
+# Local operator notes
+lokales_Dashboard.txt
+
+# Generated handoff/export artifacts
+outputs/
+_local_handoff_archive/
