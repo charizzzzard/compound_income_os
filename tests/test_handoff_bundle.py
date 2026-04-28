@@ -92,6 +92,8 @@ class HandoffBundleTests(unittest.TestCase):
         manifest_names = [row["entry_name"] for row in manifest_rows]
         self.assertEqual(manifest_names, sorted(manifest_names))
         self.assertTrue(all(row["sha256"] for row in manifest_rows))
+        self.assertNotIn("HANDOFF_MANIFEST.csv", manifest_names)
+        self.assertNotIn("HANDOFF_VALIDATION.txt", manifest_names)
 
     def test_git_status_parser_preserves_paths_and_renames(self) -> None:
         cases = {
@@ -140,6 +142,10 @@ class HandoffBundleTests(unittest.TestCase):
         self.assertIn("latest_archive_hash_match=", validation_text)
         self.assertIn("validation_status=", validation_text)
         self.assertIn("manifest_sha256=", validation_text)
+        self.assertIn("manifest_row_count=", validation_text)
+        self.assertIn("terminal_metadata_count=2", validation_text)
+        self.assertIn("manifest_file_count_delta=2", validation_text)
+        self.assertIn("manifest_file_count_note=", validation_text)
         self.assertNotIn("sha256_scope=", validation_text)
         self.assertNotIn("\nsha256=", validation_text)
 

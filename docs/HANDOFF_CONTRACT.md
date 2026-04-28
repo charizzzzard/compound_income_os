@@ -57,9 +57,18 @@ Validation commands can be recorded with repeatable `--validation-command`
 arguments. `HANDOFF_VALIDATION.txt` records validation provenance: command text,
 command status, ZIP integrity, SHA256 verification, file count, forbidden/private
 count, nested ZIP count, internal/external context match status, archive/latest
-hash match status, validation status and `manifest_sha256`. If no external
-commands are supplied, the exporter records `self_validation_only` rather than a
-blank or misleading command list.
+hash match status, validation status, `manifest_sha256`, manifest row count and
+the terminal metadata file-count delta. If no external commands are supplied, the
+exporter records `self_validation_only` rather than a blank or misleading command
+list.
+
+`HANDOFF_CONTEXT.md` preserves `created_at_utc` as the canonical run timestamp.
+Archive and upload-ready filenames use the same UTC timestamp normalized as
+`YYYYMMDD-HHMMSS`; no local-time timestamp is used for default lifecycle output.
+If `profile` and `bundle_name` are identical, filenames and upload bundle IDs use
+one copy of the name segment, for example `HANDOFF_preview_<timestamp>...`
+rather than `HANDOFF_preview_preview_<timestamp>...`. Distinct patch bundle
+names still include both profile and bundle name.
 
 ## External LLM Context Requirements
 
@@ -95,6 +104,10 @@ Latest validation must confirm:
 - `HANDOFF_VALIDATION.txt` `file_count` equals the actual ZIP entry count
 - `forbidden_count` is `0`
 - `nested_zip_count` is `0`
+- the manifest/file-count relationship is documented. `HANDOFF_MANIFEST.csv` is
+  generated before terminal metadata files `HANDOFF_MANIFEST.csv` and
+  `HANDOFF_VALIDATION.txt` are written, so ZIP `file_count` is expected to exceed
+  manifest row count by exactly those terminal metadata files.
 
 Validation must reject forbidden/private entries, nested ZIP files, raw private
 data, identity maps, user-agent files, build outputs and cache/log files.
@@ -112,9 +125,9 @@ directory:
 - `<upload_bundle_id>_CONTEXT.md`
 - `<upload_bundle_id>.sha256`
 
-The `upload_bundle_id` includes project name, `HANDOFF`, profile, bundle name,
-normalized run timestamp, short HEAD and the first eight characters of the ZIP
-SHA256. The upload-ready ZIP must be byte-identical to
+The `upload_bundle_id` includes project name, `HANDOFF`, profile, distinct bundle
+name when applicable, normalized UTC run timestamp, short HEAD and the first
+eight characters of the ZIP SHA256. The upload-ready ZIP must be byte-identical to
 `outputs/handoffs/latest/HANDOFF_LATEST.zip`, the upload-ready context must match
 the internal `HANDOFF_CONTEXT.md`, and the upload-ready SHA256 file must refer to
 the unique ZIP filename rather than `HANDOFF_LATEST.zip`.

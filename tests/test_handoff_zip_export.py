@@ -30,14 +30,23 @@ class HandoffZipExportTests(unittest.TestCase):
 
         with zipfile.ZipFile(result.zip_path, "r") as archive:
             names = set(archive.namelist())
+            validation_text = archive.read("HANDOFF_VALIDATION.txt").decode("utf-8")
+            manifest_rows = list(csv.DictReader(archive.read("HANDOFF_MANIFEST.csv").decode("utf-8").splitlines()))
 
         self.assertIn("HANDOFF_CONTEXT.md", names)
         self.assertIn("HANDOFF_REPORT.md", names)
         self.assertIn("HANDOFF_MANIFEST.csv", names)
         self.assertIn("HANDOFF_CHANGE_CLASSIFICATION.csv", names)
+        self.assertIn("HANDOFF_VALIDATION.txt", names)
         self.assertTrue(any(name.startswith("src/") for name in names))
         self.assertTrue(any(name.startswith("tests/") for name in names))
         self.assertNotIn("ZIP_REPO_HEAD.txt", names)
+        self.assertNotIn("HANDOFF_preview_preview_", result.zip_path.name)
+        self.assertIn(f"file_count={len(names)}", validation_text)
+        self.assertIn("forbidden_count=0", validation_text)
+        self.assertIn("nested_zip_count=0", validation_text)
+        self.assertIn("manifest_file_count_delta=2", validation_text)
+        self.assertEqual(len(names) - len(manifest_rows), 2)
         self.assertEqual(result.forbidden_matches, ())
         self.assertEqual(scan_forbidden_entries(result.zip_path), ())
 

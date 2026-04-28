@@ -470,6 +470,8 @@ def validation_text(
     file_count: int,
     nested_zip_count: int,
     manifest_sha256: str,
+    manifest_row_count: int,
+    terminal_metadata_count: int,
     sha256_verified: str = "ARCHIVE_SHA256_CALCULATED_AFTER_WRITE",
     context_match: str = "INTERNAL_EXTERNAL_MATCH_VALIDATED_ON_LATEST_PUBLISH",
     latest_archive_hash_match: str = "VALIDATED_DURING_LATEST_PUBLISH",
@@ -503,6 +505,10 @@ def validation_text(
             f"latest_archive_hash_match={latest_archive_hash_match}",
             f"validation_status={validation_status}",
             f"manifest_sha256={manifest_sha256}",
+            f"manifest_row_count={manifest_row_count}",
+            f"terminal_metadata_count={terminal_metadata_count}",
+            f"manifest_file_count_delta={file_count - manifest_row_count}",
+            "manifest_file_count_note=HANDOFF_MANIFEST.csv is generated before terminal metadata entries HANDOFF_MANIFEST.csv and HANDOFF_VALIDATION.txt are written; ZIP file_count includes those terminal metadata files.",
         ]
     )
     return ("\n".join(lines) + "\n").encode("utf-8")
@@ -554,7 +560,16 @@ def upload_bundle_id_from_context(context_bytes: bytes, zip_sha256: str) -> str:
     created_at = normalized_context_timestamp(context.get("created_at_utc", ""))
     short_head = safe_handoff_component(context.get("head", "unknown")[:7])
     short_sha = zip_sha256[:8].upper()
-    return f"{project_name}_HANDOFF_{profile}_{bundle_name}_{created_at}_{short_head}_{short_sha}"
+    name_segment = handoff_name_segment(profile, bundle_name)
+    return f"{project_name}_HANDOFF_{name_segment}_{created_at}_{short_head}_{short_sha}"
+
+
+def handoff_name_segment(profile: str, bundle_name: str) -> str:
+    safe_profile = safe_handoff_component(profile)
+    safe_bundle = safe_handoff_component(bundle_name)
+    if not safe_bundle or safe_bundle == safe_profile:
+        return safe_profile
+    return f"{safe_profile}_{safe_bundle}"
 
 
 def _zip_validation_details(zip_path: Path, *, expected_context_bytes: bytes | None = None) -> dict[str, str]:
@@ -869,14 +884,16 @@ def export_handoff_bundle(
         ).encode("utf-8"),
         "HANDOFF_EXTERNAL_REVIEW_CHECKLIST.md": external_review_checklist(),
     }
+    manifest_row_values = manifest_rows(root, files, metadata_entries, profile)
     metadata_entries["HANDOFF_MANIFEST.csv"] = csv_bytes(
         ["entry_name", "size_bytes", "sha256", "entry_type", "source_group", "profile", "required_for_review"],
-        manifest_rows(root, files, metadata_entries, profile),
+        manifest_row_values,
     )
     safe_name = "".join(char if char.isalnum() or char in {"-", "_"} else "_" for char in bundle_name).strip("_")
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    context_created_at = parse_context_metadata(metadata_entries["HANDOFF_CONTEXT.md"].decode("utf-8")).get("created_at_utc", "")
+    timestamp = normalized_context_timestamp(context_created_at)
     if not output_path:
-        zip_path = target_dir / f"compound_income_os_HANDOFF_{profile}_{safe_name}_{timestamp}_{short_head}.zip"
+        zip_path = target_dir / f"compound_income_os_HANDOFF_{handoff_name_segment(profile, safe_name)}_{timestamp}_{short_head}.zip"
     pending_entries = included_entries + list(metadata_entries) + ["HANDOFF_VALIDATION.txt"]
     pending_forbidden = tuple(sorted(entry for entry in pending_entries if is_forbidden_entry(entry)))
     pending_nested_zip = tuple(sorted(entry for entry in pending_entries if entry.endswith(".zip")))
@@ -890,6 +907,8 @@ def export_handoff_bundle(
         file_count=pending_file_count,
         nested_zip_count=len(pending_nested_zip),
         manifest_sha256=manifest_sha256,
+        manifest_row_count=len(manifest_row_values),
+        terminal_metadata_count=2,
     )
     write_zip(zip_path, files, root, metadata_entries)
     forbidden, file_count = validate_zip(zip_path)
