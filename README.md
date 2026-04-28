@@ -24,6 +24,8 @@ Das System fuehrt keine Orders aus. Es verarbeitet CSV-Inputs und lokale textbas
 - [docs/PROJECT_CHARTER.md](docs/PROJECT_CHARTER.md): harte Projektcharta, Scope und Invarianten
 - [docs/CONTEXT_AND_ROADMAP.md](docs/CONTEXT_AND_ROADMAP.md): Ist-Zustand, lokale Worktree-Beobachtungen und Roadmap
 - [docs/MODULE_CONTRACTS.md](docs/MODULE_CONTRACTS.md): Modulvertraege, Inputs, Outputs und Drift-Risiken
+- [docs/HANDOFF_CONTRACT.md](docs/HANDOFF_CONTRACT.md): einheitlicher externer Review-/Handoff-Vertrag
+- [docs/DOCUMENTATION_MAINTENANCE.md](docs/DOCUMENTATION_MAINTENANCE.md): Prozess gegen README-/Docs-Drift
 - [docs/CODEX_TASK_TEMPLATE.md](docs/CODEX_TASK_TEMPLATE.md): wiederverwendbares Task-Template
 - [docs/CODEX_TASKS/POST_ITERATION_QA.md](docs/CODEX_TASKS/POST_ITERATION_QA.md): standardisierter Post-Iteration-QA-/Bug-Hunt-Task
 
@@ -55,6 +57,40 @@ Die transparente Fundamentals-Schicht liegt in:
 - [configs/fundamentals_metric_definitions.yaml](configs/fundamentals_metric_definitions.yaml): KPI-Definitionen, Profil-Anwendbarkeit und Missing-Handling fuer den Personal-Master
 
 ## CLI-Entry-Points
+
+## SEC-derived KPI workflow
+
+Der aktuelle SEC-Core-KPI-Pfad ist review-gated und mutiert keine Raw-Master oder Scores:
+
+1. SEC CompanyFacts Snapshots werden nur mit explizitem Fetch/User-Agent lokal retained.
+2. Approved CompanyFacts werden in `personal_sec_companyfacts_approved_facts.csv` exportiert.
+3. `src.personal_sec_derived_kpi_compose` erzeugt nur derived KPI Proposals.
+4. `src.personal_sec_derived_kpi_evidence_compose` erzeugt Evidence-Proposals, ohne Apply.
+5. `src.personal_sec_derived_kpi_reviewed_evidence_apply` schreibt nur einen separaten processed evidence-applied Master.
+6. Closure Impact, Gap Queue, Period Selection, Concept Coverage Diagnostics und Alias Review bleiben read-only.
+7. `src.personal_sec_concept_alias_approval_input` erzeugt Human-Approval-Inputs.
+8. `src.personal_sec_approved_concept_alias_map` erzeugt eine approved Alias Map, aber `active_for_period_selection=False`.
+
+Alias-Freigaben wenden keine KPI-Werte an. Missing Data und stale FY-Werte bleiben sichtbar, bis ein spaeterer expliziter Patch Period Selection oder Evidence Apply erweitert.
+
+## External handoff
+
+Externe LLM-Reviews laufen ueber den unified Handoff-Exporter:
+
+```powershell
+python -m src.handoff_zip_export --profile patch --name <bundle_name>
+```
+
+Standardausgaben liegen unter `outputs/handoffs/archive/` und
+`outputs/handoffs/latest/`. Der Handoff schliesst private Raw-Daten, Identity
+Maps, User-Agent-Dateien, verschachtelte ZIPs und Build-Artefakte aus.
+`latest` wird atomisch aus einem validierten Archivlauf veroeffentlicht: die
+externe `HANDOFF_LATEST_CONTEXT.md` muss der internen `HANDOFF_CONTEXT.md`
+entsprechen, die Archive/Latest-Hashes muessen gleich sein, die SHA256-Datei
+muss zum ZIP passen und `HANDOFF_VALIDATION.txt` muss Validation Provenance mit
+Command-Status oder `self_validation_only`, `file_count`, `forbidden_count`,
+`nested_zip_count`, `context_match`, `latest_archive_hash_match` und
+`validation_status` enthalten.
 
 Fixture-/Sample-Pipeline:
 
@@ -754,11 +790,17 @@ Interpretation der persoenlichen Outputs:
 - `personal_run_used_inputs.csv`: flacher Input-Lineage-Index fuer den persoenlichen Orchestrator; keine Output-Artefakte und keine hypothetischen Inputs
 - `personal_profile_review_unlock_summary.csv`: kompakte Zaehler fuer Profile-Review-Unlock, verbleibende Gap-Typen, Score-/Watchlist-/Monthly-Auswirkung
 - `personal_profile_review_unlock_holdings.csv`: zeilenbezogene Next-Action-Tabelle aus vorhandenen Gap-, Score- und Monthly-Artefakten; keine neue Scoring-Logik
+- `personal_missing_kpi_closure_summary.csv`: kompakte Zaehler fuer Missing-KPI-/Evidence-Closure, Master-Usage und naechste Daten-/Pipeline-Schritte
+- `personal_missing_kpi_closure_holdings.csv`: zeilenbezogene Missing-KPI-/Evidence-Closure-Tabelle; zeigt required KPIs, verfuegbare Evidence/KPIs und konservative Next Actions
+- `personal_evidence_applied_downstream_delta_summary.csv`: Vorher/Nachher-Zaehler fuer einen kontrollierten Evidence-Applied-Downstream-Lauf
+- `personal_evidence_applied_downstream_delta_holdings.csv`: zeilenbezogene Delta-Tabelle zwischen vorherigem Missing-KPI-Closure-Stand und aktuellem Evidence-Applied-Downstream-Stand
 - `personal_portfolio_holdings_action_table.csv`: operative Holdings-Aktionen `ADD`, `HOLD`, `WATCH`, `REDUCE`, `EXIT_REVIEW`; bei uebergebener Coverage werden offene Fundamentals-Luecken konservativ als Guardrail sichtbar
 - `personal_monthly_buy_ranking.csv`: Kauf-Ranking fuer den konfigurierten Monatszufluss; bei uebergebener Coverage werden bestehende Holdings mit offenen Fundamentals-Luecken nicht fuer frisches Kapital empfohlen
 - `personal_monthly_decision_report.md`: monatlicher Entscheidungsreport mit optional eingeblendeten Fundamentals-Research-Luecken
 - `personal_portfolio_review.md`: deutscher Review-Report fuer das persoenliche Depot
 - `reports/YYYY-MM-DD/personal_profile_review_unlock_report.md`: Markdown-Zusammenfassung der Profile-Review-Unlock-Wirkung fuer externe Review-/LLM-Handoffs
+- `reports/YYYY-MM-DD/personal_missing_kpi_closure_report.md`: Markdown-Zusammenfassung der Missing-KPI-/Evidence-Closure-Lage fuer externe Review-/LLM-Handoffs
+- `reports/YYYY-MM-DD/personal_evidence_applied_downstream_delta_report.md`: Markdown-Zusammenfassung des Evidence-Applied-Downstream-Deltas fuer externe Review-/LLM-Handoffs
 
 Datenschutz:
 
@@ -783,7 +825,13 @@ Erlaubte Handoff-Evidenzartefakte sind bewusst eng allowlisted, z. B.:
 
 - `data/processed/personal_profile_review_unlock_summary.csv`
 - `data/processed/personal_profile_review_unlock_holdings.csv`
+- `data/processed/personal_missing_kpi_closure_summary.csv`
+- `data/processed/personal_missing_kpi_closure_holdings.csv`
+- `data/processed/personal_evidence_applied_downstream_delta_summary.csv`
+- `data/processed/personal_evidence_applied_downstream_delta_holdings.csv`
 - `reports/YYYY-MM-DD/personal_profile_review_unlock_report.md`
+- `reports/YYYY-MM-DD/personal_missing_kpi_closure_report.md`
+- `reports/YYYY-MM-DD/personal_evidence_applied_downstream_delta_report.md`
 
 Nicht erlaubt bleiben `.git/`, Caches, Virtualenvs, alte ZIPs, `outputs/`, `data/raw/private/`, private lokale Root-Dateien und historische Reports ausserhalb der expliziten Handoff-Allowlist.
 

@@ -35,7 +35,12 @@ Keine hypothetischen Problem-Listen ohne Repro oder Datei-Evidenz.
 - README-Pfade bleiben repo-portabel.
 - Keine privaten Rohdaten, Secrets, `.codex_tmp`, `data/processed/` oder `reports/` in Patch-Commits.
 - Handoff-ZIPs duerfen explizit allowlistete Patch-Evidenzartefakte aus `data/processed/` und `reports/YYYY-MM-DD/` enthalten, wenn sie fuer externe LLM-Validierung der Datenlage noetig sind; das ist keine Freigabe fuer pauschale Commit-Aufnahme oder historische Output-Ballastdateien.
-- Handoff-ZIPs muessen `ZIP_REPO_HEAD.txt`, `ZIP_REPO_STATUS.txt`, Code/Tests/Doku/Configs und die projektrelevanten Patch-Artefakte enthalten; private Raw-Daten, `.git/`, Caches, alte ZIPs und `data/raw/private/` bleiben verboten.
+- Handoff-ZIPs muessen dem einheitlichen [Handoff Contract](../HANDOFF_CONTRACT.md) folgen und die standardisierten `HANDOFF_*` Dateien enthalten; private Raw-Daten, `.git/`, Caches, alte ZIPs und `data/raw/private/` bleiben verboten.
+- Externe Review-Patches muessen `outputs/handoffs/latest/HANDOFF_LATEST.zip`, `.sha256` und `_CONTEXT.md` atomisch aktualisieren und die Archive/Latest-Konsistenz pruefen.
+- Handoff-QA muss bestaetigen, dass die externe `HANDOFF_LATEST_CONTEXT.md` exakt zur internen `HANDOFF_CONTEXT.md` im ZIP passt, dass Archive/Latest-Hashes gleich sind, dass die SHA256-Datei zum ZIP passt, dass `HANDOFF_VALIDATION.txt` den echten `file_count` ausweist und dass `forbidden_count=0` sowie `nested_zip_count=0` gelten.
+- Handoff-QA muss Validation Provenance pruefen: `HANDOFF_VALIDATION.txt` enthaelt die ausgefuehrten Validierungsbefehle oder `self_validation_only`, pass/fail-/Statusinformationen, `sha256_verified`, `context_match`, `latest_archive_hash_match` und `validation_status`.
+- Neue Module, Workflow-Stages, generated Artefakte, Handoff-Verhalten oder Website-Mockup-Materialien muessen gegen [Documentation Maintenance](../DOCUMENTATION_MAINTENANCE.md) und [Docs Drift Checklist](DOCS_DRIFT_CHECKLIST.md) geprueft werden.
+- Vor Konsolidierungs-Commits muss ein Docs-Drift-Report erzeugt werden; offene Warnungen muessen entweder gefixt oder im Patch-Report akzeptiert werden.
 - Fehlende Daten werden nicht erfunden.
 - Persoenliche Holdings fallen nicht still auf Sample-Fundamentals zurueck.
 - Reports werden aus verarbeiteten Artefakten gebaut.
@@ -80,3 +85,4 @@ QA selbst committen nur, wenn sie dokumentierte QA-Artefakte als Teil einer akze
 ## Handoff-Spur
 
 Nach Patches, die externe LLM-Validierung oder reproduzierbare Uebergabe erfordern, muss ein frisches Handoff-ZIP erzeugt werden. Aeltere `compound_income_os_HANDOFF_*.zip` im Repo-Root sollen entfernt werden, sodass nur das aktuelle Handoff-Paket liegen bleibt. Der Export muss einen Forbidden-Entry-Scan mit `0` Treffern bestehen und alle explizit benoetigten Patch-Evidenzartefakte enthalten.
+Neue Handoff-ZIPs werden standardmaessig unter `outputs/handoffs/archive/` erzeugt. `outputs/handoffs/latest/HANDOFF_LATEST.zip`, `.sha256` und `_CONTEXT.md` zeigen auf das juengste Paket. Die Latest-Dateien duerfen erst ersetzt werden, nachdem der Archiv-ZIP und ein gestagter Latest-Satz validiert wurden; bei Fehlern bleibt der vorherige Latest-Satz erhalten. Repo-Root-ZIP-Ausgabe ist nur mit explizitem `--output-path` zulaessig.

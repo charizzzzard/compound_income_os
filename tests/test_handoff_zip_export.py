@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import csv
 import shutil
 import unittest
 import zipfile
 from pathlib import Path
 
-from src.handoff_zip_export import export_handoff_zip, scan_forbidden_entries
+from src.handoff_zip_export import (
+    export_handoff_zip,
+    export_profile_handoff_zip,
+    scan_forbidden_entries,
+)
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -13,297 +18,133 @@ ROOT = Path(__file__).resolve().parent.parent
 
 class HandoffZipExportTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.temp_paths: list[Path] = []
-        self.preserved_files: dict[Path, bytes | None] = {}
+        self.tmp = ROOT / "tests" / "handoff_zip_export_fixture"
+        self.tmp.mkdir(parents=True, exist_ok=True)
 
     def tearDown(self) -> None:
-        for path in reversed(self.temp_paths):
-            if path.exists():
-                if path.is_dir():
-                    shutil.rmtree(path)
-                else:
-                    path.unlink()
-        for path, content in self.preserved_files.items():
-            if content is None:
-                if path.exists():
-                    path.unlink()
-            else:
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_bytes(content)
+        if self.tmp.exists():
+            shutil.rmtree(self.tmp)
 
-    def _path(self, name: str) -> Path:
-        path = Path("tests") / name
-        self.temp_paths.append(path)
-        return path
-
-    def _write_preserved_file(self, path: Path, content: str) -> None:
-        if path not in self.preserved_files:
-            self.preserved_files[path] = path.read_bytes() if path.exists() else None
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content, encoding="utf-8")
-
-    def test_export_contains_metadata_and_excludes_forbidden_entries(self) -> None:
-        result = export_handoff_zip(output_dir="tests")
-        self.temp_paths.append(result.zip_path)
+    def test_preview_export_keeps_legacy_entrypoint_with_unified_metadata(self) -> None:
+        result = export_handoff_zip(output_dir=self.tmp)
 
         with zipfile.ZipFile(result.zip_path, "r") as archive:
             names = set(archive.namelist())
 
-        self.assertIn("ZIP_REPO_HEAD.txt", names)
-        self.assertIn("ZIP_REPO_STATUS.txt", names)
+        self.assertIn("HANDOFF_CONTEXT.md", names)
+        self.assertIn("HANDOFF_REPORT.md", names)
+        self.assertIn("HANDOFF_MANIFEST.csv", names)
+        self.assertIn("HANDOFF_CHANGE_CLASSIFICATION.csv", names)
         self.assertTrue(any(name.startswith("src/") for name in names))
         self.assertTrue(any(name.startswith("tests/") for name in names))
-        if (ROOT / "website").exists():
-            self.assertTrue(any(name.startswith("website/") for name in names))
+        self.assertNotIn("ZIP_REPO_HEAD.txt", names)
         self.assertEqual(result.forbidden_matches, ())
         self.assertEqual(scan_forbidden_entries(result.zip_path), ())
 
-    def test_export_contains_explicit_handoff_artifacts_without_opening_reports_broadly(self) -> None:
-        artifact_paths = [
-            ROOT / "data" / "processed" / "personal_profile_review_unlock_summary.csv",
-            ROOT / "data" / "processed" / "personal_profile_review_unlock_holdings.csv",
-            ROOT / "data" / "processed" / "personal_missing_kpi_closure_summary.csv",
-            ROOT / "data" / "processed" / "personal_missing_kpi_closure_holdings.csv",
-            ROOT / "data" / "processed" / "personal_evidence_applied_downstream_delta_summary.csv",
-            ROOT / "data" / "processed" / "personal_evidence_applied_downstream_delta_holdings.csv",
-            ROOT / "data" / "processed" / "personal_artifact_reconciliation_summary.csv",
-            ROOT / "data" / "processed" / "personal_artifact_reconciliation_checks.csv",
-            ROOT / "data" / "processed" / "personal_kpi_provenance_audit.csv",
-            ROOT / "data" / "processed" / "personal_kpi_provenance_summary.csv",
-            ROOT / "data" / "processed" / "personal_score_audit_provenance.csv",
-            ROOT / "data" / "processed" / "personal_score_audit_provenance_summary.csv",
-            ROOT / "data" / "processed" / "personal_monthly_action_compatibility.csv",
-            ROOT / "data" / "processed" / "personal_monthly_action_compatibility_summary.csv",
-            ROOT / "data" / "processed" / "personal_watchlist_input_gate.csv",
-            ROOT / "data" / "processed" / "personal_watchlist_input_gate_summary.csv",
-            ROOT / "data" / "processed" / "personal_artifact_freshness_checks.csv",
-            ROOT / "data" / "processed" / "personal_artifact_freshness_summary.csv",
-            ROOT / "data" / "processed" / "personal_valuation_input_review_queue.csv",
-            ROOT / "data" / "processed" / "personal_valuation_input_contract_summary.csv",
-            ROOT / "data" / "processed" / "personal_core_kpi_closure_queue.csv",
-            ROOT / "data" / "processed" / "personal_core_kpi_closure_summary.csv",
-            ROOT / "data" / "processed" / "personal_dividend_fcf_input_review_queue.csv",
-            ROOT / "data" / "processed" / "personal_dividend_fcf_input_contract_summary.csv",
-            ROOT / "data" / "processed" / "personal_readiness_status_summary.csv",
-            ROOT / "data" / "processed" / "personal_readiness_blockers.csv",
-            ROOT / "data" / "processed" / "personal_readiness_next_actions.csv",
-            ROOT / "data" / "processed" / "personal_private_input_review_validation.csv",
-            ROOT / "data" / "processed" / "personal_private_input_review_summary.csv",
-            ROOT / "data" / "processed" / "personal_private_input_apply_candidates_sanitized.csv",
-            ROOT / "data" / "processed" / "personal_private_input_apply_candidates_summary.csv",
-            ROOT / "data" / "processed" / "personal_sec_core_kpi_refresh_plan.csv",
-            ROOT / "data" / "processed" / "personal_sec_core_kpi_refresh_plan_summary.csv",
-            ROOT / "data" / "processed" / "personal_sec_refresh_preflight.csv",
-            ROOT / "data" / "processed" / "personal_sec_refresh_preflight_summary.csv",
-            ROOT / "data" / "processed" / "dashboard_readiness_panel.csv",
-            ROOT / "data" / "processed" / "dashboard_readiness_blockers.csv",
-            ROOT / "data" / "processed" / "dashboard_readiness_next_actions.csv",
-            ROOT / "data" / "processed" / "dashboard_readiness_payload.json",
-            ROOT / "data" / "processed" / "website_private_preview_route_matrix.csv",
-            ROOT / "data" / "processed" / "website_private_preview_cta_matrix.csv",
-            ROOT / "data" / "processed" / "website_private_preview_copy_guardrails.csv",
-            ROOT / "data" / "processed" / "website_private_preview_qa_summary.csv",
-            ROOT / "data" / "processed" / "website_static_build_package_qa.csv",
-            ROOT / "data" / "processed" / "website_static_build_package_summary.csv",
-            ROOT / "data" / "processed" / "website_private_preview_copy_freeze_matrix.csv",
-            ROOT / "data" / "processed" / "website_private_preview_copy_freeze_summary.csv",
-            ROOT / "data" / "processed" / "website_private_preview_handoff_index.csv",
-            ROOT / "data" / "processed" / "website_private_preview_release_summary.csv",
-            ROOT / "data" / "processed" / "website_private_preview_handoff_zip_content_index.csv",
-            ROOT / "data" / "processed" / "website_private_preview_handoff_qa_summary.csv",
-            ROOT / "reports" / "2099-01-01" / "personal_profile_review_unlock_report.md",
-            ROOT / "reports" / "2099-01-01" / "personal_missing_kpi_closure_report.md",
-            ROOT / "reports" / "2099-01-01" / "personal_evidence_applied_downstream_delta_report.md",
-            ROOT / "reports" / "2099-01-01" / "strategy_review_fundamentals_trust_scoring.md",
-            ROOT / "reports" / "2099-01-01" / "personal_artifact_reconciliation_report.md",
-            ROOT / "reports" / "2099-01-01" / "personal_kpi_provenance_audit_report.md",
-            ROOT / "reports" / "2099-01-01" / "personal_score_audit_provenance_report.md",
-            ROOT / "reports" / "2099-01-01" / "personal_monthly_action_schema_report.md",
-            ROOT / "reports" / "2099-01-01" / "personal_watchlist_input_gate_report.md",
-            ROOT / "reports" / "2099-01-01" / "personal_artifact_freshness_report.md",
-            ROOT / "reports" / "2099-01-01" / "personal_valuation_input_contract_report.md",
-            ROOT / "reports" / "2099-01-01" / "personal_core_kpi_closure_report.md",
-            ROOT / "reports" / "2099-01-01" / "personal_dividend_fcf_input_contract_report.md",
-            ROOT / "reports" / "2099-01-01" / "personal_readiness_status_report.md",
-            ROOT / "reports" / "2099-01-01" / "personal_private_input_review_report.md",
-            ROOT / "reports" / "2099-01-01" / "personal_private_input_apply_candidates_report.md",
-            ROOT / "reports" / "2099-01-01" / "personal_sec_core_kpi_refresh_plan_report.md",
-            ROOT / "reports" / "2099-01-01" / "personal_sec_refresh_preflight_report.md",
-            ROOT / "reports" / "2099-01-01" / "dashboard_readiness_panel_report.md",
-            ROOT / "reports" / "2099-01-01" / "dashboard_readiness_payload_report.md",
-            ROOT / "reports" / "2099-01-01" / "website_private_preview_route_matrix_report.md",
-            ROOT / "reports" / "2099-01-01" / "website_static_build_package_report.md",
-            ROOT / "reports" / "2099-01-01" / "website_private_preview_copy_freeze_report.md",
-            ROOT / "reports" / "2099-01-01" / "website_private_preview_release_notes.md",
-            ROOT / "reports" / "2099-01-01" / "website_private_preview_handoff_qa_report.md",
-            ROOT / "reports" / "2099-01-01" / "historical_report.md",
-        ]
-        for path in artifact_paths:
-            self._write_preserved_file(path, "metric,value\nexample,1\n")
-        self.temp_paths.append(ROOT / "reports" / "2099-01-01")
-
-        result = export_handoff_zip(output_dir="tests")
-        self.temp_paths.append(result.zip_path)
+    def test_patch_profile_contains_known_sec_concept_review_artifacts(self) -> None:
+        result = export_profile_handoff_zip(
+            profile="patch",
+            name="sec_companyfacts_concept_review",
+            output_dir=self.tmp,
+            validation_summary="unit validation",
+        )
 
         with zipfile.ZipFile(result.zip_path, "r") as archive:
             names = set(archive.namelist())
+            context_text = archive.read("HANDOFF_CONTEXT.md").decode("utf-8")
+            omitted_text = archive.read("HANDOFF_OMITTED_ARTIFACTS.csv").decode("utf-8")
 
-        self.assertIn("data/processed/personal_profile_review_unlock_summary.csv", names)
-        self.assertIn("data/processed/personal_profile_review_unlock_holdings.csv", names)
-        self.assertIn("data/processed/personal_missing_kpi_closure_summary.csv", names)
-        self.assertIn("data/processed/personal_missing_kpi_closure_holdings.csv", names)
-        self.assertIn("data/processed/personal_evidence_applied_downstream_delta_summary.csv", names)
-        self.assertIn("data/processed/personal_evidence_applied_downstream_delta_holdings.csv", names)
-        self.assertIn("data/processed/personal_artifact_reconciliation_summary.csv", names)
-        self.assertIn("data/processed/personal_artifact_reconciliation_checks.csv", names)
-        self.assertIn("data/processed/personal_kpi_provenance_audit.csv", names)
-        self.assertIn("data/processed/personal_kpi_provenance_summary.csv", names)
-        self.assertIn("data/processed/personal_score_audit_provenance.csv", names)
-        self.assertIn("data/processed/personal_score_audit_provenance_summary.csv", names)
-        self.assertIn("data/processed/personal_monthly_action_compatibility.csv", names)
-        self.assertIn("data/processed/personal_monthly_action_compatibility_summary.csv", names)
-        self.assertIn("data/processed/personal_watchlist_input_gate.csv", names)
-        self.assertIn("data/processed/personal_watchlist_input_gate_summary.csv", names)
-        self.assertIn("data/processed/personal_artifact_freshness_checks.csv", names)
-        self.assertIn("data/processed/personal_artifact_freshness_summary.csv", names)
-        self.assertIn("data/processed/personal_valuation_input_review_queue.csv", names)
-        self.assertIn("data/processed/personal_valuation_input_contract_summary.csv", names)
-        self.assertIn("data/processed/personal_core_kpi_closure_queue.csv", names)
-        self.assertIn("data/processed/personal_core_kpi_closure_summary.csv", names)
-        self.assertIn("data/processed/personal_dividend_fcf_input_review_queue.csv", names)
-        self.assertIn("data/processed/personal_dividend_fcf_input_contract_summary.csv", names)
-        self.assertIn("data/processed/personal_readiness_status_summary.csv", names)
-        self.assertIn("data/processed/personal_readiness_blockers.csv", names)
-        self.assertIn("data/processed/personal_readiness_next_actions.csv", names)
-        self.assertIn("data/processed/personal_private_input_review_validation.csv", names)
-        self.assertIn("data/processed/personal_private_input_review_summary.csv", names)
-        self.assertIn("data/processed/personal_private_input_apply_candidates_sanitized.csv", names)
-        self.assertIn("data/processed/personal_private_input_apply_candidates_summary.csv", names)
-        self.assertIn("data/processed/personal_sec_core_kpi_refresh_plan.csv", names)
-        self.assertIn("data/processed/personal_sec_core_kpi_refresh_plan_summary.csv", names)
-        self.assertIn("data/processed/personal_sec_refresh_preflight.csv", names)
-        self.assertIn("data/processed/personal_sec_refresh_preflight_summary.csv", names)
-        self.assertIn("data/processed/dashboard_readiness_panel.csv", names)
-        self.assertIn("data/processed/dashboard_readiness_blockers.csv", names)
-        self.assertIn("data/processed/dashboard_readiness_next_actions.csv", names)
-        self.assertIn("data/processed/dashboard_readiness_payload.json", names)
-        self.assertIn("data/processed/website_private_preview_route_matrix.csv", names)
-        self.assertIn("data/processed/website_private_preview_cta_matrix.csv", names)
-        self.assertIn("data/processed/website_private_preview_copy_guardrails.csv", names)
-        self.assertIn("data/processed/website_private_preview_qa_summary.csv", names)
-        self.assertIn("data/processed/website_static_build_package_qa.csv", names)
-        self.assertIn("data/processed/website_static_build_package_summary.csv", names)
-        self.assertIn("data/processed/website_private_preview_copy_freeze_matrix.csv", names)
-        self.assertIn("data/processed/website_private_preview_copy_freeze_summary.csv", names)
-        self.assertIn("data/processed/website_private_preview_handoff_index.csv", names)
-        self.assertIn("data/processed/website_private_preview_release_summary.csv", names)
-        self.assertIn("data/processed/website_private_preview_handoff_zip_content_index.csv", names)
-        self.assertIn("data/processed/website_private_preview_handoff_qa_summary.csv", names)
-        self.assertIn("reports/2099-01-01/personal_profile_review_unlock_report.md", names)
-        self.assertIn("reports/2099-01-01/personal_missing_kpi_closure_report.md", names)
-        self.assertIn("reports/2099-01-01/personal_evidence_applied_downstream_delta_report.md", names)
-        self.assertIn("reports/2099-01-01/strategy_review_fundamentals_trust_scoring.md", names)
-        self.assertIn("reports/2099-01-01/personal_artifact_reconciliation_report.md", names)
-        self.assertIn("reports/2099-01-01/personal_kpi_provenance_audit_report.md", names)
-        self.assertIn("reports/2099-01-01/personal_score_audit_provenance_report.md", names)
-        self.assertIn("reports/2099-01-01/personal_monthly_action_schema_report.md", names)
-        self.assertIn("reports/2099-01-01/personal_watchlist_input_gate_report.md", names)
-        self.assertIn("reports/2099-01-01/personal_artifact_freshness_report.md", names)
-        self.assertIn("reports/2099-01-01/personal_valuation_input_contract_report.md", names)
-        self.assertIn("reports/2099-01-01/personal_core_kpi_closure_report.md", names)
-        self.assertIn("reports/2099-01-01/personal_dividend_fcf_input_contract_report.md", names)
-        self.assertIn("reports/2099-01-01/personal_readiness_status_report.md", names)
-        self.assertIn("reports/2099-01-01/personal_private_input_review_report.md", names)
-        self.assertIn("reports/2099-01-01/personal_private_input_apply_candidates_report.md", names)
-        self.assertIn("reports/2099-01-01/personal_sec_core_kpi_refresh_plan_report.md", names)
-        self.assertIn("reports/2099-01-01/personal_sec_refresh_preflight_report.md", names)
-        self.assertIn("reports/2099-01-01/dashboard_readiness_panel_report.md", names)
-        self.assertIn("reports/2099-01-01/dashboard_readiness_payload_report.md", names)
-        self.assertIn("reports/2099-01-01/website_private_preview_route_matrix_report.md", names)
-        self.assertIn("reports/2099-01-01/website_static_build_package_report.md", names)
-        self.assertIn("reports/2099-01-01/website_private_preview_copy_freeze_report.md", names)
-        self.assertIn("reports/2099-01-01/website_private_preview_release_notes.md", names)
-        self.assertIn("reports/2099-01-01/website_private_preview_handoff_qa_report.md", names)
-        self.assertNotIn("reports/2099-01-01/historical_report.md", names)
+        expected = {
+            "src/personal_sec_kpi_extraction_gap_review.py",
+            "tests/test_personal_sec_kpi_extraction_gap_review.py",
+            "data/processed/personal_sec_kpi_extraction_gap_matrix.csv",
+            "data/processed/personal_sec_kpi_extraction_concept_candidates.csv",
+            "data/processed/personal_sec_kpi_extraction_gap_summary.csv",
+            "reports/2026-04-27/personal_sec_kpi_extraction_gap_review_report.md",
+            "src/personal_sec_companyfacts_concept_review_table.py",
+            "tests/test_personal_sec_companyfacts_concept_review_table.py",
+            "data/processed/personal_sec_companyfacts_concept_review_table.csv",
+            "data/processed/personal_sec_companyfacts_concept_review_summary.csv",
+            "reports/2026-04-27/personal_sec_companyfacts_concept_review_table_report.md",
+        }
+        self.assertTrue(expected.issubset(names))
+        self.assertIn("profile: `patch`", context_text)
+        self.assertNotIn("data/raw/private/fundamentals/personal_sec_companyfacts_concept_approval_template.csv", names)
+        self.assertNotIn("sec_user_agent.local.txt", "\n".join(names))
+        self.assertIn("<private_raw_file>", omitted_text)
         self.assertEqual(scan_forbidden_entries(result.zip_path), ())
 
-    def test_forbidden_entry_scan_detects_blocked_paths(self) -> None:
-        zip_path = self._path("_tmp_handoff_bad.zip")
+    def test_explicit_forbidden_include_is_omitted_not_included(self) -> None:
+        forbidden = ROOT / "data" / "raw" / "private" / "fundamentals" / "sec_user_agent.local.txt"
+        result = export_profile_handoff_zip(
+            profile="patch",
+            name="unit_forbidden",
+            output_dir=self.tmp,
+            include_paths=[str(forbidden)],
+        )
+
+        with zipfile.ZipFile(result.zip_path, "r") as archive:
+            names = set(archive.namelist())
+            omitted_rows = list(csv.DictReader(archive.read("HANDOFF_OMITTED_ARTIFACTS.csv").decode("utf-8").splitlines()))
+
+        self.assertNotIn("data/raw/private/fundamentals/sec_user_agent.local.txt", names)
+        self.assertTrue(any(row["omission_reason"] == "FORBIDDEN_PATH" for row in omitted_rows))
+        self.assertEqual(scan_forbidden_entries(result.zip_path), ())
+
+    def test_explicit_include_self_handoff_contains_handoff_system_files_and_validation(self) -> None:
+        include_paths = [
+            "src/handoff_bundle.py",
+            "src/handoff_zip_export.py",
+            "src/patch_handoff_export.py",
+            "tests/test_handoff_bundle.py",
+            "tests/test_handoff_zip_export.py",
+            "tests/test_patch_handoff_export.py",
+            "docs/HANDOFF_CONTRACT.md",
+            "docs/CODEX_TASKS/POST_ITERATION_QA.md",
+        ]
+        result = export_profile_handoff_zip(
+            profile="patch",
+            name="unified_handoff_export_system",
+            output_dir=self.tmp,
+            include_paths=include_paths,
+            validation_commands=["python -m unittest tests.test_handoff_bundle -q"],
+        )
+
+        with zipfile.ZipFile(result.zip_path, "r") as archive:
+            names = set(archive.namelist())
+            validation_text = archive.read("HANDOFF_VALIDATION.txt").decode("utf-8")
+
+        self.assertTrue(set(include_paths).issubset(names))
+        self.assertIn("HANDOFF_CONTEXT.md", names)
+        self.assertIn("HANDOFF_REPORT.md", names)
+        self.assertIn("python -m unittest tests.test_handoff_bundle -q", validation_text)
+        self.assertIn("manifest_sha256=", validation_text)
+        self.assertNotIn("data/raw/private/", "\n".join(names))
+        self.assertNotIn("sec_user_agent.local.txt", "\n".join(names))
+        self.assertFalse(any(name.endswith(".zip") for name in names))
+        self.assertEqual(scan_forbidden_entries(result.zip_path), ())
+
+    def test_forbidden_entry_scan_detects_blocked_paths_and_allows_known_reports(self) -> None:
+        zip_path = self.tmp / "bad_scan.zip"
         with zipfile.ZipFile(zip_path, "w") as archive:
             archive.writestr(".git/config", "blocked")
             archive.writestr("reports/run.md", "blocked")
-            archive.writestr("reports/2026-04-26/personal_profile_review_unlock_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/personal_missing_kpi_closure_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/personal_evidence_applied_downstream_delta_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/strategy_review_fundamentals_trust_scoring.md", "allowed")
-            archive.writestr("reports/2026-04-26/personal_artifact_reconciliation_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/personal_kpi_provenance_audit_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/personal_score_audit_provenance_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/personal_monthly_action_schema_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/personal_watchlist_input_gate_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/personal_artifact_freshness_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/personal_valuation_input_contract_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/personal_core_kpi_closure_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/personal_dividend_fcf_input_contract_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/personal_readiness_status_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/personal_private_input_review_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/personal_private_input_apply_candidates_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/personal_sec_core_kpi_refresh_plan_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/personal_sec_refresh_preflight_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/dashboard_readiness_panel_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/dashboard_readiness_payload_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/website_private_preview_route_matrix_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/website_static_build_package_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/website_private_preview_copy_freeze_report.md", "allowed")
-            archive.writestr("reports/2026-04-26/website_private_preview_release_notes.md", "allowed")
-            archive.writestr("reports/2026-04-26/website_private_preview_handoff_qa_report.md", "allowed")
+            archive.writestr("reports/2026-04-27/personal_sec_kpi_extraction_gap_review_report.md", "allowed")
             archive.writestr("data/raw/private/secret.csv", "blocked")
-            archive.writestr("tests/_tmp_fixture.csv", "blocked")
-            archive.writestr("src/__pycache__/module.pyc", "blocked")
             archive.writestr("old_export.zip", "blocked")
             archive.writestr("website/compound-income-os-landing/.env", "blocked")
-            archive.writestr("website/compound-income-os-landing/.env.production.local", "blocked")
             archive.writestr("website/compound-income-os-landing/.env.example", "allowed")
-            archive.writestr("website/compound-income-os-landing/deploy_artifacts/dist.zip", "blocked")
             archive.writestr("src/app.py", "allowed")
 
         matches = scan_forbidden_entries(zip_path)
 
         self.assertIn(".git/config", matches)
         self.assertIn("reports/run.md", matches)
-        self.assertNotIn("reports/2026-04-26/personal_profile_review_unlock_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/personal_missing_kpi_closure_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/personal_evidence_applied_downstream_delta_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/strategy_review_fundamentals_trust_scoring.md", matches)
-        self.assertNotIn("reports/2026-04-26/personal_artifact_reconciliation_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/personal_kpi_provenance_audit_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/personal_score_audit_provenance_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/personal_monthly_action_schema_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/personal_watchlist_input_gate_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/personal_artifact_freshness_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/personal_valuation_input_contract_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/personal_core_kpi_closure_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/personal_dividend_fcf_input_contract_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/personal_readiness_status_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/personal_private_input_review_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/personal_private_input_apply_candidates_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/personal_sec_core_kpi_refresh_plan_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/personal_sec_refresh_preflight_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/dashboard_readiness_panel_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/dashboard_readiness_payload_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/website_private_preview_route_matrix_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/website_static_build_package_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/website_private_preview_copy_freeze_report.md", matches)
-        self.assertNotIn("reports/2026-04-26/website_private_preview_release_notes.md", matches)
-        self.assertNotIn("reports/2026-04-26/website_private_preview_handoff_qa_report.md", matches)
+        self.assertNotIn("reports/2026-04-27/personal_sec_kpi_extraction_gap_review_report.md", matches)
         self.assertIn("data/raw/private/secret.csv", matches)
-        self.assertIn("tests/_tmp_fixture.csv", matches)
-        self.assertIn("src/__pycache__/module.pyc", matches)
         self.assertIn("old_export.zip", matches)
         self.assertIn("website/compound-income-os-landing/.env", matches)
-        self.assertIn("website/compound-income-os-landing/.env.production.local", matches)
-        self.assertNotIn("website/compound-income-os-landing/.env.example", matches)
-        self.assertIn("website/compound-income-os-landing/deploy_artifacts/dist.zip", matches)
+        self.assertIn("website/compound-income-os-landing/.env.example", matches)
         self.assertNotIn("src/app.py", matches)
 
 
