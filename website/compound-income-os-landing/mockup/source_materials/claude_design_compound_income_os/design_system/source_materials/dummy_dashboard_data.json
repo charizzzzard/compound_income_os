@@ -1,0 +1,1533 @@
+{
+  "metadata": {
+    "schema_version": "1.0.0",
+    "product_name": "Compound Income OS",
+    "generated_for": "design_prototype",
+    "generated_at_utc": "2026-04-26T16:05:00Z",
+    "is_dummy": true,
+    "privacy_note": "Synthetic demo data only. No private portfolio holdings are represented.",
+    "currency": "EUR",
+    "locale": "en-US",
+    "source_alignment": [
+      "local-first portfolio research",
+      "deterministic CSV/Markdown artifacts",
+      "monthly decision reports",
+      "dashboard KPI layer",
+      "dividend-growth and quality-compounder workflow",
+      "evidence and data-quality gates",
+      "no broker execution",
+      "not investment advice"
+    ]
+  },
+  "app_copy": {
+    "wordmark": "Compound Income OS",
+    "hero": {
+      "headline": "A local operating system for long-term investing.",
+      "subheadline": "Turn broker exports, fundamentals, and evidence files into reproducible rankings, dashboards, and monthly decision reports. Local-first. No broker execution. No advice.",
+      "primary_cta": "Join Early Access",
+      "secondary_cta": "Request GitHub Access",
+      "microcopy": "Open-source core. No cloud account required. Not investment advice."
+    },
+    "navigation": [
+      {
+        "label": "Portfolio",
+        "target": "portfolio_structure"
+      },
+      {
+        "label": "Scores",
+        "target": "score_fundamentals"
+      },
+      {
+        "label": "Dividends",
+        "target": "dividend_snowball"
+      },
+      {
+        "label": "Decision",
+        "target": "monthly_decision"
+      },
+      {
+        "label": "Evidence",
+        "target": "evidence_quality"
+      },
+      {
+        "label": "Methodology",
+        "target": "methodology"
+      }
+    ],
+    "safe_action_labels": [
+      "Run Monthly Review",
+      "Inspect Coverage",
+      "Open Decision Report",
+      "Export Artifacts",
+      "Review Evidence",
+      "Add Journal Entry"
+    ]
+  },
+  "run_context": {
+    "run_id": "DEMO-20260426-160500",
+    "snapshot_date": "2026-04-26",
+    "measurement_mode": "SNAPSHOT_ONLY",
+    "monthly_new_cash_eur": 500.0,
+    "data_quality_flag": "REVIEW|MISSING_DATA",
+    "manifest_status": "AVAILABLE",
+    "source_artifacts": [
+      "data/processed/demo_positions_snapshot.csv",
+      "data/processed/demo_company_scores.csv",
+      "data/processed/demo_portfolio_holdings_action_table.csv",
+      "data/processed/demo_fundamentals_coverage.csv",
+      "data/processed/demo_monthly_buy_ranking.csv",
+      "reports/demo/monthly_decision_report.md"
+    ],
+    "generated_artifacts": [
+      "dashboard_kpis.csv",
+      "dashboard_sections.csv",
+      "dashboard_summary.csv",
+      "monthly_decision_report.md",
+      "decision_journal.md"
+    ],
+    "operator_note": "Demo run uses synthetic holdings and deterministic sample values for design only."
+  },
+  "portfolio_summary": {
+    "total_assets_eur": 37250.0,
+    "invested_assets_eur": 35000.0,
+    "cash_eur": 2250.0,
+    "cash_weight_pct": 6.04,
+    "number_of_positions": 7,
+    "top_5_weight_pct": 80.54,
+    "single_stock_weight_pct": 72.89,
+    "core_etf_weight_pct": 23.89,
+    "non_core_weight_pct": 4.97,
+    "weighted_business_score": 82.4,
+    "weighted_valuation_score": 63.2,
+    "weighted_dividend_score": 76.5,
+    "weighted_buy_score": 71.8,
+    "dashboard_data_quality_flag": "REVIEW|MISSING_DATA",
+    "primary_next_action": "Inspect Coverage",
+    "primary_next_action_reason": "3 holdings have partial evidence coverage and 1 holding requires manual review before it can enter the monthly decision queue."
+  },
+  "kpi_cards": [
+    {
+      "id": "total_assets",
+      "label": "Total Assets",
+      "value": 37250.0,
+      "display": "€37,250",
+      "unit": "EUR",
+      "status": "OK",
+      "trend": "+€1,420 vs previous run"
+    },
+    {
+      "id": "cash",
+      "label": "Cash",
+      "value": 2250.0,
+      "display": "€2,250",
+      "unit": "EUR",
+      "status": "OK",
+      "trend": "6.04% of assets"
+    },
+    {
+      "id": "weighted_buy_score",
+      "label": "Weighted Buy Score",
+      "value": 71.8,
+      "display": "71.8",
+      "unit": "SCORE",
+      "status": "PARTIAL",
+      "trend": "+2.1 vs previous run"
+    },
+    {
+      "id": "annual_dividend_income",
+      "label": "Annual Dividend Income",
+      "value": 714.7,
+      "display": "€715",
+      "unit": "EUR_PER_YEAR",
+      "status": "PARTIAL",
+      "trend": "+€43 run-over-run"
+    },
+    {
+      "id": "monthly_new_cash",
+      "label": "Monthly New Cash",
+      "value": 500.0,
+      "display": "€500",
+      "unit": "EUR",
+      "status": "OK",
+      "trend": "Configured rule"
+    },
+    {
+      "id": "missing_required_kpis",
+      "label": "Missing Required KPIs",
+      "value": 7,
+      "display": "7",
+      "unit": "COUNT",
+      "status": "MISSING_DATA",
+      "trend": "-3 after evidence apply"
+    }
+  ],
+  "sections": {
+    "portfolio_structure": {
+      "title": "Portfolio & Structure",
+      "status": "AVAILABLE",
+      "summary": "A clean view of current holdings, cash, sleeve allocation, and concentration.",
+      "metrics": [
+        {
+          "name": "total_assets",
+          "label": "Total Assets",
+          "value": 37250.0,
+          "unit": "EUR",
+          "status": "OK"
+        },
+        {
+          "name": "cash_weight",
+          "label": "Cash Weight",
+          "value": 6.04,
+          "unit": "PCT",
+          "status": "OK"
+        },
+        {
+          "name": "top_5_weight",
+          "label": "Top 5 Weight",
+          "value": 80.54,
+          "unit": "PCT",
+          "status": "OK"
+        },
+        {
+          "name": "number_of_positions",
+          "label": "Positions",
+          "value": 7,
+          "unit": "COUNT",
+          "status": "OK"
+        }
+      ],
+      "sleeve_allocation": [
+        {
+          "sleeve": "QUALITY_COMPOUNDER",
+          "market_value_eur": 15150.0,
+          "weight_pct": 40.67
+        },
+        {
+          "sleeve": "DIVIDEND_GROWTH",
+          "market_value_eur": 9500.0,
+          "weight_pct": 25.5
+        },
+        {
+          "sleeve": "CORE_ETF",
+          "market_value_eur": 8900.0,
+          "weight_pct": 23.89
+        },
+        {
+          "sleeve": "CASH",
+          "market_value_eur": 2250.0,
+          "weight_pct": 6.04
+        },
+        {
+          "sleeve": "NON_CORE_REVIEW",
+          "market_value_eur": 1450.0,
+          "weight_pct": 3.89
+        }
+      ],
+      "concentration_top_5": [
+        {
+          "ticker": "DEMO-ETF",
+          "company_name": "World Quality ETF",
+          "weight_pct": 23.89
+        },
+        {
+          "ticker": "QCA",
+          "company_name": "Quality Compounder A",
+          "weight_pct": 18.26
+        },
+        {
+          "ticker": "DGB",
+          "company_name": "Dividend Grower B",
+          "weight_pct": 14.5
+        },
+        {
+          "ticker": "HCF",
+          "company_name": "Healthcare Franchise C",
+          "weight_pct": 12.75
+        },
+        {
+          "ticker": "IFG",
+          "company_name": "Industrial Flywheel Group",
+          "weight_pct": 11.14
+        }
+      ]
+    },
+    "score_fundamentals": {
+      "title": "Score & Fundamentals",
+      "status": "PARTIAL",
+      "summary": "Business quality is strong, but several KPI gaps remain visible before candidate status can be trusted.",
+      "weighted_scores": [
+        {
+          "name": "business_score",
+          "label": "Business",
+          "value": 82.4,
+          "status": "OK"
+        },
+        {
+          "name": "valuation_score",
+          "label": "Valuation",
+          "value": 63.2,
+          "status": "PARTIAL"
+        },
+        {
+          "name": "dividend_score",
+          "label": "Dividend",
+          "value": 76.5,
+          "status": "PARTIAL"
+        },
+        {
+          "name": "buy_score",
+          "label": "Buy Score",
+          "value": 71.8,
+          "status": "PARTIAL"
+        }
+      ],
+      "score_distribution": [
+        {
+          "bucket": "80-100",
+          "count": 2
+        },
+        {
+          "bucket": "60-79",
+          "count": 3
+        },
+        {
+          "bucket": "40-59",
+          "count": 1
+        },
+        {
+          "bucket": "REVIEW",
+          "count": 1
+        }
+      ],
+      "candidate_status_counts": {
+        "ELIGIBLE_FOR_REVIEW": 2,
+        "DEFERRED_VALUATION": 2,
+        "WATCH": 2,
+        "MISSING_DATA": 1
+      }
+    },
+    "dividend_snowball": {
+      "title": "Dividend Snowball",
+      "status": "PARTIAL",
+      "summary": "Illustrative income calculation based on declared rates, current weights, monthly contribution, and reinvestment assumptions.",
+      "assumptions": {
+        "monthly_new_cash_eur": 500.0,
+        "reinvestment_rate_pct": 100.0,
+        "demo_dividend_growth_assumption_pct": 5.0,
+        "price_growth_assumption_pct": 0.0,
+        "important_note": "Illustrative calculation only; not a return forecast."
+      },
+      "metrics": [
+        {
+          "name": "annual_dividend_income",
+          "label": "Annual Income",
+          "value": 714.7,
+          "unit": "EUR",
+          "status": "PARTIAL"
+        },
+        {
+          "name": "monthly_dividend_income",
+          "label": "Monthly Income",
+          "value": 59.56,
+          "unit": "EUR",
+          "status": "PARTIAL"
+        },
+        {
+          "name": "forward_portfolio_yield",
+          "label": "Forward Yield",
+          "value": 2.04,
+          "unit": "PCT",
+          "status": "PARTIAL"
+        },
+        {
+          "name": "income_coverage",
+          "label": "Income Coverage",
+          "value": 86.0,
+          "unit": "PCT",
+          "status": "REVIEW"
+        }
+      ],
+      "income_by_sleeve": [
+        {
+          "sleeve": "DIVIDEND_GROWTH",
+          "annual_income_eur": 292.8,
+          "share_pct": 40.96
+        },
+        {
+          "sleeve": "CORE_ETF",
+          "annual_income_eur": 186.9,
+          "share_pct": 26.15
+        },
+        {
+          "sleeve": "QUALITY_COMPOUNDER",
+          "annual_income_eur": 194.2,
+          "share_pct": 27.17
+        },
+        {
+          "sleeve": "NON_CORE_REVIEW",
+          "annual_income_eur": 40.8,
+          "share_pct": 5.71
+        }
+      ],
+      "projection_years": [
+        {
+          "year": 2026,
+          "annual_income_eur": 715,
+          "monthly_income_eur": 60,
+          "status": "CURRENT_RUN"
+        },
+        {
+          "year": 2027,
+          "annual_income_eur": 1010,
+          "monthly_income_eur": 84,
+          "status": "ILLUSTRATIVE"
+        },
+        {
+          "year": 2028,
+          "annual_income_eur": 1348,
+          "monthly_income_eur": 112,
+          "status": "ILLUSTRATIVE"
+        },
+        {
+          "year": 2029,
+          "annual_income_eur": 1719,
+          "monthly_income_eur": 143,
+          "status": "ILLUSTRATIVE"
+        },
+        {
+          "year": 2030,
+          "annual_income_eur": 2125,
+          "monthly_income_eur": 177,
+          "status": "ILLUSTRATIVE"
+        }
+      ],
+      "dividend_calendar": [
+        {
+          "month": "Jan",
+          "expected_income_eur": 42
+        },
+        {
+          "month": "Feb",
+          "expected_income_eur": 38
+        },
+        {
+          "month": "Mar",
+          "expected_income_eur": 86
+        },
+        {
+          "month": "Apr",
+          "expected_income_eur": 51
+        },
+        {
+          "month": "May",
+          "expected_income_eur": 39
+        },
+        {
+          "month": "Jun",
+          "expected_income_eur": 91
+        },
+        {
+          "month": "Jul",
+          "expected_income_eur": 44
+        },
+        {
+          "month": "Aug",
+          "expected_income_eur": 40
+        },
+        {
+          "month": "Sep",
+          "expected_income_eur": 93
+        },
+        {
+          "month": "Oct",
+          "expected_income_eur": 45
+        },
+        {
+          "month": "Nov",
+          "expected_income_eur": 41
+        },
+        {
+          "month": "Dec",
+          "expected_income_eur": 104
+        }
+      ]
+    },
+    "monthly_decision": {
+      "title": "Monthly Decision Queue",
+      "status": "REVIEW",
+      "summary": "Monthly cash exists, but candidate eligibility depends on valuation and coverage checks.",
+      "cash_to_allocate_eur": 500.0,
+      "action_counts": {
+        "ADD": 1,
+        "HOLD": 3,
+        "WATCH": 2,
+        "REVIEW_REQUIRED": 1,
+        "DO_NOT_BUY": 1
+      },
+      "decision_journal": {
+        "journal_status": "DRAFT",
+        "current_entry_title": "April 2026 Monthly Review",
+        "open_review_items": 4,
+        "artifact_path": "reports/demo/decision_journal_2026-04.md"
+      }
+    },
+    "evidence_quality": {
+      "title": "Evidence & Data Quality",
+      "status": "REVIEW|MISSING_DATA",
+      "summary": "Coverage gaps remain first-class dashboard objects and are not hidden behind aggregate scores.",
+      "coverage_counts": {
+        "COVERED": 4,
+        "PARTIAL": 3,
+        "REVIEW": 1,
+        "MISSING_DATA": 1,
+        "NO_MATCH": 0,
+        "INSUFFICIENT_INPUTS": 0
+      },
+      "blocker_counts": [
+        {
+          "blocker": "MISSING_REQUIRED_KPI",
+          "count": 4
+        },
+        {
+          "blocker": "MANUAL_OVERLAY_REQUIRED",
+          "count": 2
+        },
+        {
+          "blocker": "NON_STANDARD_PROFILE",
+          "count": 1
+        },
+        {
+          "blocker": "INSUFFICIENT_HISTORY",
+          "count": 1
+        }
+      ],
+      "evidence_pipeline": [
+        {
+          "step": "Identity review",
+          "status": "OK",
+          "rows": 7
+        },
+        {
+          "step": "Evidence registry",
+          "status": "PARTIAL",
+          "rows": 21
+        },
+        {
+          "step": "Proposed updates",
+          "status": "REVIEW",
+          "rows": 6
+        },
+        {
+          "step": "Evidence apply",
+          "status": "PARTIAL",
+          "rows": 4
+        },
+        {
+          "step": "Downstream rerun",
+          "status": "AVAILABLE",
+          "rows": 1
+        }
+      ]
+    },
+    "performance": {
+      "title": "Benchmark & Performance",
+      "status": "INSUFFICIENT_HISTORY",
+      "summary": "Demo history is shown for layout only. Real app should mark insufficient history when the configured threshold is not met.",
+      "metrics": [
+        {
+          "name": "portfolio_nav",
+          "value": 37250.0,
+          "unit": "EUR",
+          "status": "OK"
+        },
+        {
+          "name": "active_return",
+          "value": null,
+          "unit": "PCT",
+          "status": "INSUFFICIENT_HISTORY"
+        },
+        {
+          "name": "max_drawdown",
+          "value": null,
+          "unit": "PCT",
+          "status": "INSUFFICIENT_HISTORY"
+        },
+        {
+          "name": "history_points",
+          "value": 7,
+          "unit": "COUNT",
+          "status": "PARTIAL"
+        }
+      ]
+    },
+    "costs_taxes": {
+      "title": "Costs & Taxes",
+      "status": "PARTIAL",
+      "summary": "Cost and tax artifacts are visible where ledger inputs exist. No tax advice is implied.",
+      "metrics": [
+        {
+          "name": "total_fees_ytd",
+          "value": 18.4,
+          "unit": "EUR",
+          "status": "OK"
+        },
+        {
+          "name": "total_taxes_ytd",
+          "value": 92.7,
+          "unit": "EUR",
+          "status": "OK"
+        },
+        {
+          "name": "withholding_tax_ytd",
+          "value": 41.2,
+          "unit": "EUR",
+          "status": "PARTIAL"
+        },
+        {
+          "name": "ledger_rows_review",
+          "value": 2,
+          "unit": "COUNT",
+          "status": "REVIEW"
+        }
+      ]
+    }
+  },
+  "charts": {
+    "portfolio_vs_benchmark": [
+      {
+        "date": "2025-10-31",
+        "portfolio_nav_eur": 31200,
+        "benchmark_reference_value": 100.0
+      },
+      {
+        "date": "2025-11-30",
+        "portfolio_nav_eur": 32150,
+        "benchmark_reference_value": 101.4
+      },
+      {
+        "date": "2025-12-31",
+        "portfolio_nav_eur": 33300,
+        "benchmark_reference_value": 103.0
+      },
+      {
+        "date": "2026-01-31",
+        "portfolio_nav_eur": 34280,
+        "benchmark_reference_value": 104.2
+      },
+      {
+        "date": "2026-02-28",
+        "portfolio_nav_eur": 34950,
+        "benchmark_reference_value": 104.9
+      },
+      {
+        "date": "2026-03-31",
+        "portfolio_nav_eur": 35830,
+        "benchmark_reference_value": 106.5
+      },
+      {
+        "date": "2026-04-26",
+        "portfolio_nav_eur": 37250,
+        "benchmark_reference_value": 108.1
+      }
+    ],
+    "score_history": [
+      {
+        "date": "2026-01-31",
+        "business_score": 78.2,
+        "valuation_score": 66.1,
+        "buy_score": 68.3
+      },
+      {
+        "date": "2026-02-28",
+        "business_score": 80.5,
+        "valuation_score": 64.7,
+        "buy_score": 69.1
+      },
+      {
+        "date": "2026-03-31",
+        "business_score": 81.6,
+        "valuation_score": 62.8,
+        "buy_score": 70.2
+      },
+      {
+        "date": "2026-04-26",
+        "business_score": 82.4,
+        "valuation_score": 63.2,
+        "buy_score": 71.8
+      }
+    ],
+    "dividend_income_path": [
+      {
+        "year": 2026,
+        "annual_income_eur": 715
+      },
+      {
+        "year": 2027,
+        "annual_income_eur": 1010
+      },
+      {
+        "year": 2028,
+        "annual_income_eur": 1348
+      },
+      {
+        "year": 2029,
+        "annual_income_eur": 1719
+      },
+      {
+        "year": 2030,
+        "annual_income_eur": 2125
+      }
+    ],
+    "coverage_status": [
+      {
+        "status": "COVERED",
+        "count": 4
+      },
+      {
+        "status": "PARTIAL",
+        "count": 3
+      },
+      {
+        "status": "REVIEW",
+        "count": 1
+      },
+      {
+        "status": "MISSING_DATA",
+        "count": 1
+      }
+    ]
+  },
+  "tables": {
+    "positions": [
+      {
+        "portfolio_date": "2026-04-26",
+        "isin": "",
+        "ticker": "EUR-CASH",
+        "company_name": "Cash",
+        "asset_type": "CASH",
+        "sleeve": "CASH",
+        "market_value": "2250.00",
+        "market_value_eur": "2250.00",
+        "mandate_fit": "CASH_RESERVE",
+        "data_quality_flag": "OK",
+        "review_flag": "False",
+        "weight_total_assets_pct": "6.04"
+      },
+      {
+        "portfolio_date": "2026-04-26",
+        "isin": "DEMO00000001",
+        "ticker": "QCA",
+        "company_name": "Quality Compounder A",
+        "asset_type": "STOCK",
+        "sleeve": "QUALITY_COMPOUNDER",
+        "market_value": "6800.00",
+        "market_value_eur": "6800.00",
+        "mandate_fit": "MANDATE_FIT",
+        "data_quality_flag": "OK",
+        "review_flag": "False",
+        "weight_total_assets_pct": "18.26"
+      },
+      {
+        "portfolio_date": "2026-04-26",
+        "isin": "DEMO00000002",
+        "ticker": "DGB",
+        "company_name": "Dividend Grower B",
+        "asset_type": "STOCK",
+        "sleeve": "DIVIDEND_GROWTH",
+        "market_value": "5400.00",
+        "market_value_eur": "5400.00",
+        "mandate_fit": "MANDATE_FIT",
+        "data_quality_flag": "OK",
+        "review_flag": "False",
+        "weight_total_assets_pct": "14.50"
+      },
+      {
+        "portfolio_date": "2026-04-26",
+        "isin": "DEMO00000003",
+        "ticker": "HCF",
+        "company_name": "Healthcare Franchise C",
+        "asset_type": "STOCK",
+        "sleeve": "QUALITY_COMPOUNDER",
+        "market_value": "4750.00",
+        "market_value_eur": "4750.00",
+        "mandate_fit": "MANDATE_FIT",
+        "data_quality_flag": "PARTIAL",
+        "review_flag": "False",
+        "weight_total_assets_pct": "12.75"
+      },
+      {
+        "portfolio_date": "2026-04-26",
+        "isin": "DEMO00000004",
+        "ticker": "IFG",
+        "company_name": "Industrial Flywheel Group",
+        "asset_type": "STOCK",
+        "sleeve": "DIVIDEND_GROWTH",
+        "market_value": "4100.00",
+        "market_value_eur": "4100.00",
+        "mandate_fit": "MANDATE_FIT",
+        "data_quality_flag": "PARTIAL",
+        "review_flag": "False",
+        "weight_total_assets_pct": "11.01"
+      },
+      {
+        "portfolio_date": "2026-04-26",
+        "isin": "DEMO00000005",
+        "ticker": "FND",
+        "company_name": "Financial Network D",
+        "asset_type": "STOCK",
+        "sleeve": "QUALITY_COMPOUNDER",
+        "market_value": "3600.00",
+        "market_value_eur": "3600.00",
+        "mandate_fit": "PROFILE_REVIEW",
+        "data_quality_flag": "REVIEW",
+        "review_flag": "True",
+        "weight_total_assets_pct": "9.66"
+      },
+      {
+        "portfolio_date": "2026-04-26",
+        "isin": "DEMO00000006",
+        "ticker": "DEMO-ETF",
+        "company_name": "World Quality ETF",
+        "asset_type": "ETF",
+        "sleeve": "CORE_ETF",
+        "market_value": "8900.00",
+        "market_value_eur": "8900.00",
+        "mandate_fit": "CORE_HOLDING",
+        "data_quality_flag": "OK",
+        "review_flag": "False",
+        "weight_total_assets_pct": "23.89"
+      },
+      {
+        "portfolio_date": "2026-04-26",
+        "isin": "DEMO00000007",
+        "ticker": "NCR",
+        "company_name": "Non-Core Review Position",
+        "asset_type": "STOCK",
+        "sleeve": "NON_CORE_REVIEW",
+        "market_value": "1450.00",
+        "market_value_eur": "1450.00",
+        "mandate_fit": "NON_CORE",
+        "data_quality_flag": "MISSING_DATA",
+        "review_flag": "True",
+        "weight_total_assets_pct": "3.89"
+      }
+    ],
+    "holdings": [
+      {
+        "ticker": "QCA",
+        "company_name": "Quality Compounder A",
+        "asset_type": "STOCK",
+        "sleeve": "QUALITY_COMPOUNDER",
+        "market_value": "6800.00",
+        "current_weight": "18.26",
+        "business_score": "91.0",
+        "valuation_score": "58.0",
+        "buy_score": "73.0",
+        "mandate_fit": "MANDATE_FIT",
+        "purchase_readiness": "DEFERRED_VALUATION",
+        "portfolio_action": "HOLD",
+        "portfolio_action_reason": "High business score but valuation gate is not attractive enough for new capital.",
+        "data_quality_flag": "OK",
+        "review_flag": "False"
+      },
+      {
+        "ticker": "DGB",
+        "company_name": "Dividend Grower B",
+        "asset_type": "STOCK",
+        "sleeve": "DIVIDEND_GROWTH",
+        "market_value": "5400.00",
+        "current_weight": "14.50",
+        "business_score": "84.0",
+        "valuation_score": "72.0",
+        "buy_score": "80.0",
+        "mandate_fit": "MANDATE_FIT",
+        "purchase_readiness": "ELIGIBLE_FOR_REVIEW",
+        "portfolio_action": "ADD",
+        "portfolio_action_reason": "Meets dividend quality and valuation gates within concentration limit.",
+        "data_quality_flag": "OK",
+        "review_flag": "False"
+      },
+      {
+        "ticker": "HCF",
+        "company_name": "Healthcare Franchise C",
+        "asset_type": "STOCK",
+        "sleeve": "QUALITY_COMPOUNDER",
+        "market_value": "4750.00",
+        "current_weight": "12.75",
+        "business_score": "86.0",
+        "valuation_score": "61.0",
+        "buy_score": "72.0",
+        "mandate_fit": "MANDATE_FIT",
+        "purchase_readiness": "WATCH",
+        "portfolio_action": "WATCH",
+        "portfolio_action_reason": "Partial evidence coverage; keep in watch queue.",
+        "data_quality_flag": "PARTIAL",
+        "review_flag": "False"
+      },
+      {
+        "ticker": "IFG",
+        "company_name": "Industrial Flywheel Group",
+        "asset_type": "STOCK",
+        "sleeve": "DIVIDEND_GROWTH",
+        "market_value": "4100.00",
+        "current_weight": "11.01",
+        "business_score": "78.0",
+        "valuation_score": "68.0",
+        "buy_score": "74.0",
+        "mandate_fit": "MANDATE_FIT",
+        "purchase_readiness": "ELIGIBLE_FOR_REVIEW",
+        "portfolio_action": "HOLD",
+        "portfolio_action_reason": "Already near target weight; no new cash allocated this cycle.",
+        "data_quality_flag": "PARTIAL",
+        "review_flag": "False"
+      },
+      {
+        "ticker": "FND",
+        "company_name": "Financial Network D",
+        "asset_type": "STOCK",
+        "sleeve": "QUALITY_COMPOUNDER",
+        "market_value": "3600.00",
+        "current_weight": "9.66",
+        "business_score": "NOT_AVAILABLE",
+        "valuation_score": "NOT_AVAILABLE",
+        "buy_score": "NOT_AVAILABLE",
+        "mandate_fit": "PROFILE_REVIEW",
+        "purchase_readiness": "REVIEW_REQUIRED",
+        "portfolio_action": "REVIEW_REQUIRED",
+        "portfolio_action_reason": "Financial company profile requires separate KPI model.",
+        "data_quality_flag": "REVIEW",
+        "review_flag": "True"
+      },
+      {
+        "ticker": "DEMO-ETF",
+        "company_name": "World Quality ETF",
+        "asset_type": "ETF",
+        "sleeve": "CORE_ETF",
+        "market_value": "8900.00",
+        "current_weight": "23.89",
+        "business_score": "NOT_APPLICABLE",
+        "valuation_score": "NOT_APPLICABLE",
+        "buy_score": "67.0",
+        "mandate_fit": "CORE_HOLDING",
+        "purchase_readiness": "HOLD",
+        "portfolio_action": "HOLD",
+        "portfolio_action_reason": "Core ETF sleeve remains within rule band.",
+        "data_quality_flag": "OK",
+        "review_flag": "False"
+      },
+      {
+        "ticker": "NCR",
+        "company_name": "Non-Core Review Position",
+        "asset_type": "STOCK",
+        "sleeve": "NON_CORE_REVIEW",
+        "market_value": "1450.00",
+        "current_weight": "3.89",
+        "business_score": "NOT_AVAILABLE",
+        "valuation_score": "NOT_AVAILABLE",
+        "buy_score": "NOT_AVAILABLE",
+        "mandate_fit": "NON_CORE",
+        "purchase_readiness": "DO_NOT_BUY",
+        "portfolio_action": "DO_NOT_BUY",
+        "portfolio_action_reason": "Missing fundamentals and non-core sleeve.",
+        "data_quality_flag": "MISSING_DATA",
+        "review_flag": "True"
+      }
+    ],
+    "monthly_buy_ranking": [
+      {
+        "rank": "1",
+        "ticker": "DGB",
+        "company_name": "Dividend Grower B",
+        "current_weight": "14.50",
+        "target_action": "REVIEW_CANDIDATE",
+        "allocation_status": "ELIGIBLE",
+        "suggested_buy_amount_eur": "300.00",
+        "rationale": "Highest covered dividend-growth candidate after valuation gate.",
+        "constraint_checks": "cash_available=true; concentration_ok=true; coverage_ok=true",
+        "valuation_comment": "Within rule band.",
+        "mandate_fit_comment": "Dividend-growth sleeve fit."
+      },
+      {
+        "rank": "2",
+        "ticker": "IFG",
+        "company_name": "Industrial Flywheel Group",
+        "current_weight": "11.01",
+        "target_action": "DEFER",
+        "allocation_status": "NEAR_TARGET_WEIGHT",
+        "suggested_buy_amount_eur": "0.00",
+        "rationale": "Good score but already near target allocation.",
+        "constraint_checks": "cash_available=true; concentration_ok=true; coverage_partial=true",
+        "valuation_comment": "Acceptable, not compelling.",
+        "mandate_fit_comment": "Dividend-growth sleeve fit."
+      },
+      {
+        "rank": "3",
+        "ticker": "HCF",
+        "company_name": "Healthcare Franchise C",
+        "current_weight": "12.75",
+        "target_action": "WATCH",
+        "allocation_status": "EVIDENCE_PARTIAL",
+        "suggested_buy_amount_eur": "0.00",
+        "rationale": "Needs missing KPI review before new capital.",
+        "constraint_checks": "coverage_ok=false; review_required=true",
+        "valuation_comment": "Incomplete input.",
+        "mandate_fit_comment": "Quality-compounder sleeve fit."
+      },
+      {
+        "rank": "4",
+        "ticker": "EUR-CASH",
+        "company_name": "Cash",
+        "current_weight": "6.04",
+        "target_action": "HOLD_CASH",
+        "allocation_status": "RESERVE_OK",
+        "suggested_buy_amount_eur": "200.00",
+        "rationale": "Reserve retained until review cases are closed.",
+        "constraint_checks": "cash_reserve_ok=true",
+        "valuation_comment": "NOT_APPLICABLE",
+        "mandate_fit_comment": "Cash reserve."
+      }
+    ],
+    "rebalance_proposals": [
+      {
+        "ticker": "DEMO-ETF",
+        "company_name": "World Quality ETF",
+        "action": "HOLD",
+        "current_weight_pct": "23.89",
+        "reason": "Core ETF sleeve remains within configured band."
+      },
+      {
+        "ticker": "NCR",
+        "company_name": "Non-Core Review Position",
+        "action": "REVIEW",
+        "current_weight_pct": "3.89",
+        "reason": "Non-core position with missing data; keep visible for operator decision."
+      }
+    ],
+    "watchlist": [
+      {
+        "ticker": "DGB",
+        "company_name": "Dividend Grower B",
+        "sector": "Consumer Staples",
+        "country": "DEMO",
+        "asset_type": "STOCK",
+        "sleeve": "DIVIDEND_GROWTH",
+        "business_score": "84.0",
+        "valuation_score": "72.0",
+        "buy_score": "80.0",
+        "mandate_fit": "MANDATE_FIT",
+        "status": "ELIGIBLE_FOR_REVIEW",
+        "data_quality_flag": "OK",
+        "thesis_summary": "Defensive dividend compounder with consistent cash returns.",
+        "main_risks": "Margin pressure; valuation normalization."
+      },
+      {
+        "ticker": "HCF",
+        "company_name": "Healthcare Franchise C",
+        "sector": "Healthcare",
+        "country": "DEMO",
+        "asset_type": "STOCK",
+        "sleeve": "QUALITY_COMPOUNDER",
+        "business_score": "86.0",
+        "valuation_score": "61.0",
+        "buy_score": "72.0",
+        "mandate_fit": "MANDATE_FIT",
+        "status": "WATCH",
+        "data_quality_flag": "PARTIAL",
+        "thesis_summary": "Durable healthcare franchise; needs updated evidence.",
+        "main_risks": "Regulatory risk; missing FCF metrics."
+      },
+      {
+        "ticker": "QCA",
+        "company_name": "Quality Compounder A",
+        "sector": "Software",
+        "country": "DEMO",
+        "asset_type": "STOCK",
+        "sleeve": "QUALITY_COMPOUNDER",
+        "business_score": "91.0",
+        "valuation_score": "58.0",
+        "buy_score": "73.0",
+        "mandate_fit": "MANDATE_FIT",
+        "status": "DEFERRED_VALUATION",
+        "data_quality_flag": "OK",
+        "thesis_summary": "High-quality compounder; new capital depends on valuation.",
+        "main_risks": "Multiple compression."
+      }
+    ],
+    "fundamentals_coverage": [
+      {
+        "holding_name": "Quality Compounder A",
+        "ticker": "QCA",
+        "isin": "DEMO00000001",
+        "asset_type": "STOCK",
+        "company_type_profile": "STANDARD",
+        "match_status": "COVERED",
+        "match_method": "EXACT_TICKER_ISIN",
+        "data_quality_flag": "OK",
+        "missing_required_kpis": "",
+        "optional_missing_kpis": "target_fcf_yield_pct",
+        "needs_research_flag": "False",
+        "profile_classification_warning_flag": "False",
+        "profile_classification_warning_reason": "",
+        "notes": "Demo covered row."
+      },
+      {
+        "holding_name": "Dividend Grower B",
+        "ticker": "DGB",
+        "isin": "DEMO00000002",
+        "asset_type": "STOCK",
+        "company_type_profile": "STANDARD",
+        "match_status": "COVERED",
+        "match_method": "EXACT_TICKER_ISIN",
+        "data_quality_flag": "OK",
+        "missing_required_kpis": "",
+        "optional_missing_kpis": "",
+        "needs_research_flag": "False",
+        "profile_classification_warning_flag": "False",
+        "profile_classification_warning_reason": "",
+        "notes": "Demo covered row."
+      },
+      {
+        "holding_name": "Healthcare Franchise C",
+        "ticker": "HCF",
+        "isin": "DEMO00000003",
+        "asset_type": "STOCK",
+        "company_type_profile": "STANDARD",
+        "match_status": "PARTIAL",
+        "match_method": "EXACT_TICKER_ISIN",
+        "data_quality_flag": "PARTIAL",
+        "missing_required_kpis": "fcf_margin; payout_ratio_fcf",
+        "optional_missing_kpis": "share_count_cagr_5y",
+        "needs_research_flag": "True",
+        "profile_classification_warning_flag": "False",
+        "profile_classification_warning_reason": "",
+        "notes": "Needs evidence review."
+      },
+      {
+        "holding_name": "Industrial Flywheel Group",
+        "ticker": "IFG",
+        "isin": "DEMO00000004",
+        "asset_type": "STOCK",
+        "company_type_profile": "STANDARD",
+        "match_status": "PARTIAL",
+        "match_method": "EXACT_TICKER_ISIN",
+        "data_quality_flag": "PARTIAL",
+        "missing_required_kpis": "normalized_fcf_yield_pct",
+        "optional_missing_kpis": "",
+        "needs_research_flag": "True",
+        "profile_classification_warning_flag": "False",
+        "profile_classification_warning_reason": "",
+        "notes": "Market-data input required."
+      },
+      {
+        "holding_name": "Financial Network D",
+        "ticker": "FND",
+        "isin": "DEMO00000005",
+        "asset_type": "STOCK",
+        "company_type_profile": "FINANCIAL",
+        "match_status": "REVIEW",
+        "match_method": "EXACT_TICKER_ISIN",
+        "data_quality_flag": "REVIEW",
+        "missing_required_kpis": "",
+        "optional_missing_kpis": "",
+        "needs_research_flag": "True",
+        "profile_classification_warning_flag": "True",
+        "profile_classification_warning_reason": "Financial-company profile should not use STANDARD scoring without explicit model.",
+        "notes": "Profile handling required."
+      },
+      {
+        "holding_name": "World Quality ETF",
+        "ticker": "DEMO-ETF",
+        "isin": "DEMO00000006",
+        "asset_type": "ETF",
+        "company_type_profile": "OTHER",
+        "match_status": "COVERED",
+        "match_method": "EXACT_TICKER_ISIN",
+        "data_quality_flag": "OK",
+        "missing_required_kpis": "",
+        "optional_missing_kpis": "",
+        "needs_research_flag": "False",
+        "profile_classification_warning_flag": "False",
+        "profile_classification_warning_reason": "",
+        "notes": "ETF/fund facts workflow, not STANDARD company scoring."
+      },
+      {
+        "holding_name": "Non-Core Review Position",
+        "ticker": "NCR",
+        "isin": "DEMO00000007",
+        "asset_type": "STOCK",
+        "company_type_profile": "OTHER",
+        "match_status": "MISSING_DATA",
+        "match_method": "NO_MATCH",
+        "data_quality_flag": "MISSING_DATA",
+        "missing_required_kpis": "roic; roce; fcf_margin; payout_ratio_fcf; net_debt_to_ebitda",
+        "optional_missing_kpis": "all_optional",
+        "needs_research_flag": "True",
+        "profile_classification_warning_flag": "True",
+        "profile_classification_warning_reason": "Non-core review position lacks reliable fundamentals.",
+        "notes": "Keep visible; do not force-score."
+      }
+    ],
+    "research_priority": [
+      {
+        "ticker": "NCR",
+        "isin": "DEMO00000007",
+        "company_name": "Non-Core Review Position",
+        "asset_type": "STOCK",
+        "company_type_profile": "OTHER",
+        "market_value_eur": "1450.00",
+        "weight_total_assets_pct": "3.89",
+        "missing_required_kpi_count": "5",
+        "needs_research_flag": "True",
+        "coverage_status": "MISSING_DATA",
+        "research_priority": "HIGH",
+        "research_priority_reason": "Missing fundamentals and non-core classification."
+      },
+      {
+        "ticker": "HCF",
+        "isin": "DEMO00000003",
+        "company_name": "Healthcare Franchise C",
+        "asset_type": "STOCK",
+        "company_type_profile": "STANDARD",
+        "market_value_eur": "4750.00",
+        "weight_total_assets_pct": "12.75",
+        "missing_required_kpi_count": "2",
+        "needs_research_flag": "True",
+        "coverage_status": "PARTIAL",
+        "research_priority": "MEDIUM",
+        "research_priority_reason": "Candidate quality is high but FCF evidence is incomplete."
+      },
+      {
+        "ticker": "FND",
+        "isin": "DEMO00000005",
+        "company_name": "Financial Network D",
+        "asset_type": "STOCK",
+        "company_type_profile": "FINANCIAL",
+        "market_value_eur": "3600.00",
+        "weight_total_assets_pct": "9.66",
+        "missing_required_kpi_count": "0",
+        "needs_research_flag": "True",
+        "coverage_status": "REVIEW",
+        "research_priority": "MEDIUM",
+        "research_priority_reason": "Requires financial-company KPI model."
+      }
+    ],
+    "cost_tax_ledger": [
+      {
+        "event_date": "2026-01-15",
+        "broker": "demo_broker_export",
+        "document_type": "DIVIDEND",
+        "event_type": "DIVIDEND_CASH",
+        "instrument_name": "Dividend Grower B",
+        "ticker": "DGB",
+        "isin": "DEMO00000002",
+        "currency": "EUR",
+        "gross_amount": "46.00",
+        "net_amount": "34.50",
+        "fee_amount": "0.00",
+        "tax_amount": "11.50",
+        "withholding_tax_amount": "4.20",
+        "verification_status": "VERIFIED",
+        "data_quality_flag": "OK",
+        "notes": "Synthetic demo event."
+      },
+      {
+        "event_date": "2026-02-12",
+        "broker": "demo_broker_export",
+        "document_type": "ORDER",
+        "event_type": "BUY",
+        "instrument_name": "World Quality ETF",
+        "ticker": "DEMO-ETF",
+        "isin": "DEMO00000006",
+        "currency": "EUR",
+        "gross_amount": "500.00",
+        "net_amount": "501.00",
+        "fee_amount": "1.00",
+        "tax_amount": "0.00",
+        "withholding_tax_amount": "0.00",
+        "verification_status": "VERIFIED",
+        "data_quality_flag": "OK",
+        "notes": "Synthetic demo event."
+      },
+      {
+        "event_date": "2026-03-21",
+        "broker": "demo_broker_export",
+        "document_type": "DIVIDEND",
+        "event_type": "DIVIDEND_CASH",
+        "instrument_name": "Healthcare Franchise C",
+        "ticker": "HCF",
+        "isin": "DEMO00000003",
+        "currency": "EUR",
+        "gross_amount": "32.00",
+        "net_amount": "24.00",
+        "fee_amount": "0.00",
+        "tax_amount": "8.00",
+        "withholding_tax_amount": "3.10",
+        "verification_status": "REVIEW",
+        "data_quality_flag": "REVIEW",
+        "notes": "Synthetic demo event with review state."
+      }
+    ],
+    "dashboard_summary": [
+      {
+        "snapshot_date": "2026-04-26",
+        "performance_source_date": "2026-04-26",
+        "cost_tax_source_date": "2026-04-26",
+        "cross_source_data_quality_flag": "REVIEW|MISSING_DATA",
+        "dashboard_data_quality_flag": "REVIEW|MISSING_DATA",
+        "portfolio_measurement_mode": "SNAPSHOT_ONLY",
+        "performance_measurement_mode": "INSUFFICIENT_HISTORY",
+        "ledger_measurement_mode": "PARTIAL_LEDGER",
+        "total_assets": "37250.00",
+        "weighted_buy_score": "71.80",
+        "active_return": "NOT_AVAILABLE",
+        "total_fees": "18.40",
+        "total_taxes": "92.70",
+        "notes_count": "4",
+        "missing_block_count": "2"
+      }
+    ],
+    "dashboard_kpis": [
+      {
+        "metric_name": "total_assets",
+        "metric_group": "Portfolio / Struktur",
+        "metric_value": "37250.00",
+        "metric_unit": "EUR",
+        "source_name": "demo_positions",
+        "source_file": "data/processed/demo_positions_snapshot.csv",
+        "measurement_mode": "SNAPSHOT_ONLY",
+        "data_quality_flag": "OK",
+        "availability_status": "AVAILABLE",
+        "notes": "Synthetic demo KPI."
+      },
+      {
+        "metric_name": "cash",
+        "metric_group": "Portfolio / Struktur",
+        "metric_value": "2250.00",
+        "metric_unit": "EUR",
+        "source_name": "demo_positions",
+        "source_file": "data/processed/demo_positions_snapshot.csv",
+        "measurement_mode": "SNAPSHOT_ONLY",
+        "data_quality_flag": "OK",
+        "availability_status": "AVAILABLE",
+        "notes": "Synthetic demo KPI."
+      },
+      {
+        "metric_name": "weighted_business_score",
+        "metric_group": "Score / Fundamentals",
+        "metric_value": "82.40",
+        "metric_unit": "SCORE",
+        "source_name": "demo_scores",
+        "source_file": "data/processed/demo_company_scores.csv",
+        "measurement_mode": "SNAPSHOT_ONLY",
+        "data_quality_flag": "PARTIAL",
+        "availability_status": "AVAILABLE",
+        "notes": "Coverage gaps visible."
+      },
+      {
+        "metric_name": "weighted_valuation_score",
+        "metric_group": "Score / Fundamentals",
+        "metric_value": "63.20",
+        "metric_unit": "SCORE",
+        "source_name": "demo_scores",
+        "source_file": "data/processed/demo_company_scores.csv",
+        "measurement_mode": "SNAPSHOT_ONLY",
+        "data_quality_flag": "PARTIAL",
+        "availability_status": "AVAILABLE",
+        "notes": "Coverage gaps visible."
+      },
+      {
+        "metric_name": "weighted_buy_score",
+        "metric_group": "Score / Fundamentals",
+        "metric_value": "71.80",
+        "metric_unit": "SCORE",
+        "source_name": "demo_scores",
+        "source_file": "data/processed/demo_company_scores.csv",
+        "measurement_mode": "SNAPSHOT_ONLY",
+        "data_quality_flag": "PARTIAL",
+        "availability_status": "AVAILABLE",
+        "notes": "Decision-support score only."
+      },
+      {
+        "metric_name": "annual_dividend_income",
+        "metric_group": "Dividend Snowball",
+        "metric_value": "714.70",
+        "metric_unit": "EUR_PER_YEAR",
+        "source_name": "demo_dividend_model",
+        "source_file": "data/processed/demo_dividend_snowball.csv",
+        "measurement_mode": "SNAPSHOT_ONLY",
+        "data_quality_flag": "PARTIAL",
+        "availability_status": "AVAILABLE",
+        "notes": "Illustrative calculation, not a forecast."
+      },
+      {
+        "metric_name": "active_return",
+        "metric_group": "Benchmark / Performance",
+        "metric_value": "NOT_AVAILABLE",
+        "metric_unit": "PCT",
+        "source_name": "demo_performance",
+        "source_file": "data/processed/demo_performance_summary.csv",
+        "measurement_mode": "INSUFFICIENT_HISTORY",
+        "data_quality_flag": "INSUFFICIENT_HISTORY",
+        "availability_status": "NOT_AVAILABLE",
+        "notes": "Demo history is too short."
+      },
+      {
+        "metric_name": "total_fees",
+        "metric_group": "Kosten / Steuern",
+        "metric_value": "18.40",
+        "metric_unit": "EUR",
+        "source_name": "demo_cost_tax",
+        "source_file": "data/processed/demo_cost_tax_ledger_normalized.csv",
+        "measurement_mode": "PARTIAL_LEDGER",
+        "data_quality_flag": "PARTIAL",
+        "availability_status": "AVAILABLE",
+        "notes": "No tax advice."
+      },
+      {
+        "metric_name": "missing_required_kpis",
+        "metric_group": "Datenqualitaet / Methodik",
+        "metric_value": "7",
+        "metric_unit": "COUNT",
+        "source_name": "demo_coverage",
+        "source_file": "data/processed/demo_fundamentals_coverage.csv",
+        "measurement_mode": "SNAPSHOT_ONLY",
+        "data_quality_flag": "MISSING_DATA",
+        "availability_status": "AVAILABLE",
+        "notes": "Missing values stay visible."
+      }
+    ],
+    "dashboard_sections": [
+      {
+        "section_name": "Portfolio / Struktur",
+        "block_status": "AVAILABLE",
+        "metric_name": "total_assets",
+        "display_order": "101",
+        "display_label": "Total Assets",
+        "value_display": "€37,250",
+        "data_quality_flag": "OK"
+      },
+      {
+        "section_name": "Portfolio / Struktur",
+        "block_status": "AVAILABLE",
+        "metric_name": "cash_weight",
+        "display_order": "102",
+        "display_label": "Cash Weight",
+        "value_display": "6.04%",
+        "data_quality_flag": "OK"
+      },
+      {
+        "section_name": "Score / Fundamentals",
+        "block_status": "PARTIAL",
+        "metric_name": "weighted_buy_score",
+        "display_order": "201",
+        "display_label": "Weighted Buy Score",
+        "value_display": "71.8",
+        "data_quality_flag": "PARTIAL"
+      },
+      {
+        "section_name": "Dividend Snowball",
+        "block_status": "PARTIAL",
+        "metric_name": "annual_dividend_income",
+        "display_order": "251",
+        "display_label": "Annual Dividend Income",
+        "value_display": "€715",
+        "data_quality_flag": "PARTIAL"
+      },
+      {
+        "section_name": "Benchmark / Performance",
+        "block_status": "INSUFFICIENT_HISTORY",
+        "metric_name": "active_return",
+        "display_order": "301",
+        "display_label": "Active Return",
+        "value_display": "NOT_AVAILABLE",
+        "data_quality_flag": "INSUFFICIENT_HISTORY"
+      },
+      {
+        "section_name": "Kosten / Steuern",
+        "block_status": "PARTIAL",
+        "metric_name": "total_fees",
+        "display_order": "401",
+        "display_label": "Total Fees",
+        "value_display": "€18.40",
+        "data_quality_flag": "PARTIAL"
+      },
+      {
+        "section_name": "Datenqualitaet / Methodik",
+        "block_status": "REVIEW|MISSING_DATA",
+        "metric_name": "missing_required_kpis",
+        "display_order": "501",
+        "display_label": "Missing Required KPIs",
+        "value_display": "7",
+        "data_quality_flag": "MISSING_DATA"
+      }
+    ]
+  },
+  "methodology": {
+    "pipeline_principles": [
+      "Local files in; deterministic artifacts out.",
+      "Raw data, processed artifacts, and reports remain separated.",
+      "Missing data is surfaced as a status, not silently imputed.",
+      "Scoring and dashboard stages do not execute trades.",
+      "Run outputs should link back to source artifact paths."
+    ],
+    "status_legend": [
+      {
+        "status": "OK",
+        "meaning": "Input is present and usable for the current view."
+      },
+      {
+        "status": "PARTIAL",
+        "meaning": "Some inputs exist, but coverage is incomplete."
+      },
+      {
+        "status": "REVIEW",
+        "meaning": "Operator review is required before downstream use."
+      },
+      {
+        "status": "MISSING_DATA",
+        "meaning": "Required input is absent; do not force-score."
+      },
+      {
+        "status": "INSUFFICIENT_HISTORY",
+        "meaning": "History is too short for robust performance metrics."
+      },
+      {
+        "status": "NOT_AVAILABLE",
+        "meaning": "The artifact or metric is not available for this run."
+      }
+    ],
+    "artifact_lineage": [
+      {
+        "stage": "import_broker",
+        "input": "data/raw/demo_broker_export.csv",
+        "output": "data/processed/demo_positions_snapshot.csv",
+        "status": "OK"
+      },
+      {
+        "stage": "fundamentals_coverage",
+        "input": "data/raw/demo_fundamentals_master.csv",
+        "output": "data/processed/demo_fundamentals_coverage.csv",
+        "status": "PARTIAL"
+      },
+      {
+        "stage": "scoring",
+        "input": "data/processed/demo_positions_snapshot.csv",
+        "output": "data/processed/demo_company_scores.csv",
+        "status": "PARTIAL"
+      },
+      {
+        "stage": "monthly_ranking",
+        "input": "data/processed/demo_company_scores.csv",
+        "output": "data/processed/demo_monthly_buy_ranking.csv",
+        "status": "REVIEW"
+      },
+      {
+        "stage": "dashboard",
+        "input": "data/processed/dashboard_kpis.csv",
+        "output": "reports/demo/dashboard_report.md",
+        "status": "AVAILABLE"
+      }
+    ]
+  },
+  "disclaimer": "Compound Income OS is a research and decision-support tool. It does not provide investment, tax, or legal advice, does not guarantee any return, and does not execute orders or connect to brokerages. All decisions, risks, and outcomes remain solely with the user. Past data does not predict future results."
+}

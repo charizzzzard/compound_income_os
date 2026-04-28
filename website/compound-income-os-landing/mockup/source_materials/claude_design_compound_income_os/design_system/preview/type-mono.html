@@ -1,0 +1,31 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { padding: 24px; background: var(--bg-canvas); }
+  .row { display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .card { border: 1px solid var(--border-default); border-radius: 10px; padding: 14px 16px; background: var(--bg-elevated); }
+  .lab { font: 500 11px/1 var(--font-sans); letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-subtle); margin-bottom: 6px; }
+  .num-lg { font: 500 28px/1 var(--font-mono); letter-spacing: -0.01em; color: var(--ink-900); }
+  .num-md { font: 500 18px/1.2 var(--font-mono); color: var(--ink-900); }
+  .num-sm { font: 400 12px/1.4 var(--font-mono); color: var(--fg-muted); }
+  .meta { font: 400 11px/1 var(--font-mono); color: var(--fg-subtle); margin-top: 8px; }
+</style></head>
+<body>
+  <div class="row">
+    <div class="card">
+      <div class="lab">Total Assets</div>
+      <div class="num-lg">€37,250</div>
+      <div class="meta">mono-lg · 24 · KPI hero</div>
+    </div>
+    <div class="card">
+      <div class="lab">Buy Score</div>
+      <div class="num-md">71.8 <span class="num-sm">+2.1</span></div>
+      <div class="meta">mono-md · 18 · table cell</div>
+    </div>
+    <div class="card">
+      <div class="lab">Run / Path</div>
+      <div class="num-sm" style="color: var(--ink-700);">DEMO-20260426-160500<br>reports/demo/decision_journal_2026-04.md</div>
+      <div class="meta">mono-sm · 13 · run id, path</div>
+    </div>
+  </div>
+</body></html>

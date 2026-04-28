@@ -1,0 +1,21 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { padding: 24px; background: var(--bg-canvas); }
+  .grid { display:grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .item { border: 1px solid var(--border-default); border-radius: 10px; padding: 12px; background: var(--bg-elevated); }
+  .item .head { display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px; }
+  .item .name { font: 500 12px/1 var(--font-mono); color: var(--ink-900); }
+  .item .meta { font: 400 11px/1 var(--font-mono); color: var(--fg-subtle); }
+  .label { font: 500 12px/1 var(--font-sans); letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-subtle); margin: 0 0 12px; }
+</style></head>
+<body>
+  <p class="label">Status · semantic palette</p>
+  <div class="grid">
+    <div class="item"><div class="head"><span class="pill ok">COVERED</span></div><div class="meta">ok · sage</div></div>
+    <div class="item"><div class="head"><span class="pill partial">PARTIAL</span></div><div class="meta">partial · amber</div></div>
+    <div class="item"><div class="head"><span class="pill review">REVIEW</span></div><div class="meta">review · ochre</div></div>
+    <div class="item"><div class="head"><span class="pill missing">MISSING_DATA</span></div><div class="meta">missing · muted rose</div></div>
+    <div class="item"><div class="head"><span class="pill neutral">NOT_AVAILABLE</span></div><div class="meta">neutral · slate</div></div>
+  </div>
+</body></html>

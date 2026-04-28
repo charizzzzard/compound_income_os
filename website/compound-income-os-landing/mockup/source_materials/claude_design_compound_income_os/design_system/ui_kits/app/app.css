@@ -1,0 +1,201 @@
+/* App shell — sidebar + topbar + main canvas.
+   All tokens come from ../../colors_and_type.css. */
+
+.app {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+  background: var(--bg-default);
+  color: var(--fg-default);
+}
+
+/* ----- Sidebar ---------------------------------------------------------- */
+.sidebar {
+  background: var(--bg-elevated);
+  border-right: 1px solid var(--border-default);
+  padding: 22px 14px;
+  display: flex; flex-direction: column; gap: 22px;
+  position: sticky; top: 0; height: 100vh;
+}
+.sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 0 8px; }
+.sidebar-brand img { height: 18px; }
+.sidebar-brand-tag {
+  font: 500 10px/1 var(--font-mono); letter-spacing: 0.08em;
+  color: var(--ink-500); text-transform: uppercase;
+  padding: 3px 6px; border-radius: 4px; background: var(--paper-200);
+}
+.sidebar-section-label {
+  font: 500 10px/1 var(--font-sans); letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--fg-subtle); padding: 0 8px; margin-bottom: 6px;
+}
+.sidebar-nav { display: flex; flex-direction: column; gap: 1px; }
+.sidebar-link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 8px; border-radius: 6px;
+  font: 400 13.5px/1 var(--font-sans); color: var(--ink-700);
+  cursor: pointer; user-select: none;
+}
+.sidebar-link:hover { background: var(--paper-100); color: var(--fg-strong); }
+.sidebar-link.is-active { background: var(--paper-200); color: var(--fg-strong); font-weight: 500; }
+.sidebar-link .glyph {
+  width: 14px; height: 14px; flex-shrink: 0;
+  color: var(--ink-500);
+}
+.sidebar-link.is-active .glyph { color: var(--accent-600); }
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 12px; border: 1px solid var(--border-default); border-radius: 8px;
+  background: var(--bg-default);
+}
+.sidebar-footer-title { font: 500 12px/1.2 var(--font-sans); color: var(--fg-strong); margin-bottom: 4px; }
+.sidebar-footer-meta { font: 400 11px/1.4 var(--font-mono); color: var(--ink-500); }
+
+/* ----- Topbar ----------------------------------------------------------- */
+.topbar {
+  position: sticky; top: 0; z-index: 5;
+  background: rgba(251, 250, 247, 0.92);
+  backdrop-filter: saturate(140%) blur(8px);
+  border-bottom: 1px solid var(--border-default);
+  padding: 10px 28px;
+  display: flex; align-items: center; gap: 16px;
+}
+.topbar-crumbs { font: 400 12px/1 var(--font-mono); color: var(--ink-500); letter-spacing: 0.04em; }
+.topbar-crumbs strong { color: var(--ink-800); font-weight: 500; }
+.topbar-spacer { flex: 1; }
+.topbar-runid {
+  font: 500 11px/1 var(--font-mono);
+  color: var(--ink-700);
+  background: var(--paper-100);
+  border: 1px solid var(--border-default);
+  padding: 6px 10px; border-radius: 6px;
+  letter-spacing: 0.02em;
+}
+.topbar-statuschip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 8px 4px 6px; border-radius: 999px;
+  background: var(--ok-bg); color: var(--ok-fg);
+  font: 500 11px/1 var(--font-sans);
+  border: 1px solid var(--ok-border);
+}
+.topbar-statuschip::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ok-fg);
+}
+
+/* ----- Main canvas ------------------------------------------------------ */
+.canvas { padding: 28px 28px 64px; max-width: 1360px; margin: 0 auto; }
+.canvas-header { margin-bottom: 24px; }
+.canvas-eyebrow { font: 500 11px/1 var(--font-sans); letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-600); margin-bottom: 8px; }
+.canvas-title {
+  font: 500 28px/1.18 var(--font-sans); letter-spacing: -0.015em; color: var(--fg-strong);
+  margin: 0 0 10px;
+}
+.canvas-sub { color: var(--fg-muted); font-size: 14px; line-height: 1.5; max-width: 70ch; }
+
+/* ----- KPI grid (in-app, paper background) ----------------------------- */
+.kpi-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+/* ----- Card ------------------------------------------------------------- */
+.card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+.card-h {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 14px;
+}
+.card-title { font: 500 13px/1 var(--font-sans); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-700); }
+.card-sub  { font: 400 12px/1 var(--font-mono); color: var(--ink-500); }
+
+/* ----- Table ------------------------------------------------------------ */
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl th, .tbl td {
+  text-align: left; padding: 10px 12px;
+  font: 400 13px/1.3 var(--font-sans); color: var(--ink-800);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.tbl th {
+  font: 500 11px/1 var(--font-sans); letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--fg-subtle);
+}
+.tbl td.num, .tbl th.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--paper-100); }
+
+.row-action {
+  font: 500 12px/1 var(--font-sans); color: var(--accent-600);
+  cursor: pointer; padding: 4px 8px; border-radius: 4px;
+}
+.row-action:hover { background: var(--accent-50); }
+
+/* ----- Tabs ------------------------------------------------------------- */
+.tabs {
+  display: flex; gap: 4px; border-bottom: 1px solid var(--border-default);
+  margin-bottom: 22px;
+}
+.tab {
+  padding: 10px 14px; cursor: pointer; user-select: none;
+  font: 400 13.5px/1 var(--font-sans); color: var(--fg-muted);
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.tab:hover { color: var(--fg-strong); }
+.tab.is-active { color: var(--fg-strong); border-bottom-color: var(--accent-600); font-weight: 500; }
+
+/* ----- Misc ------------------------------------------------------------- */
+.split-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+.split-1-1 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.review-banner {
+  display: flex; gap: 14px; align-items: center;
+  padding: 12px 14px; border-radius: 8px;
+  background: var(--review-bg); color: var(--review-fg);
+  border: 1px solid var(--review-border);
+  margin-bottom: 18px;
+  font: 400 13px/1.5 var(--font-sans);
+}
+.review-banner strong { font-weight: 600; }
+
+.kbd {
+  font: 500 11px/1 var(--font-mono); padding: 2px 5px;
+  background: var(--paper-200); border: 1px solid var(--border-default); border-radius: 4px;
+  color: var(--ink-700);
+}
+
+/* ----- Toolbar / segmented ---------------------------------------------- */
+.toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.seg { display: inline-flex; border: 1px solid var(--border-default); border-radius: 8px; padding: 2px; background: var(--bg-elevated); }
+.seg-opt {
+  padding: 6px 12px; font: 500 12px/1 var(--font-sans); color: var(--fg-muted);
+  border-radius: 6px; cursor: pointer; user-select: none;
+}
+.seg-opt.is-active { background: var(--paper-200); color: var(--fg-strong); }
+
+/* ----- Drawer / panel --------------------------------------------------- */
+.drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; width: 460px; z-index: 50;
+  background: var(--bg-elevated); border-left: 1px solid var(--border-default);
+  transform: translateX(100%); transition: transform 220ms var(--ease-out-soft);
+  display: flex; flex-direction: column;
+}
+.drawer.is-open { transform: translateX(0); }
+.drawer-h { padding: 18px 20px; border-bottom: 1px solid var(--border-default); display: flex; justify-content: space-between; align-items: flex-start; }
+.drawer-body { padding: 18px 20px; overflow: auto; flex: 1; }
+.drawer-close { font: 500 12px/1 var(--font-mono); color: var(--ink-500); cursor: pointer; padding: 4px 8px; border-radius: 4px; }
+.drawer-close:hover { background: var(--paper-100); color: var(--ink-800); }
+.scrim {
+  position: fixed; inset: 0; background: rgba(20,24,28,0.16);
+  backdrop-filter: blur(2px); z-index: 40;
+}
+
+/* ----- Coverage bar ----------------------------------------------------- */
+.cov { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--paper-200); }
+.cov > span { display: block; height: 100%; }
+.cov-legend { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+.cov-legend .item { display: flex; align-items: center; gap: 6px; font: 400 12px/1 var(--font-mono); color: var(--ink-600); }
+.cov-legend .dot { width: 8px; height: 8px; border-radius: 50%; }

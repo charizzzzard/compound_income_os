@@ -1,0 +1,20 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { padding: 24px; background: var(--bg-canvas); }
+  .row { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; }
+  .sw { border-radius: 10px; height: 70px; border: 1px solid var(--border-default); display:flex; align-items:flex-end; padding: 8px 10px; }
+  .sw .c { font: 500 11px/1.2 var(--font-mono); color: var(--ink-900); background: rgba(255,255,255,0.7); padding: 2px 5px; border-radius: 4px; }
+  .sw.dark .c { color: var(--dark-fg); background: rgba(0,0,0,0.35); }
+  .label { font: 500 12px/1 var(--font-sans); letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-subtle); margin: 0 0 10px; }
+</style></head>
+<body>
+  <p class="label">Paper / Neutral surfaces</p>
+  <div class="row">
+    <div class="sw" style="background:var(--paper-50)"><span class="c">paper-50</span></div>
+    <div class="sw" style="background:var(--paper-100)"><span class="c">paper-100</span></div>
+    <div class="sw" style="background:var(--paper-200)"><span class="c">paper-200</span></div>
+    <div class="sw" style="background:var(--paper-300)"><span class="c">paper-300</span></div>
+    <div class="sw" style="background:var(--paper-400)"><span class="c">paper-400</span></div>
+  </div>
+</body></html>

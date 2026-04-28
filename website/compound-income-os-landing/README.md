@@ -4,6 +4,32 @@ This is an isolated React/Vite prototype for the Compound Income OS landing page
 
 The page is a marketing prototype only. It is not investment advice, does not execute orders, and does not connect to brokerages. All dashboard values shown in the page and screenshots are synthetic demo values.
 
+## Source And Reference Material
+
+Production website source remains under:
+
+```text
+website/compound-income-os-landing/src/
+```
+
+The mockup folder is intentionally retained as source/reference material for
+future implementation work:
+
+```text
+website/compound-income-os-landing/mockup/
+```
+
+It contains PNG mockups, review notes, the Mockup Master Plan image and
+`source_materials/`. Claude-generated design references live under:
+
+```text
+website/compound-income-os-landing/mockup/source_materials/claude_design_compound_income_os/
+```
+
+These files are reference material, not production source. Do not delete the
+mockup folder during cleanup. `dist/`, `deploy_artifacts/` and `node_modules/`
+are generated/regeneratable and should not be committed.
+
 ## Mockup Master Plan v4 - Wave 1
 
 This private-preview build implements the first website mockup wave:
