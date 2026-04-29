@@ -75,6 +75,21 @@ Die transparente Fundamentals-Schicht liegt in:
 
 ## CLI-Entry-Points
 
+## Decision Capture
+
+`src.personal_decision_state_capture` is the first minimal producer from the
+architecture baseline. It creates or validates an append-only decision/no-action
+capture CSV and a local report. It does not execute orders, calculate outcome
+attribution, calculate benchmark returns, track tax lots, attribute FX,
+simulate, backtest or change scores.
+
+```powershell
+python -m src.personal_decision_state_capture --output data/processed/personal_decision_state_capture.csv --report reports/YYYY-MM-DD/personal_decision_state_capture_report.md
+```
+
+If no input is provided, the command writes a stable header-only CSV and an
+`EMPTY_STATE` report.
+
 ## SEC-derived KPI workflow
 
 Der aktuelle SEC-Core-KPI-Pfad ist review-gated und mutiert keine Raw-Master oder Scores:
