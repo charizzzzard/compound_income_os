@@ -1,12 +1,60 @@
 from __future__ import annotations
 
 import csv
+import re
 import shutil
 import unittest
 import uuid
 from pathlib import Path
 
-from src.personal_decision_state_capture import FIELDS, run_decision_state_capture
+from src.personal_decision_state_capture import ENUMS, FIELDS, run_decision_state_capture
+
+
+EXPECTED_ENUMS = {
+    "decision_scope": {"ASSET", "HOLDING_REVIEW", "PORTFOLIO", "CASH", "MONTHLY_REVIEW", "WATCHLIST", "UNKNOWN"},
+    "proposed_action": {
+        "ADD_REVIEW",
+        "HOLD_REVIEW",
+        "TRIM_REVIEW",
+        "EXIT_REVIEW",
+        "WAIT_FOR_EVIDENCE",
+        "WAIT_FOR_PRICE",
+        "WAIT_FOR_REVIEW",
+        "RESEARCH_MORE",
+        "REJECT_CANDIDATE",
+        "NO_ACTION",
+        "SKIP_MONTH",
+        "CASH_DEPLOYMENT",
+        "UNKNOWN",
+    },
+    "human_decision": {"PENDING_REVIEW", "APPROVED_FOR_MANUAL_ACTION", "REJECTED", "DEFERRED", "NO_ACTION", "NOT_REVIEWED"},
+    "decision_status": {"OPEN", "BLOCKED", "REVIEW_SCHEDULED", "CLOSED", "NOT_AVAILABLE", "INVALID", "INSUFFICIENT_EVIDENCE", "SUPERSEDED"},
+    "dominant_uncertainty": {
+        "MISSING_DATA",
+        "VALUATION",
+        "PORTFOLIO_FIT",
+        "CASH_CONTEXT",
+        "TAX_CONTEXT",
+        "EVIDENCE_QUALITY",
+        "BEHAVIOURAL_RISK",
+        "UNKNOWN",
+    },
+    "benchmark_alternative": {
+        "CASH",
+        "CORE_ETF",
+        "DIVIDEND_GROWTH_ETF",
+        "QUALITY_ETF",
+        "EXISTING_HOLDING",
+        "WATCHLIST_CANDIDATE",
+        "WATCHLIST_TOP_CANDIDATE",
+        "NO_ACTION",
+        "UNKNOWN",
+    },
+    "accounting_basis": {"SNAPSHOT_ONLY", "PARTIAL_LEDGER", "RECONCILED_LEDGER", "UNKNOWN"},
+    "cash_context": {"AVAILABLE_CASH", "RESERVED_CASH", "TAX_RESERVE", "NO_CASH", "UNKNOWN"},
+    "operator_state": {"NORMAL", "MARKET_STRESS", "DRAWDOWN_STRESS", "EUPHORIA", "TIME_CONSTRAINED", "UNCERTAIN", "NOT_RECORDED"},
+    "decision_pressure": {"NORMAL", "TIME_CONSTRAINED", "MARKET_STRESS", "UNKNOWN"},
+}
 
 
 class PersonalDecisionStateCaptureTests(unittest.TestCase):
@@ -19,7 +67,7 @@ class PersonalDecisionStateCaptureTests(unittest.TestCase):
             shutil.rmtree(self.tmp)
 
     def write_csv(self, path: Path, rows: list[dict[str, str]]) -> None:
-        fieldnames = list(rows[0])
+        fieldnames = list(dict.fromkeys(field for row in rows for field in row))
         with path.open("w", encoding="utf-8", newline="") as handle:
             writer = csv.DictWriter(handle, fieldnames=fieldnames)
             writer.writeheader()
@@ -42,6 +90,33 @@ class PersonalDecisionStateCaptureTests(unittest.TestCase):
             "ticker": "MSFT",
             "asset_name": "Microsoft",
         }
+
+    def documented_enums(self) -> dict[str, set[str]]:
+        contract = Path("docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md").read_text(encoding="utf-8")
+        documented: dict[str, set[str]] = {}
+        for field in EXPECTED_ENUMS:
+            match = re.search(rf"### `{re.escape(field)}`\n\n(?P<body>.*?)(?:\n## |\n### |\Z)", contract, re.S)
+            self.assertIsNotNone(match, field)
+            documented[field] = set(re.findall(r"^- `([^`]+)`", match.group("body"), re.M))
+        return documented
+
+    def test_documented_enums_match_producer_source_of_truth(self) -> None:
+        self.assertEqual(ENUMS, EXPECTED_ENUMS)
+        self.assertEqual(self.documented_enums(), EXPECTED_ENUMS)
+
+    def test_contract_documented_enum_values_are_accepted(self) -> None:
+        rows: list[dict[str, str]] = []
+        for field, values in EXPECTED_ENUMS.items():
+            for value in sorted(values):
+                row = self.base_row()
+                row[field] = value
+                rows.append(row)
+        input_path = self.tmp / "input.csv"
+        self.write_csv(input_path, rows)
+
+        result = run_decision_state_capture(input_path=str(input_path), output=str(self.tmp / "out.csv"), report=str(self.tmp / "report.md"), report_date="2026-04-29")
+
+        self.assertEqual(result.invalid_rows, [])
 
     def test_empty_template_csv_has_stable_headers_and_report(self) -> None:
         output = self.tmp / "nested" / "capture.csv"
@@ -113,9 +188,60 @@ class PersonalDecisionStateCaptureTests(unittest.TestCase):
 
         self.assertIn("MISSING_CONDITIONAL:review_date", result.invalid_rows[0]["validation_reasons"])
 
+    def test_hold_review_requires_review_date(self) -> None:
+        row = self.base_row()
+        row["proposed_action"] = "HOLD_REVIEW"
+        row["decision_status"] = "OPEN"
+        row["review_date"] = ""
+        input_path = self.tmp / "input.csv"
+        self.write_csv(input_path, [row])
+
+        result = run_decision_state_capture(input_path=str(input_path), output=str(self.tmp / "out.csv"), report=str(self.tmp / "report.md"), report_date="2026-04-29")
+
+        self.assertIn("MISSING_CONDITIONAL:review_date", result.invalid_rows[0]["validation_reasons"])
+
+    def test_wait_actions_require_review_date(self) -> None:
+        for action in ("WAIT_FOR_EVIDENCE", "WAIT_FOR_PRICE", "WAIT_FOR_REVIEW"):
+            with self.subTest(action=action):
+                row = self.base_row()
+                row["proposed_action"] = action
+                row["decision_status"] = "OPEN"
+                row["review_date"] = ""
+                input_path = self.tmp / f"{action}.csv"
+                self.write_csv(input_path, [row])
+
+                result = run_decision_state_capture(input_path=str(input_path), output=str(self.tmp / f"{action}_out.csv"), report=str(self.tmp / f"{action}.md"), report_date="2026-04-29")
+
+                self.assertIn("MISSING_CONDITIONAL:review_date", result.invalid_rows[0]["validation_reasons"])
+
+    def test_review_scheduled_status_requires_review_date(self) -> None:
+        row = self.base_row()
+        row["proposed_action"] = "NO_ACTION"
+        row["decision_status"] = "REVIEW_SCHEDULED"
+        row["review_date"] = ""
+        input_path = self.tmp / "input.csv"
+        self.write_csv(input_path, [row])
+
+        result = run_decision_state_capture(input_path=str(input_path), output=str(self.tmp / "out.csv"), report=str(self.tmp / "report.md"), report_date="2026-04-29")
+
+        self.assertIn("MISSING_CONDITIONAL:review_date", result.invalid_rows[0]["validation_reasons"])
+
+    def test_missing_input_path_is_surfaced_in_report(self) -> None:
+        missing_input = self.tmp / "missing.csv"
+        report = self.tmp / "report.md"
+
+        result = run_decision_state_capture(input_path=str(missing_input), output=str(self.tmp / "out.csv"), report=str(report), report_date="2026-04-29")
+
+        self.assertEqual(result.rows, [])
+        self.assertEqual(result.input_status, "MISSING_INPUT_PATH")
+        self.assertIn("input_status: MISSING_INPUT_PATH", report.read_text(encoding="utf-8"))
+
     def test_unresolved_auto_system_references_are_surfaced(self) -> None:
         input_path = self.tmp / "input.csv"
-        self.write_csv(input_path, [self.base_row()])
+        row = self.base_row()
+        row["ticker"] = ""
+        row["asset_name"] = ""
+        self.write_csv(input_path, [row])
 
         result = run_decision_state_capture(input_path=str(input_path), output=str(self.tmp / "out.csv"), report=str(self.tmp / "report.md"), report_date="2026-04-29")
 
@@ -123,7 +249,13 @@ class PersonalDecisionStateCaptureTests(unittest.TestCase):
         self.assertEqual(written[0]["run_id"], "MISSING_REFERENCE")
         self.assertEqual(written[0]["asset_id"], "UNKNOWN")
         self.assertTrue(result.missing_replay_references)
+        self.assertTrue(result.unresolved_auto_system_fields)
+        self.assertIn("asset_id", result.unresolved_auto_system_fields[0]["unresolved_auto_system_fields"])
+        self.assertIn("ticker", result.unresolved_auto_system_fields[0]["unresolved_auto_system_fields"])
+        self.assertIn("asset_name", result.unresolved_auto_system_fields[0]["unresolved_auto_system_fields"])
+        self.assertIn("asset_type", result.unresolved_auto_system_fields[0]["unresolved_auto_system_fields"])
         self.assertIn("Missing Replay References", (self.tmp / "report.md").read_text(encoding="utf-8"))
+        self.assertIn("Unresolved Auto/System Fields", (self.tmp / "report.md").read_text(encoding="utf-8"))
 
     def test_report_contains_required_sections_and_v1_exclusions(self) -> None:
         input_path = self.tmp / "input.csv"

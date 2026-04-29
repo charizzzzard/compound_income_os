@@ -65,22 +65,39 @@ REPLAY_REFERENCE_FIELDS = [
 
 UNKNOWN_AUTO_FIELDS = ["asset_id", "ticker", "asset_name", "asset_type"]
 
+AUTO_SYSTEM_WARNING_FIELDS = [
+    "run_id",
+    "manifest_path",
+    "primary_report_path",
+    "source_snapshot_date",
+    "policy_ref",
+    "asset_id",
+    "ticker",
+    "asset_name",
+    "asset_type",
+    "accounting_basis",
+    "benchmark_ref_or_label",
+]
+
 ENUMS = {
-    "decision_scope": {"ASSET", "PORTFOLIO", "CASH", "MONTHLY_REVIEW", "WATCHLIST", "UNKNOWN"},
+    "decision_scope": {"ASSET", "HOLDING_REVIEW", "PORTFOLIO", "CASH", "MONTHLY_REVIEW", "WATCHLIST", "UNKNOWN"},
     "proposed_action": {
-        "BUY_REVIEW",
+        "ADD_REVIEW",
         "HOLD_REVIEW",
+        "TRIM_REVIEW",
+        "EXIT_REVIEW",
         "WAIT_FOR_EVIDENCE",
         "WAIT_FOR_PRICE",
         "WAIT_FOR_REVIEW",
         "RESEARCH_MORE",
+        "REJECT_CANDIDATE",
         "NO_ACTION",
         "SKIP_MONTH",
         "CASH_DEPLOYMENT",
         "UNKNOWN",
     },
     "human_decision": {"PENDING_REVIEW", "APPROVED_FOR_MANUAL_ACTION", "REJECTED", "DEFERRED", "NO_ACTION", "NOT_REVIEWED"},
-    "decision_status": {"OPEN", "BLOCKED", "REVIEW_SCHEDULED", "CLOSED", "NOT_AVAILABLE", "INVALID"},
+    "decision_status": {"OPEN", "BLOCKED", "REVIEW_SCHEDULED", "CLOSED", "NOT_AVAILABLE", "INVALID", "INSUFFICIENT_EVIDENCE", "SUPERSEDED"},
     "dominant_uncertainty": {
         "MISSING_DATA",
         "VALUATION",
@@ -98,6 +115,7 @@ ENUMS = {
         "QUALITY_ETF",
         "EXISTING_HOLDING",
         "WATCHLIST_CANDIDATE",
+        "WATCHLIST_TOP_CANDIDATE",
         "NO_ACTION",
         "UNKNOWN",
     },
@@ -127,6 +145,8 @@ class DecisionCaptureResult:
     rows: list[dict[str, str]]
     invalid_rows: list[dict[str, str]]
     missing_replay_references: list[dict[str, str]]
+    unresolved_auto_system_fields: list[dict[str, str]]
+    input_status: str
 
 
 def is_blank_row(row: dict[str, str]) -> bool:
@@ -153,13 +173,13 @@ def parse_iso_date(value: str) -> date | None:
         return None
 
 
-def load_input_rows(input_path: str | None) -> list[dict[str, str]]:
+def load_input_rows(input_path: str | None) -> tuple[list[dict[str, str]], str]:
     if not input_path:
-        return []
+        return [], "NOT_PROVIDED"
     path = resolve_repo_path(input_path)
     if not path.exists():
-        return []
-    return [row for row in read_csv_rows(path) if not is_blank_row(row)]
+        return [], "MISSING_INPUT_PATH"
+    return [row for row in read_csv_rows(path) if not is_blank_row(row)], "LOADED"
 
 
 def apply_defaults(
@@ -248,6 +268,25 @@ def missing_replay_reference_records(rows: list[dict[str, str]]) -> list[dict[st
     return missing
 
 
+def unresolved_auto_system_field_records(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    unresolved: list[dict[str, str]] = []
+    for row in rows:
+        fields = [
+            field
+            for field in AUTO_SYSTEM_WARNING_FIELDS
+            if row.get(field, "") in {"", "UNKNOWN", "MISSING_REFERENCE"}
+        ]
+        if fields:
+            unresolved.append(
+                {
+                    "decision_id": row.get("decision_id", ""),
+                    "ticker": row.get("ticker", ""),
+                    "unresolved_auto_system_fields": ",".join(fields),
+                }
+            )
+    return unresolved
+
+
 def overdue_rows(rows: list[dict[str, str]], report_date: date) -> list[dict[str, str]]:
     overdue: list[dict[str, str]] = []
     for row in rows:
@@ -279,8 +318,10 @@ def write_report(
     rows: list[dict[str, str]],
     invalid_rows: list[dict[str, str]],
     missing_refs: list[dict[str, str]],
+    unresolved_auto_system_fields: list[dict[str, str]],
     *,
     input_path: str | None,
+    input_status: str,
     output_path: Path,
     report_date: date,
 ) -> Path:
@@ -302,6 +343,8 @@ def write_report(
         f"- decision_rows: {len(rows)}",
         f"- invalid_rows: {len(invalid_rows)}",
         f"- missing_replay_reference_rows: {len(missing_refs)}",
+        f"- unresolved_auto_system_field_rows: {len(unresolved_auto_system_fields)}",
+        f"- input_status: {input_status}",
         "",
         "## Row Counts",
         "",
@@ -328,6 +371,14 @@ def write_report(
         )
     else:
         lines.append("- none")
+    lines.extend(["", "## Unresolved Auto/System Fields", ""])
+    if unresolved_auto_system_fields:
+        lines.extend(
+            f"- `{row['decision_id']}` `{row['ticker']}` unresolved `{row['unresolved_auto_system_fields']}`"
+            for row in unresolved_auto_system_fields
+        )
+    else:
+        lines.append("- none")
     lines.extend(["", "## Invalid Rows", ""])
     if invalid_rows:
         lines.extend(
@@ -346,6 +397,7 @@ def write_report(
             "## Input / Output Paths",
             "",
             f"- input: `{input_path or 'NOT_PROVIDED'}`",
+            f"- input_status: `{input_status}`",
             f"- output: `{output_path.as_posix()}`",
             f"- report: `{resolve_repo_path(report_path).as_posix()}`",
         ]
@@ -367,7 +419,7 @@ def run_decision_state_capture(
     report_date: str | None = None,
 ) -> DecisionCaptureResult:
     effective_date = date.fromisoformat(report_date) if report_date else date.today()
-    raw_rows = load_input_rows(input_path)
+    raw_rows, input_status = load_input_rows(input_path)
     rows = apply_defaults(
         raw_rows,
         report_date=effective_date,
@@ -378,9 +430,20 @@ def run_decision_state_capture(
     )
     invalid = invalid_row_records(rows)
     missing_refs = missing_replay_reference_records(rows)
+    unresolved_auto_system_fields = unresolved_auto_system_field_records(rows)
     output_path = write_csv_rows(output, FIELDS, rows)
-    report_path = write_report(report, rows, invalid, missing_refs, input_path=input_path, output_path=output_path, report_date=effective_date)
-    return DecisionCaptureResult(output_path, report_path, rows, invalid, missing_refs)
+    report_path = write_report(
+        report,
+        rows,
+        invalid,
+        missing_refs,
+        unresolved_auto_system_fields,
+        input_path=input_path,
+        input_status=input_status,
+        output_path=output_path,
+        report_date=effective_date,
+    )
+    return DecisionCaptureResult(output_path, report_path, rows, invalid, missing_refs, unresolved_auto_system_fields, input_status)
 
 
 def parse_args() -> argparse.Namespace:

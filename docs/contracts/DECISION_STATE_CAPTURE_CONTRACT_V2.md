@@ -99,28 +99,29 @@ exists. Unresolved auto/system fields must be marked `UNKNOWN` or
 
 ### `decision_scope`
 
-- `MONTHLY_REVIEW`
-- `CASH_DEPLOYMENT`
-- `WATCHLIST_REVIEW`
+- `ASSET`
 - `HOLDING_REVIEW`
-- `DIVIDEND_REVIEW`
-- `VALUATION_REVIEW`
-- `SYSTEM_REVIEW`
+- `PORTFOLIO`
+- `CASH`
+- `MONTHLY_REVIEW`
+- `WATCHLIST`
+- `UNKNOWN`
 
 ### `proposed_action`
 
-- `BUY_REVIEW`
 - `ADD_REVIEW`
 - `HOLD_REVIEW`
 - `TRIM_REVIEW`
 - `EXIT_REVIEW`
-- `REJECT_CANDIDATE`
-- `WAIT_FOR_PRICE`
 - `WAIT_FOR_EVIDENCE`
+- `WAIT_FOR_PRICE`
+- `WAIT_FOR_REVIEW`
 - `RESEARCH_MORE`
+- `REJECT_CANDIDATE`
 - `NO_ACTION`
 - `SKIP_MONTH`
 - `CASH_DEPLOYMENT`
+- `UNKNOWN`
 
 These are review states, not execution instructions.
 
@@ -136,23 +137,23 @@ These are review states, not execution instructions.
 ### `decision_status`
 
 - `OPEN`
-- `CLOSED`
-- `REVIEW_SCHEDULED`
-- `INSUFFICIENT_EVIDENCE`
 - `BLOCKED`
+- `REVIEW_SCHEDULED`
+- `CLOSED`
+- `NOT_AVAILABLE`
+- `INVALID`
+- `INSUFFICIENT_EVIDENCE`
 - `SUPERSEDED`
 
 ### `dominant_uncertainty`
 
+- `MISSING_DATA`
 - `VALUATION`
-- `DATA_QUALITY`
-- `BUSINESS_QUALITY`
-- `DIVIDEND_SAFETY`
-- `FX`
-- `TAX`
-- `PORTFOLIO_CONCENTRATION`
+- `PORTFOLIO_FIT`
+- `CASH_CONTEXT`
+- `TAX_CONTEXT`
+- `EVIDENCE_QUALITY`
 - `BEHAVIOURAL_RISK`
-- `MACRO_REGIME`
 - `UNKNOWN`
 
 ### `accounting_basis`
@@ -191,15 +192,15 @@ Default: `NOT_RECORDED`.
 
 ### `benchmark_alternative`
 
-Examples:
-
 - `CASH`
 - `CORE_ETF`
 - `DIVIDEND_GROWTH_ETF`
 - `QUALITY_ETF`
 - `EXISTING_HOLDING`
+- `WATCHLIST_CANDIDATE`
 - `WATCHLIST_TOP_CANDIDATE`
 - `NO_ACTION`
+- `UNKNOWN`
 
 ## No-Action Capture Rule
 
@@ -243,7 +244,7 @@ This is a minimal invariant, not a full time-aware replay engine.
 
 ## Examples
 
-### `BUY_REVIEW`
+### `ADD_REVIEW`
 
 Used when an asset is ready for human review as a potential manual action. It
 does not instruct order execution.
