@@ -34,6 +34,9 @@ Canonical architecture baseline:
 - [docs/architecture/00_META_SYNTHESIS.md](docs/architecture/00_META_SYNTHESIS.md): akzeptierte Meta-Architektur-Synthese
 - [docs/architecture/01_TARGET_OS_KERNEL_V1.md](docs/architecture/01_TARGET_OS_KERNEL_V1.md): sechs Kernel-Domaenen und Operating Loop
 - [docs/architecture/03_INVESTMENT_PHILOSOPHY_V1.md](docs/architecture/03_INVESTMENT_PHILOSOPHY_V1.md): Dividend Growth, Quality Compounders und Value Discipline
+- [docs/architecture/04_META_REVIEW_LOOP_PROTOCOL.md](docs/architecture/04_META_REVIEW_LOOP_PROTOCOL.md): Architektur-Review- und Codex-Ausfuehrungsgate
+- [docs/architecture/05_ARCHITECTURE_BACKLOG.csv](docs/architecture/05_ARCHITECTURE_BACKLOG.csv): priorisierte Architektur-Backlogfolge
+- [docs/architecture/06_ADOPTED_DECISIONS.yaml](docs/architecture/06_ADOPTED_DECISIONS.yaml): akzeptierte Architekturentscheidungen
 - [docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md](docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md): naechster Producer-Vertrag, noch nicht implementiert
 - [docs/policies/LLM_CODEX_OPERATING_POLICY.md](docs/policies/LLM_CODEX_OPERATING_POLICY.md): LLM-/Codex-Grenzen
 
@@ -50,7 +53,7 @@ foundations exist.
 - Harte Trennung zwischen `raw`, `processed` und `reports`
 - Fehlende Daten werden als `REVIEW` oder `MISSING_DATA` markiert
 - Keine Auto-Trades, keine Broker-Orderlogik, keine versteckte Cash-Hardcodes
-- Keine OCR-, API- oder Live-Daten-Integration im Phase-1-Pfad
+- Keine implizite API-, OCR- oder Live-Daten-Integration im Core-Pfad. Explizite externe Fetches, z. B. SEC CompanyFacts, muessen review-gated und local-first bleiben und duerfen Scores, Master-Daten oder Entscheidungen nicht still mutieren.
 
 ## Config-Format
 

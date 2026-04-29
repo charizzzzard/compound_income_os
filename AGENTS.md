@@ -12,6 +12,9 @@ Dieses Repository ist ein lokales Portfolio-Research-System. Es darf keine Order
 - [docs/architecture/00_META_SYNTHESIS.md](docs/architecture/00_META_SYNTHESIS.md): akzeptierte Meta-Architektur-Synthese
 - [docs/architecture/01_TARGET_OS_KERNEL_V1.md](docs/architecture/01_TARGET_OS_KERNEL_V1.md): sechs Kernel-Domaenen des Compound Income OS
 - [docs/architecture/03_INVESTMENT_PHILOSOPHY_V1.md](docs/architecture/03_INVESTMENT_PHILOSOPHY_V1.md): Investment-Philosophie und Nicht-Ziele
+- [docs/architecture/04_META_REVIEW_LOOP_PROTOCOL.md](docs/architecture/04_META_REVIEW_LOOP_PROTOCOL.md): Architektur-Review- und Codex-Ausfuehrungsgate
+- [docs/architecture/05_ARCHITECTURE_BACKLOG.csv](docs/architecture/05_ARCHITECTURE_BACKLOG.csv): priorisierte Architektur-Backlogfolge
+- [docs/architecture/06_ADOPTED_DECISIONS.yaml](docs/architecture/06_ADOPTED_DECISIONS.yaml): akzeptierte Architekturentscheidungen
 - [docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md](docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md): naechster Producer-Vertrag, noch nicht implementiert
 - [docs/policies/LLM_CODEX_OPERATING_POLICY.md](docs/policies/LLM_CODEX_OPERATING_POLICY.md): LLM-/Codex-Operating-Policy
 - [docs/CODEX_TASK_TEMPLATE.md](docs/CODEX_TASK_TEMPLATE.md): wiederverwendbares Codex-Task-Template

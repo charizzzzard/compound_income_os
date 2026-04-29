@@ -42,8 +42,8 @@ The operator must provide these fields:
 
 ## Conditional Required Fields
 
-- `review_date` is required only for `HOLD_REVIEW` and `WAIT_*` proposed
-  actions.
+- `review_date` is required only for `HOLD_REVIEW`, `WAIT_*` proposed actions,
+  `RESEARCH_MORE`, or `decision_status=REVIEW_SCHEDULED`.
 
 It is not universally required.
 
@@ -68,6 +68,18 @@ Auto/system fields:
 - `asset_name`
 - `asset_type`
 - `policy_ref`
+- `benchmark_ref_or_label`
+
+`benchmark_alternative` is the operator-selected v1 comparison category.
+`benchmark_ref_or_label` is the replay-preserved concrete benchmark label or
+reference. In v1, `benchmark_ref_or_label` may be derived from
+`benchmark_alternative` if no benchmark registry exists.
+
+No benchmark return calculation is performed in v1.
+
+`accounting_basis` defaults to `SNAPSHOT_ONLY` unless a reviewed ledger basis
+exists. Unresolved auto/system fields must be marked `UNKNOWN` or
+`MISSING_REFERENCE` and surfaced in the report.
 
 ## Optional Fields
 
