@@ -1,0 +1,48 @@
+meta_review_date: "2026-04-29"
+project: compound_income_os
+status: accepted_baseline
+
+decisions:
+  six_kernel_architecture:
+    adopted: true
+    summary: "Use Identity & Evidence, Portfolio Accounting & State, Research & Valuation, Decision Packet & Journal, Benchmark & Outcome, and Policy & Feedback as the canonical OS kernel."
+  local_first_deterministic_source_of_truth:
+    adopted: true
+    summary: "Deterministic Python and local artifacts remain source of truth."
+  no_auto_trading:
+    adopted: true
+    summary: "No broker/order execution, no autonomous trading, no live trading surface."
+  human_final_decision:
+    adopted: true
+    summary: "The system may prepare evidence and review packets; the human operator decides."
+  decision_capture_first_producer:
+    adopted: true
+    summary: "Decision Capture is the next producer before outcome, simulation or feedback layers."
+  no_action_is_decision:
+    adopted: true
+    summary: "Deliberate no-action must be capturable when it affects review, cash deployment or attention."
+  score_is_diagnostic_not_decision:
+    adopted: true
+    summary: "Scores create diagnostic attention and guardrails; they do not decide."
+  replay_minimum_embedded_in_decision_capture_v1:
+    adopted: true
+    summary: "run_id, manifest_path, primary_report_path, source_snapshot_date, policy_ref, benchmark_ref_or_label and accounting_basis are embedded in Decision Capture."
+  portfolio_event_ledger_deferred_until_decision_capture_usage:
+    adopted: true
+    summary: "The Portfolio Event Ledger contract follows after at least one month or several real Decision Capture entries."
+  simulation_backtesting_deferred:
+    adopted: true
+    summary: "Simulation, Monte Carlo and backtesting wait for Decision Capture and accounting/replay foundations."
+  llm_codex_assist_not_decide:
+    adopted: true
+    summary: "LLMs and Codex may review, draft and implement scoped patches; they do not create final investment decisions."
+  raw_review_bundle_not_canonical_source:
+    adopted: true
+    summary: "Raw review transcripts, combined bundles and ZIPs remain source material, not canonical architecture docs."
+
+guardrails:
+  missing_data_visible: true
+  no_silent_imputation: true
+  no_runtime_llm_dependency_in_core_pipeline: true
+  no_score_formula_change_from_architecture_docs: true
+  no_value_apply_from_alias_or_architecture_review: true

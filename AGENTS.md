@@ -9,6 +9,11 @@ Dieses Repository ist ein lokales Portfolio-Research-System. Es darf keine Order
 - [docs/PROJECT_CHARTER.md](docs/PROJECT_CHARTER.md): harte Projektcharta, Scope und Invarianten
 - [docs/CONTEXT_AND_ROADMAP.md](docs/CONTEXT_AND_ROADMAP.md): repo-gestuetzter Ist-Zustand, lokale Worktree-Beobachtungen und Roadmap
 - [docs/MODULE_CONTRACTS.md](docs/MODULE_CONTRACTS.md): Modulvertraege, Inputs, Outputs und Drift-Risiken
+- [docs/architecture/00_META_SYNTHESIS.md](docs/architecture/00_META_SYNTHESIS.md): akzeptierte Meta-Architektur-Synthese
+- [docs/architecture/01_TARGET_OS_KERNEL_V1.md](docs/architecture/01_TARGET_OS_KERNEL_V1.md): sechs Kernel-Domaenen des Compound Income OS
+- [docs/architecture/03_INVESTMENT_PHILOSOPHY_V1.md](docs/architecture/03_INVESTMENT_PHILOSOPHY_V1.md): Investment-Philosophie und Nicht-Ziele
+- [docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md](docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md): naechster Producer-Vertrag, noch nicht implementiert
+- [docs/policies/LLM_CODEX_OPERATING_POLICY.md](docs/policies/LLM_CODEX_OPERATING_POLICY.md): LLM-/Codex-Operating-Policy
 - [docs/CODEX_TASK_TEMPLATE.md](docs/CODEX_TASK_TEMPLATE.md): wiederverwendbares Codex-Task-Template
 - [docs/CODEX_TASKS/POST_ITERATION_QA.md](docs/CODEX_TASKS/POST_ITERATION_QA.md): Pflicht-QA nach jedem Patch
 
@@ -24,6 +29,8 @@ Dieses Repository ist ein lokales Portfolio-Research-System. Es darf keine Order
 - CSV- und Markdown-Artefakte deterministisch erzeugen
 - Reports nur aus bereits verarbeiteten Artefakten bauen
 - Das Dashboard konsolidiert verarbeitete Artefakte und fuehrt keine neue Fachlogik ein
+- Sechs-Kernel-OS-Modell, Human-Final-Decision und deterministic Python als Source of Truth respektieren
+- Decision Capture ist die erste geplante Producer-Sequenz; Simulation/Backtesting warten auf Decision Capture und Accounting-/Replay-Fundamente
 
 ## Coding-Konventionen
 

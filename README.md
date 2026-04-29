@@ -29,6 +29,20 @@ Das System fuehrt keine Orders aus. Es verarbeitet CSV-Inputs und lokale textbas
 - [docs/CODEX_TASK_TEMPLATE.md](docs/CODEX_TASK_TEMPLATE.md): wiederverwendbares Task-Template
 - [docs/CODEX_TASKS/POST_ITERATION_QA.md](docs/CODEX_TASKS/POST_ITERATION_QA.md): standardisierter Post-Iteration-QA-/Bug-Hunt-Task
 
+Canonical architecture baseline:
+
+- [docs/architecture/00_META_SYNTHESIS.md](docs/architecture/00_META_SYNTHESIS.md): akzeptierte Meta-Architektur-Synthese
+- [docs/architecture/01_TARGET_OS_KERNEL_V1.md](docs/architecture/01_TARGET_OS_KERNEL_V1.md): sechs Kernel-Domaenen und Operating Loop
+- [docs/architecture/03_INVESTMENT_PHILOSOPHY_V1.md](docs/architecture/03_INVESTMENT_PHILOSOPHY_V1.md): Dividend Growth, Quality Compounders und Value Discipline
+- [docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md](docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md): naechster Producer-Vertrag, noch nicht implementiert
+- [docs/policies/LLM_CODEX_OPERATING_POLICY.md](docs/policies/LLM_CODEX_OPERATING_POLICY.md): LLM-/Codex-Grenzen
+
+Future Codex work must respect the six-kernel OS model, no-auto-trading,
+human-final-decision, deterministic Python as source of truth and Decision
+Capture as the first producer sequence. Simulation, backtesting and outcome
+attribution remain deferred until Decision Capture and accounting/replay
+foundations exist.
+
 ## Design-Prinzipien
 
 - Standardmaessig nur lokale CSV-Dateien und explizit angegebene lokale Dokumente
