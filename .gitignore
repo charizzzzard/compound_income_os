@@ -55,3 +55,6 @@ lokales_Dashboard.txt
 # Generated handoff/export artifacts
 outputs/
 _local_handoff_archive/
+
+#Strategy Development and Review
+strategy/
