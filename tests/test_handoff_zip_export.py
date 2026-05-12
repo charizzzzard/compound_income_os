@@ -64,14 +64,14 @@ class HandoffZipExportTests(unittest.TestCase):
             omitted_text = archive.read("HANDOFF_OMITTED_ARTIFACTS.csv").decode("utf-8")
 
         expected = {
-            "src/personal_sec_kpi_extraction_gap_review.py",
-            "tests/test_personal_sec_kpi_extraction_gap_review.py",
+            "_archive/sec/src/personal_sec_kpi_extraction_gap_review.py",
+            "_archive/sec/tests/test_personal_sec_kpi_extraction_gap_review.py",
             "data/processed/personal_sec_kpi_extraction_gap_matrix.csv",
             "data/processed/personal_sec_kpi_extraction_concept_candidates.csv",
             "data/processed/personal_sec_kpi_extraction_gap_summary.csv",
             "reports/2026-04-27/personal_sec_kpi_extraction_gap_review_report.md",
-            "src/personal_sec_companyfacts_concept_review_table.py",
-            "tests/test_personal_sec_companyfacts_concept_review_table.py",
+            "_archive/sec/src/personal_sec_companyfacts_concept_review_table.py",
+            "_archive/sec/tests/test_personal_sec_companyfacts_concept_review_table.py",
             "data/processed/personal_sec_companyfacts_concept_review_table.csv",
             "data/processed/personal_sec_companyfacts_concept_review_summary.csv",
             "reports/2026-04-27/personal_sec_companyfacts_concept_review_table_report.md",

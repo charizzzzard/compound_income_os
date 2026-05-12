@@ -15,7 +15,7 @@ from src.handoff_bundle import (
     zip_top_level_contents,
 )
 
-INCLUDED_DIRS = ("src", "tests", "docs", "configs", "scripts", "website")
+INCLUDED_DIRS = ("src", "tests", "docs", "configs", "scripts", "website", "_archive")
 INCLUDED_ROOT_FILES = ("README.md", "AGENTS.md", "pyproject.toml", "requirements.txt")
 HANDOFF_ARTIFACT_FILES = (
     "data/processed/personal_profile_review_unlock_summary.csv",
@@ -114,14 +114,14 @@ HANDOFF_ARTIFACT_GLOBS = (
 )
 PATCH_FILE_LISTS = {
     "sec_companyfacts_concept_review": (
-        "src/personal_sec_kpi_extraction_gap_review.py",
-        "tests/test_personal_sec_kpi_extraction_gap_review.py",
+        "_archive/sec/src/personal_sec_kpi_extraction_gap_review.py",
+        "_archive/sec/tests/test_personal_sec_kpi_extraction_gap_review.py",
         "data/processed/personal_sec_kpi_extraction_gap_matrix.csv",
         "data/processed/personal_sec_kpi_extraction_concept_candidates.csv",
         "data/processed/personal_sec_kpi_extraction_gap_summary.csv",
         "reports/2026-04-27/personal_sec_kpi_extraction_gap_review_report.md",
-        "src/personal_sec_companyfacts_concept_review_table.py",
-        "tests/test_personal_sec_companyfacts_concept_review_table.py",
+        "_archive/sec/src/personal_sec_companyfacts_concept_review_table.py",
+        "_archive/sec/tests/test_personal_sec_companyfacts_concept_review_table.py",
         "data/processed/personal_sec_companyfacts_concept_review_table.csv",
         "data/processed/personal_sec_companyfacts_concept_review_summary.csv",
         "reports/2026-04-27/personal_sec_companyfacts_concept_review_table_report.md",
