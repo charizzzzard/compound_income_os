@@ -6,7 +6,7 @@ import unittest
 import uuid
 from pathlib import Path
 
-from src.website_demo_payload_export import run_website_demo_payload_export
+from website.src.website_demo_payload_export import run_website_demo_payload_export
 
 
 class WebsiteDemoPayloadExportTests(unittest.TestCase):

@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 APP = ROOT / "website" / "compound-income-os-landing" / "src" / "App.jsx"
 CONFIG = ROOT / "website" / "compound-income-os-landing" / "src" / "siteConfig.js"
 SCREENSHOT_SCRIPT = ROOT / "website" / "compound-income-os-landing" / "scripts" / "capture-screenshots.mjs"

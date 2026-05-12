@@ -8,7 +8,7 @@ from datetime import date
 from pathlib import Path
 
 from src.handoff_zip_export import HANDOFF_ARTIFACT_FILES, HANDOFF_ARTIFACT_GLOBS
-from src.website_private_preview_handoff_qa import (
+from website.src.website_private_preview_handoff_qa import (
     EXPECTED_ENTRIES,
     HANDOFF_QA_SUMMARY_OUTPUT,
     REQUIRED_QA_ARTIFACTS,
@@ -24,7 +24,7 @@ from src.website_private_preview_handoff_qa import (
 )
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 REPORT = "reports/2026-04-27/website_private_preview_handoff_qa_report.md"
 
 

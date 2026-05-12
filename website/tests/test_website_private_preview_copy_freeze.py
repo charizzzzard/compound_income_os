@@ -6,7 +6,7 @@ from datetime import date
 from pathlib import Path
 
 from src.handoff_zip_export import HANDOFF_ARTIFACT_FILES, HANDOFF_ARTIFACT_GLOBS
-from src.website_private_preview_copy_freeze import (
+from website.src.website_private_preview_copy_freeze import (
     COPY_FREEZE_MATRIX_OUTPUT,
     COPY_FREEZE_SUMMARY_OUTPUT,
     action_term_matches,
@@ -17,7 +17,7 @@ from src.website_private_preview_copy_freeze import (
 )
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def read_csv(path_value: str) -> list[dict[str, str]]:

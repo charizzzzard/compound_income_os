@@ -8,14 +8,14 @@ from datetime import date
 from pathlib import Path
 
 from src.handoff_zip_export import HANDOFF_ARTIFACT_FILES, HANDOFF_ARTIFACT_GLOBS, is_forbidden_entry
-from src.website_static_build_package_qa import (
+from website.src.website_static_build_package_qa import (
     STATIC_QA_OUTPUT,
     STATIC_QA_SUMMARY_OUTPUT,
     run_website_static_build_package_qa,
 )
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 DIST = ROOT / "website" / "compound-income-os-landing" / "dist"
 
 

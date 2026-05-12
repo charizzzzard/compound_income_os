@@ -15,6 +15,7 @@ Das System fuehrt keine Orders aus. Es verarbeitet CSV-Inputs und lokale textbas
 - `research/`: Platzhalter fuer spaetere Deep-Dives
 - `src/`: Kernmodule und CLI-Entry-Points
 - `tests/`: `unittest`-basierte Kernlogik-Tests
+- `website/`: separater Website-Code, Website-Tests und bestehende Mockup-/Landing-Assets
 - `_archive/sec/`: archivierte SEC-Module und Tests als read-only Referenz
 
 ## Project governance / canonical docs

@@ -8,7 +8,7 @@
 
 ## TRACKED_HEAD Ist-Zustand
 
-Das getrackte Repo enthaelt `AGENTS.md`, `README.md`, `configs/`, `data/`, `reports/`, `research/`, `src/`, `tests/`, `_archive/sec/` und diese Governance-Dokumentation unter `docs/`.
+Das getrackte Repo enthaelt `AGENTS.md`, `README.md`, `configs/`, `data/`, `reports/`, `research/`, `src/`, `tests/`, `website/`, `_archive/sec/` und diese Governance-Dokumentation unter `docs/`.
 
 Getrackte Kernmodule sind:
 
@@ -23,6 +23,8 @@ Getrackte Kernmodule sind:
 Getrackte Konfigurationen liegen unter `configs/` und decken Portfolio-Regeln, Scoring-Gewichte, Fundamentals-Schema, Fundamentals-Score-Regeln, Fundamentals-Metric-Definitionen, Watchlist, Datenquellen, Benchmark, Cost/Tax und Dashboard-KPIs ab.
 
 Die getrackten Tests liegen unter `tests/test_*.py` und nutzen `unittest`. Sie pruefen unter anderem README-Portabilitaet, Import/Normalisierung, Scoring, Raw-/Legacy-/Personal-Fundamentals, Watchlist, Monatsranking, Reports, Performance, Cost/Tax, Dashboard und Trade-Republic-Dokumentparser.
+
+Website-Code und Website-Tests liegen seit Patch 1 separat unter `website/src/` und `website/tests/`; sie sind nicht Teil des aktiven Core-Test-Discoverys unter `tests/`.
 
 ## Dirty-/Untracked-Regel
 

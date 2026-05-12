@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 from src.handoff_zip_export import HANDOFF_ARTIFACT_FILES, HANDOFF_ARTIFACT_GLOBS
-from src.website_private_preview_route_matrix import (
+from website.src.website_private_preview_route_matrix import (
     COPY_GUARDRAILS_OUTPUT,
     CTA_MATRIX_OUTPUT,
     QA_SUMMARY_OUTPUT,
@@ -14,7 +14,7 @@ from src.website_private_preview_route_matrix import (
 )
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 SCREENSHOT_SCRIPT = ROOT / "website" / "compound-income-os-landing" / "scripts" / "capture-screenshots.mjs"
 PUBLIC_DEMO = ROOT / "website" / "compound-income-os-landing" / "public" / "demo"
 
