@@ -14,6 +14,8 @@ This discovery does not remove, archive, or edit imports. It records the current
 
 Important result: the intended list of 13 modules cannot be reconstructed with high confidence from current repo documentation. The only high-confidence archive candidate is `src/personal_profile_review_materialize.py`. Several other modules look like review/reporting helpers or `LOCAL_PATCH` artifacts, but current docs also connect some of them to handoff, dashboard-readiness, reconciliation, or the v1.2 target architecture.
 
+Patch 2.2b status: `personal_profile_review_materialize.py` archived to `_archive/personal_meta/`.
+
 ## Candidate Inventory
 
 | Module | Tests | Imports In | Outputs / Artifacts | Docs / Contract Evidence | Classification | Proposed Treatment | Confidence |

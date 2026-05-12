@@ -8,7 +8,7 @@
 
 ## TRACKED_HEAD Ist-Zustand
 
-Das getrackte Repo enthaelt `AGENTS.md`, `README.md`, `configs/`, `data/`, `reports/`, `research/`, `src/`, `tests/`, `website/`, `_archive/sec/` und diese Governance-Dokumentation unter `docs/`.
+Das getrackte Repo enthaelt `AGENTS.md`, `README.md`, `configs/`, `data/`, `reports/`, `research/`, `src/`, `tests/`, `website/`, `_archive/sec/`, `_archive/personal_meta/` und diese Governance-Dokumentation unter `docs/`.
 
 Getrackte Kernmodule sind:
 
@@ -45,8 +45,9 @@ Website-Code und Website-Tests liegen seit Patch 1 separat unter `website/src/` 
 10. Persoenlicher Orchestrator: `src.personal_run_engine` fuehrt nur explizit angeforderte Stages in kanonischer Reihenfolge aus und protokolliert Run-Status, Inputs, Outputs, Warnings und Stage-Ergebnisse in Manifest-/Artefakt-Outputs.
 11. KPI Tier Guardrails: Fundamentals-, Scoring- und Monthly-Ranking-Pfade unterscheiden Core-Quality-, Valuation-, Dividend-FCF- und Advanced-Datenqualitaet. Fehlende Tier-Daten bleiben sichtbar und werden konservativ in Score-/Monthly-Guardrails verarbeitet.
 12. SEC-Archiv: 26 ehemalige SEC-Module und 26 zugehoerige Tests liegen als read-only Referenz unter `_archive/sec/`. Sie sind nicht Teil der aktiven `src/`-Oberflaeche und werden durch `python -m unittest discover -s tests -p "test_*.py"` nicht mehr entdeckt.
-13. Handoff und Docs Drift: `src.handoff_zip_export` erzeugt standardisierte `outputs/handoffs/archive/`, `outputs/handoffs/latest/`- und `outputs/handoffs/upload_ready/`-Pakete fuer externe Review ohne private Daten. Docs-Drift wird ueber `docs/DOCUMENTATION_MAINTENANCE.md`, `docs/CODEX_TASKS/DOCS_DRIFT_CHECKLIST.md` und den lokalen Drift-Report sichtbar gemacht.
-14. Architektur-Baseline: `docs/architecture/` fixiert das sechs-Kernel-Modell fuer Compound Income OS. `docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md` definiert den Decision-Capture-Vertrag. `src.personal_decision_state_capture` implementiert den minimalen standalone Producer fuer append-only Entscheidungen und No-Actions; er erzeugt nur processed/report Artefakte und fuehrt keine Order-, Outcome-, Benchmark-Return-, Simulation- oder Backtesting-Logik aus. `docs/policies/LLM_CODEX_OPERATING_POLICY.md` haelt fest, dass LLMs/Codex assistieren und nicht entscheiden.
+13. Personal-Meta-Archiv: `src.personal_profile_review_materialize` und der zugehoerige Test liegen seit Patch 2.2b als read-only Referenz unter `_archive/personal_meta/`. Sie sind nicht Teil der aktiven `src/`-Oberflaeche und werden durch `python -m unittest discover -s tests -p "test_*.py"` nicht mehr entdeckt.
+14. Handoff und Docs Drift: `src.handoff_zip_export` erzeugt standardisierte `outputs/handoffs/archive/`, `outputs/handoffs/latest/`- und `outputs/handoffs/upload_ready/`-Pakete fuer externe Review ohne private Daten. Docs-Drift wird ueber `docs/DOCUMENTATION_MAINTENANCE.md`, `docs/CODEX_TASKS/DOCS_DRIFT_CHECKLIST.md` und den lokalen Drift-Report sichtbar gemacht.
+15. Architektur-Baseline: `docs/architecture/` fixiert das sechs-Kernel-Modell fuer Compound Income OS. `docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md` definiert den Decision-Capture-Vertrag. `src.personal_decision_state_capture` implementiert den minimalen standalone Producer fuer append-only Entscheidungen und No-Actions; er erzeugt nur processed/report Artefakte und fuehrt keine Order-, Outcome-, Benchmark-Return-, Simulation- oder Backtesting-Logik aus. `docs/policies/LLM_CODEX_OPERATING_POLICY.md` haelt fest, dass LLMs/Codex assistieren und nicht entscheiden.
 
 ## ROADMAP / Spaeter
 

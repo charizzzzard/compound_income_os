@@ -18,6 +18,7 @@ Das System fuehrt keine Orders aus. Es verarbeitet CSV-Inputs und lokale textbas
 - `tests/`: `unittest`-basierte Kernlogik-Tests
 - `website/`: separater Website-Code, Website-Tests und bestehende Mockup-/Landing-Assets
 - `_archive/sec/`: archivierte SEC-Module und Tests als read-only Referenz
+- `_archive/personal_meta/`: archivierte Personal-Meta-Module und Tests als read-only Referenz
 
 ## Project governance / canonical docs
 
