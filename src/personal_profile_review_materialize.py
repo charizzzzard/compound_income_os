@@ -10,8 +10,10 @@ from typing import Any
 from src.common import canonicalize_ticker, resolve_repo_path, safe_upper, write_csv_rows
 from src.fundamentals_master import DEFAULT_PERSONAL_MASTER_PATH, VALID_COMPANY_TYPE_PROFILES
 from src.fundamentals_profile_engine import PROFILE_REVIEW_INPUT_FIELDS, require_header_columns
-from src.personal_sec_profile_seed import DEFAULT_PROFILE_SEED_OUTPUT
 
+# DEFAULT_PROFILE_SEED_OUTPUT copied from archived personal_sec_profile_seed.
+# This module is scheduled for removal in Patch 2; inline copy avoids an import break during SEC archival.
+DEFAULT_PROFILE_SEED_OUTPUT = "data/processed/personal_fundamentals_profile_review_seed_from_sec_identity.csv"
 DEFAULT_REVIEW_OUTPUT = "data/raw/personal_fundamentals_profile_review.csv"
 DEFAULT_EXACT_MAP_INPUT = "data/raw/private/fundamentals/personal_profile_review_exact_map.csv"
 DEFAULT_REPORT_OUTPUT = f"reports/{date.today().isoformat()}/personal_profile_review_materialization_report.md"
