@@ -234,6 +234,14 @@ def default_omitted_artifacts(profile: str) -> list[dict[str, str]]:
         omitted_row("data/raw/private/**", "OMITTED_PRIVATE", "False", "False", "True", "Private raw inputs are never exported."),
         omitted_row("**/sec_user_agent.local.txt", "OMITTED_FORBIDDEN", "False", "False", "True", "User-agent files are never exported."),
         omitted_row("*.zip", "OMITTED_FORBIDDEN", "False", "False", "True", "Nested ZIPs are never exported."),
+        omitted_row("**/__pycache__/**", "OMITTED_FORBIDDEN", "False", "False", "True", "Python cache directories are never exported."),
+        omitted_row("**/*.pyc", "OMITTED_FORBIDDEN", "False", "False", "True", "Python bytecode files are never exported."),
+        omitted_row("**/.pytest_cache/**", "OMITTED_FORBIDDEN", "False", "False", "True", "Test runner cache directories are never exported."),
+        omitted_row("**/.mypy_cache/**", "OMITTED_FORBIDDEN", "False", "False", "True", "Type-checker cache directories are never exported."),
+        omitted_row("**/.ruff_cache/**", "OMITTED_FORBIDDEN", "False", "False", "True", "Linter cache directories are never exported."),
+        omitted_row("**/.cache/**", "OMITTED_FORBIDDEN", "False", "False", "True", "Generic local cache directories are never exported."),
+        omitted_row("**/.DS_Store", "OMITTED_FORBIDDEN", "False", "False", "True", "OS metadata files are never exported."),
+        omitted_row("**/Thumbs.db", "OMITTED_FORBIDDEN", "False", "False", "True", "OS metadata files are never exported."),
     ]
     if profile == "patch":
         rows.append(

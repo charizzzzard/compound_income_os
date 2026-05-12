@@ -143,6 +143,13 @@ class HandoffZipExportTests(unittest.TestCase):
             archive.writestr("old_export.zip", "blocked")
             archive.writestr("website/compound-income-os-landing/.env", "blocked")
             archive.writestr("website/compound-income-os-landing/.env.example", "allowed")
+            archive.writestr("src/__pycache__/app.cpython-313.pyc", "blocked")
+            archive.writestr("src/.pytest_cache/v/cache/nodeids", "blocked")
+            archive.writestr("src/.mypy_cache/meta.json", "blocked")
+            archive.writestr("src/.ruff_cache/cache.bin", "blocked")
+            archive.writestr("src/.cache/tool/cache.bin", "blocked")
+            archive.writestr("src/.DS_Store", "blocked")
+            archive.writestr("src/Thumbs.db", "blocked")
             archive.writestr("src/app.py", "allowed")
 
         matches = scan_forbidden_entries(zip_path)
@@ -154,7 +161,46 @@ class HandoffZipExportTests(unittest.TestCase):
         self.assertIn("old_export.zip", matches)
         self.assertIn("website/compound-income-os-landing/.env", matches)
         self.assertIn("website/compound-income-os-landing/.env.example", matches)
+        self.assertIn("src/__pycache__/app.cpython-313.pyc", matches)
+        self.assertIn("src/.pytest_cache/v/cache/nodeids", matches)
+        self.assertIn("src/.mypy_cache/meta.json", matches)
+        self.assertIn("src/.ruff_cache/cache.bin", matches)
+        self.assertIn("src/.cache/tool/cache.bin", matches)
+        self.assertIn("src/.DS_Store", matches)
+        self.assertIn("src/Thumbs.db", matches)
         self.assertNotIn("src/app.py", matches)
+
+    def test_full_review_export_omits_cache_directories_and_os_metadata(self) -> None:
+        cache_root = self.tmp / "cache_source"
+        (cache_root / "__pycache__").mkdir(parents=True)
+        (cache_root / "__pycache__" / "mod.cpython-313.pyc").write_bytes(b"cache")
+        (cache_root / ".pytest_cache" / "v" / "cache").mkdir(parents=True)
+        (cache_root / ".pytest_cache" / "v" / "cache" / "nodeids").write_text("cache", encoding="utf-8")
+        (cache_root / ".mypy_cache").mkdir(parents=True)
+        (cache_root / ".mypy_cache" / "meta.json").write_text("{}", encoding="utf-8")
+        (cache_root / ".ruff_cache").mkdir(parents=True)
+        (cache_root / ".ruff_cache" / "cache.bin").write_bytes(b"cache")
+        (cache_root / ".cache" / "tool").mkdir(parents=True)
+        (cache_root / ".cache" / "tool" / "cache.bin").write_bytes(b"cache")
+        (cache_root / ".DS_Store").write_bytes(b"cache")
+        (cache_root / "Thumbs.db").write_bytes(b"cache")
+        (cache_root / "safe.txt").write_text("safe", encoding="utf-8")
+
+        result = export_profile_handoff_zip(profile="full_review", name="unit_cache_hygiene", output_dir=self.tmp)
+
+        with zipfile.ZipFile(result.zip_path, "r") as archive:
+            names = set(archive.namelist())
+
+        joined = "\n".join(sorted(names))
+        self.assertIn("tests/handoff_zip_export_fixture/cache_source/safe.txt", names)
+        self.assertNotIn("__pycache__", joined)
+        self.assertFalse(any(name.endswith(".pyc") for name in names))
+        self.assertNotIn(".pytest_cache", joined)
+        self.assertNotIn(".mypy_cache", joined)
+        self.assertNotIn(".ruff_cache", joined)
+        self.assertNotIn("/.cache/", joined)
+        self.assertFalse(any(name.endswith("/.DS_Store") or name.endswith("/Thumbs.db") for name in names))
+        self.assertEqual(scan_forbidden_entries(result.zip_path), ())
 
     def test_docs_describe_upload_ready_handoff_usage(self) -> None:
         contract_text = (ROOT / "docs" / "HANDOFF_CONTRACT.md").read_text(encoding="utf-8")

@@ -42,9 +42,14 @@ FORBIDDEN_PATTERNS = (
     "deploy_artifacts/**",
     "__pycache__/**",
     ".pytest_cache/**",
+    ".mypy_cache/**",
+    ".ruff_cache/**",
+    ".cache/**",
     "*.pyc",
     "*.zip",
     "*.log",
+    ".DS_Store",
+    "Thumbs.db",
     "tests/_tmp_*",
 )
 FORBIDDEN_PREFIXES = (
@@ -58,13 +63,15 @@ FORBIDDEN_PREFIXES = (
     "website/compound-income-os-landing/deploy_artifacts/",
     "outputs/",
 )
-FORBIDDEN_DIR_NAMES = {"__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", "node_modules", "dist", "deploy_artifacts"}
+FORBIDDEN_DIR_NAMES = {"__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", ".cache", "node_modules", "dist", "deploy_artifacts"}
 FORBIDDEN_FILE_NAMES = {
+    ".ds_store",
     ".env",
     ".env.local",
     "sec_user_agent.local.txt",
     "personal_sec_identity_map.csv",
     "personal_sec_scope_review_filled.csv",
+    "thumbs.db",
 }
 
 
@@ -117,7 +124,7 @@ def is_forbidden_entry(entry_name: str) -> bool:
     parts = set(name.split("/"))
     if name.endswith(".zip") or name.endswith(".log") or name.endswith(".pyc"):
         return True
-    if basename in FORBIDDEN_FILE_NAMES:
+    if lowered in FORBIDDEN_FILE_NAMES:
         return True
     if lowered.startswith(".env") or "user_agent" in lowered:
         return True
