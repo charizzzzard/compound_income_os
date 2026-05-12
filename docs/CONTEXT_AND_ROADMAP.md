@@ -19,6 +19,7 @@ Getrackte Kernmodule sind:
 - `src.performance_engine`, `src.benchmark_history_engine`, `src.multi_benchmark_performance_engine`, `src.portfolio_history_engine`, `src.cost_tax_engine`, `src.cost_tax_archive_engine`, `src.dashboard_engine` und `src.dashboard_server` fuer Performance-/Benchmark-, Benchmark-Archiv-, Multi-Benchmark-, Portfolio-Historien-, Cost-/Tax-Archiv-, Cost-/Tax-, Dashboard- und lokalen Dashboard-Viewer-Artefakte
 - `src.personal_run_engine` fuer explizite persoenliche Stage-Orchestrierung, Run-Manifest, Artefaktindex und Run-Report
 - `src.common` fuer gemeinsame Pfad-, CSV-, Config-, Parsing- und Score-Helfer
+- `src.platform` fuer minimale stdlib-only Foundation-Helfer: Schema-Registry, Validierung und atomare Artefakt-IO
 
 Getrackte Konfigurationen liegen unter `configs/` und decken Portfolio-Regeln, Scoring-Gewichte, Fundamentals-Schema, Fundamentals-Score-Regeln, Fundamentals-Metric-Definitionen, Watchlist, Datenquellen, Benchmark, Cost/Tax und Dashboard-KPIs ab.
 

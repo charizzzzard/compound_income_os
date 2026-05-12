@@ -14,6 +14,7 @@ Das System fuehrt keine Orders aus. Es verarbeitet CSV-Inputs und lokale textbas
 - `reports/`: generierte Markdown-Reports
 - `research/`: Platzhalter fuer spaetere Deep-Dives
 - `src/`: Kernmodule und CLI-Entry-Points
+- `src/platform/`: minimale stdlib-only Foundation fuer Schema-Registry, Validierung und atomare Artefakt-IO
 - `tests/`: `unittest`-basierte Kernlogik-Tests
 - `website/`: separater Website-Code, Website-Tests und bestehende Mockup-/Landing-Assets
 - `_archive/sec/`: archivierte SEC-Module und Tests als read-only Referenz
