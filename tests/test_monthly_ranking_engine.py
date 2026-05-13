@@ -5,11 +5,27 @@ import subprocess
 import unittest
 from pathlib import Path
 import json
+from unittest.mock import patch
 
 from src.common import read_csv_rows
 from src.fundamentals_master import COVERAGE_OUTPUT_FIELDS
-from src.monthly_ranking_engine import build_monthly_ranking
+from src.monthly_ranking_engine import OUTPUT_FIELDS, build_monthly_ranking
 from src.portfolio_rules import load_portfolio_rules
+
+
+PRE_ROUTING_OUTPUT_FIELDS = [
+    "rank",
+    "ticker",
+    "company_name",
+    "current_weight",
+    "target_action",
+    "allocation_status",
+    "suggested_buy_amount_eur",
+    "rationale",
+    "constraint_checks",
+    "valuation_comment",
+    "mandate_fit_comment",
+]
 
 
 class MonthlyRankingEngineTests(unittest.TestCase):
@@ -97,6 +113,81 @@ class MonthlyRankingEngineTests(unittest.TestCase):
         ranking, _ = build_monthly_ranking(positions, scores, watchlist)
         self.assertEqual(ranking[0]["ticker"], "HOLD_CASH")
         self.assertEqual(ranking[0]["target_action"], "HOLD_CASH")
+
+    def test_output_fields_append_execution_mode_fields(self) -> None:
+        self.assertEqual(OUTPUT_FIELDS[:-2], PRE_ROUTING_OUTPUT_FIELDS)
+        self.assertEqual(OUTPUT_FIELDS[-2:], ["execution_mode", "execution_mode_reason"])
+
+    def test_non_buy_rows_get_empty_execution_mode(self) -> None:
+        positions = [
+            {"ticker": "EUR-CASH", "company_name": "Cash", "asset_type": "CASH", "sleeve": "CASH", "sector": "Cash", "market_value_eur": "2000"},
+        ]
+        scores = [
+            {
+                "ticker": "BAD",
+                "company_name": "Bad Co",
+                "sector": "Tech",
+                "sleeve": "SINGLE_STOCK",
+                "held_in_portfolio": "false",
+                "business_score": "60",
+                "valuation_score": "50",
+                "buy_score": "61",
+                "margin_of_safety_pct": "0",
+                "classification": "REJECT",
+                "has_hard_risk_flag": "true",
+                "data_quality_flag": "OK",
+                "valuation_comment": "Too weak.",
+                "mandate_fit_score": "40",
+            }
+        ]
+        watchlist = [{"ticker": "BAD", "company_name": "Bad Co", "sector": "Tech", "sleeve": "SINGLE_STOCK", "status": "REJECT"}]
+        ranking, _ = build_monthly_ranking(positions, scores, watchlist)
+        self.assertEqual(ranking[0]["execution_mode"], "")
+        self.assertEqual(ranking[0]["execution_mode_reason"], "not_a_buy_candidate")
+
+    def test_buy_row_gets_allowed_execution_mode(self) -> None:
+        positions, scores, watchlist = self.eligible_holding_fixture()
+        ranking, _ = build_monthly_ranking(positions, scores, watchlist)
+        self.assertIn(
+            ranking[0]["execution_mode"],
+            {"SAVINGS_PLAN_EXISTING", "SAVINGS_PLAN_NEW", "SINGLE_ORDER", "NO_RECOMMENDATION"},
+        )
+        self.assertTrue(ranking[0]["execution_mode_reason"])
+
+    def test_routing_thresholds_are_loaded_once_per_run(self) -> None:
+        positions, scores, watchlist = self.eligible_holding_fixture()
+        with patch("src.monthly_ranking_engine.load_routing_thresholds") as loader:
+            loader.return_value = {
+                "drawdown_opportunity_threshold": 70.0,
+                "material_underweight_gap_pct": 1.0,
+                "single_order_min_amount_eur": 200.0,
+                "max_fee_ratio": 0.005,
+                "max_wait_days_for_savings_plan": 14,
+                "buy_gate_business_score": 60.0,
+                "buy_gate_valuation_score": 60.0,
+                "position_weight_cap": 0.10,
+            }
+            build_monthly_ranking(positions, scores, watchlist)
+        loader.assert_called_once()
+
+    def test_savings_plan_lookup_is_loaded_once_per_run(self) -> None:
+        positions, scores, watchlist = self.eligible_holding_fixture()
+        with patch("src.monthly_ranking_engine.load_savings_plan_lookup", return_value={}) as loader:
+            build_monthly_ranking(positions, scores, watchlist)
+        loader.assert_called_once()
+
+    def test_no_routing_mode_for_non_buy_candidates(self) -> None:
+        positions, scores, watchlist = self.eligible_holding_fixture()
+        scores[0]["business_score"] = "40"
+        scores[0]["valuation_score"] = "30"
+        scores[0]["buy_score"] = "35"
+        scores[1]["business_score"] = "40"
+        scores[1]["valuation_score"] = "30"
+        scores[1]["buy_score"] = "35"
+        ranking, _ = build_monthly_ranking(positions, scores, watchlist)
+        non_buy_rows = [row for row in ranking if str(row["target_action"]).upper() not in {"BUY", "TOP_UP"}]
+        self.assertTrue(non_buy_rows)
+        self.assertTrue(all(row["execution_mode"] == "" for row in non_buy_rows))
 
     def test_monthly_cash_uses_configuration_value(self) -> None:
         rules = load_portfolio_rules()

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+from datetime import date
 from typing import Any
 
 from src.common import canonicalize_ticker, read_csv_rows, require_columns, require_unique_tickers, resolve_repo_path, round2, safe_upper, to_bool, to_float, write_csv_rows
@@ -12,6 +13,13 @@ from src.portfolio_rules import (
     compute_sector_weights,
     compute_total_assets,
     load_portfolio_rules,
+)
+from src.savings_plan_routing import (
+    DEFAULT_REGISTRY_PATH as DEFAULT_SAVINGS_PLAN_REGISTRY_PATH,
+    DEFAULT_THRESHOLDS_PATH as DEFAULT_ROUTING_THRESHOLDS_PATH,
+    load_routing_thresholds,
+    load_savings_plan_lookup,
+    route_candidates,
 )
 from src.scoring_engine import evaluate_purchase_readiness
 
@@ -42,6 +50,8 @@ OUTPUT_FIELDS = [
     "constraint_checks",
     "valuation_comment",
     "mandate_fit_comment",
+    "execution_mode",
+    "execution_mode_reason",
 ]
 
 REBALANCE_FIELDS = [
@@ -203,6 +213,18 @@ def corridor_gap_bonus(sleeve: str, summary: dict[str, float], rules: dict[str, 
     return 4.0
 
 
+def bucket_underweight_gap_pct(sleeve: str, summary: dict[str, float], rules: dict[str, Any]) -> float:
+    sleeve = sleeve.upper()
+    mapping = {
+        "CORE_ETF": ("core_etf_weight", "target_core_etf_min"),
+        "DIVIDEND_QUALITY_ETF": ("dividend_quality_etf_weight", "target_dividend_quality_etf_min"),
+        "SINGLE_STOCK": ("single_stocks_weight", "target_single_stocks_min"),
+        "CASH": ("cash_weight", "target_cash_min"),
+    }
+    weight_key, min_key = mapping.get(sleeve, mapping["SINGLE_STOCK"])
+    return round2(max(0.0, to_float(rules[min_key]) - summary[weight_key]) * 100.0)
+
+
 def build_candidate_rows(
     score_rows: list[dict[str, str]],
     watchlist_rows: list[dict[str, str]],
@@ -248,6 +270,7 @@ def evaluate_candidate(
     if sleeve in {"CORE_ETF", "DIVIDEND_QUALITY_ETF"} or sector == "ETF":
         sector_cap = budget
     allowed_amount = max(0.0, min(budget, position_cap, sector_cap))
+    position_weight_after_buy = round2(((current_value + allowed_amount) / projected_total_assets) if projected_total_assets else 0.0)
     business_score = to_float(score_row.get("business_score"))
     valuation_score = to_float(score_row.get("valuation_score"))
     buy_score = to_float(score_row.get("buy_score"))
@@ -319,6 +342,12 @@ def evaluate_candidate(
             "mandate_fit_comment",
             f"Mandats-Fit {score_row.get('mandate_fit_score', 'n/a')} und Portfolio-Sleeve {sleeve}.",
         ),
+        "business_score": round2(business_score),
+        "valuation_score": round2(valuation_score),
+        "drawdown_opportunity_score": score_row.get("drawdown_opportunity_score", ""),
+        "bucket_underweight_gap": bucket_underweight_gap_pct(sleeve, summary, rules),
+        "position_weight_after_buy": position_weight_after_buy,
+        "candidate_amount_eur": round2(allowed_amount if eligible else 0.0),
         "_eligible": eligible,
         "_priority_score": priority_score,
     }
@@ -379,6 +408,9 @@ def build_monthly_ranking(
     watchlist_source_name: str = "watchlist input",
     coverage_rows: list[dict[str, Any]] | None = None,
     coverage_source_name: str = "coverage input",
+    routing_thresholds_path: str = DEFAULT_ROUTING_THRESHOLDS_PATH,
+    savings_plan_registry_path: str = DEFAULT_SAVINGS_PLAN_REGISTRY_PATH,
+    routing_run_date: date | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     rules = load_portfolio_rules(rules_path)
     require_unique_tickers(score_rows, score_source_name)
@@ -489,8 +521,18 @@ def build_monthly_ranking(
     for rank, row in enumerate(ranking_rows, start=1):
         row["rank"] = rank
 
+    routing_thresholds = load_routing_thresholds(routing_thresholds_path)
+    savings_plan_lookup = load_savings_plan_lookup(savings_plan_registry_path)
+    ranking_rows = route_candidates(ranking_rows, savings_plan_lookup, routing_thresholds, {"BUY", "TOP_UP"}, routing_run_date)
+
     rebalance = build_rebalance_proposals(positions_rows, score_rows, rules)
     return ranking_rows, rebalance
+
+
+def parse_run_date(value: str | None) -> date | None:
+    if not value:
+        return None
+    return date.fromisoformat(value)
 
 
 def parse_args() -> argparse.Namespace:
@@ -502,6 +544,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--coverage", help="Optional personal fundamentals coverage CSV.")
     parser.add_argument("--rebalance-output", default="data/processed/rebalance_proposals.csv", help="Rebalance CSV output.")
     parser.add_argument("--rules", default=DEFAULT_RULES_PATH, help="Portfolio rules config path.")
+    parser.add_argument("--routing-thresholds", default=DEFAULT_ROUTING_THRESHOLDS_PATH, help="Savings plan routing thresholds config path.")
+    parser.add_argument("--savings-plan-registry", default=DEFAULT_SAVINGS_PLAN_REGISTRY_PATH, help="Savings plan registry CSV input.")
+    parser.add_argument("--routing-run-date", help="Optional ISO run date for savings plan routing derivations.")
     return parser.parse_args()
 
 
@@ -532,6 +577,9 @@ def main() -> None:
         f"watchlist CSV ({args.watchlist})",
         coverage_rows,
         f"coverage CSV ({args.coverage})",
+        args.routing_thresholds,
+        args.savings_plan_registry,
+        parse_run_date(args.routing_run_date),
     )
     cleaned_ranking = [{key: row.get(key, "") for key in OUTPUT_FIELDS} for row in ranking]
     write_csv_rows(args.output, OUTPUT_FIELDS, cleaned_ranking)
