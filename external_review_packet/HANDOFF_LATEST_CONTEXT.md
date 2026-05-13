@@ -1,48 +1,63 @@
 # Handoff Context
 
 - project_name: `compound_income_os`
-- profile: `post_patch_2_external_review`
+- profile: `post_patch_1_2_external_review`
 - bundle_name: `HANDOFF_LATEST`
-- bundle_purpose: `external_llm_validation_after_patch_2`
-- created_at_utc: `2026-05-13T07:04:51Z`
+- bundle_purpose: `external_llm_validation_after_phase_1_2`
+- created_at_utc: `2026-05-13T15:42:08Z`
 - branch: `main`
-- head: `aeba5ae1d11bd7d269ea20570589fd2e49633b2a`
-- short_head: `aeba5ae`
+- implementation_head: `a09d5b36e86e734dc14ce13114b5ae7c9ecea03c`
+- implementation_short_head: `a09d5b3`
+- current_handoff_head: `a09d5b36e86e734dc14ce13114b5ae7c9ecea03c`
+- current_handoff_short_head: `a09d5b3`
 - dirty_worktree_present: `False` before handoff artifact generation
-- patch_level: `Patch 2 finalized`
+- patch_level: `Phase 1.2 complete`
 - canonical_vision: `COMPOUND_INCOME_OS_VISION_v1_2.md`
-- personal_meta_operator_decision: `11 ambiguous candidates kept active for now`
-- additional_personal_meta_archival: `none`
-- purpose: final post-Patch-2 handoff for external LLM validation
+- bundle_source: `python -m src.handoff_zip_export --profile full_review --name HANDOFF_LATEST --output-path external_review_packet/HANDOFF_LATEST.zip`
+- purpose: external LLM validation after Phase 1.2 Sparplan-Routing
 
 ## Included Artifact Groups
 - configs
 - docs
-- processed_artifacts / `data/processed`
-- reports
 - repo_context
 - source
 - tests
-- website_source
-- archive_metadata / `_archive/sec`
-- archive_metadata / `_archive/personal_meta`
+- website_source and archive metadata when normally included by the exporter
+- handoff metadata
+- `PATCH_1_2_FINAL_REPORT.md`
 
 ## Omitted Artifact Groups
-- OMITTED_FORBIDDEN
-- OMITTED_PRIVATE
 - raw private data
+- credentials and local user-agent values
 - generated caches
+- nested ZIPs
+- old non-canonical vision files
+
+## Patch 1.2 Scope Summary
+- `src/savings_plan_routing.py` adds deterministic, read-only Sparplan routing recommendations.
+- `configs/savings_plan_routing_thresholds.yaml` defines explicit thresholds.
+- `src/monthly_ranking_engine.py` appends `execution_mode` and `execution_mode_reason`.
+- `src/build_monthly_decision_report.py` renders execution mode only for Buy/TOP_UP candidates.
+- Decision Capture schema and enums remain unchanged.
+- No broker API, external HTTP, order execution, auto-trading, scoring change, portfolio-rule change, watchlist change, fundamentals change, Personal-Meta change, Patch-3 merge, or Phase-1.3+ logic is included.
+
+## Validation Summary
+- Baseline before Patch 1.2: `545 tests OK`, approx. `84.960s`.
+- Final after Patch 1.2: `574 tests OK`, `85.868s`.
+- Backfill mode: `GREEN`.
+- Full discovery was intentionally skipped during this artifact-only backfill.
+- Cheap smokes run during backfill:
+  - `python -m src.savings_plan_routing --help`
+  - `python -m src.monthly_ranking_engine --help`
+  - `python -m src.personal_run_engine --help`
+  - `python -m src.handoff_zip_export --help`
 
 ## External LLM Instructions
 - Use `COMPOUND_INCOME_OS_VISION_v1_2.md` as the sole canonical vision document.
 - Use `HANDOFF_LATEST.zip` as the sole canonical repo evidence bundle.
-- Treat this ZIP as post-Patch-2 repo reality.
+- Use `PATCH_1_2_FINAL_REPORT.md` for implementation scope, validation evidence, no-change verification and open gaps.
 - Do not use older `COMPOUND_INCOME_OS_VISION_v1.md` or `COMPOUND_INCOME_OS_VISION_v1_1.md` documents if present elsewhere.
 - Do not infer private raw data, credentials, user-agent values, or omitted local files.
 - Reference files by full relative path, not basename.
-- Check `HANDOFF_CHANGE_CLASSIFICATION.csv` before assuming dirty worktree state.
-- Archived SEC modules are not active core pipeline modules.
-- Website code is not part of the active core `src/` lifecycle.
-- The archived personal-meta module is not active core pipeline code.
-- If ZIP-internal `HANDOFF_CONTEXT.md` conflicts with this external context, this external `HANDOFF_LATEST_CONTEXT.md` wins for packet metadata.
-- The 11 ambiguous Personal-Meta candidates from `docs/architecture/PATCH_02_PERSONAL_META_REMOVAL_SCOPE.md` are kept active for now.
+- Check ZIP-internal `HANDOFF_CHANGE_CLASSIFICATION.csv` before assuming dirty worktree state.
+- If ZIP-internal generic `HANDOFF_CONTEXT.md` conflicts with this external context, this external `HANDOFF_LATEST_CONTEXT.md` wins for packet metadata.
