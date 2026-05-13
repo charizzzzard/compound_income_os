@@ -1,44 +1,74 @@
-# 00 READ ME FIRST - Phase 1.3 External Review
+# Compound Income OS External LLM Review Packet  Phase 1.3
 
-Dies ist das Startdokument fuer die externe LLM-Validierung nach Phase 1.3 des `compound_income_os`.
+Dies ist der Einstiegspunkt fuer die externe LLM-Review des Phase-1.3-Handoffs von `compound_income_os`.
 
-## Source-of-truth Reihenfolge
+## Source-of-truth / Precedence
 
-1. `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
-2. `external_review_packet/PATCH_1_3_FINAL_REPORT.md`
-3. `external_review_packet/HANDOFF_LATEST.sha256`
-4. `external_review_packet/HANDOFF_LATEST.zip`
-5. Repo-Dateien im ZIP, insbesondere `docs/COMPOUND_INCOME_OS_VISION_v1_2.md`, `docs/CONTEXT_AND_ROADMAP.md`, `docs/MODULE_CONTRACTS.md`, `README.md`, `src/`, `tests/`, `configs/`
+Bei Konflikten gilt diese Reihenfolge:
 
-Wenn ein ZIP-interner generischer `HANDOFF_CONTEXT.md` von `external_review_packet/HANDOFF_LATEST_CONTEXT.md` abweicht, gewinnt die externe Datei `HANDOFF_LATEST_CONTEXT.md` fuer Phase-1.3-Metadaten.
+1. `external_review_packet/00_READ_ME_FIRST.md`
+   - Einstiegspunkt und Reviewer-Instruktionen
 
-## Phase 1.3 Scope
+2. `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
+   - autoritative Phase-1.3-Packet-Metadaten und Lineage
 
-Phase 1.3 implementiert zwei aggregate, read-only Portfolio-Health-Reviews:
+3. `external_review_packet/PATCH_1_3_FINAL_REPORT.md`
+   - Implementierungszusammenfassung, Validierungsevidenz, Guardrails, bekannte Findings
 
-- Cash-Refill Review in `src/cash_refill_review.py`
-- Rebalance Review in `src/rebalance_review.py`
-- Integration als `personal_run_engine`-Stages nach `portfolio_review` und vor `monthly`
-- Portfolio-Health-Rendering im Monthly Decision Report vor Buy-Kandidaten
-- Dokumentation und Backlog-Update
+4. `external_review_packet/HANDOFF_LATEST.sha256`
+   - Checksumme fuer das ZIP
 
-Nicht enthalten: Decision-Capture-Schemaaenderung, neue `proposed_action`-Enums, Broker/API/HTTP/Order-Ausfuehrung, Auto-Trading, Steuerquantifizierung, Sell-Order-Logik, Scoring-/Watchlist-/Portfolio-Regel-Aenderungen, Phase 1.4+.
+5. `external_review_packet/HANDOFF_LATEST.zip`
+   - kanonisches Repo-Evidenz-Bundle
 
-## Heads
+6. ZIP-interne Repo-Dateien, insbesondere:
+   - `docs/COMPOUND_INCOME_OS_VISION_v1_2.md`
+   - `docs/CONTEXT_AND_ROADMAP.md`
+   - `docs/MODULE_CONTRACTS.md`
+   - `README.md`
+   - `src/`
+   - `tests/`
+   - `configs/`
 
-- implementation_baseline_head: `a09d5b36e86e734dc14ce13114b5ae7c9ecea03c`
-- artifact_baseline_head / start_head: `65c665ec0fb6cd9a0dd2d139d3bafb5cee8f6577`
-- phase_1_3_final_head: `feff13240a89b1e306226f43032abb68c35c3d1c`
-- current_handoff_head: wird in `HANDOFF_LATEST_CONTEXT.md` dokumentiert
+## Conflict Rule
 
-## Validierung
+Wenn ZIP-internes `HANDOFF_CONTEXT.md` mit externem `HANDOFF_LATEST_CONTEXT.md` kollidiert, gewinnt `external_review_packet/HANDOFF_LATEST_CONTEXT.md` fuer Phase-1.3-Metadaten, Lineage, Scope und Reviewer-Instruktionen.
 
-- Baseline vor Phase 1.3: 574 Tests OK in 87.181s
-- Phase 1.3 final: 615 Tests OK in 91.707s
-- Handoff-Backfill-Preflight: 615 Tests OK in 90.090s
-- Help-Smokes und Stage-Smokes fuer Cash-Refill/Rebalance liefen erfolgreich
-- No-change-Pruefungen gegen `65c665e..HEAD` waren fuer Decision Capture, Scoring, Watchlist, Monthly Ranking, Portfolio Rules, Portfolio Review, Artifact IO und Savings Plan Routing leer
+ZIP-internes `HANDOFF_CONTEXT.md` ist generische Exporter-Metadokumentation. Es darf fuer ZIP-Source-Fakten genutzt werden, zum Beispiel Source Head, Dirty-Worktree-Status zum Exportzeitpunkt, Exporter-Profil und inkludierte/ausgelassene Gruppen. Es ueberschreibt nicht die Phase-1.3-spezifischen externen Metadaten.
 
-## Reviewer-Anweisung
+## Artifact-Lineage Warning
 
-Pruefe das ZIP gegen die externe Context-Datei und den Phase-1.3-Finalbericht. Entscheide nur ueber Phase 1.3 Handoff-Readiness und Phase-1.4-Startfaehigkeit. Keine Phase-1.4-Implementierung aus diesem Paket ableiten.
+Nicht verwechseln:
+
+- `phase_1_3_final_head`: `feff13240a89b1e306226f43032abb68c35c3d1c`
+- `handoff_zip_source_head`: `a36c3fc403138454d2581f276d7a5d849b940bfe`
+- `artifact_checksum_commit`: `a551ad9746126d1ec60ed8488a18aa8fa22335a2`
+
+`a36c3fc...` ist der ZIP-Source-Head. `a551ad9...` ist laut Git-Evidenz ein Artifact-/Checksum-Commit mit Aenderung nur an `external_review_packet/HANDOFF_LATEST.sha256`. Keiner dieser beiden Heads ist ein neuer funktionaler Phase-1.3-Implementierungsstand.
+
+## Canonical Review Inputs
+
+Reviewer sollen diese Inputs verwenden:
+
+- `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
+- `external_review_packet/PATCH_1_3_FINAL_REPORT.md`
+- `external_review_packet/HANDOFF_LATEST.sha256`
+- `external_review_packet/HANDOFF_LATEST.zip`
+- ZIP-interne Repo-Dateien:
+  - `docs/COMPOUND_INCOME_OS_VISION_v1_2.md`
+  - `docs/CONTEXT_AND_ROADMAP.md`
+  - `docs/MODULE_CONTRACTS.md`
+  - `README.md`
+  - `src/`
+  - `tests/`
+  - `configs/`
+
+## Reviewer Rules
+
+- Vollstaendige relative Pfade verwenden.
+- Keine privaten oder rohen Dateien inferieren.
+- Keine Broker-Writes, HTTP-Calls, Order-Ausfuehrung, Auto-Trading, Steuerquantifizierung, Sell-Logik oder Phase-1.4-Implementierung inferieren.
+- Fehlende private Inputs nicht als imputierte Werte behandeln.
+- Tests nur als bestanden bezeichnen, wenn die Evidenz im Report, im Repo oder im Operator-Log explizit vorhanden ist.
+- Alte Phase-1.2-Texte aus stale externem Kontext nicht verwenden, wenn sie durch dieses Phase-1.3-Packet ersetzt wurden.
+- ZIP-internes `HANDOFF_CONTEXT.md` nur als generische Exporter-Metadaten behandeln.
