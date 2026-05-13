@@ -16,7 +16,8 @@ class ReadmeAndReportTests(unittest.TestCase):
         self.assertNotIn("C:\\Users\\", readme)
         self.assertNotIn("(/C:/Users/", readme)
         self.assertIn("reports/sample/portfolio_snapshot.md", readme)
-        self.assertIn("data/raw/real_portfolio_example.csv", readme)
+        old_raw_path = "real_portfolio" + "_example.csv"
+        self.assertNotIn(old_raw_path, readme)
         self.assertIn("--mode real", readme)
         self.assertIn("data/processed/personal_positions_snapshot.csv", readme)
         self.assertIn("Private Rohdaten sollten nicht committed werden.", readme)

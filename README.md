@@ -160,7 +160,7 @@ Die Ausgabeordner unter `reports/` sind frei waehlbar. Fuer datierte Laeufe kann
 Fuer echte Depot-CSV-Dateien gibt es einen separaten, aber kompatiblen Importpfad:
 
 ```powershell
-python -m src.import_broker --input data/raw/real_portfolio_example.csv --output data/processed/real_positions_snapshot.csv --mode real --source-name manual_real_depot
+python -m src.import_broker --input data/raw/private/depot_export.csv --output data/processed/real_positions_snapshot.csv --mode real --source-name manual_real_depot
 python -m src.scoring_engine --positions data/processed/real_positions_snapshot.csv --fundamentals data/raw/sample_fundamentals.csv --output data/processed/real_company_scores.csv
 python -m src.build_portfolio_snapshot --positions data/processed/real_positions_snapshot.csv --scores data/processed/real_company_scores.csv --holdings-output data/processed/portfolio_holdings_action_table.csv --output reports/sample/real_portfolio_review.md
 ```
