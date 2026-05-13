@@ -17,6 +17,10 @@ from src.handoff_bundle import (
 
 INCLUDED_DIRS = ("src", "tests", "docs", "configs", "scripts", "website", "_archive")
 INCLUDED_ROOT_FILES = ("README.md", "AGENTS.md", "pyproject.toml", "requirements.txt")
+EXCLUDED_REVIEW_FILES = {
+    "docs/COMPOUND_INCOME_OS_VISION_v1.md",
+    "docs/COMPOUND_INCOME_OS_VISION_v1_1.md",
+}
 HANDOFF_ARTIFACT_FILES = (
     "data/processed/personal_profile_review_unlock_summary.csv",
     "data/processed/personal_profile_review_unlock_holdings.csv",
@@ -207,6 +211,8 @@ def recursive_profile_paths(repo_root: Path, dirs: tuple[str, ...]) -> list[str]
             if not path.is_file():
                 continue
             rel_name = normalize_entry_name(path.relative_to(repo_root).as_posix())
+            if rel_name in EXCLUDED_REVIEW_FILES:
+                continue
             if not bundle_forbidden_entry(rel_name):
                 paths.append(rel_name)
     return paths

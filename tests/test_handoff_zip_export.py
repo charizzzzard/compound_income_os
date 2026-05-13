@@ -202,6 +202,16 @@ class HandoffZipExportTests(unittest.TestCase):
         self.assertFalse(any(name.endswith("/.DS_Store") or name.endswith("/Thumbs.db") for name in names))
         self.assertEqual(scan_forbidden_entries(result.zip_path), ())
 
+    def test_full_review_export_uses_current_canonical_vision_only(self) -> None:
+        result = export_profile_handoff_zip(profile="full_review", name="unit_canonical_vision", output_dir=self.tmp)
+
+        with zipfile.ZipFile(result.zip_path, "r") as archive:
+            names = set(archive.namelist())
+
+        self.assertIn("docs/COMPOUND_INCOME_OS_VISION_v1_2.md", names)
+        self.assertNotIn("docs/COMPOUND_INCOME_OS_VISION_v1_1.md", names)
+        self.assertNotIn("docs/COMPOUND_INCOME_OS_VISION_v1.md", names)
+
     def test_docs_describe_upload_ready_handoff_usage(self) -> None:
         contract_text = (ROOT / "docs" / "HANDOFF_CONTRACT.md").read_text(encoding="utf-8")
         readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
