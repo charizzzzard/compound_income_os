@@ -1,43 +1,44 @@
-# Compound Income OS External LLM Review Packet
+# 00 READ ME FIRST - Phase 1.3 External Review
 
-## Source of Truth / Precedence
+Dies ist das Startdokument fuer die externe LLM-Validierung nach Phase 1.3 des `compound_income_os`.
 
-Start with this file.
+## Source-of-truth Reihenfolge
 
-Use `HANDOFF_LATEST_CONTEXT.md` as authoritative packet metadata.
-Use `HANDOFF_LATEST.zip` as authoritative repo evidence.
-Use `COMPOUND_INCOME_OS_VISION_v1_2.md` as the sole canonical vision.
-Use `PATCH_1_2_FINAL_REPORT.md` as the validation summary.
+1. `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
+2. `external_review_packet/PATCH_1_3_FINAL_REPORT.md`
+3. `external_review_packet/HANDOFF_LATEST.sha256`
+4. `external_review_packet/HANDOFF_LATEST.zip`
+5. Repo-Dateien im ZIP, insbesondere `docs/COMPOUND_INCOME_OS_VISION_v1_2.md`, `docs/CONTEXT_AND_ROADMAP.md`, `docs/MODULE_CONTRACTS.md`, `README.md`, `src/`, `tests/`, `configs/`
 
-If any ZIP-internal `HANDOFF_CONTEXT.md` conflicts with external `HANDOFF_LATEST_CONTEXT.md`, the external `HANDOFF_LATEST_CONTEXT.md` wins.
+Wenn ein ZIP-interner generischer `HANDOFF_CONTEXT.md` von `external_review_packet/HANDOFF_LATEST_CONTEXT.md` abweicht, gewinnt die externe Datei `HANDOFF_LATEST_CONTEXT.md` fuer Phase-1.3-Metadaten.
 
-Patch 1.2 is functionally complete at implementation head `a09d5b3`.
-This handoff is an artifact-only backfill because the original Phase 1.2 implementation prompt did not require a fresh external review packet.
+## Phase 1.3 Scope
 
-Canonical review inputs:
+Phase 1.3 implementiert zwei aggregate, read-only Portfolio-Health-Reviews:
 
-1. `COMPOUND_INCOME_OS_VISION_v1_2.md`
-   - Canonical target vision for Patch 1.2 review.
-   - Ignore older `COMPOUND_INCOME_OS_VISION_v1.md` or `COMPOUND_INCOME_OS_VISION_v1_1.md` if seen elsewhere.
+- Cash-Refill Review in `src/cash_refill_review.py`
+- Rebalance Review in `src/rebalance_review.py`
+- Integration als `personal_run_engine`-Stages nach `portfolio_review` und vor `monthly`
+- Portfolio-Health-Rendering im Monthly Decision Report vor Buy-Kandidaten
+- Dokumentation und Backlog-Update
 
-2. `HANDOFF_LATEST.zip`
-   - Canonical post-Patch-1.2 repo evidence bundle.
+Nicht enthalten: Decision-Capture-Schemaaenderung, neue `proposed_action`-Enums, Broker/API/HTTP/Order-Ausfuehrung, Auto-Trading, Steuerquantifizierung, Sell-Order-Logik, Scoring-/Watchlist-/Portfolio-Regel-Aenderungen, Phase 1.4+.
 
-3. `HANDOFF_LATEST_CONTEXT.md`
-   - Bundle metadata: branch, implementation head, current handoff head, purpose, omissions, included artifact groups.
+## Heads
 
-4. `HANDOFF_LATEST.sha256`
-   - SHA256 checksum for the canonical ZIP.
+- implementation_baseline_head: `a09d5b36e86e734dc14ce13114b5ae7c9ecea03c`
+- artifact_baseline_head / start_head: `65c665ec0fb6cd9a0dd2d139d3bafb5cee8f6577`
+- phase_1_3_final_head: `feff13240a89b1e306226f43032abb68c35c3d1c`
+- current_handoff_head: wird in `HANDOFF_LATEST_CONTEXT.md` dokumentiert
 
-5. `PATCH_1_2_FINAL_REPORT.md`
-   - Validation, guardrail and output-contract summary for Patch 1.2.
+## Validierung
 
-Rules for reviewers:
-- Treat the ZIP as post-Patch-1.2 repo reality.
-- Treat Vision v1.2 as canonical.
-- Use full relative paths when referring to files.
-- Do not infer omitted private/raw files.
-- Do not treat `execution_mode` as a Decision Capture schema field.
-- Do not infer broker writes, HTTP calls, order execution, auto-trading, or Phase-1.3+ logic.
-- Missing routing inputs remain deliberately visible as `NO_RECOMMENDATION` or failed gates; do not treat them as imputed defaults.
-- If ZIP-internal generic exporter metadata conflicts with this external context, this external `HANDOFF_LATEST_CONTEXT.md` wins for packet metadata.
+- Baseline vor Phase 1.3: 574 Tests OK in 87.181s
+- Phase 1.3 final: 615 Tests OK in 91.707s
+- Handoff-Backfill-Preflight: 615 Tests OK in 90.090s
+- Help-Smokes und Stage-Smokes fuer Cash-Refill/Rebalance liefen erfolgreich
+- No-change-Pruefungen gegen `65c665e..HEAD` waren fuer Decision Capture, Scoring, Watchlist, Monthly Ranking, Portfolio Rules, Portfolio Review, Artifact IO und Savings Plan Routing leer
+
+## Reviewer-Anweisung
+
+Pruefe das ZIP gegen die externe Context-Datei und den Phase-1.3-Finalbericht. Entscheide nur ueber Phase 1.3 Handoff-Readiness und Phase-1.4-Startfaehigkeit. Keine Phase-1.4-Implementierung aus diesem Paket ableiten.

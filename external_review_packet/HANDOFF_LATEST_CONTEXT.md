@@ -1,63 +1,82 @@
-# Handoff Context
+# HANDOFF LATEST CONTEXT - Phase 1.3
 
-- project_name: `compound_income_os`
-- profile: `post_patch_1_2_external_review`
-- bundle_name: `HANDOFF_LATEST`
-- bundle_purpose: `external_llm_validation_after_phase_1_2`
-- created_at_utc: `2026-05-13T15:42:08Z`
-- branch: `main`
-- implementation_head: `a09d5b36e86e734dc14ce13114b5ae7c9ecea03c`
-- implementation_short_head: `a09d5b3`
-- current_handoff_head: `a09d5b36e86e734dc14ce13114b5ae7c9ecea03c`
-- current_handoff_short_head: `a09d5b3`
-- dirty_worktree_present: `False` before handoff artifact generation
-- patch_level: `Phase 1.2 complete`
-- canonical_vision: `COMPOUND_INCOME_OS_VISION_v1_2.md`
-- bundle_source: `python -m src.handoff_zip_export --profile full_review --name HANDOFF_LATEST --output-path external_review_packet/HANDOFF_LATEST.zip`
-- purpose: external LLM validation after Phase 1.2 Sparplan-Routing
+project_name: compound_income_os
+profile: post_phase_1_3_external_review
+bundle_name: HANDOFF_LATEST
+bundle_purpose: external_llm_validation_after_phase_1_3
+created_at_utc: 2026-05-13T17:10:27Z
+branch: main
+implementation_baseline_head: a09d5b36e86e734dc14ce13114b5ae7c9ecea03c
+artifact_baseline_head: 65c665ec0fb6cd9a0dd2d139d3bafb5cee8f6577
+phase_1_3_final_head: feff13240a89b1e306226f43032abb68c35c3d1c
+current_handoff_head: feff13240a89b1e306226f43032abb68c35c3d1c
+dirty_worktree_present_before_handoff_generation: false
+patch_level: Phase 1.3 complete
+canonical_vision: COMPOUND_INCOME_OS_VISION_v1_2.md
+
+## Scope Summary
+
+Phase 1.3 liefert read-only Portfolio Health:
+
+- `src/cash_refill_review.py`: Cash-Refill Review gegen absolute Cash-Reserve und Cash-Bucket-Floor.
+- `src/rebalance_review.py`: Vier-Bucket-Rebalance-Review mit Cash-first-Logik.
+- `src/personal_run_engine.py`: neue Stages `cash_refill_review` und `rebalance_review` nach `portfolio_review` und vor `monthly`.
+- `src/build_monthly_decision_report.py`: Portfolio-Health-Sektion vor Buy-Kandidaten; fehlende Artefakte rendern als nicht verfuegbar.
+- Doku-/Backlog-Update fuer Phase 1.3.
 
 ## Included Artifact Groups
-- configs
-- docs
-- repo_context
-- source
-- tests
-- website_source and archive metadata when normally included by the exporter
-- handoff metadata
-- `PATCH_1_2_FINAL_REPORT.md`
+
+- Core source: `src/`
+- Tests: `tests/`
+- Configs: `configs/`
+- Docs: `docs/`
+- Repo context: `README.md`, `AGENTS.md`, `pyproject.toml`, `requirements.txt` sofern vorhanden
+- External packet files: `00_READ_ME_FIRST.md`, `HANDOFF_LATEST_CONTEXT.md`, `PATCH_1_3_FINAL_REPORT.md`, `HANDOFF_LATEST.sha256`, `HANDOFF_LATEST.zip`
 
 ## Omitted Artifact Groups
-- raw private data
-- credentials and local user-agent values
-- generated caches
-- nested ZIPs
-- old non-canonical vision files
 
-## Patch 1.2 Scope Summary
-- `src/savings_plan_routing.py` adds deterministic, read-only Sparplan routing recommendations.
-- `configs/savings_plan_routing_thresholds.yaml` defines explicit thresholds.
-- `src/monthly_ranking_engine.py` appends `execution_mode` and `execution_mode_reason`.
-- `src/build_monthly_decision_report.py` renders execution mode only for Buy/TOP_UP candidates.
-- Decision Capture schema and enums remain unchanged.
-- No broker API, external HTTP, order execution, auto-trading, scoring change, portfolio-rule change, watchlist change, fundamentals change, Personal-Meta change, Patch-3 merge, or Phase-1.3+ logic is included.
+- private raw data, insbesondere `data/raw/private/**`
+- credentials and local user-agent files
+- generated caches: `__pycache__`, `*.pyc`, `.pytest_cache`, `.mypy_cache`, `.ruff_cache`, `.cache`
+- nested ZIPs
+- non-canonical old vision files in full-review export, soweit der Exporter sie ausschliesst
 
 ## Validation Summary
-- Baseline before Patch 1.2: `545 tests OK`, approx. `84.960s`.
-- Final after Patch 1.2: `574 tests OK`, `85.868s`.
-- Backfill mode: `GREEN`.
-- Full discovery was intentionally skipped during this artifact-only backfill.
-- Cheap smokes run during backfill:
-  - `python -m src.savings_plan_routing --help`
-  - `python -m src.monthly_ranking_engine --help`
-  - `python -m src.personal_run_engine --help`
-  - `python -m src.handoff_zip_export --help`
+
+- Baseline vor Phase 1.3: 574 Tests OK in 87.181s
+- Phase 1.3 final: 615 Tests OK in 91.707s
+- Handoff-Backfill-Preflight: `python -m unittest discover -s tests -p "test_*.py" -v` -> 615 Tests OK in 90.090s
+- Help-Smokes OK: `cash_refill_review`, `rebalance_review`, `personal_run_engine`, `personal_decision_state_capture`, `savings_plan_routing`, `monthly_ranking_engine`
+- Stage-Smokes OK: `personal_run_engine --stage cash_refill_review`, `personal_run_engine --stage rebalance_review`
+
+## No-change Summary
+
+Diffs gegen `65c665e..HEAD` sind leer fuer:
+
+- `src/personal_decision_state_capture.py`
+- `tests/test_personal_decision_state_capture.py`
+- `src/scoring_engine.py`
+- `src/watchlist_engine.py`
+- `src/monthly_ranking_engine.py`
+- `src/portfolio_rules.py`
+- `src/portfolio_review.py`
+- `configs/portfolio_rules.yaml`
+- `src/platform/artifact_io.py`
+- `src/savings_plan_routing.py`
+
+Personal-Meta-Grep: keine Treffer.
+
+## Guardrail Summary
+
+- keine Decision-Capture-Schema- oder Enum-Aenderung
+- keine Broker/API/HTTP/Order-Ausfuehrung
+- keine Auto-Trading-Logik
+- keine Scoring-, Watchlist-, Monthly-Ranking- oder Portfolio-Regel-Aenderung
+- Cash-Refill empfiehlt keinen Sell/Trim/Exit
+- Rebalance `OVERWEIGHT` bleibt `HOLD` mit Cash-first-Reason
+- `TRIM_FOR_REBALANCE_REVIEW` ist nur qualitativer Marker fuer extreme Uebergewichtung; keine Steuer-/Orderbetragsfelder
+- `write_csv_atomic` bleibt unveraendert
 
 ## External LLM Instructions
-- Use `COMPOUND_INCOME_OS_VISION_v1_2.md` as the sole canonical vision document.
-- Use `HANDOFF_LATEST.zip` as the sole canonical repo evidence bundle.
-- Use `PATCH_1_2_FINAL_REPORT.md` for implementation scope, validation evidence, no-change verification and open gaps.
-- Do not use older `COMPOUND_INCOME_OS_VISION_v1.md` or `COMPOUND_INCOME_OS_VISION_v1_1.md` documents if present elsewhere.
-- Do not infer private raw data, credentials, user-agent values, or omitted local files.
-- Reference files by full relative path, not basename.
-- Check ZIP-internal `HANDOFF_CHANGE_CLASSIFICATION.csv` before assuming dirty worktree state.
-- If ZIP-internal generic `HANDOFF_CONTEXT.md` conflicts with this external context, this external `HANDOFF_LATEST_CONTEXT.md` wins for packet metadata.
+
+Nutze dieses externe Context-File als Metadaten-Source-of-Truth. Falls ein ZIP-interner generischer Handoff-Kontext abweicht, gilt dieses File. Pruefe nur Phase 1.3 und Handoff-Readiness. Phase 1.4 darf aus diesem Paket nicht implementiert werden.
