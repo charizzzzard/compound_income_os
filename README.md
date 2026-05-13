@@ -659,6 +659,28 @@ Sample-CLI:
 python -m src.savings_plan_routing --ranking-input data/processed/monthly_buy_ranking.csv --registry-input data/raw/savings_plan_registry.csv --thresholds configs/savings_plan_routing_thresholds.yaml --routing-output data/processed/savings_plan_routing.csv --report-output reports/sample/savings_plan_routing_report.md
 ```
 
+### Portfolio Health
+
+`src.cash_refill_review` und `src.rebalance_review` erzeugen aggregate read-only Portfolio-Health-Sichten. Sie liefern Kontext fuer den Monatsbericht, blockieren oder unterdruecken aber keine Buy-Kandidaten aus dem Monthly Ranking. Der Operator entscheidet; das System handelt nicht.
+
+Cash-Refill Review:
+
+- prueft Cash gegen `min_cash_reserve_eur` und den Cash-Bucket-Floor aus den Portfolio-Regeln
+- meldet `CASH_REFILL_REQUIRED`, `CASH_REFILL_MARGINAL` oder `CASH_REFILL_NOT_REQUIRED`
+- erzeugt keine Sell-, Order- oder Broker-Aktion
+
+Rebalance Review:
+
+- bewertet die vier Buckets `CORE_ETF`, `DIVIDEND_QUALITY_ETF`, `SINGLE_STOCK` und `CASH`
+- folgt einer Cash-first-Logik fuer Untergewichtungen und normale Uebergewichtungen
+- nutzt `TRIM_FOR_REBALANCE_REVIEW` nur als qualitativen Marker bei extremer Uebergewichtung
+- berechnet keine Steuer, keinen realisierten Gewinn und keinen Orderbetrag; steuerquantifizierte Rebalance-Logik erfordert spaeter ein Portfolio Event Ledger
+
+```powershell
+python -m src.cash_refill_review --positions data/processed/personal_positions_snapshot.csv --rules configs/portfolio_rules.yaml --thresholds configs/portfolio_health_thresholds.yaml --csv-output data/processed/personal_cash_refill_review.csv --report-output reports/YYYY-MM-DD/personal_cash_refill_review.md
+python -m src.rebalance_review --positions data/processed/personal_positions_snapshot.csv --rules configs/portfolio_rules.yaml --thresholds configs/portfolio_health_thresholds.yaml --csv-output data/processed/personal_rebalance_review.csv --report-output reports/YYYY-MM-DD/personal_rebalance_review.md
+```
+
 ### Localhost Dashboard UI
 
 `src.dashboard_server` ist ein rein lokaler Read-only-Viewer fuer bereits erzeugte processed Artefakte. Er berechnet keine neuen KPIs, keine neuen Investment-Scores, schreibt keine neuen Outputs und bindet nur an `127.0.0.1`.
@@ -694,7 +716,7 @@ Die additive read-only Source-Registry fuer den persoenlichen Lauf liegt in `con
 Core-Orchestrator-Beispiel:
 
 ```powershell
-python -m src.personal_run_engine --stage import --stage fundamentals_seed --stage scoring --stage coverage --stage watchlist --stage monthly --stage portfolio_review --positions-raw-input data/raw/personal_depot.csv --import-mode real --source-name personal_depot --fundamentals-master data/raw/personal_fundamentals_master.csv --watchlist-input data/raw/sample_watchlist.csv --manifest-output data/processed/personal_run_manifest.json --artifacts-output data/processed/personal_run_artifacts.csv --used-inputs-output data/processed/personal_run_used_inputs.csv --report-output reports/YYYY-MM-DD/personal_run_report.md
+python -m src.personal_run_engine --stage import --stage fundamentals_seed --stage scoring --stage coverage --stage watchlist --stage portfolio_review --stage cash_refill_review --stage rebalance_review --stage monthly --positions-raw-input data/raw/personal_depot.csv --import-mode real --source-name personal_depot --fundamentals-master data/raw/personal_fundamentals_master.csv --watchlist-input data/raw/sample_watchlist.csv --manifest-output data/processed/personal_run_manifest.json --artifacts-output data/processed/personal_run_artifacts.csv --used-inputs-output data/processed/personal_run_used_inputs.csv --report-output reports/YYYY-MM-DD/personal_run_report.md
 ```
 
 Hinweise:
@@ -721,7 +743,7 @@ Hinweise:
 - `personal_run_used_inputs.csv` enthaelt nur die tatsaechlich verwendeten Stage-Inputs; fuer fundamentals-abhaengige Stages macht das Feld `notes` `fundamentals_source_mode=BASE`, `fundamentals_source_mode=PROFILED`, `fundamentals_source_mode=APPLIED` oder `fundamentals_source_mode=EVIDENCE_APPLIED` sichtbar.
 - Der Used-Inputs-Index bleibt bewusst eine flache Projektion aus `StageResult.used_inputs`; wenn eine Stage lokale Config-Dateien real liest, erscheinen diese Pfade dort ebenfalls als Stage-Inputs.
 - Wenn ein Input ueber `configs/personal_run_data_sources.yaml` als Default aufgeloest wurde, machen `personal_data_source_registry_resolved.csv` und die Stage-Notes dies sichtbar; das ersetzt keine tiefere engine-interne Lineage.
-- Die persoenlichen Orchestrator-Defaults fuer Watchlist-, Monthly- und Portfolio-Review-Reports schreiben nach `reports/YYYY-MM-DD/personal_watchlist_report.md`, `reports/YYYY-MM-DD/personal_monthly_decision_report.md` und `reports/YYYY-MM-DD/personal_portfolio_review.md`, nicht nach `reports/sample/...`.
+- Die persoenlichen Orchestrator-Defaults fuer Watchlist-, Portfolio-Review-, Cash-Refill-, Rebalance- und Monthly-Reports schreiben nach `reports/YYYY-MM-DD/...`, nicht nach `reports/sample/...`.
 - Multi-Benchmark-Stages behalten die expliziten Symbolauswahl-Regeln aus `src.multi_benchmark_performance_engine`; bei mehreren Symbolen gibt es keine stille Auswahl.
 - `history` und `performance` brauchen einen datierten Snapshot. Bei `--import-mode sample` sollte deshalb `--portfolio-date` explizit gesetzt werden.
 - Die Einzel-CLIs unten bleiben weiterhin gueltig und sind die fachlichen Modulvertraege.
@@ -739,7 +761,7 @@ python -m src.scoring_engine --positions data/processed/personal_positions_snaps
 python -m src.fundamentals_master --positions data/processed/personal_positions_snapshot.csv --fundamentals data/raw/personal_fundamentals_master.csv --scores data/processed/personal_company_scores.csv --coverage-output data/processed/personal_fundamentals_coverage.csv --enriched-output data/processed/personal_fundamentals_enriched.csv --research-priority-output data/processed/personal_research_priority.csv --report-output reports/YYYY-MM-DD/personal_fundamentals_coverage_report.md
 python -m src.watchlist_engine --input data/raw/sample_watchlist.csv --scores data/processed/personal_company_scores.csv --output data/processed/personal_watchlist_ranked.csv --report-output reports/YYYY-MM-DD/personal_watchlist_report.md
 python -m src.monthly_ranking_engine --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --watchlist data/processed/personal_watchlist_ranked.csv --coverage data/processed/personal_fundamentals_coverage.csv --output data/processed/personal_monthly_buy_ranking.csv --rebalance-output data/processed/personal_rebalance_proposals.csv
-python -m src.build_monthly_decision_report --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --ranking data/processed/personal_monthly_buy_ranking.csv --coverage data/processed/personal_fundamentals_coverage.csv --output reports/YYYY-MM-DD/personal_monthly_decision_report.md
+python -m src.build_monthly_decision_report --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --ranking data/processed/personal_monthly_buy_ranking.csv --coverage data/processed/personal_fundamentals_coverage.csv --cash-refill-review data/processed/personal_cash_refill_review.csv --rebalance-review data/processed/personal_rebalance_review.csv --output reports/YYYY-MM-DD/personal_monthly_decision_report.md
 python -m src.build_portfolio_snapshot --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --coverage data/processed/personal_fundamentals_coverage.csv --holdings-output data/processed/personal_portfolio_holdings_action_table.csv --output reports/YYYY-MM-DD/personal_portfolio_review.md
 ```
 
@@ -752,7 +774,7 @@ python -m src.scoring_engine --positions data/processed/personal_positions_snaps
 python -m src.fundamentals_master --positions data/processed/personal_positions_snapshot.csv --fundamentals data/raw/personal_fundamentals_master.csv --scores data/processed/personal_company_scores.csv --coverage-output data/processed/personal_fundamentals_coverage.csv --enriched-output data/processed/personal_fundamentals_enriched.csv --research-priority-output data/processed/personal_research_priority.csv --report-output reports/YYYY-MM-DD/personal_fundamentals_coverage_report.md
 python -m src.watchlist_engine --input data/raw/sample_watchlist.csv --scores data/processed/personal_company_scores.csv --output data/processed/personal_watchlist_ranked.csv --report-output reports/YYYY-MM-DD/personal_watchlist_report.md
 python -m src.monthly_ranking_engine --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --watchlist data/processed/personal_watchlist_ranked.csv --coverage data/processed/personal_fundamentals_coverage.csv --output data/processed/personal_monthly_buy_ranking.csv --rebalance-output data/processed/personal_rebalance_proposals.csv
-python -m src.build_monthly_decision_report --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --ranking data/processed/personal_monthly_buy_ranking.csv --coverage data/processed/personal_fundamentals_coverage.csv --output reports/YYYY-MM-DD/personal_monthly_decision_report.md
+python -m src.build_monthly_decision_report --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --ranking data/processed/personal_monthly_buy_ranking.csv --coverage data/processed/personal_fundamentals_coverage.csv --cash-refill-review data/processed/personal_cash_refill_review.csv --rebalance-review data/processed/personal_rebalance_review.csv --output reports/YYYY-MM-DD/personal_monthly_decision_report.md
 python -m src.build_portfolio_snapshot --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --coverage data/processed/personal_fundamentals_coverage.csv --holdings-output data/processed/personal_portfolio_holdings_action_table.csv --output reports/YYYY-MM-DD/personal_portfolio_review.md
 ```
 

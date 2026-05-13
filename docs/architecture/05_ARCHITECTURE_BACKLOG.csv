@@ -8,10 +8,11 @@ P0_NEXT,ARCH-P0N-001,Portfolio Event Ledger Contract v1,planned,Define accountin
 P0_NEXT,ARCH-P0N-002,Transaction and broker statement ingestion ergonomics review,planned,Assess operator workflow for transaction/broker statement capture,ARCH-P0N-001,after_decision_capture_usage,Review-only before implementation
 P1,ARCH-P1-001,Phase 1 Step 1 Sparplan-Register + Universe-Dashboard,done,Implement read-only savings plan registry and Universe dashboard consolidation without routing or decisions,none,now,Feature patch completed without broker writes or new scoring
 P1,ARCH-P1-002,Phase 1 Step 2 Sparplan-Routing,done,Add read-only execution-mode recommendation per monthly Buy candidate without broker writes or Decision Capture schema changes,ARCH-P1-001,now,Feature patch completed with deterministic routing and no new scoring
-P1,ARCH-P1-003,Minimum Viable Research Note,planned,Add small research note structure without thesis bloat,ARCH-P0-003,after_decision_capture_usage,Must fit operator time budget
+P1,ARCH-P1-003,Phase 1 Step 3 Cash-Refill + Rebalance-Review,done,Add read-only aggregate portfolio health reviews without sells tax quantification or monthly ranking suppression,ARCH-P1-002,now,Feature patch completed with separate portfolio health modules and no Decision Capture changes
 P1,ARCH-P1-004,Descriptive Outcome Review Contract,planned,Capture later outcomes descriptively without optimization,ARCH-P1-005;ARCH-P1-002,after_real_decision_history,No attribution engine yet
 P1,ARCH-P1-005,Time-Aware Replay Contract v1,planned,Make point-in-time run/report/manifest reconstruction explicit,ARCH-P0-003,after_decision_capture_usage,Minimal replay refs are already embedded in Decision Capture v2
 P1,ARCH-P1-006,Decision Benchmarking Contract v1,planned,Define benchmark alternative and later comparison basis per decision,ARCH-P0-003,after_decision_capture_usage,No return calculation in Decision Capture v1
+P1,ARCH-P1-007,Minimum Viable Research Note,planned,Add small research note structure without thesis bloat,ARCH-P0-003,after_decision_capture_usage,Must fit operator time budget
 P2,ARCH-P2-001,Strategy Feedback Report,planned,Summarize recurring issues and candidate policy changes,ARCH-P1-004,after_outcome_history,Propose only; do not auto-change policy
 P2,ARCH-P2-002,Policy Change Proposal Template,planned,Standardize human-reviewed rule changes,ARCH-P2-001,after_strategy_feedback,No automatic scoring updates
 P2,ARCH-P2-003,Portfolio Event Ledger implementation,planned,Implement reviewed ledger only after contract and usage evidence,ARCH-P0N-001,after_contract_acceptance,No raw master mutation
@@ -19,6 +20,6 @@ P2,ARCH-P2-004,Cash / Tax / FX State extensions,planned,Extend accounting state 
 P3,ARCH-P3-001,Monte Carlo,deferred,Scenario analysis is premature before decisions and accounting history exist,ARCH-P2-003,not_before_foundations,Deferred
 P3,ARCH-P3-002,Backtesting / Rule Replay,deferred,Point-in-time replay requires captured decisions and data snapshots,ARCH-P1-005,not_before_replay_history,Deferred
 P3,ARCH-P3-003,Simulation Lab,deferred,Cash/dividend/drawdown simulation needs ledger and outcome basis,ARCH-P2-003,not_before_event_ledger,Deferred
-P3,ARCH-P3-004,Research Case Workbench,deferred,Heavy research tooling should wait for minimum viable notes,ARCH-P1-003,not_before_mvrn_usage,Deferred
+P3,ARCH-P3-004,Research Case Workbench,deferred,Heavy research tooling should wait for minimum viable notes,ARCH-P1-007,not_before_mvrn_usage,Deferred
 P3,ARCH-P3-005,Runtime LLM Commentary Layer,deferred,Core pipeline must not depend on runtime LLM commentary,ARCH-P0-004,not_before_policy_review,Deferred
 P3,ARCH-P3-006,Web/SaaS productization,deferred,Productization follows stable local OS contracts,ARCH-P0-003,not_before_stable_workflows,Deferred
