@@ -1,0 +1,17 @@
+{
+  "schema_name": "savings_plan_registry",
+  "version": 1,
+  "fields": [
+    {"name": "ticker", "required": true, "type": "string", "primary_key": true},
+    {"name": "isin", "required": false, "type": "string", "regex": "^[A-Z]{2}[A-Z0-9]{10}$", "invalid_policy": "warn"},
+    {"name": "broker", "required": true, "type": "enum", "allowed_values": ["TRADE_REPUBLIC", "OTHER"]},
+    {"name": "instrument_name", "required": true, "type": "string"},
+    {"name": "monthly_amount_eur", "required": true, "type": "float", "min": 0},
+    {"name": "frequency", "required": true, "type": "enum", "allowed_values": ["MONTHLY", "BI_WEEKLY", "QUARTERLY"]},
+    {"name": "execution_day_of_month", "required": true, "type": "int", "min": 1, "max": 28},
+    {"name": "active", "required": true, "type": "enum", "allowed_values": ["TRUE", "FALSE"]},
+    {"name": "started_at", "required": true, "type": "date", "format": "YYYY-MM-DD"},
+    {"name": "last_modified", "required": true, "type": "date", "format": "YYYY-MM-DD"},
+    {"name": "notes", "required": false, "type": "string"}
+  ]
+}
