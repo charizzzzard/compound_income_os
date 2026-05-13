@@ -19,6 +19,9 @@
 | 9 | Neue Disziplin-Linie: `tax_confidence` Gate für steuerliche Empfehlungen |
 | 10 | Zeit-Budget realistischer: 30-40 min Normalfall, 45-90 min bei neuen Holdings / Quartal |
 | 10 | Phase-1-Automatisierungen ergänzt: Prefill, Stale-Queue, Reconciliation-Summary |
+| 6 | FX-Exposure Sources-Korrektur (Patch 3.0) |
+| 7 | Module-Count-Prognose auf Post-Patch-2-Realität aktualisiert (Patch 3.0) |
+| 8 | Phase-0-Eintrag um strikte Scope-Klarstellung ergänzt (Patch 3.0) |
 
 ---
 
@@ -268,7 +271,7 @@ Jede Capability hat einen **primary kernel** (Verantwortung) und **source kernel
 | Rebalance-Review | 4 (Decision) | 2, 6 |
 | Corporate-Actions | 2 (Accounting) | 1 (Identity), 4 |
 | Dividend-Risk | 3 (Research) | 1 (Evidence), 4 |
-| FX-Exposure | 2 (State/Risk Observation) | 2 (State) |
+| FX-Exposure | 2 (State/Risk Observation) | 5 (Benchmark), 3 (Risk View) |
 
 ---
 
@@ -353,7 +356,16 @@ src/
     └── handoff_zip_export.py
 ```
 
-**~50 Module nach allen Phasen** (33 Konsolidiert + ~17 neue über Phasen 1-3 verteilt + 8 platform/-Module gestuft eingeführt).
+**~63 Module nach allen Phasen** — realistische Post-Patch-2-Prognose:
+
+- Patch 1 abgeschlossen: 90 → 58 (26 SEC archiviert, 6 Website separiert, 4 platform/ ergänzt)
+- Patch 2 abgeschlossen: 58 → 57 (1 Personal-Meta archiviert)
+- Patch 3 geplant (Engine-Merges): 57 → ~53
+- Phase 1 (neue Decision-/Observe-/Data-Module): ~53 → ~63
+
+Konsolidierungs-Reduktion erreicht damit ~40 % statt der ursprünglich projizierten ~60 %.
+Begründung: 11 Personal-Meta-Module bleiben als `KEEP_ACTIVE_FOR_NOW` aktiv,
+siehe `docs/architecture/PATCH_02_PERSONAL_META_REMOVAL_SCOPE.md`.
 
 **Archiviert:** `_archive/sec/` (26 SEC-Module), `website/` (separates Lifecycle).
 
@@ -363,7 +375,7 @@ src/
 
 | Phase | Dauer | Neue Capabilities | Was du danach kannst |
 |---|---|---|---|
-| **0 — Konsolidierung** | 2-3 Tage | platform/: `schema_registry`, `validation`, `artifact_io` | Schlankes Repo, Foundation für Schema-Migration |
+| **0 — Konsolidierung** | 2-3 Tage | platform/: `schema_registry`, `validation`, `artifact_io` (strikt minimal: nur Foundation, keine bestehende Logik migrieren, keine Phase-1-Fachlogik vorgreifen) | Schlankes Repo, Foundation für Schema-Migration |
 | **1 — Operations + Always-On** | 4-6 Wochen | Sparplan-Register, Sparplan-Routing, Universe-Dashboard, Cash-Refill, Rebalance-Review, Dividend-Risk, FX-Exposure, **Profit-Taking-ATTENTION + Loss-Risk-ATTENTION** (qualitativ), Decision-Capture-Prefill, Stale-Queue, `run_logging` | Voll einsetzbarer Monthly Run, Always-On Watchlist, qualitative Pre-Warnungen |
 | **2 — Portfolio Event Ledger** | 6-8 Wochen | Event Ledger (Trades / Dividenden / Steuern / Kosten als Events), Cost-Basis FIFO, Tax-Lots, Corporate Actions, `money.py`, `time_policy.py`, `tax_lot_policy.py`, `idempotency.py` | Echte Yield-on-Cost, echte realisierte Gewinne, Replay |
 | **3 — Tax-aware Profit-Taking + Loss-Realization** | 3-4 Wochen | `PROFIT_TAKING_REVIEW`, `LOSS_REALIZATION_REVIEW` mit `tax_confidence=RECONCILED_LEDGER`, DE-Töpfe, Sparerpauschbetrag-Tracking, Vorabpauschale | Steueroptimierte Trim-/Loss-Empfehlungen |
