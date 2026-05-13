@@ -16,6 +16,17 @@ Important result: the intended list of 13 modules cannot be reconstructed with h
 
 Patch 2.2b status: `personal_profile_review_materialize.py` archived to `_archive/personal_meta/`.
 
+## Operator Decision After Handoff Review
+
+The 11 ambiguous modules are intentionally kept active for now.
+
+Reason: the evidence connects them to handoff, dashboard-readiness, reconciliation, review evidence, or the Vision v1.2 target architecture. No further Personal-Meta archival or removal is approved in Patch 2.
+
+Future removal requires a separate Patch 3+ decision with import map, artifact map, docs update, and tests.
+
+- Final Operator Decision: `keep_active_for_now`
+- Patch 2 Treatment: no move, no archive, no delete
+
 ## Candidate Inventory
 
 | Module | Tests | Imports In | Outputs / Artifacts | Docs / Contract Evidence | Classification | Proposed Treatment | Confidence |
@@ -50,6 +61,10 @@ Patch 2.2b status: `personal_profile_review_materialize.py` archived to `_archiv
 
 ### Needs Operator Decision
 
+Final Operator Decision: `keep_active_for_now`
+
+Patch 2 Treatment: no move, no archive, no delete
+
 | Module | Reason Ambiguous | Options |
 |---|---|---|
 | `src/personal_artifact_freshness.py` | Looks like handoff/observe hygiene, but its summary is consumed by reconciliation and handoff allowlists. No removal note. | `keep` or `archive_to__archive/personal_meta/` |
@@ -64,7 +79,7 @@ Patch 2.2b status: `personal_profile_review_materialize.py` archived to `_archiv
 | `src/personal_valuation_input_contract.py` | Produces readiness blocker summary; no explicit removal note. | `keep` or `archive_to__archive/personal_meta/` |
 | `src/personal_watchlist_input_gate.py` | Produces watchlist gate summary consumed by readiness/reconciliation; no explicit removal note. | `keep` or `archive_to__archive/personal_meta/` |
 
-Potential 13-module operator-review set: the 11 ambiguous modules above plus `src/personal_profile_review_materialize.py` and, if the operator decides the score provenance companion is temporary despite Vision v1.2 listing it under score, `src/personal_score_audit_provenance.py`. This is not high-confidence enough to execute.
+Historical note: before the handoff-review operator decision, the potential 13-module operator-review set was the 11 ambiguous modules above plus `src/personal_profile_review_materialize.py` and, if the operator decided the score provenance companion was temporary despite Vision v1.2 listing it under score, `src/personal_score_audit_provenance.py`. This was not high-confidence enough to execute and is superseded by `keep_active_for_now` for the 11 ambiguous modules.
 
 ## Modules Explicitly Not To Remove
 
