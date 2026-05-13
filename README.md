@@ -635,6 +635,30 @@ Artefakte:
 python -m src.savings_plan_registry --input data/raw/savings_plan_registry.csv --summary-output data/processed/savings_plan_registry_summary.csv --report-output reports/YYYY-MM-DD/savings_plan_registry_report.md
 ```
 
+### Sparplan-Routing
+
+`src.savings_plan_routing` erzeugt eine deterministische read-only Routing-Empfehlung pro Buy-Kandidat aus dem Monatsranking. Die Logik folgt Vision v1.2 §4.2, nutzt das per Ticker gepflegte Sparplan-Register und explizite Schwellen aus `configs/savings_plan_routing_thresholds.yaml`.
+
+Execution Modes:
+
+- `SAVINGS_PLAN_EXISTING`: ein aktiver bestehender Sparplan ist vorhanden.
+- `SAVINGS_PLAN_NEW`: der Kandidat ist explizit sparplanfaehig, aber es gibt noch keinen aktiven Plan.
+- `SINGLE_ORDER`: mindestens eine Vision-v1.2-§4.2-Bedingung fuer eine Einzelorder-Empfehlung ist explizit erfuellt.
+- `NO_RECOMMENDATION`: fehlende oder unklare Inputs verhindern eine belastbare Routing-Empfehlung.
+
+Leitplanken:
+
+- Routing ist nur eine Empfehlung im Report und in `execution_mode` / `execution_mode_reason`.
+- Es gibt keinen Broker-Write, keine automatische Order-Ausfuehrung und keine externe API.
+- Decision Capture bleibt unveraendert; es werden keine Schemafelder oder `proposed_action`-Enums ergaenzt.
+- Fehlende Routing-Inputs werden nicht imputiert. Drawdown allein reicht nie fuer `SINGLE_ORDER`.
+
+Sample-CLI:
+
+```powershell
+python -m src.savings_plan_routing --ranking-input data/processed/monthly_buy_ranking.csv --registry-input data/raw/savings_plan_registry.csv --thresholds configs/savings_plan_routing_thresholds.yaml --routing-output data/processed/savings_plan_routing.csv --report-output reports/sample/savings_plan_routing_report.md
+```
+
 ### Localhost Dashboard UI
 
 `src.dashboard_server` ist ein rein lokaler Read-only-Viewer fuer bereits erzeugte processed Artefakte. Er berechnet keine neuen KPIs, keine neuen Investment-Scores, schreibt keine neuen Outputs und bindet nur an `127.0.0.1`.

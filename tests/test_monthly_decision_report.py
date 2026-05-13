@@ -124,3 +124,73 @@ class MonthlyDecisionReportTests(unittest.TestCase):
             for path in [positions_path, scores_path, ranking_path, output_path]:
                 if path.exists():
                     path.unlink()
+
+    def test_report_renders_execution_mode_for_buy_candidate(self) -> None:
+        rules = load_portfolio_rules()
+        rules_path = Path("tests") / "_tmp_report_execution_rules.yaml"
+        output_path = Path("tests") / "_tmp_monthly_report_execution.md"
+        try:
+            rules_path.write_text(json.dumps(rules), encoding="utf-8")
+            build_monthly_decision_report(
+                positions_rows=[],
+                score_rows=[],
+                ranking_rows=[
+                    {
+                        "rank": "1",
+                        "ticker": "VWCE",
+                        "target_action": "BUY",
+                        "allocation_status": "SELECTED_THIS_MONTH",
+                        "suggested_buy_amount_eur": "250.0",
+                        "rationale": "test rationale",
+                        "constraint_checks": "business_ok=YES",
+                        "valuation_comment": "Attractive.",
+                        "mandate_fit_comment": "Improves corridor.",
+                        "execution_mode": "SAVINGS_PLAN_NEW",
+                        "execution_mode_reason": "eligible_for_new_plan",
+                    }
+                ],
+                output_path=str(output_path),
+                rules_path=str(rules_path),
+            )
+            report = output_path.read_text(encoding="utf-8")
+            self.assertIn("Empfohlene Ausfuehrung: SAVINGS_PLAN_NEW (eligible_for_new_plan)", report)
+        finally:
+            if rules_path.exists():
+                rules_path.unlink()
+            if output_path.exists():
+                output_path.unlink()
+
+    def test_report_does_not_render_execution_mode_for_non_buy_row(self) -> None:
+        rules = load_portfolio_rules()
+        rules_path = Path("tests") / "_tmp_report_non_buy_execution_rules.yaml"
+        output_path = Path("tests") / "_tmp_monthly_report_non_buy_execution.md"
+        try:
+            rules_path.write_text(json.dumps(rules), encoding="utf-8")
+            build_monthly_decision_report(
+                positions_rows=[],
+                score_rows=[],
+                ranking_rows=[
+                    {
+                        "rank": "1",
+                        "ticker": "HOLD_CASH",
+                        "target_action": "HOLD_CASH",
+                        "allocation_status": "SELECTED_THIS_MONTH",
+                        "suggested_buy_amount_eur": "500.0",
+                        "rationale": "hold cash",
+                        "constraint_checks": "portfolio_rule=hold_cash_allowed",
+                        "valuation_comment": "Cash.",
+                        "mandate_fit_comment": "Allowed.",
+                        "execution_mode": "SINGLE_ORDER",
+                        "execution_mode_reason": "candidate_amount_above_min",
+                    }
+                ],
+                output_path=str(output_path),
+                rules_path=str(rules_path),
+            )
+            report = output_path.read_text(encoding="utf-8")
+            self.assertNotIn("Empfohlene Ausfuehrung", report)
+        finally:
+            if rules_path.exists():
+                rules_path.unlink()
+            if output_path.exists():
+                output_path.unlink()

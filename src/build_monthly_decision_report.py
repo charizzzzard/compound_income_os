@@ -73,6 +73,17 @@ def describe_allocation_status(row: dict[str, str]) -> str:
     return labels.get(status, status)
 
 
+def execution_mode_text(row: dict[str, str]) -> str:
+    action = str(row.get("target_action", "")).upper()
+    mode = str(row.get("execution_mode", "")).strip()
+    if action not in {"BUY", "TOP_UP"} or not mode:
+        return ""
+    reason = str(row.get("execution_mode_reason", "")).strip()
+    if reason:
+        return f"Empfohlene Ausfuehrung: {mode} ({reason})"
+    return f"Empfohlene Ausfuehrung: {mode}"
+
+
 def build_monthly_decision_report(
     positions_rows: list[dict[str, str]],
     score_rows: list[dict[str, str]],
@@ -151,6 +162,9 @@ def build_monthly_decision_report(
         lines.append(
             f"- `{row['ticker']}`: {describe_allocation_status(row)}. {row['constraint_checks']}. {row['valuation_comment']} {row['mandate_fit_comment']}"
         )
+        execution_line = execution_mode_text(row)
+        if execution_line:
+            lines.append(f"- `{row['ticker']}`: {execution_line}.")
 
     lines.extend(
         [
