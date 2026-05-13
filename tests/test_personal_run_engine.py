@@ -483,6 +483,11 @@ class PersonalRunEngineTests(unittest.TestCase):
             monthly_report_output=str(self._path(f"_tmp_{prefix}_monthly_report.md")),
             portfolio_review_output=str(self._path(f"_tmp_{prefix}_portfolio_review.md")),
             holdings_output=str(self._path(f"_tmp_{prefix}_holdings.csv")),
+            portfolio_health_thresholds_input=DEFAULT_PATHS["portfolio_health_thresholds_input"],
+            cash_refill_csv_output=str(self._path(f"_tmp_{prefix}_cash_refill_review.csv")),
+            cash_refill_report_output=str(self._path(f"_tmp_{prefix}_cash_refill_review.md")),
+            rebalance_review_csv_output=str(self._path(f"_tmp_{prefix}_rebalance_review.csv")),
+            rebalance_review_report_output=str(self._path(f"_tmp_{prefix}_rebalance_review.md")),
             portfolio_archive=str(self._path(f"_tmp_{prefix}_portfolio_archive.csv")),
             portfolio_timeseries_output=str(self._path(f"_tmp_{prefix}_portfolio_timeseries.csv")),
             portfolio_history_summary_output=str(self._path(f"_tmp_{prefix}_portfolio_history_summary.csv")),
@@ -552,8 +557,10 @@ class PersonalRunEngineTests(unittest.TestCase):
                 "scoring",
                 "coverage",
                 "watchlist",
-                "monthly",
                 "portfolio_review",
+                "cash_refill_review",
+                "rebalance_review",
+                "monthly",
                 "history",
                 "benchmark_archive",
                 "performance",
@@ -579,6 +586,45 @@ class PersonalRunEngineTests(unittest.TestCase):
         produced_roles = {row["artifact_role"] for row in artifact_rows if row["stage_name"] == "savings_plan" and row["produced"] == "True"}
         self.assertEqual(produced_roles, {"savings_plan_report", "savings_plan_summary"})
 
+    def test_portfolio_health_stages_order_and_runners(self) -> None:
+        self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("portfolio_review") + 1], "cash_refill_review")
+        self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("cash_refill_review") + 1], "rebalance_review")
+        self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("rebalance_review") + 1], "monthly")
+        self.assertIn("cash_refill_review", STAGE_RUNNERS)
+        self.assertIn("rebalance_review", STAGE_RUNNERS)
+
+    def test_targeted_cash_refill_review_stage_writes_outputs(self) -> None:
+        options = self._base_options("cash_refill_stage", ["cash_refill_review"])
+        self._write_csv(Path(options.positions_output), ["ticker", "asset_type", "sleeve", "market_value_eur"], [])
+
+        manifest = run_personal_run_engine(options)
+
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(manifest["executed_stage_order"], ["cash_refill_review"])
+        result = next(row for row in manifest["stage_results"] if row["stage_name"] == "cash_refill_review")
+        self.assertEqual(result["status"], "SUCCESS")
+        self.assertTrue(Path(options.cash_refill_csv_output).exists())
+        self.assertTrue(Path(options.cash_refill_report_output).exists())
+        artifact_rows = read_csv_rows(options.artifacts_output)
+        produced_roles = {row["artifact_role"] for row in artifact_rows if row["stage_name"] == "cash_refill_review" and row["produced"] == "True"}
+        self.assertEqual(produced_roles, {"cash_refill_review", "cash_refill_review_report"})
+
+    def test_targeted_rebalance_review_stage_writes_outputs(self) -> None:
+        options = self._base_options("rebalance_review_stage", ["rebalance_review"])
+        self._write_csv(Path(options.positions_output), ["ticker", "asset_type", "sleeve", "market_value_eur"], [])
+
+        manifest = run_personal_run_engine(options)
+
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(manifest["executed_stage_order"], ["rebalance_review"])
+        result = next(row for row in manifest["stage_results"] if row["stage_name"] == "rebalance_review")
+        self.assertEqual(result["status"], "SUCCESS")
+        self.assertTrue(Path(options.rebalance_review_csv_output).exists())
+        self.assertTrue(Path(options.rebalance_review_report_output).exists())
+        artifact_rows = read_csv_rows(options.artifacts_output)
+        produced_roles = {row["artifact_role"] for row in artifact_rows if row["stage_name"] == "rebalance_review" and row["produced"] == "True"}
+        self.assertEqual(produced_roles, {"rebalance_review", "rebalance_review_report"})
+
     def test_core_personal_run_writes_manifest_artifacts_and_reports(self) -> None:
         options = self._core_options(
             "core",
@@ -593,7 +639,7 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertEqual(manifest_on_disk["run_status"], "SUCCESS")
         self.assertEqual(
             manifest_on_disk["executed_stage_order"],
-            ["import", "fundamentals_seed", "scoring", "coverage", "watchlist", "monthly", "portfolio_review"],
+            ["import", "fundamentals_seed", "scoring", "coverage", "watchlist", "portfolio_review", "monthly"],
         )
         self.assertEqual({row["stage_name"] for row in artifact_rows if row["produced"] == "True"}, {*set(manifest_on_disk["executed_stage_order"]), "personal_run"})
         self.assertTrue(Path(options.holdings_output).exists())

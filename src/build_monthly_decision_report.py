@@ -84,6 +84,49 @@ def execution_mode_text(row: dict[str, str]) -> str:
     return f"Empfohlene Ausfuehrung: {mode}"
 
 
+def build_portfolio_health_lines(
+    cash_refill_rows: list[dict[str, str]] | None = None,
+    rebalance_rows: list[dict[str, str]] | None = None,
+) -> list[str]:
+    lines = [
+        "## Portfolio Health",
+        "",
+        "### Cash-Refill",
+        "",
+    ]
+    if cash_refill_rows:
+        row = cash_refill_rows[0]
+        lines.extend(
+            [
+                f"Status: `{row.get('status', '')}`",
+                "",
+                "| Current cash EUR | Min reserve EUR | Current cash pct | Target cash min pct | Trigger | Data quality |",
+                "| ---: | ---: | ---: | ---: | --- | --- |",
+                f"| {row.get('current_cash_eur', '')} | {row.get('min_cash_reserve_eur', '')} | {row.get('current_cash_pct', '')} | "
+                f"{row.get('target_cash_min_pct', '')} | {row.get('trigger', '')} | {row.get('data_quality_flag', '')} |",
+            ]
+        )
+    else:
+        lines.append("Cash-Refill Review: not available")
+
+    lines.extend(["", "### Rebalance", ""])
+    if rebalance_rows:
+        lines.extend(
+            [
+                "| Bucket | Current pct | Target min pct | Target max pct | Band status | Recommended action | Reason |",
+                "| --- | ---: | ---: | ---: | --- | --- | --- |",
+            ]
+        )
+        for row in rebalance_rows:
+            lines.append(
+                f"| {row.get('bucket', '')} | {row.get('current_pct', '')} | {row.get('target_min_pct', '')} | "
+                f"{row.get('target_max_pct', '')} | {row.get('band_status', '')} | {row.get('recommended_action', '')} | {row.get('reason', '')} |"
+            )
+    else:
+        lines.append("Rebalance Review: not available")
+    return lines
+
+
 def build_monthly_decision_report(
     positions_rows: list[dict[str, str]],
     score_rows: list[dict[str, str]],
@@ -91,6 +134,8 @@ def build_monthly_decision_report(
     output_path: str,
     rules_path: str = "configs/portfolio_rules.yaml",
     coverage_rows: list[dict[str, str]] | None = None,
+    cash_refill_rows: list[dict[str, str]] | None = None,
+    rebalance_rows: list[dict[str, str]] | None = None,
 ) -> Path:
     rules = load_portfolio_rules(rules_path)
     monthly_cash = to_float(rules["monthly_new_cash_eur"])
@@ -114,11 +159,17 @@ def build_monthly_decision_report(
         f"- Mindest-Cash-Reserve: {rules['min_cash_reserve_eur']} EUR",
         f"- Cash halten ohne Opportunitaet erlaubt: {rules['allow_hold_cash_if_no_opportunity']}",
         "",
+    ]
+    lines.extend(build_portfolio_health_lines(cash_refill_rows, rebalance_rows))
+    lines.extend(
+        [
+        "",
         "## Bestes Kauf-Ranking",
         "",
         "| Rank | Ticker | Aktion | Status | Betrag EUR | Kommentar |",
         "| --- | --- | --- | --- | ---: | --- |",
-    ]
+        ]
+    )
 
     for row in top_rows:
         lines.append(
@@ -227,6 +278,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ranking", required=True, help="Monthly ranking CSV.")
     parser.add_argument("--output", required=True, help="Markdown output path.")
     parser.add_argument("--coverage", help="Optional personal fundamentals coverage CSV.")
+    parser.add_argument("--cash-refill-review", help="Optional Cash-Refill Review CSV.")
+    parser.add_argument("--rebalance-review", help="Optional Rebalance Review CSV.")
     parser.add_argument("--rules", default="configs/portfolio_rules.yaml", help="Portfolio rules config path.")
     return parser.parse_args()
 
@@ -237,6 +290,8 @@ def main() -> None:
     score_rows = read_csv_rows(args.scores)
     ranking_rows = read_csv_rows(args.ranking)
     coverage_rows = read_coverage_rows(args.coverage) if args.coverage else None
+    cash_refill_rows = read_csv_rows(args.cash_refill_review) if args.cash_refill_review and resolve_repo_path(args.cash_refill_review).exists() else None
+    rebalance_rows = read_csv_rows(args.rebalance_review) if args.rebalance_review and resolve_repo_path(args.rebalance_review).exists() else None
     require_columns(
         score_rows,
         ["ticker", "classification", "data_quality_flag", "held_in_portfolio", "main_risks"],
@@ -249,7 +304,16 @@ def main() -> None:
         f"ranking CSV ({args.ranking})",
     )
     require_unique_tickers(ranking_rows, f"ranking CSV ({args.ranking})")
-    build_monthly_decision_report(positions_rows, score_rows, ranking_rows, args.output, args.rules, coverage_rows)
+    build_monthly_decision_report(
+        positions_rows,
+        score_rows,
+        ranking_rows,
+        args.output,
+        args.rules,
+        coverage_rows,
+        cash_refill_rows=cash_refill_rows,
+        rebalance_rows=rebalance_rows,
+    )
 
 
 if __name__ == "__main__":

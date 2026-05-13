@@ -194,3 +194,93 @@ class MonthlyDecisionReportTests(unittest.TestCase):
                 rules_path.unlink()
             if output_path.exists():
                 output_path.unlink()
+
+    def test_report_includes_portfolio_health_when_inputs_present(self) -> None:
+        rules = load_portfolio_rules()
+        rules_path = Path("tests") / "_tmp_report_health_rules.yaml"
+        output_path = Path("tests") / "_tmp_monthly_report_health.md"
+        try:
+            rules_path.write_text(json.dumps(rules), encoding="utf-8")
+            build_monthly_decision_report(
+                positions_rows=[],
+                score_rows=[],
+                ranking_rows=[
+                    {
+                        "rank": "1",
+                        "ticker": "VWCE",
+                        "target_action": "BUY",
+                        "allocation_status": "SELECTED_THIS_MONTH",
+                        "suggested_buy_amount_eur": "250.0",
+                        "rationale": "test rationale",
+                        "constraint_checks": "business_ok=YES",
+                        "valuation_comment": "Attractive.",
+                        "mandate_fit_comment": "Improves corridor.",
+                    }
+                ],
+                output_path=str(output_path),
+                rules_path=str(rules_path),
+                cash_refill_rows=[
+                    {
+                        "status": "CASH_REFILL_REQUIRED",
+                        "current_cash_eur": "100",
+                        "min_cash_reserve_eur": "1500",
+                        "current_cash_pct": "0.01",
+                        "target_cash_min_pct": "0.05",
+                        "trigger": "BOTH",
+                        "data_quality_flag": "OK",
+                    }
+                ],
+                rebalance_rows=[
+                    {"bucket": "CORE_ETF", "current_pct": "0.40", "target_min_pct": "0.45", "target_max_pct": "0.60", "band_status": "UNDERWEIGHT", "recommended_action": "DEPLOY_NEW_CASH", "reason": "underweight_deploy_new_cash"},
+                    {"bucket": "DIVIDEND_QUALITY_ETF", "current_pct": "0.15", "target_min_pct": "0.10", "target_max_pct": "0.25", "band_status": "WITHIN_BAND", "recommended_action": "HOLD", "reason": "within_band"},
+                    {"bucket": "SINGLE_STOCK", "current_pct": "0.35", "target_min_pct": "0.20", "target_max_pct": "0.35", "band_status": "WITHIN_BAND", "recommended_action": "HOLD", "reason": "within_band"},
+                    {"bucket": "CASH", "current_pct": "0.10", "target_min_pct": "0.05", "target_max_pct": "0.15", "band_status": "WITHIN_BAND", "recommended_action": "HOLD", "reason": "within_band"},
+                ],
+            )
+            report = output_path.read_text(encoding="utf-8")
+            self.assertIn("## Portfolio Health", report)
+            self.assertIn("Status: `CASH_REFILL_REQUIRED`", report)
+            self.assertIn("| CORE_ETF |", report)
+            self.assertIn("| CASH |", report)
+        finally:
+            if rules_path.exists():
+                rules_path.unlink()
+            if output_path.exists():
+                output_path.unlink()
+
+    def test_report_renders_health_missing_as_not_available(self) -> None:
+        rules = load_portfolio_rules()
+        rules_path = Path("tests") / "_tmp_report_missing_health_rules.yaml"
+        output_path = Path("tests") / "_tmp_monthly_report_missing_health.md"
+        try:
+            rules_path.write_text(json.dumps(rules), encoding="utf-8")
+            build_monthly_decision_report([], [], [], str(output_path), str(rules_path))
+            report = output_path.read_text(encoding="utf-8")
+            self.assertIn("Cash-Refill Review: not available", report)
+            self.assertIn("Rebalance Review: not available", report)
+        finally:
+            if rules_path.exists():
+                rules_path.unlink()
+            if output_path.exists():
+                output_path.unlink()
+
+    def test_portfolio_health_appears_before_buy_candidates(self) -> None:
+        rules = load_portfolio_rules()
+        rules_path = Path("tests") / "_tmp_report_health_order_rules.yaml"
+        output_path = Path("tests") / "_tmp_monthly_report_health_order.md"
+        try:
+            rules_path.write_text(json.dumps(rules), encoding="utf-8")
+            build_monthly_decision_report(
+                positions_rows=[],
+                score_rows=[],
+                ranking_rows=[],
+                output_path=str(output_path),
+                rules_path=str(rules_path),
+            )
+            report = output_path.read_text(encoding="utf-8")
+            self.assertLess(report.index("## Portfolio Health"), report.index("## Bestes Kauf-Ranking"))
+        finally:
+            if rules_path.exists():
+                rules_path.unlink()
+            if output_path.exists():
+                output_path.unlink()

@@ -14,6 +14,9 @@ from src import watchlist_engine
 from src.benchmark_history_engine import run_benchmark_history_engine
 from src.build_monthly_decision_report import build_monthly_decision_report, read_coverage_rows as read_report_coverage_rows
 from src.build_portfolio_snapshot import build_portfolio_snapshot_report, read_coverage_rows as read_snapshot_coverage_rows
+from src.cash_refill_review import DEFAULT_CSV_OUTPUT as DEFAULT_CASH_REFILL_CSV_OUTPUT
+from src.cash_refill_review import DEFAULT_THRESHOLDS_PATH as DEFAULT_PORTFOLIO_HEALTH_THRESHOLDS_PATH
+from src.cash_refill_review import run_cash_refill_review
 from src.common import ensure_parent_dir, read_csv_rows, require_columns, require_non_blank_fields, resolve_repo_path, write_csv_rows
 from src.cost_tax_archive_engine import DEFAULT_CONFIG_PATH as DEFAULT_COST_TAX_CONFIG_PATH, run_cost_tax_archive_engine
 from src.data_source_registry import (
@@ -101,6 +104,8 @@ from src.multi_benchmark_performance_engine import run_multi_benchmark_performan
 from src.performance_engine import run_performance_engine
 from src.portfolio_history_engine import run_portfolio_history_engine
 from src.portfolio_review import DEFAULT_RULES_PATH as DEFAULT_PORTFOLIO_REVIEW_RULES_PATH
+from src.rebalance_review import DEFAULT_CSV_OUTPUT as DEFAULT_REBALANCE_REVIEW_CSV_OUTPUT
+from src.rebalance_review import run_rebalance_review
 from src.savings_plan_registry import DEFAULT_INPUT as DEFAULT_SAVINGS_PLAN_INPUT
 from src.savings_plan_registry import DEFAULT_SUMMARY_OUTPUT as DEFAULT_SAVINGS_PLAN_SUMMARY_OUTPUT
 from src.savings_plan_registry import run_savings_plan_registry
@@ -126,8 +131,10 @@ STAGE_ORDER = [
     "scoring",
     "coverage",
     "watchlist",
-    "monthly",
     "portfolio_review",
+    "cash_refill_review",
+    "rebalance_review",
+    "monthly",
     "history",
     "benchmark_archive",
     "performance",
@@ -207,6 +214,11 @@ DEFAULT_PATHS = {
     "monthly_report_output": default_dated_report_path("personal_monthly_decision_report.md"),
     "portfolio_review_output": default_dated_report_path("personal_portfolio_review.md"),
     "holdings_output": "data/processed/personal_portfolio_holdings_action_table.csv",
+    "portfolio_health_thresholds_input": DEFAULT_PORTFOLIO_HEALTH_THRESHOLDS_PATH,
+    "cash_refill_csv_output": DEFAULT_CASH_REFILL_CSV_OUTPUT,
+    "cash_refill_report_output": default_dated_report_path("personal_cash_refill_review.md"),
+    "rebalance_review_csv_output": DEFAULT_REBALANCE_REVIEW_CSV_OUTPUT,
+    "rebalance_review_report_output": default_dated_report_path("personal_rebalance_review.md"),
     "portfolio_archive": "data/processed/portfolio_snapshot_archive.csv",
     "portfolio_timeseries_output": "data/processed/portfolio_timeseries.csv",
     "portfolio_history_summary_output": "data/processed/portfolio_history_summary.csv",
@@ -359,6 +371,11 @@ class PersonalRunOptions:
     monthly_report_output: str = DEFAULT_PATHS["monthly_report_output"]
     portfolio_review_output: str = DEFAULT_PATHS["portfolio_review_output"]
     holdings_output: str = DEFAULT_PATHS["holdings_output"]
+    portfolio_health_thresholds_input: str = DEFAULT_PATHS["portfolio_health_thresholds_input"]
+    cash_refill_csv_output: str = DEFAULT_PATHS["cash_refill_csv_output"]
+    cash_refill_report_output: str = DEFAULT_PATHS["cash_refill_report_output"]
+    rebalance_review_csv_output: str = DEFAULT_PATHS["rebalance_review_csv_output"]
+    rebalance_review_report_output: str = DEFAULT_PATHS["rebalance_review_report_output"]
     portfolio_archive: str = DEFAULT_PATHS["portfolio_archive"]
     portfolio_timeseries_output: str = DEFAULT_PATHS["portfolio_timeseries_output"]
     portfolio_history_summary_output: str = DEFAULT_PATHS["portfolio_history_summary_output"]
@@ -1206,7 +1223,17 @@ def run_monthly_stage(options: PersonalRunOptions) -> StageResult:
     write_csv_rows(options.monthly_ranking_output, monthly_ranking_engine.OUTPUT_FIELDS, cleaned_ranking)
     write_csv_rows(options.rebalance_output, monthly_ranking_engine.REBALANCE_FIELDS, rebalance)
     report_coverage_rows = read_report_coverage_rows(coverage_path)
-    build_monthly_decision_report(positions_rows, score_rows, cleaned_ranking, options.monthly_report_output, coverage_rows=report_coverage_rows)
+    cash_refill_rows = read_csv_rows(options.cash_refill_csv_output) if path_exists(options.cash_refill_csv_output) else None
+    rebalance_review_rows = read_csv_rows(options.rebalance_review_csv_output) if path_exists(options.rebalance_review_csv_output) else None
+    build_monthly_decision_report(
+        positions_rows,
+        score_rows,
+        cleaned_ranking,
+        options.monthly_report_output,
+        coverage_rows=report_coverage_rows,
+        cash_refill_rows=cash_refill_rows,
+        rebalance_rows=rebalance_review_rows,
+    )
     used_inputs = {
         "positions_output": positions_path,
         "scores_output": scores_path,
@@ -1215,6 +1242,10 @@ def run_monthly_stage(options: PersonalRunOptions) -> StageResult:
         "portfolio_rules": rules_path,
         "fundamentals_source_mode": fundamentals_source_mode,
     }
+    if cash_refill_rows is not None:
+        used_inputs["cash_refill_review"] = options.cash_refill_csv_output
+    if rebalance_review_rows is not None:
+        used_inputs["rebalance_review"] = options.rebalance_review_csv_output
     if fundamentals_path:
         used_inputs["fundamentals_master"] = fundamentals_path
     return stage_result(
@@ -1273,6 +1304,64 @@ def run_portfolio_review_stage(options: PersonalRunOptions) -> StageResult:
             f"Portfolio review report and holdings action table generated with coverage guardrail; fundamentals_source_mode={fundamentals_source_mode}.",
             "fundamentals_master",
         ),
+    )
+
+
+def run_cash_refill_review_stage(options: PersonalRunOptions) -> StageResult:
+    stage = "cash_refill_review"
+    positions_path = require_existing_path(options.positions_output, "positions snapshot", stage)
+    thresholds_path = require_existing_path(options.portfolio_health_thresholds_input, "portfolio health thresholds", stage)
+    rules_path = DEFAULT_PORTFOLIO_REVIEW_RULES_PATH
+    run_cash_refill_review(
+        positions_input=positions_path,
+        rules_input=rules_path,
+        thresholds_input=thresholds_path,
+        csv_output=options.cash_refill_csv_output,
+        report_output=options.cash_refill_report_output,
+    )
+    return stage_result(
+        stage,
+        SUCCESS,
+        ["positions_output", "portfolio_health_thresholds_input"],
+        used_inputs={
+            "positions_output": positions_path,
+            "portfolio_rules": rules_path,
+            "portfolio_health_thresholds": thresholds_path,
+        },
+        produced_outputs={
+            "cash_refill_review": options.cash_refill_csv_output,
+            "cash_refill_review_report": options.cash_refill_report_output,
+        },
+        notes="Read-only Cash-Refill Review generated; no monthly ranking candidate is blocked.",
+    )
+
+
+def run_rebalance_review_stage(options: PersonalRunOptions) -> StageResult:
+    stage = "rebalance_review"
+    positions_path = require_existing_path(options.positions_output, "positions snapshot", stage)
+    thresholds_path = require_existing_path(options.portfolio_health_thresholds_input, "portfolio health thresholds", stage)
+    rules_path = DEFAULT_PORTFOLIO_REVIEW_RULES_PATH
+    run_rebalance_review(
+        positions_input=positions_path,
+        rules_input=rules_path,
+        thresholds_input=thresholds_path,
+        csv_output=options.rebalance_review_csv_output,
+        report_output=options.rebalance_review_report_output,
+    )
+    return stage_result(
+        stage,
+        SUCCESS,
+        ["positions_output", "portfolio_health_thresholds_input"],
+        used_inputs={
+            "positions_output": positions_path,
+            "portfolio_rules": rules_path,
+            "portfolio_health_thresholds": thresholds_path,
+        },
+        produced_outputs={
+            "rebalance_review": options.rebalance_review_csv_output,
+            "rebalance_review_report": options.rebalance_review_report_output,
+        },
+        notes="Read-only Rebalance Review generated; cash-first context only, no order action.",
     )
 
 
@@ -1524,8 +1613,10 @@ STAGE_RUNNERS: dict[str, Callable[[PersonalRunOptions], StageResult]] = {
     "scoring": run_scoring_stage,
     "coverage": run_coverage_stage,
     "watchlist": run_watchlist_stage,
-    "monthly": run_monthly_stage,
     "portfolio_review": run_portfolio_review_stage,
+    "cash_refill_review": run_cash_refill_review_stage,
+    "rebalance_review": run_rebalance_review_stage,
+    "monthly": run_monthly_stage,
     "history": run_history_stage,
     "benchmark_archive": run_benchmark_archive_stage,
     "performance": run_performance_stage,
@@ -1924,6 +2015,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--monthly-report-output", default=DEFAULT_PATHS["monthly_report_output"], help="Monthly decision report output.")
     parser.add_argument("--portfolio-review-output", default=DEFAULT_PATHS["portfolio_review_output"], help="Portfolio review markdown output.")
     parser.add_argument("--holdings-output", default=DEFAULT_PATHS["holdings_output"], help="Holdings action table output.")
+    parser.add_argument("--portfolio-health-thresholds-input", default=DEFAULT_PATHS["portfolio_health_thresholds_input"], help="Portfolio health thresholds config input.")
+    parser.add_argument("--cash-refill-csv-output", default=DEFAULT_PATHS["cash_refill_csv_output"], help="Cash-Refill Review CSV output.")
+    parser.add_argument("--cash-refill-report-output", default=DEFAULT_PATHS["cash_refill_report_output"], help="Cash-Refill Review markdown output.")
+    parser.add_argument("--rebalance-review-csv-output", default=DEFAULT_PATHS["rebalance_review_csv_output"], help="Rebalance Review CSV output.")
+    parser.add_argument("--rebalance-review-report-output", default=DEFAULT_PATHS["rebalance_review_report_output"], help="Rebalance Review markdown output.")
     parser.add_argument("--portfolio-archive", default=DEFAULT_PATHS["portfolio_archive"], help="Portfolio snapshot archive path.")
     parser.add_argument("--portfolio-timeseries-output", default=DEFAULT_PATHS["portfolio_timeseries_output"], help="Portfolio timeseries output.")
     parser.add_argument("--portfolio-history-summary-output", default=DEFAULT_PATHS["portfolio_history_summary_output"], help="Portfolio history summary output.")
@@ -2037,6 +2133,11 @@ def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
         monthly_report_output=args.monthly_report_output,
         portfolio_review_output=args.portfolio_review_output,
         holdings_output=args.holdings_output,
+        portfolio_health_thresholds_input=args.portfolio_health_thresholds_input,
+        cash_refill_csv_output=args.cash_refill_csv_output,
+        cash_refill_report_output=args.cash_refill_report_output,
+        rebalance_review_csv_output=args.rebalance_review_csv_output,
+        rebalance_review_report_output=args.rebalance_review_report_output,
         portfolio_archive=args.portfolio_archive,
         portfolio_timeseries_output=args.portfolio_timeseries_output,
         portfolio_history_summary_output=args.portfolio_history_summary_output,
