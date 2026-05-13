@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "thresholds": {
+    "drawdown_opportunity_threshold": 70,
+    "material_underweight_gap_pct": 1.0,
+    "single_order_min_amount_eur": 200,
+    "max_fee_ratio": 0.005,
+    "max_wait_days_for_savings_plan": 14,
+    "buy_gate_business_score": 60,
+    "buy_gate_valuation_score": 60,
+    "position_weight_cap": 0.10
+  },
+  "mirror_sources": {
+    "buy_gate_business_score": "configs/portfolio_rules.yaml if equivalent exists",
+    "buy_gate_valuation_score": "configs/portfolio_rules.yaml if equivalent exists",
+    "position_weight_cap": "configs/portfolio_rules.yaml if equivalent exists"
+  }
+}
