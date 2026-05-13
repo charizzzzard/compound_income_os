@@ -1,0 +1,9 @@
+{
+  "tolerance_band_multiplier": 2.0,
+  "cash_refill_margin_pct": 0.01,
+  "months_to_floor_warning_threshold": 3,
+  "rebalance_action_thresholds": {
+    "underweight_action_threshold_pct": 0.02,
+    "overweight_trim_band_multiplier": 2.0
+  }
+}
