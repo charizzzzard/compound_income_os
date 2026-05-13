@@ -9,7 +9,7 @@ import time
 import unittest
 from pathlib import Path
 
-from src.dashboard_engine import DASHBOARD_KPI_FIELDS, DASHBOARD_SECTION_FIELDS, DASHBOARD_SUMMARY_FIELDS
+from src.dashboard_engine import DASHBOARD_KPI_FIELDS, DASHBOARD_SECTION_FIELDS, DASHBOARD_SUMMARY_FIELDS, DASHBOARD_UNIVERSE_FIELDS
 from src.dashboard_server import (
     ArtifactCache,
     DashboardPaths,
@@ -22,7 +22,9 @@ from src.dashboard_server import (
     load_kpis,
     load_sections,
     load_summary,
+    load_universe_section,
     render_index_html,
+    render_universe_section,
     validate_host,
 )
 
@@ -58,6 +60,7 @@ class DashboardServerTests(unittest.TestCase):
             "kpis": self._path("_tmp_dashboard_server_kpis.csv"),
             "sections": self._path("_tmp_dashboard_server_sections.csv"),
             "summary": self._path("_tmp_dashboard_server_summary.csv"),
+            "universe": self._path("_tmp_dashboard_server_universe.csv"),
             "positions": self._path("_tmp_dashboard_server_positions.csv"),
             "holdings": self._path("_tmp_dashboard_server_holdings.csv"),
             "monthly_buy_ranking": self._path("_tmp_dashboard_server_monthly.csv"),
@@ -162,6 +165,27 @@ class DashboardServerTests(unittest.TestCase):
                     "total_taxes": "1.0",
                     "notes_count": "1",
                     "missing_block_count": "1",
+                }
+            ],
+        )
+        self._write_csv(
+            paths["universe"],
+            DASHBOARD_UNIVERSE_FIELDS,
+            [
+                {
+                    "ticker": "ALPHA",
+                    "instrument_name": "Alpha Corp",
+                    "sector": "Industrials",
+                    "bucket": "HOLDING",
+                    "sleeve": "SINGLE_STOCK",
+                    "business_score": "80.0",
+                    "valuation_score": "70.0",
+                    "buy_score": "75.0",
+                    "watchlist_status": "NOT_ON_WATCHLIST",
+                    "savings_plan_active": "TRUE",
+                    "last_score_update_date": "2026-04-24",
+                    "stale_marker": "FRESH",
+                    "data_quality_flag": "OK",
                 }
             ],
         )
@@ -676,7 +700,8 @@ class DashboardServerTests(unittest.TestCase):
 
     def test_extended_dashboard_paths_include_decision_artifacts(self) -> None:
         paths = DashboardPaths()
-        self.assertEqual(len(paths.all_paths()), 14)
+        self.assertEqual(len(paths.all_paths()), 15)
+        self.assertIn(paths.universe, paths.all_paths())
         self.assertIn(paths.positions, paths.all_paths())
         self.assertIn(paths.holdings, paths.all_paths())
         self.assertIn(paths.monthly_buy_ranking, paths.all_paths())
@@ -693,6 +718,20 @@ class DashboardServerTests(unittest.TestCase):
         missing = load_csv_table(self._path("_tmp_dashboard_server_missing_optional.csv"), ["ticker"], "optional dashboard table")
         self.assertEqual(missing["status"], "NOT_AVAILABLE")
         self.assertTrue(missing["path"].endswith("_tmp_dashboard_server_missing_optional.csv"))
+
+    def test_universe_section_loader_returns_rows(self) -> None:
+        paths = self._write_fixture_sources()
+        rows = load_universe_section(paths.universe)
+
+        self.assertEqual(rows[0]["ticker"], "ALPHA")
+        self.assertEqual(rows[0]["savings_plan_active"], "TRUE")
+
+    def test_missing_universe_section_renders_not_available_block(self) -> None:
+        missing = load_universe_section(self._path("_tmp_dashboard_server_missing_universe.csv"))
+        html_text = render_universe_section(missing)
+
+        self.assertIn("Universe", html_text)
+        self.assertIn("NOT_AVAILABLE", html_text)
 
     def test_readiness_payload_loader_returns_not_available_for_missing_json(self) -> None:
         missing = load_json_payload(self._path("_tmp_dashboard_server_missing_readiness.json"))
@@ -717,6 +756,7 @@ class DashboardServerTests(unittest.TestCase):
             load_kpis(paths.kpis),
             load_sections(paths.sections),
             load_summary(paths.summary),
+            load_universe_section(paths.universe),
             load_holdings(paths.holdings),
             load_csv_table(paths.positions, ["ticker"], "positions"),
             load_csv_table(paths.monthly_buy_ranking, ["ticker"], "monthly"),
@@ -731,6 +771,7 @@ class DashboardServerTests(unittest.TestCase):
         )
         for title in [
             "Decision Overview",
+            "Universe",
             "Holdings Detail",
             "Monthly Buy Ranking",
             "Watchlist",
@@ -755,6 +796,7 @@ class DashboardServerTests(unittest.TestCase):
             load_kpis(paths.kpis),
             load_sections(paths.sections),
             load_summary(paths.summary),
+            load_universe_section(paths.universe),
             holdings,
             load_csv_table(paths.positions, ["ticker"], "positions"),
             load_csv_table(paths.monthly_buy_ranking, ["ticker"], "monthly"),
@@ -839,6 +881,8 @@ class DashboardServerTests(unittest.TestCase):
             "/api/kpis.json",
             "/api/sections.json",
             "/api/summary.json",
+            "/api/universe.json",
+            "/api/universe",
             "/healthz",
         ]:
             status, headers, payload = self._request_json(port, path)
@@ -862,6 +906,9 @@ class DashboardServerTests(unittest.TestCase):
         self.assertEqual(response.status, 200)
         self.assertIn("<!DOCTYPE html>", body)
         self.assertIn("Decision Overview", body)
+        self.assertIn("data-universe-filter='bucket'", body)
+        self.assertIn("data-universe-filter='sleeve'", body)
+        self.assertIn("data-universe-filter='stale_marker'", body)
         self.assertIn("INSUFFICIENT_HISTORY", body)
         self.assertNotIn("aria-label='Portfolio and benchmark history chart'", body)
         conn.close()

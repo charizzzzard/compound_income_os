@@ -18,9 +18,11 @@ from src.dashboard_engine import (
     DASHBOARD_KPI_FIELDS,
     DASHBOARD_SECTION_FIELDS,
     DASHBOARD_SUMMARY_FIELDS,
+    DASHBOARD_UNIVERSE_FIELDS,
     DEFAULT_KPI_OUTPUT,
     DEFAULT_SECTIONS_OUTPUT,
     DEFAULT_SUMMARY_OUTPUT,
+    DEFAULT_UNIVERSE_OUTPUT,
     NOT_AVAILABLE,
 )
 
@@ -38,6 +40,7 @@ DEFAULT_COST_TAX_LEDGER_OUTPUT = "data/processed/cost_tax_ledger_normalized.csv"
 DEFAULT_PORTFOLIO_TIMESERIES_OUTPUT = "data/processed/portfolio_timeseries.csv"
 DEFAULT_BENCHMARK_TIMESERIES_OUTPUT = "data/processed/benchmark_timeseries_normalized.csv"
 DEFAULT_READINESS_PAYLOAD_OUTPUT = "data/processed/dashboard_readiness_payload.json"
+DEFAULT_UNIVERSE_OUTPUT_PATH = DEFAULT_UNIVERSE_OUTPUT
 
 POSITIONS_FIELDS = [
     "portfolio_date",
@@ -155,6 +158,7 @@ class DashboardPaths:
     kpis: str = DEFAULT_KPI_OUTPUT
     sections: str = DEFAULT_SECTIONS_OUTPUT
     summary: str = DEFAULT_SUMMARY_OUTPUT
+    universe: str = DEFAULT_UNIVERSE_OUTPUT_PATH
     positions: str = DEFAULT_POSITIONS_OUTPUT
     holdings: str = DEFAULT_HOLDINGS_OUTPUT
     monthly_buy_ranking: str = DEFAULT_MONTHLY_BUY_RANKING_OUTPUT
@@ -172,6 +176,7 @@ class DashboardPaths:
             self.kpis,
             self.sections,
             self.summary,
+            self.universe,
             self.positions,
             self.holdings,
             self.monthly_buy_ranking,
@@ -264,6 +269,10 @@ def load_summary(path_value: str | Path) -> dict[str, str]:
     if is_not_available(rows):
         return rows
     return rows[0]
+
+
+def load_universe_section(path_value: str | Path) -> list[dict[str, str]] | dict[str, str]:
+    return load_csv_table(path_value, DASHBOARD_UNIVERSE_FIELDS, "dashboard universe section CSV")
 
 
 def load_positions(path_value: str | Path) -> list[dict[str, str]] | dict[str, str]:
@@ -727,6 +736,72 @@ def render_table(
     )
 
 
+def render_universe_row(row: dict[str, str]) -> str:
+    attrs = " ".join(
+        f"data-{field.replace('_', '-')}='{html.escape(str(row.get(field, '')))}'"
+        for field in ("bucket", "sleeve", "stale_marker")
+    )
+    cells = [
+        html.escape(str(row.get("ticker", ""))),
+        html.escape(str(row.get("instrument_name", ""))),
+        html.escape(str(row.get("sector", ""))),
+        render_badge(str(row.get("bucket", "")), "status"),
+        render_badge(str(row.get("sleeve", "")), "status"),
+        html.escape(str(row.get("business_score", ""))),
+        html.escape(str(row.get("valuation_score", ""))),
+        html.escape(str(row.get("buy_score", ""))),
+        render_badge(str(row.get("watchlist_status", "")), "status"),
+        render_badge(str(row.get("savings_plan_active", "")), "bool"),
+        html.escape(str(row.get("last_score_update_date", ""))),
+        render_badge(str(row.get("stale_marker", "")), "status"),
+        render_badge(str(row.get("data_quality_flag", "")), "quality"),
+    ]
+    return f"<tr {attrs}>" + "".join(f"<td>{cell}</td>" for cell in cells) + "</tr>"
+
+
+def render_universe_section(universe: list[dict[str, str]] | dict[str, str]) -> str:
+    if is_not_available(universe):
+        return render_not_available_block("Universe", universe)
+    if not universe:
+        return "<section class='panel' id='universe'><h2>Universe</h2><p class='muted'>Leere Tabelle.</p></section>"
+    headers = [
+        "Ticker",
+        "Instrument",
+        "Sector",
+        "Bucket",
+        "Sleeve",
+        "Business",
+        "Valuation",
+        "Buy",
+        "Watchlist",
+        "Sparplan",
+        "Score Date",
+        "Stale",
+        "Data Quality",
+    ]
+    header_html = "".join(f"<th>{html.escape(label)}</th>" for label in headers)
+    return (
+        "<section class='panel' id='universe'>"
+        f"<h2><span>Universe</span>{render_badge(str(len(universe)), 'status')}</h2>"
+        "<div class='table-toolbar universe-toolbar'>"
+        "<label>Bucket <select class='table-filter' data-universe-filter='bucket'>"
+        "<option value=''>All</option><option value='HOLDING'>HOLDING</option><option value='HOLDING_AND_WATCHLIST'>HOLDING_AND_WATCHLIST</option>"
+        "<option value='WATCHLIST'>WATCHLIST</option><option value='UNKNOWN_BUCKET'>UNKNOWN_BUCKET</option></select></label>"
+        "<label>Sleeve <select class='table-filter' data-universe-filter='sleeve'>"
+        "<option value=''>All</option><option value='CORE_ETF'>CORE_ETF</option><option value='DIVIDEND_QUALITY_ETF'>DIVIDEND_QUALITY_ETF</option>"
+        "<option value='SINGLE_STOCK'>SINGLE_STOCK</option><option value='CASH'>CASH</option><option value='UNKNOWN_SLEEVE'>UNKNOWN_SLEEVE</option></select></label>"
+        "<label>Stale <select class='table-filter' data-universe-filter='stale_marker'>"
+        "<option value=''>All</option><option value='FRESH'>FRESH</option><option value='STALE_7D'>STALE_7D</option>"
+        "<option value='STALE_30D'>STALE_30D</option><option value='NEVER_SCORED'>NEVER_SCORED</option></select></label>"
+        "</div>"
+        "<div class='table-wrap'><table id='universe-table' data-filter-table='universe'>"
+        f"<thead><tr>{header_html}</tr></thead>"
+        f"<tbody>{''.join(render_universe_row(row) for row in universe)}</tbody>"
+        "</table></div>"
+        "</section>"
+    )
+
+
 def render_decision_overview(
     holdings: list[dict[str, str]] | dict[str, str],
     positions: list[dict[str, str]] | dict[str, str],
@@ -790,6 +865,7 @@ def render_index_html(
     kpis: list[dict[str, str]] | dict[str, str],
     sections: list[dict[str, str]] | dict[str, str],
     summary: dict[str, str],
+    universe: list[dict[str, str]] | dict[str, str],
     holdings: list[dict[str, str]] | dict[str, str],
     positions: list[dict[str, str]] | dict[str, str],
     monthly_buy_ranking: list[dict[str, str]] | dict[str, str],
@@ -804,6 +880,7 @@ def render_index_html(
 ) -> str:
     kpi_count = "NOT_AVAILABLE" if is_not_available(kpis) else str(len(kpis))
     decision_overview_html = render_decision_overview(holdings, positions)
+    universe_html = render_universe_section(universe)
     holdings_html = render_table(
         "holdings-detail",
         "Holdings Detail",
@@ -1048,6 +1125,8 @@ def render_index_html(
     .status-empty, .quality-empty, .action-empty, .bool-empty {{ background: var(--neutral); }}
     .table-wrap {{ overflow-x: auto; }}
     .table-toolbar {{ display: flex; justify-content: flex-end; margin-bottom: 12px; }}
+    .universe-toolbar {{ justify-content: flex-start; gap: 10px; flex-wrap: wrap; }}
+    .universe-toolbar label {{ color: var(--muted); display: grid; gap: 4px; font-size: 0.9rem; }}
     .table-filter {{
       width: min(320px, 100%);
       padding: 8px 10px;
@@ -1139,6 +1218,7 @@ def render_index_html(
     <p class="meta">Read-only localhost viewer for processed dashboard and decision artifacts. KPI rows loaded: {html.escape(kpi_count)}.</p>
     {render_summary_block(summary)}
     {decision_overview_html}
+    {universe_html}
     {holdings_html}
     {monthly_html}
     {watchlist_html}
@@ -1185,6 +1265,9 @@ def render_index_html(
       }});
       document.querySelectorAll(".table-filter").forEach((input) => {{
         input.addEventListener("input", () => {{
+          if (!input.dataset.tableTarget) {{
+            return;
+          }}
           const table = document.getElementById(input.dataset.tableTarget);
           if (!table) {{
             return;
@@ -1195,6 +1278,23 @@ def render_index_html(
             row.hidden = query !== "" && !haystack.includes(query);
           }});
         }});
+      }});
+      function applyUniverseFilters() {{
+        const filters = {{}};
+        document.querySelectorAll("[data-universe-filter]").forEach((select) => {{
+          filters[select.dataset.universeFilter] = select.value;
+        }});
+        document.querySelectorAll("#universe-table tbody tr").forEach((row) => {{
+          const visible = Object.entries(filters).every(([key, value]) => {{
+            if (!value) return true;
+            const attr = "data-" + key.replaceAll("_", "-");
+            return row.getAttribute(attr) === value;
+          }});
+          row.hidden = !visible;
+        }});
+      }}
+      document.querySelectorAll("[data-universe-filter]").forEach((select) => {{
+        select.addEventListener("change", applyUniverseFilters);
       }});
     }})();
   </script>
@@ -1221,6 +1321,9 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
                 return
             if parsed.path == "/api/summary.json":
                 self._serve_json(self.server.artifact_cache.get(self.server.dashboard_paths.summary, load_summary), data_mtime)
+                return
+            if parsed.path in {"/api/universe", "/api/universe.json"}:
+                self._serve_json(self.server.artifact_cache.get(self.server.dashboard_paths.universe, load_universe_section), data_mtime)
                 return
             if parsed.path == "/api/positions.json":
                 self._serve_json(self.server.artifact_cache.get(self.server.dashboard_paths.positions, load_positions), data_mtime)
@@ -1275,6 +1378,7 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
         kpis = self.server.artifact_cache.get(self.server.dashboard_paths.kpis, load_kpis)
         sections = self.server.artifact_cache.get(self.server.dashboard_paths.sections, load_sections)
         summary = self.server.artifact_cache.get(self.server.dashboard_paths.summary, load_summary)
+        universe = self.server.artifact_cache.get(self.server.dashboard_paths.universe, load_universe_section)
         holdings = self.server.artifact_cache.get(self.server.dashboard_paths.holdings, load_holdings)
         positions = self.server.artifact_cache.get(self.server.dashboard_paths.positions, load_positions)
         monthly_buy_ranking = self.server.artifact_cache.get(self.server.dashboard_paths.monthly_buy_ranking, load_monthly_buy_ranking)
@@ -1289,6 +1393,7 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
             kpis,
             sections,
             summary,
+            universe,
             holdings,
             positions,
             monthly_buy_ranking,
@@ -1337,6 +1442,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--kpis", default=DEFAULT_KPI_OUTPUT, help="Dashboard KPI CSV.")
     parser.add_argument("--sections", default=DEFAULT_SECTIONS_OUTPUT, help="Dashboard sections CSV.")
     parser.add_argument("--summary", default=DEFAULT_SUMMARY_OUTPUT, help="Dashboard summary CSV.")
+    parser.add_argument("--universe", default=DEFAULT_UNIVERSE_OUTPUT_PATH, help="Dashboard Universe section CSV.")
     parser.add_argument("--positions", default=DEFAULT_POSITIONS_OUTPUT, help="Positions snapshot CSV.")
     parser.add_argument("--holdings", default=DEFAULT_HOLDINGS_OUTPUT, help="Portfolio holdings action table CSV.")
     parser.add_argument("--monthly-buy-ranking", default=DEFAULT_MONTHLY_BUY_RANKING_OUTPUT, help="Monthly buy ranking CSV.")
@@ -1360,6 +1466,7 @@ def main() -> None:
         kpis=args.kpis,
         sections=args.sections,
         summary=args.summary,
+        universe=args.universe,
         positions=args.positions,
         holdings=args.holdings,
         monthly_buy_ranking=args.monthly_buy_ranking,

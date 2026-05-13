@@ -2,12 +2,16 @@ from __future__ import annotations
 
 import argparse
 import csv
+import os
 from collections import Counter
 from dataclasses import dataclass
 from datetime import date, datetime
+from pathlib import Path
 from typing import Any
 
 from src.common import ensure_parent_dir, load_yaml_config, read_csv_rows, resolve_repo_path, round2, to_bool, to_float, write_csv_rows
+from src.savings_plan_registry import DEFAULT_INPUT as DEFAULT_SAVINGS_PLAN_INPUT
+from src.savings_plan_registry import load_savings_plan_registry, validate_savings_plan_registry
 
 AVAILABLE = "AVAILABLE"
 PARTIAL = "PARTIAL"
@@ -23,6 +27,7 @@ DEFAULT_CONFIG_PATH = "configs/dashboard_kpis.yaml"
 DEFAULT_POSITIONS_PATH = "data/processed/personal_positions_snapshot.csv"
 DEFAULT_SCORES_PATH = "data/processed/personal_company_scores.csv"
 DEFAULT_HOLDINGS_PATH = "data/processed/personal_portfolio_holdings_action_table.csv"
+DEFAULT_WATCHLIST_PATH = "data/processed/personal_watchlist_ranked.csv"
 DEFAULT_SCORE_AUDIT_PATH = "data/processed/personal_score_audit.csv"
 DEFAULT_COVERAGE_PATH = ""
 DEFAULT_PERFORMANCE_KPIS_PATH = "data/processed/performance_kpis.csv"
@@ -34,6 +39,7 @@ DEFAULT_KPI_OUTPUT = "data/processed/dashboard_kpis.csv"
 DEFAULT_SECTIONS_OUTPUT = "data/processed/dashboard_sections.csv"
 DEFAULT_SUMMARY_OUTPUT = "data/processed/dashboard_summary.csv"
 DEFAULT_REPORT_OUTPUT = "reports/sample/dashboard_report.md"
+DEFAULT_UNIVERSE_OUTPUT = "data/processed/dashboard_universe_section.csv"
 
 DASHBOARD_KPI_FIELDS = [
     "metric_name",
@@ -76,6 +82,22 @@ DASHBOARD_SUMMARY_FIELDS = [
     "missing_block_count",
 ]
 
+DASHBOARD_UNIVERSE_FIELDS = [
+    "ticker",
+    "instrument_name",
+    "sector",
+    "bucket",
+    "sleeve",
+    "business_score",
+    "valuation_score",
+    "buy_score",
+    "watchlist_status",
+    "savings_plan_active",
+    "last_score_update_date",
+    "stale_marker",
+    "data_quality_flag",
+]
+
 PRIMARY_GROUPS = [
     "Portfolio / Struktur",
     "Score / Fundamentals",
@@ -98,6 +120,30 @@ DASHBOARD_DERIVED_METRICS = {
     "dashboard_data_quality_flag",
     "methodology_notes_count",
     "missing_block_count",
+}
+
+SLEEVE_ORDER = {
+    "CORE_ETF": 0,
+    "DIVIDEND_QUALITY_ETF": 1,
+    "SINGLE_STOCK": 2,
+    "CASH": 3,
+    "UNKNOWN_SLEEVE": 4,
+}
+BUCKET_ORDER = {
+    "HOLDING": 0,
+    "HOLDING_AND_WATCHLIST": 1,
+    "WATCHLIST": 2,
+    "UNKNOWN_BUCKET": 3,
+}
+VALID_SLEEVES = set(SLEEVE_ORDER)
+VALID_WATCHLIST_STATUSES = {
+    "CORE_CANDIDATE",
+    "DG_CANDIDATE",
+    "QUALITY_COMPOUNDER_CANDIDATE",
+    "TOO_EXPENSIVE",
+    "REVIEW",
+    "REJECT",
+    "NOT_ON_WATCHLIST",
 }
 
 
@@ -168,6 +214,187 @@ def parse_iso_date(value: Any) -> date | None:
         return datetime.strptime(text, "%Y-%m-%d").date()
     except ValueError:
         return None
+
+
+def canonical_ticker(value: Any) -> str:
+    return str(value or "").strip().upper().replace(" ", "")
+
+
+def first_text(*values: Any) -> str:
+    for value in values:
+        text = str(value or "").strip()
+        if text:
+            return text
+    return ""
+
+
+def canonical_sleeve(value: Any) -> str:
+    sleeve = str(value or "").strip().upper()
+    return sleeve if sleeve in VALID_SLEEVES and sleeve != "UNKNOWN_SLEEVE" else "UNKNOWN_SLEEVE"
+
+
+def score_text(row: dict[str, str] | None, field_name: str) -> str:
+    if row is None:
+        return "MISSING_DATA"
+    text = str(row.get(field_name, "")).strip()
+    if not text:
+        return "MISSING_DATA"
+    value = to_float(text, float("nan"))
+    if value != value or value < 0.0 or value > 100.0:
+        return "MISSING_DATA"
+    return text
+
+
+def universe_data_quality(business_score: str, valuation_score: str, buy_score: str) -> str:
+    missing_core = business_score == "MISSING_DATA"
+    missing_valuation = valuation_score == "MISSING_DATA" or buy_score == "MISSING_DATA"
+    if missing_core and missing_valuation:
+        return "MULTIPLE_GAPS"
+    if missing_core:
+        return "MISSING_CORE_KPIS"
+    if missing_valuation:
+        return "MISSING_VALUATION_KPIS"
+    return "OK"
+
+
+def stale_marker(score_row: dict[str, str] | None, today: date | None = None) -> tuple[str, str]:
+    if score_row is None:
+        return "", "NEVER_SCORED"
+    date_text = str(score_row.get("source_as_of_date", "")).strip()
+    score_date = parse_iso_date(date_text)
+    if score_date is None:
+        return "", "NEVER_SCORED"
+    anchor = today or date.today()
+    age_days = (anchor - score_date).days
+    if age_days <= 7:
+        return date_text, "FRESH"
+    if age_days <= 30:
+        return date_text, "STALE_7D"
+    return date_text, "STALE_30D"
+
+
+def index_by_ticker(rows: list[dict[str, str]]) -> dict[str, dict[str, str]]:
+    index: dict[str, dict[str, str]] = {}
+    for row in rows:
+        ticker = canonical_ticker(row.get("ticker", ""))
+        if ticker and ticker not in index:
+            index[ticker] = row
+    return index
+
+
+def savings_plan_status_index(rows: list[dict[str, str]]) -> dict[str, str]:
+    index: dict[str, str] = {}
+    for row in rows:
+        ticker = canonical_ticker(row.get("ticker", ""))
+        if not ticker:
+            continue
+        active = str(row.get("active", "")).strip().upper()
+        if active in {"TRUE", "FALSE"}:
+            index[ticker] = active
+    return index
+
+
+def load_savings_plan_rows(path_value: str) -> list[dict[str, str]]:
+    if not path_value:
+        return []
+    resolved = resolve_repo_path(path_value)
+    if not resolved.exists():
+        return []
+    rows = load_savings_plan_registry(path_value)
+    normalized_rows, _warnings = validate_savings_plan_registry(rows, path_value)
+    return normalized_rows
+
+
+def build_universe_section(
+    positions_rows: list[dict[str, str]] | None = None,
+    holdings_rows: list[dict[str, str]] | None = None,
+    scores_rows: list[dict[str, str]] | None = None,
+    watchlist_rows: list[dict[str, str]] | None = None,
+    savings_plan_rows: list[dict[str, str]] | None = None,
+    today: date | None = None,
+) -> list[dict[str, str]]:
+    positions_index = index_by_ticker(positions_rows or [])
+    holdings_index = index_by_ticker(holdings_rows or [])
+    scores_index = index_by_ticker(scores_rows or [])
+    watchlist_index = index_by_ticker(watchlist_rows or [])
+    plan_index = savings_plan_status_index(savings_plan_rows or [])
+    holding_tickers = set(positions_index) | set(holdings_index)
+    watchlist_tickers = set(watchlist_index)
+    tickers = sorted(holding_tickers | watchlist_tickers | set(scores_index))
+    rows: list[dict[str, str]] = []
+    for ticker in tickers:
+        position = positions_index.get(ticker, {})
+        holding = holdings_index.get(ticker, {})
+        score = scores_index.get(ticker)
+        score_source = score or {}
+        watchlist = watchlist_index.get(ticker, {})
+        if ticker in holding_tickers and ticker in watchlist_tickers:
+            bucket = "HOLDING_AND_WATCHLIST"
+        elif ticker in holding_tickers:
+            bucket = "HOLDING"
+        elif ticker in watchlist_tickers:
+            bucket = "WATCHLIST"
+        else:
+            bucket = "UNKNOWN_BUCKET"
+        business = score_text(score, "business_score")
+        valuation = score_text(score, "valuation_score")
+        buy = score_text(score, "buy_score")
+        score_date, marker = stale_marker(score, today)
+        watch_status = str(watchlist.get("status", "")).strip().upper() if watchlist else "NOT_ON_WATCHLIST"
+        if watch_status not in VALID_WATCHLIST_STATUSES:
+            watch_status = "REVIEW"
+        rows.append(
+            {
+                "ticker": ticker,
+                "instrument_name": first_text(
+                    position.get("company_name"),
+                    position.get("instrument_name"),
+                    holding.get("company_name"),
+                    holding.get("instrument_name"),
+                    watchlist.get("company_name"),
+                    watchlist.get("instrument_name"),
+                    score_source.get("company_name"),
+                    score_source.get("instrument_name"),
+                    ticker,
+                ),
+                "sector": first_text(position.get("sector"), watchlist.get("sector"), score_source.get("sector")),
+                "bucket": bucket,
+                "sleeve": canonical_sleeve(first_text(position.get("sleeve"), holding.get("sleeve"), watchlist.get("sleeve"), score_source.get("sleeve"))),
+                "business_score": business,
+                "valuation_score": valuation,
+                "buy_score": buy,
+                "watchlist_status": watch_status,
+                "savings_plan_active": plan_index.get(ticker, "NO_PLAN"),
+                "last_score_update_date": score_date,
+                "stale_marker": marker,
+                "data_quality_flag": universe_data_quality(business, valuation, buy),
+            }
+        )
+    rows.sort(
+        key=lambda row: (
+            SLEEVE_ORDER.get(row["sleeve"], SLEEVE_ORDER["UNKNOWN_SLEEVE"]),
+            BUCKET_ORDER.get(row["bucket"], BUCKET_ORDER["UNKNOWN_BUCKET"]),
+            -(to_float(row["buy_score"], -1.0) if row["buy_score"] != "MISSING_DATA" else -1.0),
+            row["ticker"],
+        )
+    )
+    return rows
+
+
+def write_universe_csv(path_value: str | Path, rows: list[dict[str, str]]) -> Path:
+    output_path = ensure_parent_dir(path_value)
+    temp_path = output_path.with_name(f"{output_path.name}.tmp")
+    try:
+        with temp_path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=DASHBOARD_UNIVERSE_FIELDS)
+            writer.writeheader()
+            for row in rows:
+                writer.writerow({field: row.get(field, "") for field in DASHBOARD_UNIVERSE_FIELDS})
+        os.replace(temp_path, output_path)
+    finally:
+        if temp_path.exists():
+            temp_path.unlink()
+    return output_path
 
 
 def validate_metric_rows(rows: list[dict[str, str]], source_name: str) -> None:
@@ -938,6 +1165,9 @@ def run_dashboard_engine(
     sections_output: str = DEFAULT_SECTIONS_OUTPUT,
     summary_output: str = DEFAULT_SUMMARY_OUTPUT,
     report_output: str = DEFAULT_REPORT_OUTPUT,
+    watchlist_path: str = DEFAULT_WATCHLIST_PATH,
+    savings_plan_input: str = DEFAULT_SAVINGS_PLAN_INPUT,
+    universe_output: str = DEFAULT_UNIVERSE_OUTPUT,
 ) -> dict[str, Any]:
     config = load_yaml_config(config_path)
     unavailable_values = {str(value).strip() for value in config["data_quality_rules"]["unavailable_values"]}
@@ -946,6 +1176,7 @@ def run_dashboard_engine(
         "positions": load_optional_source("positions", positions_path),
         "scores": load_optional_source("scores", scores_path),
         "holdings": load_optional_source("holdings", holdings_path),
+        "watchlist": load_optional_source("watchlist", watchlist_path),
         "score_audit": load_optional_source("score_audit", score_audit_path),
         "coverage": load_optional_coverage_source("coverage", coverage_path),
         "performance_kpis": load_optional_source("performance_kpis", performance_kpis_path),
@@ -990,10 +1221,19 @@ def run_dashboard_engine(
     summary_row = build_summary_row(metric_rows, group_statuses, derived_metrics, sources)
     alerts = build_alerts(metric_rows, group_statuses, config)
     report_text = build_report_text(summary_row, metric_rows, section_rows, group_statuses, alerts)
+    savings_plan_rows = load_savings_plan_rows(savings_plan_input)
+    universe_rows = build_universe_section(
+        positions_rows=sources["positions"].rows,
+        holdings_rows=sources["holdings"].rows,
+        scores_rows=sources["scores"].rows,
+        watchlist_rows=sources["watchlist"].rows,
+        savings_plan_rows=savings_plan_rows,
+    )
 
     write_csv_rows(kpi_output, DASHBOARD_KPI_FIELDS, metric_rows)
     write_csv_rows(sections_output, DASHBOARD_SECTION_FIELDS, section_rows)
     write_csv_rows(summary_output, DASHBOARD_SUMMARY_FIELDS, [summary_row])
+    universe_path = write_universe_csv(universe_output, universe_rows)
     report_path = ensure_parent_dir(report_output)
     report_path.write_text(report_text, encoding="utf-8")
 
@@ -1001,6 +1241,8 @@ def run_dashboard_engine(
         "metric_rows": metric_rows,
         "section_rows": section_rows,
         "summary_row": summary_row,
+        "universe_rows": universe_rows,
+        "universe_path": universe_path,
         "group_statuses": group_statuses,
         "alerts": alerts,
         "report_path": report_path,
@@ -1012,6 +1254,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--positions", default=DEFAULT_POSITIONS_PATH, help="Positions snapshot CSV.")
     parser.add_argument("--scores", default=DEFAULT_SCORES_PATH, help="Company scores CSV.")
     parser.add_argument("--holdings", default=DEFAULT_HOLDINGS_PATH, help="Holdings action table CSV.")
+    parser.add_argument("--watchlist", default=DEFAULT_WATCHLIST_PATH, help="Watchlist ranked CSV for Universe consolidation.")
+    parser.add_argument("--savings-plan-input", default=DEFAULT_SAVINGS_PLAN_INPUT, help="Read-only savings plan registry CSV for Universe consolidation.")
     parser.add_argument("--score-audit", default=DEFAULT_SCORE_AUDIT_PATH, help="Score audit CSV.")
     parser.add_argument("--coverage", default=DEFAULT_COVERAGE_PATH, help="Optional personal fundamentals coverage CSV.")
     parser.add_argument("--performance-kpis", default=DEFAULT_PERFORMANCE_KPIS_PATH, help="Performance KPI CSV.")
@@ -1024,6 +1268,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sections-output", default=DEFAULT_SECTIONS_OUTPUT, help="Dashboard sections output CSV.")
     parser.add_argument("--summary-output", default=DEFAULT_SUMMARY_OUTPUT, help="Dashboard summary output CSV.")
     parser.add_argument("--report-output", default=DEFAULT_REPORT_OUTPUT, help="Dashboard markdown report output.")
+    parser.add_argument("--universe-output", default=DEFAULT_UNIVERSE_OUTPUT, help="Dashboard Universe section output CSV.")
     return parser.parse_args()
 
 
@@ -1033,6 +1278,8 @@ def main() -> None:
         positions_path=args.positions,
         scores_path=args.scores,
         holdings_path=args.holdings,
+        watchlist_path=args.watchlist,
+        savings_plan_input=args.savings_plan_input,
         score_audit_path=args.score_audit,
         coverage_path=args.coverage,
         performance_kpis_path=args.performance_kpis,
@@ -1045,6 +1292,7 @@ def main() -> None:
         sections_output=args.sections_output,
         summary_output=args.summary_output,
         report_output=args.report_output,
+        universe_output=args.universe_output,
     )
 
 
