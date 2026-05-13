@@ -593,6 +593,7 @@ Primaerquellen:
 - Score / Fundamentals: `company_scores.csv`, `portfolio_holdings_action_table.csv`, optional `score_audit.csv` und `personal_fundamentals_coverage.csv`
 - Benchmark / Performance: `performance_kpis.csv`, `performance_summary.csv`, optional `performance_comparison.csv`
 - Kosten / Steuern: `cost_tax_kpis.csv`, `cost_tax_summary.csv`
+- Universe: `positions_snapshot.csv`, `company_scores.csv`, `watchlist_ranked.csv` und das read-only Sparplan-Register
 
 Wichtige Leitplanken:
 
@@ -603,18 +604,35 @@ Wichtige Leitplanken:
 - KPI-Dateiquellen mit `metric_name` muessen eindeutige, nicht-leere Werte haben; doppelte oder leere Namen werden hart abgewiesen.
 - Das Dashboard prueft Snapshot-, Performance- und Cost-/Tax-Stichtage gegeneinander und markiert veraltete Upstream-Quellen explizit, statt sie still als aktuell zu behandeln.
 - Das Dashboard ist bewusst keine neue Performance-, Score- oder Steuerquelle.
+- Die Universe-Sektion konsolidiert Holdings, Watchlist, Scores, Stale-Marker und Sparplan-Aktivstatus ohne neue Scores oder Entscheidungen.
 
 Neue Artefakte:
 
 - `data/processed/dashboard_kpis.csv`
 - `data/processed/dashboard_sections.csv`
 - `data/processed/dashboard_summary.csv`
+- `data/processed/dashboard_universe_section.csv`
 - `reports/YYYY-MM-DD/dashboard_report.md`
 
 Sample-CLI:
 
 ```powershell
-python -m src.dashboard_engine --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --holdings data/processed/personal_portfolio_holdings_action_table.csv --score-audit data/processed/personal_score_audit.csv --coverage data/processed/personal_fundamentals_coverage.csv --performance-kpis data/processed/performance_kpis.csv --performance-summary data/processed/performance_summary.csv --performance-comparison data/processed/performance_comparison.csv --cost-tax-kpis data/processed/cost_tax_kpis.csv --cost-tax-summary data/processed/cost_tax_summary.csv --config configs/dashboard_kpis.yaml --kpi-output data/processed/dashboard_kpis.csv --sections-output data/processed/dashboard_sections.csv --summary-output data/processed/dashboard_summary.csv --report-output reports/sample/dashboard_report.md
+python -m src.dashboard_engine --positions data/processed/personal_positions_snapshot.csv --scores data/processed/personal_company_scores.csv --holdings data/processed/personal_portfolio_holdings_action_table.csv --watchlist data/processed/personal_watchlist_ranked.csv --savings-plan-input data/raw/savings_plan_registry.csv --score-audit data/processed/personal_score_audit.csv --coverage data/processed/personal_fundamentals_coverage.csv --performance-kpis data/processed/performance_kpis.csv --performance-summary data/processed/performance_summary.csv --performance-comparison data/processed/performance_comparison.csv --cost-tax-kpis data/processed/cost_tax_kpis.csv --cost-tax-summary data/processed/cost_tax_summary.csv --config configs/dashboard_kpis.yaml --kpi-output data/processed/dashboard_kpis.csv --sections-output data/processed/dashboard_sections.csv --summary-output data/processed/dashboard_summary.csv --universe-output data/processed/dashboard_universe_section.csv --report-output reports/sample/dashboard_report.md
+```
+
+### Sparplan-Register
+
+`src.savings_plan_registry` validiert ein manuell gepflegtes lokales Sparplan-Register. Das Register ist nur ein read-only Spiegel, fuehrt keine Sparplan-Routing-Logik aus, schreibt nicht zum Broker und erzeugt keine Kauf-/Verkaufsentscheidung.
+
+Artefakte:
+
+- `configs/savings_plan_schema.yaml`: JSON-kompatibles Schema mit stabiler Spaltenfolge
+- `data/raw/savings_plan_registry.csv`: header-only Template ohne private oder echte Trade-Republic-Daten
+- `data/processed/savings_plan_registry_summary.csv`: Summary mit Aktiv-/Inaktiv-Zaehlern, Monatsbetrag und Datenqualitaetsflag
+- `reports/YYYY-MM-DD/savings_plan_registry_report.md`: kurzer Validierungsreport
+
+```powershell
+python -m src.savings_plan_registry --input data/raw/savings_plan_registry.csv --summary-output data/processed/savings_plan_registry_summary.csv --report-output reports/YYYY-MM-DD/savings_plan_registry_report.md
 ```
 
 ### Localhost Dashboard UI
@@ -622,15 +640,15 @@ python -m src.dashboard_engine --positions data/processed/personal_positions_sna
 `src.dashboard_server` ist ein rein lokaler Read-only-Viewer fuer bereits erzeugte processed Artefakte. Er berechnet keine neuen KPIs, keine neuen Investment-Scores, schreibt keine neuen Outputs und bindet nur an `127.0.0.1`.
 
 ```powershell
-python -m src.dashboard_server --kpis data/processed/dashboard_kpis.csv --sections data/processed/dashboard_sections.csv --summary data/processed/dashboard_summary.csv --positions data/processed/personal_positions_snapshot.csv --holdings data/processed/personal_portfolio_holdings_action_table.csv --monthly-buy-ranking data/processed/personal_monthly_buy_ranking.csv --rebalance-proposals data/processed/personal_rebalance_proposals.csv --watchlist data/processed/personal_watchlist_ranked.csv --fundamentals-coverage data/processed/personal_fundamentals_coverage.csv --research-priority data/processed/personal_research_priority.csv --cost-tax-ledger data/processed/cost_tax_ledger_normalized.csv --portfolio-timeseries data/processed/portfolio_timeseries.csv --benchmark-timeseries data/processed/benchmark_timeseries_normalized.csv --host 127.0.0.1 --port 8765
+python -m src.dashboard_server --kpis data/processed/dashboard_kpis.csv --sections data/processed/dashboard_sections.csv --summary data/processed/dashboard_summary.csv --universe data/processed/dashboard_universe_section.csv --positions data/processed/personal_positions_snapshot.csv --holdings data/processed/personal_portfolio_holdings_action_table.csv --monthly-buy-ranking data/processed/personal_monthly_buy_ranking.csv --rebalance-proposals data/processed/personal_rebalance_proposals.csv --watchlist data/processed/personal_watchlist_ranked.csv --fundamentals-coverage data/processed/personal_fundamentals_coverage.csv --research-priority data/processed/personal_research_priority.csv --cost-tax-ledger data/processed/cost_tax_ledger_normalized.csv --portfolio-timeseries data/processed/portfolio_timeseries.csv --benchmark-timeseries data/processed/benchmark_timeseries_normalized.csv --host 127.0.0.1 --port 8765
 ```
 
 Hinweise:
 
 - Die Browser-UI liegt dann unter `http://127.0.0.1:8765/`.
-- `GET /api/kpis.json`, `GET /api/sections.json`, `GET /api/summary.json`, `GET /api/positions.json`, `GET /api/holdings.json`, `GET /api/monthly-buy-ranking.json`, `GET /api/rebalance-proposals.json`, `GET /api/watchlist.json`, `GET /api/fundamentals-coverage.json`, `GET /api/research-priority.json`, `GET /api/cost-tax-ledger.json` und `GET /api/history-status.json` liefern die jeweiligen Read-only-Sichten als JSON.
+- `GET /api/kpis.json`, `GET /api/sections.json`, `GET /api/summary.json`, `GET /api/universe.json`, `GET /api/positions.json`, `GET /api/holdings.json`, `GET /api/monthly-buy-ranking.json`, `GET /api/rebalance-proposals.json`, `GET /api/watchlist.json`, `GET /api/fundamentals-coverage.json`, `GET /api/research-priority.json`, `GET /api/cost-tax-ledger.json` und `GET /api/history-status.json` liefern die jeweiligen Read-only-Sichten als JSON.
 - Fehlende Dateien bleiben explizit als `NOT_AVAILABLE` sichtbar; es gibt keinen stillen Fallback auf andere Artefakte.
-- Das Dashboard visualisiert Decision-Snapshots wie Holdings Detail, Monthly Buy Ranking, Watchlist, Rebalance Proposals, Fundamentals Coverage, Research Priority, Cost/Tax Ledger und einen lokalen History Gate.
+- Das Dashboard visualisiert Universe, Holdings Detail, Monthly Buy Ranking, Watchlist, Rebalance Proposals, Fundamentals Coverage, Research Priority, Cost/Tax Ledger und einen lokalen History Gate.
 - Portfolio-/Benchmark-Zeitreihen werden erst ab 12 realen Datenpunkten als einfacher Read-only-Chart gerendert. Darunter bleibt der UI-Zustand explizit `INSUFFICIENT_HISTORY`.
 - Aenderungen an den konfigurierten processed CSVs werden beim naechsten Request ueber einen `mtime`-basierten Reload sichtbar. Es gibt keinen Watcher, keinen Polling-Thread und keinen Server-Neustart-Zwang.
 

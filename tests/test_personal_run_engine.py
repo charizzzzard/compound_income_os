@@ -22,7 +22,8 @@ from src.fundamentals_overlay_engine import DEFAULT_SCHEMA_PATH as DEFAULT_OVERL
 from src.fundamentals_profile_engine import PROFILE_REVIEW_INPUT_FIELDS
 from src.fundamentals_snapshot_ingestion import SNAPSHOT_INPUT_FIELDS, SUMMARY_FIELDS
 from src.fundamentals_snapshot_review import SNAPSHOT_REVIEW_INPUT_FIELDS, SNAPSHOT_REVIEW_SUMMARY_FIELDS
-from src.personal_run_engine import DEFAULT_PATHS, USED_INPUT_FIELDS, PersonalRunOptions, options_from_args, parse_args, run_personal_run_engine
+from src.personal_run_engine import DEFAULT_PATHS, STAGE_ORDER, STAGE_RUNNERS, USED_INPUT_FIELDS, PersonalRunOptions, options_from_args, parse_args, run_personal_run_engine
+from src.savings_plan_registry import REGISTRY_FIELDS
 
 
 class PersonalRunEngineTests(unittest.TestCase):
@@ -430,6 +431,9 @@ class PersonalRunEngineTests(unittest.TestCase):
             data_source_status_output=str(self._path(f"_tmp_{prefix}_data_source_status.csv")),
             data_source_resolved_output=str(self._path(f"_tmp_{prefix}_data_source_resolved.csv")),
             positions_output=str(self._path(f"_tmp_{prefix}_positions.csv")),
+            savings_plan_input=str(self._path(f"_tmp_{prefix}_savings_plan_registry.csv")),
+            savings_plan_summary_output=str(self._path(f"_tmp_{prefix}_savings_plan_summary.csv")),
+            savings_plan_report_output=str(self._path(f"_tmp_{prefix}_savings_plan_report.md")),
             fundamentals_master=str(self._path(f"_tmp_{prefix}_personal_master.csv")),
             scores_output=str(self._path(f"_tmp_{prefix}_scores.csv")),
             score_audit_output=str(self._path(f"_tmp_{prefix}_score_audit.csv")),
@@ -505,6 +509,7 @@ class PersonalRunEngineTests(unittest.TestCase):
             dashboard_kpi_output=str(self._path(f"_tmp_{prefix}_dashboard_kpis.csv")),
             dashboard_sections_output=str(self._path(f"_tmp_{prefix}_dashboard_sections.csv")),
             dashboard_summary_output=str(self._path(f"_tmp_{prefix}_dashboard_summary.csv")),
+            dashboard_universe_output=str(self._path(f"_tmp_{prefix}_dashboard_universe.csv")),
             dashboard_report_output=str(self._path(f"_tmp_{prefix}_dashboard_report.md")),
             manifest_output=str(self._path(f"_tmp_{prefix}_manifest.json")),
             artifacts_output=str(self._path(f"_tmp_{prefix}_artifacts.csv")),
@@ -526,6 +531,53 @@ class PersonalRunEngineTests(unittest.TestCase):
 
     def _used_inputs_for_stage(self, rows: list[dict[str, str]], stage_name: str) -> dict[str, dict[str, str]]:
         return {row["input_role"]: row for row in rows if row["stage_name"] == stage_name}
+
+    def test_savings_plan_stage_order_runner_and_existing_order(self) -> None:
+        self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("import") + 1], "savings_plan")
+        self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("savings_plan") + 1], "fundamentals_seed")
+        self.assertIn("savings_plan", STAGE_RUNNERS)
+        self.assertEqual(
+            [stage for stage in STAGE_ORDER if stage != "savings_plan"],
+            [
+                "data_sources_validate",
+                "import",
+                "fundamentals_seed",
+                "fundamentals_profile",
+                "fundamentals_snapshot_ingest",
+                "fundamentals_snapshot_review",
+                "fundamentals_evidence_compose",
+                "fundamentals_evidence",
+                "fundamentals_evidence_apply",
+                "fundamentals_overlay",
+                "scoring",
+                "coverage",
+                "watchlist",
+                "monthly",
+                "portfolio_review",
+                "history",
+                "benchmark_archive",
+                "performance",
+                "multi_benchmark",
+                "cost_tax",
+                "dashboard",
+            ],
+        )
+
+    def test_targeted_savings_plan_stage_succeeds_with_header_only_input(self) -> None:
+        options = self._base_options("savings_plan_stage", ["savings_plan"])
+        self._write_csv(Path(options.savings_plan_input), REGISTRY_FIELDS, [])
+
+        manifest = run_personal_run_engine(options)
+
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(manifest["executed_stage_order"], ["savings_plan"])
+        savings_plan_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "savings_plan")
+        self.assertEqual(savings_plan_result["status"], "SUCCESS")
+        self.assertTrue(Path(options.savings_plan_summary_output).exists())
+        self.assertTrue(Path(options.savings_plan_report_output).exists())
+        artifact_rows = read_csv_rows(options.artifacts_output)
+        produced_roles = {row["artifact_role"] for row in artifact_rows if row["stage_name"] == "savings_plan" and row["produced"] == "True"}
+        self.assertEqual(produced_roles, {"savings_plan_report", "savings_plan_summary"})
 
     def test_core_personal_run_writes_manifest_artifacts_and_reports(self) -> None:
         options = self._core_options(
@@ -1737,6 +1789,7 @@ class PersonalRunEngineTests(unittest.TestCase):
 
         self.assertEqual(manifest["run_status"], "SUCCESS")
         self.assertTrue(Path(options.dashboard_kpi_output).exists())
+        self.assertTrue(Path(options.dashboard_universe_output).exists())
         self.assertIn("dashboard", manifest["data_quality_flags"])
         dashboard_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "dashboard")
         self.assertEqual(dashboard_inputs["dashboard_config"]["input_path"], DEFAULT_DASHBOARD_CONFIG_PATH)

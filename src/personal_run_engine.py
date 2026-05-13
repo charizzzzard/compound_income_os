@@ -101,6 +101,9 @@ from src.multi_benchmark_performance_engine import run_multi_benchmark_performan
 from src.performance_engine import run_performance_engine
 from src.portfolio_history_engine import run_portfolio_history_engine
 from src.portfolio_review import DEFAULT_RULES_PATH as DEFAULT_PORTFOLIO_REVIEW_RULES_PATH
+from src.savings_plan_registry import DEFAULT_INPUT as DEFAULT_SAVINGS_PLAN_INPUT
+from src.savings_plan_registry import DEFAULT_SUMMARY_OUTPUT as DEFAULT_SAVINGS_PLAN_SUMMARY_OUTPUT
+from src.savings_plan_registry import run_savings_plan_registry
 from src.traderepublic_documents import load_trade_republic_pdf_rows
 
 SUCCESS = "SUCCESS"
@@ -111,6 +114,7 @@ NOT_REQUESTED = "NOT_REQUESTED"
 STAGE_ORDER = [
     "data_sources_validate",
     "import",
+    "savings_plan",
     "fundamentals_seed",
     "fundamentals_profile",
     "fundamentals_snapshot_ingest",
@@ -154,6 +158,9 @@ DEFAULT_PATHS = {
     "data_source_status_output": DEFAULT_DATA_SOURCE_STATUS_OUTPUT,
     "data_source_resolved_output": DEFAULT_DATA_SOURCE_RESOLVED_OUTPUT,
     "positions_output": "data/processed/personal_positions_snapshot.csv",
+    "savings_plan_input": DEFAULT_SAVINGS_PLAN_INPUT,
+    "savings_plan_summary_output": DEFAULT_SAVINGS_PLAN_SUMMARY_OUTPUT,
+    "savings_plan_report_output": default_dated_report_path("savings_plan_registry_report.md"),
     "fundamentals_master": "data/raw/personal_fundamentals_master.csv",
     "scores_output": "data/processed/personal_company_scores.csv",
     "score_audit_output": "data/processed/personal_score_audit.csv",
@@ -221,6 +228,7 @@ DEFAULT_PATHS = {
     "dashboard_kpi_output": "data/processed/dashboard_kpis.csv",
     "dashboard_sections_output": "data/processed/dashboard_sections.csv",
     "dashboard_summary_output": "data/processed/dashboard_summary.csv",
+    "dashboard_universe_output": "data/processed/dashboard_universe_section.csv",
     "manifest_output": "data/processed/personal_run_manifest.json",
     "artifacts_output": "data/processed/personal_run_artifacts.csv",
     "used_inputs_output": "data/processed/personal_run_used_inputs.csv",
@@ -244,6 +252,7 @@ DATA_SOURCE_OPTION_FIELDS = {
 OPTION_FIELD_DEFAULTS = {
     "positions_raw_input": "",
     "cash_input": "",
+    "savings_plan_input": DEFAULT_PATHS["savings_plan_input"],
     "fundamentals_master": DEFAULT_PATHS["fundamentals_master"],
     "profile_review_input": DEFAULT_PATHS["profile_review_input"],
     "fundamentals_snapshot_input": DEFAULT_PATHS["fundamentals_snapshot_input"],
@@ -291,6 +300,9 @@ class PersonalRunOptions:
     source_name: str = "personal_depot"
     portfolio_date: str | None = None
     positions_output: str = DEFAULT_PATHS["positions_output"]
+    savings_plan_input: str = DEFAULT_PATHS["savings_plan_input"]
+    savings_plan_summary_output: str = DEFAULT_PATHS["savings_plan_summary_output"]
+    savings_plan_report_output: str = DEFAULT_PATHS["savings_plan_report_output"]
     fundamentals_master: str = DEFAULT_PATHS["fundamentals_master"]
     overwrite_fundamentals_master: bool = False
     use_profiled_master: bool = False
@@ -380,6 +392,7 @@ class PersonalRunOptions:
     dashboard_kpi_output: str = DEFAULT_PATHS["dashboard_kpi_output"]
     dashboard_sections_output: str = DEFAULT_PATHS["dashboard_sections_output"]
     dashboard_summary_output: str = DEFAULT_PATHS["dashboard_summary_output"]
+    dashboard_universe_output: str = DEFAULT_PATHS["dashboard_universe_output"]
     dashboard_report_output: str | None = None
     manifest_output: str = DEFAULT_PATHS["manifest_output"]
     artifacts_output: str = DEFAULT_PATHS["artifacts_output"]
@@ -728,6 +741,28 @@ def run_import_stage(options: PersonalRunOptions) -> StageResult:
         used_inputs=used,
         produced_outputs={"positions_snapshot": options.positions_output},
         notes="Positions snapshot generated via import_broker.",
+    )
+
+
+def run_savings_plan_stage(options: PersonalRunOptions) -> StageResult:
+    stage = "savings_plan"
+    savings_plan_input = require_existing_path(options.savings_plan_input, "savings plan registry", stage)
+    result = run_savings_plan_registry(
+        input_path=savings_plan_input,
+        summary_output=options.savings_plan_summary_output,
+        report_output=options.savings_plan_report_output,
+    )
+    return stage_result(
+        stage,
+        SUCCESS,
+        ["savings_plan_input"],
+        used_inputs={"savings_plan_input": savings_plan_input},
+        produced_outputs={
+            "savings_plan_summary": str(result["summary_path"]),
+            "savings_plan_report": str(result["report_path"]),
+        },
+        warnings=list(result["warnings"]),
+        notes="Read-only savings plan registry validated; no routing, decision, or broker write logic executed.",
     )
 
 
@@ -1428,6 +1463,8 @@ def run_dashboard_stage(options: PersonalRunOptions) -> StageResult:
         positions_path=positions_path,
         scores_path=options.scores_output,
         holdings_path=options.holdings_output,
+        watchlist_path=options.watchlist_output,
+        savings_plan_input=options.savings_plan_input,
         score_audit_path=options.score_audit_output,
         coverage_path=options.coverage_output,
         performance_kpis_path=options.performance_kpi_output,
@@ -1440,6 +1477,7 @@ def run_dashboard_stage(options: PersonalRunOptions) -> StageResult:
         sections_output=options.dashboard_sections_output,
         summary_output=options.dashboard_summary_output,
         report_output=options.dashboard_report_output or default_dated_report_path("dashboard_report.md"),
+        universe_output=options.dashboard_universe_output,
     )
     return stage_result(
         stage,
@@ -1449,6 +1487,8 @@ def run_dashboard_stage(options: PersonalRunOptions) -> StageResult:
             "positions_output": positions_path,
             "scores_output": options.scores_output,
             "holdings_output": options.holdings_output,
+            "watchlist_output": options.watchlist_output,
+            "savings_plan_input": options.savings_plan_input,
             "score_audit_output": options.score_audit_output,
             "coverage_output": options.coverage_output,
             "performance_kpi_output": options.performance_kpi_output,
@@ -1462,6 +1502,7 @@ def run_dashboard_stage(options: PersonalRunOptions) -> StageResult:
             "dashboard_kpis": options.dashboard_kpi_output,
             "dashboard_sections": options.dashboard_sections_output,
             "dashboard_summary": options.dashboard_summary_output,
+            "dashboard_universe": options.dashboard_universe_output,
             "dashboard_report": options.dashboard_report_output or "",
         },
         notes="Dashboard consolidated from processed artifacts; missing optional sources remain visible in dashboard metrics.",
@@ -1471,6 +1512,7 @@ def run_dashboard_stage(options: PersonalRunOptions) -> StageResult:
 STAGE_RUNNERS: dict[str, Callable[[PersonalRunOptions], StageResult]] = {
     "data_sources_validate": run_data_sources_validate_stage,
     "import": run_import_stage,
+    "savings_plan": run_savings_plan_stage,
     "fundamentals_seed": run_fundamentals_seed_stage,
     "fundamentals_profile": run_fundamentals_profile_stage,
     "fundamentals_snapshot_ingest": run_fundamentals_snapshot_ingest_stage,
@@ -1823,6 +1865,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--source-name", default="personal_depot", help="Source label for imported rows and manifest.")
     parser.add_argument("--portfolio-date", help="Optional portfolio date override for import stage.")
     parser.add_argument("--positions-output", default=DEFAULT_PATHS["positions_output"], help="Personal positions snapshot path.")
+    parser.add_argument("--savings-plan-input", default=DEFAULT_PATHS["savings_plan_input"], help="Read-only savings plan registry CSV input.")
+    parser.add_argument("--savings-plan-summary-output", default=DEFAULT_PATHS["savings_plan_summary_output"], help="Savings plan registry summary output.")
+    parser.add_argument("--savings-plan-report-output", default=DEFAULT_PATHS["savings_plan_report_output"], help="Savings plan registry markdown report output.")
     parser.add_argument("--fundamentals-master", default=DEFAULT_PATHS["fundamentals_master"], help="Personal fundamentals master path.")
     parser.add_argument("--overwrite-fundamentals-master", action="store_true", help="Allow fundamentals_seed to overwrite an existing master.")
     parser.add_argument("--use-profiled-master", action="store_true", help="Use the explicit profiled Personal-Fundamentals master for eligible fundamentals-dependent stages.")
@@ -1912,6 +1957,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dashboard-kpi-output", default=DEFAULT_PATHS["dashboard_kpi_output"], help="Dashboard KPI output.")
     parser.add_argument("--dashboard-sections-output", default=DEFAULT_PATHS["dashboard_sections_output"], help="Dashboard sections output.")
     parser.add_argument("--dashboard-summary-output", default=DEFAULT_PATHS["dashboard_summary_output"], help="Dashboard summary output.")
+    parser.add_argument("--dashboard-universe-output", default=DEFAULT_PATHS["dashboard_universe_output"], help="Dashboard Universe section output.")
     parser.add_argument("--dashboard-report-output", help="Dashboard markdown report output.")
     parser.add_argument("--manifest-output", default=DEFAULT_PATHS["manifest_output"], help="Personal run manifest JSON output.")
     parser.add_argument("--artifacts-output", default=DEFAULT_PATHS["artifacts_output"], help="Personal run artifacts CSV output.")
@@ -1932,6 +1978,9 @@ def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
         source_name=args.source_name,
         portfolio_date=args.portfolio_date,
         positions_output=args.positions_output,
+        savings_plan_input=args.savings_plan_input,
+        savings_plan_summary_output=args.savings_plan_summary_output,
+        savings_plan_report_output=args.savings_plan_report_output,
         fundamentals_master=args.fundamentals_master,
         overwrite_fundamentals_master=args.overwrite_fundamentals_master,
         use_profiled_master=args.use_profiled_master,
@@ -2021,6 +2070,7 @@ def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
         dashboard_kpi_output=args.dashboard_kpi_output,
         dashboard_sections_output=args.dashboard_sections_output,
         dashboard_summary_output=args.dashboard_summary_output,
+        dashboard_universe_output=args.dashboard_universe_output,
         dashboard_report_output=args.dashboard_report_output,
         manifest_output=args.manifest_output,
         artifacts_output=args.artifacts_output,
