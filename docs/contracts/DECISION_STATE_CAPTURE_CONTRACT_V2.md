@@ -15,12 +15,15 @@ It is not:
 - a tax lot tracker
 - a broker/order execution process
 
-Future expected outputs:
+Current expected outputs:
 
 - `data/processed/personal_decision_state_capture.csv`
 - `reports/<YYYY-MM-DD>/personal_decision_state_capture_report.md`
 
-No producer is implemented by this contract.
+`src.personal_decision_state_capture` implements the current minimal standalone
+producer for this contract. The tracked processed artifact may be header-only;
+that means the producer exists, but real decision history has not necessarily
+been captured yet.
 
 ## Manual Required Fields
 

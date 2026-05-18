@@ -35,6 +35,7 @@ Das System fuehrt keine Orders aus. Es verarbeitet CSV-Inputs und lokale textbas
 
 Canonical architecture baseline:
 
+- [docs/architecture/COMPOUND_INCOME_OS_SYSTEM_DEFINITION.md](docs/architecture/COMPOUND_INCOME_OS_SYSTEM_DEFINITION.md): kanonische Systemdefinition, Rollenmodell, Kernel, Operating Loop und Invarianten
 - [docs/architecture/00_META_SYNTHESIS.md](docs/architecture/00_META_SYNTHESIS.md): akzeptierte Meta-Architektur-Synthese
 - [docs/architecture/01_TARGET_OS_KERNEL_V1.md](docs/architecture/01_TARGET_OS_KERNEL_V1.md): sechs Kernel-Domaenen und Operating Loop
 - [docs/architecture/03_INVESTMENT_PHILOSOPHY_V1.md](docs/architecture/03_INVESTMENT_PHILOSOPHY_V1.md): Dividend Growth, Quality Compounders und Value Discipline

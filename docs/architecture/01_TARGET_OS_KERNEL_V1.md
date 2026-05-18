@@ -74,11 +74,13 @@ reviewable and replayable.
 Exists today:
 
 - monthly reports and readiness/gap artifacts that can feed a decision packet
+- minimal standalone `src.personal_decision_state_capture` producer for
+  append-only decision/no-action capture artifacts
 
 Not built yet:
 
-- Decision Capture producer
-- append-only decision journal
+- operationalized monthly Decision Capture workflow with real populated history
+- append-only decision journal beyond the current processed/report artifact
 - review-date queue
 
 This is the first producer sequence after the architecture baseline.

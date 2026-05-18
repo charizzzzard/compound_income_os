@@ -15,6 +15,8 @@ LLMs may:
 - draft documentation text
 - propose review questions
 - help shape scoped Codex tasks
+- compare handoff metadata against included repo evidence
+- identify missing-data and provenance risks without filling the gaps
 
 LLMs must not:
 
@@ -24,6 +26,8 @@ LLMs must not:
 - silently fill missing data
 - act as a runtime dependency in the core pipeline
 - create broker/order instructions
+- materialize KPI values without a reviewed apply path
+- override deterministic Python artifacts, processed CSVs or validated reports
 
 ## Codex Rules
 
@@ -37,6 +41,9 @@ Codex must:
 - keep validation commands and commit status visible
 - keep patches minimal and evidence-based
 - avoid runtime financial logic changes under documentation tasks
+- distinguish tracked HEAD reality, dirty/untracked worktree observations and
+  roadmap statements
+- run available cheap validation or clearly state what was not run
 
 Codex must not:
 
@@ -46,6 +53,8 @@ Codex must not:
 - implement broker write access
 - implement live trading or order execution
 - apply KPI values unless the task explicitly requests a reviewed apply step
+- add runtime LLM dependencies to the deterministic core pipeline
+- make or record final investment decisions on behalf of the operator
 
 ## Cost-Aware Use
 
@@ -56,3 +65,6 @@ Codex must not:
   they become canonical
 - keep raw review transcripts and ZIP bundles as source material, not canonical
   docs
+- prefer repo-local deterministic checks before external LLM review
+- use external LLMs for bounded review questions, not continuous runtime
+  operation
