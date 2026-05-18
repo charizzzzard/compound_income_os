@@ -1,71 +1,157 @@
-# HANDOFF LATEST CONTEXT - Phase 1.3
+# HANDOFF LATEST CONTEXT - Current System Definition Handoff
 
 project_name: compound_income_os
-profile: post_phase_1_3_external_review
+profile: full_review
 bundle_name: HANDOFF_LATEST
-bundle_purpose: external_llm_validation_after_phase_1_3
-created_at_utc: 2026-05-13T18:21:15Z
+bundle_purpose: external_llm_validation_current_system_definition
+created_at_utc: 2026-05-18T08:28:43+00:00
 branch: main
-implementation_baseline_head: a09d5b36e86e734dc14ce13114b5ae7c9ecea03c
-artifact_baseline_head: 65c665ec0fb6cd9a0dd2d139d3bafb5cee8f6577
-start_head: 65c665ec0fb6cd9a0dd2d139d3bafb5cee8f6577
-phase_1_3_final_head: feff13240a89b1e306226f43032abb68c35c3d1c
-handoff_zip_source_head: a36c3fc403138454d2581f276d7a5d849b940bfe
-artifact_checksum_commit: a551ad9746126d1ec60ed8488a18aa8fa22335a2
-dirty_worktree_present_before_zip_generation: False
-zip_file_count: 431
-zip_size_bytes: 12830062
-zip_sha256: 0D3312FB4ACFBC0E680C6DB3DB07F25EF74AF9C056087000583CDFF9E3ABEF8B
-forbidden_match_count: 0
-cache_private_forbidden_count: 0
-nested_zip_count: 0
-canonical_vision: docs/COMPOUND_INCOME_OS_VISION_v1_2.md
+current_handoff_head: e5b7afb855cbdece18d37183f288429a65b6d5af
+current_handoff_short_head: e5b7afb
+dirty_worktree_present_before_handoff_artifact_generation: False
+
+canonical_system_definition: docs/architecture/COMPOUND_INCOME_OS_SYSTEM_DEFINITION.md
 canonical_review_bundle: external_review_packet/HANDOFF_LATEST.zip
 canonical_checksum: external_review_packet/HANDOFF_LATEST.sha256
 
-Note: The broad PowerShell ZIP scan pattern also matched `website/compound-income-os-landing/src/styles/design-tokens.css` because of the substring `token`. This is classified as a false positive design-token file, not a credential/secret/private raw artifact. Effective cache/private/credential forbidden count remains 0.
+zip_file_count: 432
+zip_size_bytes: 12835813
+zip_sha256: 2E3A616052606DC86CBB5ED826E50BB948E90D1E1ABA3DBF83514415EFF1B9C2
+forbidden_match_count: 0
+nested_zip_count: 0
+system_definition_in_zip: True
 
-## Phase 1.3 Scope Summary
+## Source-of-Truth / Precedence
 
-Phase 1.3 adds portfolio-health review surfaces:
+Bei Konflikten gilt diese Reihenfolge:
 
-- `src/cash_refill_review.py`
-- `src/rebalance_review.py`
-- `configs/portfolio_health_thresholds.yaml`
-- `src/personal_run_engine.py`
-- monthly report portfolio-health rendering in `src/build_monthly_decision_report.py`
-- corresponding tests:
-  - `tests/test_cash_refill_review.py`
-  - `tests/test_rebalance_review.py`
-  - `tests/test_personal_run_engine.py`
-  - `tests/test_monthly_decision_report.py`
+1. `external_review_packet/00_READ_ME_FIRST.md`
+2. `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
+3. `external_review_packet/HANDOFF_LATEST.zip`
+4. `external_review_packet/HANDOFF_LATEST.sha256`
+5. historische Phase-Reports nur als historische Kontext-/Validierungsartefakte
 
-Conservative scope:
+ZIP-internes `HANDOFF_CONTEXT.md` ist generischer Exporter-Kontext. Wenn es mit
+dieser Datei kollidiert, gewinnt diese externe Datei fuer Packet-Metadaten,
+Head/SHA/Scope, Precedence und Reviewer-Instruktionen.
 
-- Phase 1.3 adds/readies Cash-Refill and Rebalance Review outputs.
-- It integrates portfolio-health review into personal run/report surfaces.
-- It does not implement trading, broker execution, tax computation, sell automation, or Phase-1.4 features.
+## Canonical Review Inputs
 
-## Explicitly Out of Scope
+- `external_review_packet/00_READ_ME_FIRST.md`
+- `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
+- `external_review_packet/HANDOFF_LATEST.sha256`
+- `external_review_packet/HANDOFF_LATEST.zip`
+- ZIP-intern:
+  - `HANDOFF_CONTEXT.md`
+  - `HANDOFF_VALIDATION.txt`
+  - `HANDOFF_MANIFEST.csv`
+  - `HANDOFF_ARTIFACT_INDEX.csv`
+  - `docs/architecture/COMPOUND_INCOME_OS_SYSTEM_DEFINITION.md`
+  - `README.md`
+  - `docs/CONTEXT_AND_ROADMAP.md`
+  - `docs/architecture/01_TARGET_OS_KERNEL_V1.md`
+  - `docs/architecture/05_ARCHITECTURE_BACKLOG.csv`
+  - `docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md`
+  - `docs/policies/LLM_CODEX_OPERATING_POLICY.md`
+  - `src/`
+  - `tests/`
+  - `configs/`
 
-- no Decision Capture schema change
-- no new `proposed_action` enum values
-- no broker/API/HTTP/order execution
-- no auto-trading
-- no tax quantification
-- no sell-order logic
-- no scoring/watchlist/monthly-ranking/portfolio-rule logic change unless repo diff proves otherwise
-- no Phase-1.4 implementation
-- no private/raw data inclusion
-- no credential/secret inclusion
+## Included Artifact Groups
 
-## External Reviewer Interpretation Rules
+- `configs`
+- `docs`
+- `processed_artifacts`
+- `repo_context`
+- `reports`
+- `source`
+- `tests`
+- `website_source`
 
-- Use this file as authoritative metadata.
-- Use `external_review_packet/HANDOFF_LATEST.zip` as authoritative repo evidence.
-- ZIP-internal `HANDOFF_CONTEXT.md` is generic exporter context and does not override this file.
-- If a head/hash appears inconsistent, first check Artifact Lineage before declaring a blocker.
-- Treat `a36c3fc403138454d2581f276d7a5d849b940bfe` as ZIP source head.
-- Treat `a551ad9746126d1ec60ed8488a18aa8fa22335a2` as artifact/checksum commit; Git evidence shows it changes only `external_review_packet/HANDOFF_LATEST.sha256`.
-- Treat `feff13240a89b1e306226f43032abb68c35c3d1c` as Phase-1.3 functional final head.
-- Do not infer functionality beyond the included files and stated scope.
+## Omitted Artifact Groups
+
+- `OMITTED_FORBIDDEN`
+- `OMITTED_PRIVATE`
+
+## Current Packet Scope
+
+Dieses Packet synchronisiert den externen Review-Kontext auf den committed
+Repo-Stand nach dem kanonischen Systemdefinition-Patch. Die neue kanonische
+Systemdefinition ist im ZIP enthalten und fuer diese Review der Einstiegspunkt:
+
+- `docs/architecture/COMPOUND_INCOME_OS_SYSTEM_DEFINITION.md`
+
+Die externe Review soll den aktuellen Head `e5b7afb855cbdece18d37183f288429a65b6d5af`
+bewerten. Aeltere Phase-1.2-/Phase-1.3-Metadaten, fruehere
+`HANDOFF_LATEST`-Artefakte und historische Head-Angaben duerfen nicht mit diesem
+Packet vermischt werden.
+
+## Historical Phase Reports
+
+Diese Dateien bleiben im `external_review_packet/` als historische
+Validierungs-/Kontextartefakte erhalten:
+
+- `external_review_packet/PATCH_02_FINAL_REPORT.md`
+- `external_review_packet/PATCH_1_2_FINAL_REPORT.md`
+- `external_review_packet/PATCH_1_3_FINAL_REPORT.md`
+
+Sie sind nicht die aktuelle Packet-Metadatenautoritaet und repraesentieren nicht
+den aktuellen Handoff-Head. Sie duerfen zur Historie gelesen werden, aber sie
+ueberschreiben nicht `00_READ_ME_FIRST.md` oder diese Kontextdatei.
+
+## Explicit Non-Scope
+
+- keine Finanzlogik
+- keine Scoring-Formel- oder Weight-Aenderung
+- keine Portfolio-Regel-Aenderung
+- keine Decision-State-Schema-Enum-Aenderung
+- keine Broker/API/HTTP-Write-Logik
+- keine Orderausfuehrung
+- keine Auto-Trading-Logik
+- keine privaten Rohdaten, Credentials, lokalen User-Agent-Werte oder Secrets
+- keine erfundenen Fundamentals, KPIs oder Readiness-Ergebnisse
+- keine Runtime-LLM-Abhaengigkeit
+
+## Validation Actually Performed
+
+Handoff artifact generation:
+
+- `python -m src.handoff_zip_export --profile full_review --name HANDOFF_LATEST --output-path ".\external_review_packet\HANDOFF_LATEST.zip"`
+  - result: generated ZIP for head `e5b7afb855cbdece18d37183f288429a65b6d5af`
+  - file_count: `432`
+  - size_bytes: `12835813`
+  - zip_sha256: `2E3A616052606DC86CBB5ED826E50BB948E90D1E1ABA3DBF83514415EFF1B9C2`
+  - forbidden_match_count: `0`
+
+The ZIP-internal `HANDOFF_VALIDATION.txt` records exporter self-validation:
+
+- zip_integrity: `OK`
+- file_count: `432`
+- forbidden_count: `0`
+- nested_zip_count: `0`
+- validation_status: `SELF_VALIDATION_RECORDED`
+
+Additional validation performed after external metadata update:
+
+- `git diff --check`
+  - result: no output; no whitespace errors reported.
+- `python -m src.handoff_zip_export --help`
+  - result: help/usage displayed successfully.
+- PowerShell path checks:
+  - `external_review_packet/HANDOFF_LATEST.zip` exists.
+  - `external_review_packet/HANDOFF_LATEST.sha256` exists.
+- PowerShell SHA check:
+  - zip_hash:
+    `2E3A616052606DC86CBB5ED826E50BB948E90D1E1ABA3DBF83514415EFF1B9C2`
+  - sha_file:
+    `2E3A616052606DC86CBB5ED826E50BB948E90D1E1ABA3DBF83514415EFF1B9C2`
+  - sha_match: `True`
+- Python `zipfile` integrity and entry check:
+  - testzip: `None`
+  - entry_count: `432`
+  - nested_zip_count: `0`
+  - missing_required: `[]`
+- `python -m unittest tests.test_handoff_bundle tests.test_handoff_zip_export -v`
+  - result: `Ran 23 tests in 50.104s`, `OK`
+
+No other tests are claimed by this context file.

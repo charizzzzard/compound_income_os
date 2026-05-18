@@ -1,74 +1,93 @@
-# Compound Income OS External LLM Review Packet  Phase 1.3
+# Compound Income OS External LLM Review Packet - Current System Definition Handoff
 
-Dies ist der Einstiegspunkt fuer die externe LLM-Review des Phase-1.3-Handoffs von `compound_income_os`.
+Dies ist der Einstiegspunkt fuer die externe LLM-Review des aktuellen
+`compound_income_os`-Handoffs nach dem Systemdefinition-Patch.
 
-## Source-of-truth / Precedence
+Dieses Paket repraesentiert den committed Repo-Stand:
+
+- branch: `main`
+- current_handoff_head: `e5b7afb855cbdece18d37183f288429a65b6d5af`
+- current_handoff_short_head: `e5b7afb`
+- canonical_system_definition:
+  `docs/architecture/COMPOUND_INCOME_OS_SYSTEM_DEFINITION.md`
+
+## Source-of-Truth / Precedence
 
 Bei Konflikten gilt diese Reihenfolge:
 
 1. `external_review_packet/00_READ_ME_FIRST.md`
-   - Einstiegspunkt und Reviewer-Instruktionen
+   - Einstiegspunkt, Lesereihenfolge und externe Reviewer-Regeln.
 
 2. `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
-   - autoritative Phase-1.3-Packet-Metadaten und Lineage
+   - autoritative Packet-Metadaten, Head, Scope, SHA-/ZIP-Fakten und
+     aktuelle Handoff-Interpretation.
 
-3. `external_review_packet/PATCH_1_3_FINAL_REPORT.md`
-   - Implementierungszusammenfassung, Validierungsevidenz, Guardrails, bekannte Findings
+3. `external_review_packet/HANDOFF_LATEST.zip`
+   - autoritatives Repo-Evidenz-Bundle fuer den in
+     `HANDOFF_LATEST_CONTEXT.md` genannten Head.
 
 4. `external_review_packet/HANDOFF_LATEST.sha256`
-   - Checksumme fuer das ZIP
+   - Checksumme zur Verifikation der ZIP-Bytes.
 
-5. `external_review_packet/HANDOFF_LATEST.zip`
-   - kanonisches Repo-Evidenz-Bundle
+5. Historische Phase-Reports in `external_review_packet/`
+   - nur historische Kontext-/Validierungsartefakte. Sie ueberschreiben weder
+     `00_READ_ME_FIRST.md` noch `HANDOFF_LATEST_CONTEXT.md`.
 
-6. ZIP-interne Repo-Dateien, insbesondere:
-   - `docs/COMPOUND_INCOME_OS_VISION_v1_2.md`
-   - `docs/CONTEXT_AND_ROADMAP.md`
-   - `docs/MODULE_CONTRACTS.md`
+## Canonical Review Inputs
+
+Reviewer sollen in dieser Reihenfolge lesen:
+
+1. `external_review_packet/00_READ_ME_FIRST.md`
+2. `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
+3. ZIP-interne `HANDOFF_CONTEXT.md`
+4. ZIP-interne `HANDOFF_VALIDATION.txt`
+5. ZIP-interne Repo-Dateien, insbesondere:
+   - `docs/architecture/COMPOUND_INCOME_OS_SYSTEM_DEFINITION.md`
    - `README.md`
+   - `docs/CONTEXT_AND_ROADMAP.md`
+   - `docs/architecture/01_TARGET_OS_KERNEL_V1.md`
+   - `docs/architecture/05_ARCHITECTURE_BACKLOG.csv`
+   - `docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md`
+   - `docs/policies/LLM_CODEX_OPERATING_POLICY.md`
    - `src/`
    - `tests/`
    - `configs/`
 
 ## Conflict Rule
 
-Wenn ZIP-internes `HANDOFF_CONTEXT.md` mit externem `HANDOFF_LATEST_CONTEXT.md` kollidiert, gewinnt `external_review_packet/HANDOFF_LATEST_CONTEXT.md` fuer Phase-1.3-Metadaten, Lineage, Scope und Reviewer-Instruktionen.
+Wenn ZIP-internes `HANDOFF_CONTEXT.md` mit
+`external_review_packet/HANDOFF_LATEST_CONTEXT.md` kollidiert, gewinnt
+`external_review_packet/HANDOFF_LATEST_CONTEXT.md` fuer Packet-Metadaten,
+Head/SHA/Scope, Precedence und Reviewer-Instruktionen.
 
-ZIP-internes `HANDOFF_CONTEXT.md` ist generische Exporter-Metadokumentation. Es darf fuer ZIP-Source-Fakten genutzt werden, zum Beispiel Source Head, Dirty-Worktree-Status zum Exportzeitpunkt, Exporter-Profil und inkludierte/ausgelassene Gruppen. Es ueberschreibt nicht die Phase-1.3-spezifischen externen Metadaten.
+ZIP-internes `HANDOFF_CONTEXT.md` ist generischer Exporter-Kontext. Es darf fuer
+Exporter-Fakten genutzt werden, z. B. Profil, inkludierte/ausgelassene Gruppen
+und Dirty-Worktree-Status zum Exportzeitpunkt. Es ueberschreibt nicht die
+externen Packet-Metadaten.
 
-## Artifact-Lineage Warning
+## Historical Reports
 
-Nicht verwechseln:
+Diese Dateien bleiben als historische Validierungs- und Kontextartefakte
+erhalten:
 
-- `phase_1_3_final_head`: `feff13240a89b1e306226f43032abb68c35c3d1c`
-- `handoff_zip_source_head`: `a36c3fc403138454d2581f276d7a5d849b940bfe`
-- `artifact_checksum_commit`: `a551ad9746126d1ec60ed8488a18aa8fa22335a2`
-
-`a36c3fc...` ist der ZIP-Source-Head. `a551ad9...` ist laut Git-Evidenz ein Artifact-/Checksum-Commit mit Aenderung nur an `external_review_packet/HANDOFF_LATEST.sha256`. Keiner dieser beiden Heads ist ein neuer funktionaler Phase-1.3-Implementierungsstand.
-
-## Canonical Review Inputs
-
-Reviewer sollen diese Inputs verwenden:
-
-- `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
+- `external_review_packet/PATCH_02_FINAL_REPORT.md`
+- `external_review_packet/PATCH_1_2_FINAL_REPORT.md`
 - `external_review_packet/PATCH_1_3_FINAL_REPORT.md`
-- `external_review_packet/HANDOFF_LATEST.sha256`
-- `external_review_packet/HANDOFF_LATEST.zip`
-- ZIP-interne Repo-Dateien:
-  - `docs/COMPOUND_INCOME_OS_VISION_v1_2.md`
-  - `docs/CONTEXT_AND_ROADMAP.md`
-  - `docs/MODULE_CONTRACTS.md`
-  - `README.md`
-  - `src/`
-  - `tests/`
-  - `configs/`
+
+Sie koennen fruehere Patch-Kontexte erklaeren, repraesentieren aber nicht den
+aktuellen Handoff-Head `e5b7afb855cbdece18d37183f288429a65b6d5af`. Alte
+Phase-1.2-/Phase-1.3-Metadaten und fruehere `HANDOFF_LATEST`-Artefakte duerfen
+nicht mit diesem aktuellen Packet vermischt werden.
 
 ## Reviewer Rules
 
 - Vollstaendige relative Pfade verwenden.
-- Keine privaten oder rohen Dateien inferieren.
-- Keine Broker-Writes, HTTP-Calls, Order-Ausfuehrung, Auto-Trading, Steuerquantifizierung, Sell-Logik oder Phase-1.4-Implementierung inferieren.
-- Fehlende private Inputs nicht als imputierte Werte behandeln.
-- Tests nur als bestanden bezeichnen, wenn die Evidenz im Report, im Repo oder im Operator-Log explizit vorhanden ist.
-- Alte Phase-1.2-Texte aus stale externem Kontext nicht verwenden, wenn sie durch dieses Phase-1.3-Packet ersetzt wurden.
-- ZIP-internes `HANDOFF_CONTEXT.md` nur als generische Exporter-Metadaten behandeln.
+- `docs/architecture/COMPOUND_INCOME_OS_SYSTEM_DEFINITION.md` als kanonischen
+  Systemdefinitions-Einstiegspunkt behandeln.
+- Keine ausgelassenen privaten oder rohen Dateien inferieren.
+- Keine Broker-Writes, HTTP-Calls, Order-Ausfuehrung, Auto-Trading,
+  Steuerquantifizierung oder Runtime-LLM-Entscheidungen inferieren.
+- Keine Fundamentals, KPIs, Readiness-Ergebnisse oder Testergebnisse erfinden.
+- Tests nur als bestanden bezeichnen, wenn die Evidenz im Repo, im Handoff, in
+  `HANDOFF_LATEST_CONTEXT.md` oder in einem expliziten Operator-Log vorhanden
+  ist.
