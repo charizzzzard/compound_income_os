@@ -95,6 +95,27 @@ python -m src.personal_decision_state_capture --output data/processed/personal_d
 If no input is provided, the command writes a stable header-only CSV and an
 `EMPTY_STATE` report.
 
+After a Monthly Run, the operator can append one human review state manually
+through the contract-v2 CLI. This records the human decision state only; it is
+not a broker instruction and it does not execute trades.
+
+```powershell
+python -m src.personal_decision_state_capture capture --decision-date 2026-05-18 --decision-scope ASSET --ticker MSFT --asset-name "Microsoft Corp." --proposed-action WAIT_FOR_PRICE --human-decision DEFERRED --decision-status REVIEW_SCHEDULED --reasoning-3-sentences "The candidate remains high quality. The current valuation does not justify adding this month. Review again after updated valuation and cash context are available." --dominant-uncertainty VALUATION --benchmark-alternative CASH --review-date 2026-06-18 --run-id 2026-05-18-monthly --primary-report-path reports/2026-05-18/personal_monthly_decision_report.md --manifest-path data/processed/personal_run_manifest.json --source-snapshot-date 2026-05-18 --output data/processed/personal_decision_state_capture.csv --report reports/2026-05-18/personal_decision_state_capture_report.md
+```
+
+The append flow preserves existing rows, rejects duplicate `decision_id` values,
+uses only the existing contract fields/enums, and blocks absolute local stored
+paths or private raw/broker document paths in stored path fields. To validate an
+existing journal and refresh its report without appending:
+
+```powershell
+python -m src.personal_decision_state_capture validate-journal --input data/processed/personal_decision_state_capture.csv --output data/processed/personal_decision_state_capture.csv --report reports/YYYY-MM-DD/personal_decision_state_capture_report.md --report-date YYYY-MM-DD
+```
+
+Decision Capture is the basis for later replay and outcome review. Outcome
+attribution, Portfolio Event Ledger integration and policy feedback remain
+deferred.
+
 ## Archived SEC workflow
 
 Der fruehere SEC-CompanyFacts-/SEC-derived-KPI-Code ist in Patch 1 nach

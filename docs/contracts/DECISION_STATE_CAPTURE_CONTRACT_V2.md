@@ -20,10 +20,12 @@ Current expected outputs:
 - `data/processed/personal_decision_state_capture.csv`
 - `reports/<YYYY-MM-DD>/personal_decision_state_capture_report.md`
 
-`src.personal_decision_state_capture` implements the current minimal standalone
-producer for this contract. The tracked processed artifact may be header-only;
-that means the producer exists, but real decision history has not necessarily
-been captured yet.
+`src.personal_decision_state_capture` implements the current standalone producer
+for this contract. It supports a root validation/normalization mode and a
+human-operated `capture` subcommand that appends one decision/no-action row to
+the existing processed CSV and refreshes the local report. The tracked processed
+artifact may be header-only; that means the producer exists, but real decision
+history has not necessarily been captured yet.
 
 ## Manual Required Fields
 
@@ -72,6 +74,11 @@ Auto/system fields:
 - `asset_type`
 - `policy_ref`
 - `benchmark_ref_or_label`
+
+The capture CLI may receive operator-visible values for auto/system fields such
+as `run_id`, `manifest_path`, `primary_report_path` or `source_snapshot_date`.
+When values are omitted, unresolved references are written as `MISSING_REFERENCE`
+or `UNKNOWN` and surfaced in the report.
 
 `benchmark_alternative` is the operator-selected v1 comparison category.
 `benchmark_ref_or_label` is the replay-preserved concrete benchmark label or
@@ -232,6 +239,35 @@ Each entry must preserve enough context to reconstruct the review surface:
 
 This is a minimal invariant, not a full time-aware replay engine.
 
+## Operational Capture Flow
+
+The append flow is human-operated and records review state only. It does not
+create a buy/sell decision, order ticket, broker instruction or transaction
+record.
+
+Supported command shape:
+
+```text
+python -m src.personal_decision_state_capture capture --decision-date <YYYY-MM-DD> --decision-scope <enum> --proposed-action <enum> --human-decision <enum> --decision-status <enum> --reasoning-3-sentences <text> --dominant-uncertainty <enum> --benchmark-alternative <enum>
+```
+
+Append-only rules:
+
+- existing rows remain logically unchanged
+- a new row is appended to `data/processed/personal_decision_state_capture.csv`
+- duplicate `decision_id` values fail fast
+- if `--decision-id` is omitted, the producer assigns the next
+  `DECISION_YYYYMMDD_NNNN` value for the supplied `decision_date`
+- stored path fields must be repo-relative and must not point to private raw or
+  broker document paths
+- no extra schema fields are added
+
+Validation-only command:
+
+```text
+python -m src.personal_decision_state_capture validate-journal --input data/processed/personal_decision_state_capture.csv --output data/processed/personal_decision_state_capture.csv --report reports/<YYYY-MM-DD>/personal_decision_state_capture_report.md --report-date <YYYY-MM-DD>
+```
+
 ## Explicitly Out Of Scope For v1
 
 - `linked_transaction_id`
@@ -279,4 +315,5 @@ Used when available cash is consciously reviewed for deployment or non-deploymen
 - generated report shows open, blocked, wait/review, no-action and overdue
   review items
 - producer writes processed/report artifacts only
+- append flow preserves existing decision IDs and rejects duplicates
 - no broker/order execution logic is introduced

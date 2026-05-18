@@ -3,11 +3,13 @@ from __future__ import annotations
 import csv
 import re
 import shutil
+import subprocess
+import sys
 import unittest
 import uuid
 from pathlib import Path
 
-from src.personal_decision_state_capture import ENUMS, FIELDS, run_decision_state_capture
+from src.personal_decision_state_capture import ENUMS, FIELDS, append_decision_capture, run_decision_state_capture
 
 
 EXPECTED_ENUMS = {
@@ -91,6 +93,30 @@ class PersonalDecisionStateCaptureTests(unittest.TestCase):
             "asset_name": "Microsoft",
         }
 
+    def append_capture(self, output: Path, report: Path, **overrides: str):
+        values = {
+            "decision_date": "2026-05-18",
+            "decision_scope": "ASSET",
+            "ticker": "MSFT",
+            "asset_name": "Microsoft Corp.",
+            "proposed_action": "WAIT_FOR_PRICE",
+            "human_decision": "DEFERRED",
+            "decision_status": "REVIEW_SCHEDULED",
+            "reasoning_3_sentences": (
+                "The candidate remains high quality. The current valuation does not justify adding this month. "
+                "Review again after updated valuation and cash context are available."
+            ),
+            "dominant_uncertainty": "VALUATION",
+            "benchmark_alternative": "CASH",
+            "review_date": "2026-06-18",
+            "run_id": "2026-05-18-monthly",
+            "primary_report_path": "reports/2026-05-18/personal_monthly_decision_report.md",
+            "manifest_path": "data/processed/personal_run_manifest.json",
+            "source_snapshot_date": "2026-05-18",
+        }
+        values.update(overrides)
+        return append_decision_capture(output=str(output), report=str(report), **values)
+
     def documented_enums(self) -> dict[str, set[str]]:
         contract = Path("docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md").read_text(encoding="utf-8")
         documented: dict[str, set[str]] = {}
@@ -129,6 +155,187 @@ class PersonalDecisionStateCaptureTests(unittest.TestCase):
         with output.open("r", encoding="utf-8") as handle:
             self.assertEqual(handle.readline().strip().split(","), FIELDS)
         self.assertIn("capture_status: EMPTY_STATE", report.read_text(encoding="utf-8"))
+
+    def test_cli_help_works(self) -> None:
+        result = subprocess.run(
+            [sys.executable, "-m", "src.personal_decision_state_capture", "--help"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("capture", result.stdout)
+        self.assertIn("does not execute trades", result.stdout)
+
+    def test_capture_cli_appends_one_decision(self) -> None:
+        output = self.tmp / "capture.csv"
+        report = self.tmp / "capture.md"
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "src.personal_decision_state_capture",
+                "capture",
+                "--decision-date",
+                "2026-05-18",
+                "--decision-scope",
+                "ASSET",
+                "--ticker",
+                "MSFT",
+                "--asset-name",
+                "Microsoft Corp.",
+                "--proposed-action",
+                "WAIT_FOR_PRICE",
+                "--human-decision",
+                "DEFERRED",
+                "--decision-status",
+                "REVIEW_SCHEDULED",
+                "--reasoning-3-sentences",
+                "The candidate remains high quality. The current valuation does not justify adding this month. Review again after updated valuation and cash context are available.",
+                "--dominant-uncertainty",
+                "VALUATION",
+                "--benchmark-alternative",
+                "CASH",
+                "--review-date",
+                "2026-06-18",
+                "--run-id",
+                "2026-05-18-monthly",
+                "--primary-report-path",
+                "reports/2026-05-18/personal_monthly_decision_report.md",
+                "--manifest-path",
+                "data/processed/personal_run_manifest.json",
+                "--source-snapshot-date",
+                "2026-05-18",
+                "--output",
+                str(output),
+                "--report",
+                str(report),
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("appended_decision_id=DECISION_20260518_0001", result.stdout)
+        rows = self.read_csv(output)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["decision_id"], "DECISION_20260518_0001")
+        self.assertEqual(rows[0]["proposed_action"], "WAIT_FOR_PRICE")
+        self.assertIn("not order execution", report.read_text(encoding="utf-8"))
+
+    def test_second_capture_appends_without_changing_existing_row(self) -> None:
+        output = self.tmp / "capture.csv"
+        report = self.tmp / "capture.md"
+        self.append_capture(output, report)
+        first_rows = self.read_csv(output)
+
+        self.append_capture(output, report, ticker="AAPL", asset_name="Apple Inc.", proposed_action="NO_ACTION", human_decision="NO_ACTION", decision_status="CLOSED", review_date="")
+        rows = self.read_csv(output)
+
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0], first_rows[0])
+        self.assertEqual(rows[0]["decision_id"], "DECISION_20260518_0001")
+        self.assertEqual(rows[1]["decision_id"], "DECISION_20260518_0002")
+        self.assertEqual(rows[1]["ticker"], "AAPL")
+
+    def test_duplicate_decision_id_fails_cleanly(self) -> None:
+        output = self.tmp / "capture.csv"
+        report = self.tmp / "capture.md"
+        self.append_capture(output, report, decision_id="DECISION_20260518_0099")
+
+        with self.assertRaisesRegex(ValueError, "duplicate decision_id"):
+            self.append_capture(output, report, decision_id="DECISION_20260518_0099", ticker="AAPL")
+
+    def test_capture_rejects_invalid_contract_enums(self) -> None:
+        cases = [
+            ("proposed_action", "TOP_UP"),
+            ("human_decision", "WAIT"),
+            ("dominant_uncertainty", "VALUATION_NOT_ATTRACTIVE"),
+        ]
+        for field, value in cases:
+            with self.subTest(field=field):
+                output = self.tmp / f"{field}.csv"
+                report = self.tmp / f"{field}.md"
+                with self.assertRaisesRegex(ValueError, "INVALID_ENUM"):
+                    self.append_capture(output, report, **{field: value})
+
+    def test_capture_rejects_missing_required_fields(self) -> None:
+        for field in [
+            "reasoning_3_sentences",
+            "proposed_action",
+            "human_decision",
+            "decision_status",
+            "dominant_uncertainty",
+            "benchmark_alternative",
+        ]:
+            with self.subTest(field=field):
+                output = self.tmp / f"{field}.csv"
+                report = self.tmp / f"{field}.md"
+                with self.assertRaisesRegex(ValueError, f"MISSING_REQUIRED:{field}"):
+                    self.append_capture(output, report, **{field: ""})
+
+    def test_capture_preserves_conditional_review_date_rule(self) -> None:
+        for action in ("HOLD_REVIEW", "WAIT_FOR_EVIDENCE", "WAIT_FOR_PRICE", "WAIT_FOR_REVIEW", "RESEARCH_MORE"):
+            with self.subTest(action=action):
+                output = self.tmp / f"{action}.csv"
+                report = self.tmp / f"{action}.md"
+                with self.assertRaisesRegex(ValueError, "MISSING_CONDITIONAL:review_date"):
+                    self.append_capture(output, report, proposed_action=action, decision_status="OPEN", review_date="")
+        with self.assertRaisesRegex(ValueError, "MISSING_CONDITIONAL:review_date"):
+            self.append_capture(self.tmp / "status.csv", self.tmp / "status.md", proposed_action="NO_ACTION", decision_status="REVIEW_SCHEDULED", review_date="")
+
+    def test_capture_rejects_absolute_local_stored_paths(self) -> None:
+        absolute_path = str(Path.home() / "private_manifest.json")
+
+        with self.assertRaisesRegex(ValueError, "repo-relative path"):
+            self.append_capture(self.tmp / "capture.csv", self.tmp / "capture.md", manifest_path=absolute_path)
+
+    def test_capture_rejects_private_raw_source_paths(self) -> None:
+        with self.assertRaisesRegex(ValueError, "private raw"):
+            self.append_capture(self.tmp / "capture.csv", self.tmp / "capture.md", source_paths="data/raw/private/traderepublic/Kontoauszug.pdf")
+
+    def test_validate_journal_cli_fails_on_duplicate_decision_id(self) -> None:
+        input_path = self.tmp / "dupe.csv"
+        output_path = self.tmp / "dupe_out.csv"
+        report_path = self.tmp / "dupe.md"
+        row = self.base_row()
+        row["decision_id"] = "DECISION_20260518_0001"
+        self.write_csv(input_path, [row, row])
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "src.personal_decision_state_capture",
+                "validate-journal",
+                "--input",
+                str(input_path),
+                "--output",
+                str(output_path),
+                "--report",
+                str(report_path),
+                "--report-date",
+                "2026-05-18",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("DUPLICATE_DECISION_ID", result.stderr + result.stdout)
+
+    def test_no_broker_order_or_tax_fields_are_generated(self) -> None:
+        output = self.tmp / "capture.csv"
+        report = self.tmp / "capture.md"
+        self.append_capture(output, report)
+
+        with output.open("r", encoding="utf-8") as handle:
+            header = handle.readline().strip().split(",")
+        forbidden = {"order_id", "broker", "execution_id", "linked_transaction_id", "filled_price", "tax_lot", "realized_gain"}
+        self.assertTrue(forbidden.isdisjoint(header))
 
     def test_loads_existing_csv_and_defaults_benchmark_reference(self) -> None:
         input_path = self.tmp / "input.csv"

@@ -100,13 +100,16 @@ case workbench and a full thesis schema.
 Purpose: deliberate decisions and deliberate no-actions should be append-only,
 reviewable and later replayable.
 
-Current capabilities include monthly reports, readiness/gap artifacts and the
-minimal `src.personal_decision_state_capture` producer. The current tracked
-processed decision-state artifact is header-only, so real decision history is
-not yet present.
+Current capabilities include monthly reports, readiness/gap artifacts and
+`src.personal_decision_state_capture`. The producer can validate the current
+decision-state CSV, append one human-operated decision/no-action row through the
+contract-v2 CLI, reject duplicate decision IDs, refresh the report and keep
+broker/private local paths out of stored path fields. The current tracked
+processed decision-state artifact may still be header-only, so real decision
+history is not guaranteed to be present.
 
-Missing capabilities include operationalized monthly prefill, routine human
-usage, a review-date queue and downstream outcome links.
+Missing capabilities include monthly prefill from reports, routine human usage,
+a review-date queue and downstream outcome links.
 
 ### 5. Benchmark & Outcome
 
@@ -192,14 +195,15 @@ does not override external Phase-specific metadata.
   and rebalance review surfaces
 - Markdown reports built from processed artifacts
 - dashboard consolidation from processed artifacts without new financial logic
-- minimal Decision Capture producer with processed/report outputs
+- human-operated append-only Decision Capture producer with processed/report
+  outputs
 - handoff ZIP exporter with private/raw omission rules and validation metadata
 - documentation, architecture and LLM/Codex governance baseline
 
 ## Known Missing Capabilities
 
 - real populated Decision Capture history
-- operationalized Decision Capture prefill and review-date queue
+- Decision Capture prefill and review-date queue
 - personal watchlist replacement for current sample/demo watchlist input
 - reviewed valuation inputs for required valuation KPIs
 - reviewed dividend/FCF inputs or reviewed SEC evidence apply path
