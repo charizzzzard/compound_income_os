@@ -80,6 +80,25 @@ Die transparente Fundamentals-Schicht liegt in:
 
 ## CLI-Entry-Points
 
+## Personal Input Closure
+
+`src.personal_input_closure` aggregates existing personal input readiness
+artifacts for Watchlist, Valuation, Dividend/FCF and KPI Provenance into one
+operator-action matrix. It reads processed summaries only, creates no personal
+input data, imputes no fundamentals, changes no scores and makes no buy
+decision.
+
+```powershell
+python -m src.personal_input_closure --as-of-date YYYY-MM-DD --output data/processed/personal_input_closure_report.csv --report reports/YYYY-MM-DD/personal_input_closure_report.md
+```
+
+The output marks `READY`, `REVIEW_REQUIRED`, `BLOCKED`, `MISSING`,
+`SAMPLE_ONLY` or `NOT_APPLICABLE` per input area and lists the next required
+operator action. `SAMPLE_ONLY` is never treated as ready. The report is a
+readiness layer for better Monthly Review and Decision Capture quality; it does
+not replace the actual personal watchlist, valuation, Dividend/FCF or evidence
+inputs.
+
 ## Decision Capture
 
 `src.personal_decision_state_capture` is the first minimal producer from the
@@ -837,10 +856,12 @@ Interpretation der persoenlichen Outputs:
 - `personal_missing_kpi_closure_holdings.csv`: zeilenbezogene Missing-KPI-/Evidence-Closure-Tabelle; zeigt required KPIs, verfuegbare Evidence/KPIs und konservative Next Actions
 - `personal_evidence_applied_downstream_delta_summary.csv`: Vorher/Nachher-Zaehler fuer einen kontrollierten Evidence-Applied-Downstream-Lauf
 - `personal_evidence_applied_downstream_delta_holdings.csv`: zeilenbezogene Delta-Tabelle zwischen vorherigem Missing-KPI-Closure-Stand und aktuellem Evidence-Applied-Downstream-Stand
+- `personal_input_closure_report.csv`: Readiness-/Operator-Action-Matrix fuer WATCHLIST, VALUATION, DIVIDEND_FCF, KPI_PROVENANCE und optional CORE_KPI_CLOSURE aus bestehenden Summary-Artefakten; keine Datenfuellung und keine Score-Aenderung
 - `personal_portfolio_holdings_action_table.csv`: operative Holdings-Aktionen `ADD`, `HOLD`, `WATCH`, `REDUCE`, `EXIT_REVIEW`; bei uebergebener Coverage werden offene Fundamentals-Luecken konservativ als Guardrail sichtbar
 - `personal_monthly_buy_ranking.csv`: Kauf-Ranking fuer den konfigurierten Monatszufluss; bei uebergebener Coverage werden bestehende Holdings mit offenen Fundamentals-Luecken nicht fuer frisches Kapital empfohlen
 - `personal_monthly_decision_report.md`: monatlicher Entscheidungsreport mit optional eingeblendeten Fundamentals-Research-Luecken
 - `personal_portfolio_review.md`: deutscher Review-Report fuer das persoenliche Depot
+- `reports/YYYY-MM-DD/personal_input_closure_report.md`: Markdown-Zusammenfassung der Personal-Input-Closure-Lage mit Operator-Aktionen und Guardrails
 - `reports/YYYY-MM-DD/personal_profile_review_unlock_report.md`: Markdown-Zusammenfassung der Profile-Review-Unlock-Wirkung fuer externe Review-/LLM-Handoffs
 - `reports/YYYY-MM-DD/personal_missing_kpi_closure_report.md`: Markdown-Zusammenfassung der Missing-KPI-/Evidence-Closure-Lage fuer externe Review-/LLM-Handoffs
 - `reports/YYYY-MM-DD/personal_evidence_applied_downstream_delta_report.md`: Markdown-Zusammenfassung des Evidence-Applied-Downstream-Deltas fuer externe Review-/LLM-Handoffs

@@ -101,12 +101,15 @@ Purpose: deliberate decisions and deliberate no-actions should be append-only,
 reviewable and later replayable.
 
 Current capabilities include monthly reports, readiness/gap artifacts and
-`src.personal_decision_state_capture`. The producer can validate the current
-decision-state CSV, append one human-operated decision/no-action row through the
-contract-v2 CLI, reject duplicate decision IDs, refresh the report and keep
-broker/private local paths out of stored path fields. The current tracked
-processed decision-state artifact may still be header-only, so real decision
-history is not guaranteed to be present.
+`src.personal_input_closure` plus `src.personal_decision_state_capture`. Input
+Closure aggregates existing Watchlist, Valuation, Dividend/FCF and KPI
+Provenance readiness summaries into a deterministic operator-action matrix; it
+does not fill data, impute fundamentals or change scores. The Decision Capture
+producer can validate the current decision-state CSV, append one human-operated
+decision/no-action row through the contract-v2 CLI, reject duplicate decision
+IDs, refresh the report and keep broker/private local paths out of stored path
+fields. The current tracked processed decision-state artifact may still be
+header-only, so real decision history is not guaranteed to be present.
 
 Missing capabilities include monthly prefill from reports, routine human usage,
 a review-date queue and downstream outcome links.
@@ -174,6 +177,8 @@ does not override external Phase-specific metadata.
 
 1. Import reviewed local broker/document or CSV inputs.
 2. Refresh or validate fundamentals, evidence, overlays and readiness artifacts.
+   Aggregate personal input closure so missing, sample-only, blocked and
+   reviewed inputs are visible before human review.
 3. Run deterministic scoring, coverage, watchlist, monthly ranking and portfolio
    health surfaces.
 4. Build reports from processed artifacts only.
@@ -191,6 +196,8 @@ does not override external Phase-specific metadata.
 - personal fundamentals master, coverage, evidence, overlay and reviewed apply
   projections
 - deterministic scoring, score audit and KPI provenance surfaces
+- personal input closure matrix for Watchlist, Valuation, Dividend/FCF and KPI
+  Provenance readiness
 - watchlist, monthly ranking, savings-plan registry/routing, cash-refill review
   and rebalance review surfaces
 - Markdown reports built from processed artifacts
