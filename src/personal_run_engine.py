@@ -102,6 +102,7 @@ from src.fundamentals_snapshot_review import (
 )
 from src.multi_benchmark_performance_engine import run_multi_benchmark_performance_engine
 from src.performance_engine import run_performance_engine
+from src.personal_decision_quality_state import run_decision_quality_state
 from src.portfolio_history_engine import run_portfolio_history_engine
 from src.portfolio_review import DEFAULT_RULES_PATH as DEFAULT_PORTFOLIO_REVIEW_RULES_PATH
 from src.rebalance_review import DEFAULT_CSV_OUTPUT as DEFAULT_REBALANCE_REVIEW_CSV_OUTPUT
@@ -135,6 +136,7 @@ STAGE_ORDER = [
     "cash_refill_review",
     "rebalance_review",
     "monthly",
+    "decision_quality",
     "history",
     "benchmark_archive",
     "performance",
@@ -219,6 +221,10 @@ DEFAULT_PATHS = {
     "cash_refill_report_output": default_dated_report_path("personal_cash_refill_review.md"),
     "rebalance_review_csv_output": DEFAULT_REBALANCE_REVIEW_CSV_OUTPUT,
     "rebalance_review_report_output": default_dated_report_path("personal_rebalance_review.md"),
+    "personal_input_closure_report": "data/processed/personal_input_closure_report.csv",
+    "personal_decision_state_capture": "data/processed/personal_decision_state_capture.csv",
+    "decision_quality_csv_output": "data/processed/decision_quality_state.csv",
+    "decision_quality_json_output": "data/processed/decision_quality_state.json",
     "portfolio_archive": "data/processed/portfolio_snapshot_archive.csv",
     "portfolio_timeseries_output": "data/processed/portfolio_timeseries.csv",
     "portfolio_history_summary_output": "data/processed/portfolio_history_summary.csv",
@@ -376,6 +382,11 @@ class PersonalRunOptions:
     cash_refill_report_output: str = DEFAULT_PATHS["cash_refill_report_output"]
     rebalance_review_csv_output: str = DEFAULT_PATHS["rebalance_review_csv_output"]
     rebalance_review_report_output: str = DEFAULT_PATHS["rebalance_review_report_output"]
+    personal_input_closure_report: str = DEFAULT_PATHS["personal_input_closure_report"]
+    personal_decision_state_capture: str = DEFAULT_PATHS["personal_decision_state_capture"]
+    decision_quality_csv_output: str = DEFAULT_PATHS["decision_quality_csv_output"]
+    decision_quality_json_output: str = DEFAULT_PATHS["decision_quality_json_output"]
+    decision_quality_report_output: str | None = None
     portfolio_archive: str = DEFAULT_PATHS["portfolio_archive"]
     portfolio_timeseries_output: str = DEFAULT_PATHS["portfolio_timeseries_output"]
     portfolio_history_summary_output: str = DEFAULT_PATHS["portfolio_history_summary_output"]
@@ -614,6 +625,11 @@ def input_snapshot(options: PersonalRunOptions) -> dict[str, Any]:
         "ledger": options.ledger or "",
         "cost_tax_documents": options.cost_tax_documents or [],
         "used_inputs_output": options.used_inputs_output,
+        "personal_input_closure_report": options.personal_input_closure_report,
+        "personal_decision_state_capture": options.personal_decision_state_capture,
+        "decision_quality_csv_output": options.decision_quality_csv_output,
+        "decision_quality_json_output": options.decision_quality_json_output,
+        "decision_quality_report_output": options.decision_quality_report_output or "",
     }
 
 
@@ -1365,6 +1381,55 @@ def run_rebalance_review_stage(options: PersonalRunOptions) -> StageResult:
     )
 
 
+def run_decision_quality_stage(options: PersonalRunOptions) -> StageResult:
+    stage = "decision_quality"
+    result = run_decision_quality_state(
+        input_closure=options.personal_input_closure_report,
+        decision_capture=options.personal_decision_state_capture,
+        cash_refill=options.cash_refill_csv_output,
+        rebalance=options.rebalance_review_csv_output,
+        run_manifest=options.manifest_output,
+        run_used_inputs=options.used_inputs_output,
+        monthly_ranking=options.monthly_ranking_output,
+        score_audit=options.score_audit_output,
+        out_csv=options.decision_quality_csv_output,
+        out_json=options.decision_quality_json_output,
+        report=options.decision_quality_report_output,
+        as_of_date=options.portfolio_date,
+    )
+    warnings = []
+    if result.state.get("review_required"):
+        warnings.append("Decision Quality state requires human review.")
+    return stage_result(
+        stage,
+        SUCCESS,
+        [
+            "personal_input_closure_report",
+            "personal_run_manifest",
+            "personal_run_used_inputs",
+            "cash_refill_review",
+            "rebalance_review",
+        ],
+        used_inputs={
+            "personal_input_closure_report": options.personal_input_closure_report,
+            "personal_decision_state_capture": options.personal_decision_state_capture,
+            "cash_refill_review": options.cash_refill_csv_output,
+            "rebalance_review": options.rebalance_review_csv_output,
+            "personal_run_manifest": options.manifest_output,
+            "personal_run_used_inputs": options.used_inputs_output,
+            "monthly_ranking_output": options.monthly_ranking_output,
+            "score_audit_output": options.score_audit_output,
+        },
+        produced_outputs={
+            "decision_quality_state_csv": str(result.csv_output),
+            "decision_quality_state_json": str(result.json_output),
+            "decision_quality_report": str(result.report_output),
+        },
+        warnings=warnings,
+        notes="Read-only Decision Quality state generated from existing run, readiness, cash/rebalance, ranking and score-audit artifacts.",
+    )
+
+
 def run_history_stage(options: PersonalRunOptions) -> StageResult:
     stage = "history"
     positions_path = require_existing_path(options.positions_output, "positions snapshot", stage)
@@ -1617,6 +1682,7 @@ STAGE_RUNNERS: dict[str, Callable[[PersonalRunOptions], StageResult]] = {
     "cash_refill_review": run_cash_refill_review_stage,
     "rebalance_review": run_rebalance_review_stage,
     "monthly": run_monthly_stage,
+    "decision_quality": run_decision_quality_stage,
     "history": run_history_stage,
     "benchmark_archive": run_benchmark_archive_stage,
     "performance": run_performance_stage,
@@ -1767,6 +1833,9 @@ def build_manifest(
             "manifest_output": options.manifest_output,
             "artifacts_output": options.artifacts_output,
             "used_inputs_output": options.used_inputs_output,
+            "decision_quality_csv_output": options.decision_quality_csv_output,
+            "decision_quality_json_output": options.decision_quality_json_output,
+            "decision_quality_report_output": options.decision_quality_report_output or "",
             "data_source_status_output": options.data_source_status_output,
             "data_source_resolved_output": options.data_source_resolved_output,
             "report_output": options.report_output or "",
@@ -1892,6 +1961,31 @@ def finalize_run_outputs(
     return manifest
 
 
+def write_decision_quality_preflight_lineage(
+    options: PersonalRunOptions,
+    selected_stages: list[str],
+    executed_stage_order: list[str],
+    stage_results_by_name: dict[str, StageResult],
+    run_started_at: str,
+    warnings: list[str],
+) -> None:
+    stage_results = [stage_results_by_name.get(stage, not_requested_result(stage)) for stage in STAGE_ORDER]
+    used_input_rows = used_input_rows_from_stage_results(stage_results)
+    write_csv_rows(options.used_inputs_output, USED_INPUT_FIELDS, used_input_rows)
+    manifest = build_manifest(
+        options,
+        selected_stages,
+        executed_stage_order,
+        stage_results,
+        run_started_at,
+        utc_now_text(),
+        SUCCESS,
+        warnings,
+        "Provisional manifest written before decision_quality stage.",
+    )
+    write_manifest(options.manifest_output, manifest)
+
+
 def run_personal_run_engine(options: PersonalRunOptions) -> dict[str, Any]:
     options = options.normalized()
     selected_stages = validate_stage_selection(options.stages)
@@ -1910,6 +2004,8 @@ def run_personal_run_engine(options: PersonalRunOptions) -> dict[str, Any]:
             stage_results_by_name[stage_name] = skipped_result(stage_name, failed_stage)
             continue
         try:
+            if stage_name == "decision_quality":
+                write_decision_quality_preflight_lineage(options, selected_stages, executed_stage_order, stage_results_by_name, run_started_at, warnings)
             executed_stage_order.append(stage_name)
             result = STAGE_RUNNERS[stage_name](options)
             stage_results_by_name[stage_name] = result
@@ -2020,6 +2116,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cash-refill-report-output", default=DEFAULT_PATHS["cash_refill_report_output"], help="Cash-Refill Review markdown output.")
     parser.add_argument("--rebalance-review-csv-output", default=DEFAULT_PATHS["rebalance_review_csv_output"], help="Rebalance Review CSV output.")
     parser.add_argument("--rebalance-review-report-output", default=DEFAULT_PATHS["rebalance_review_report_output"], help="Rebalance Review markdown output.")
+    parser.add_argument("--personal-input-closure-report", default=DEFAULT_PATHS["personal_input_closure_report"], help="Personal Input Closure CSV input for decision_quality.")
+    parser.add_argument("--personal-decision-state-capture", default=DEFAULT_PATHS["personal_decision_state_capture"], help="Personal Decision Capture CSV input for decision_quality.")
+    parser.add_argument("--decision-quality-csv-output", default=DEFAULT_PATHS["decision_quality_csv_output"], help="Decision Quality State CSV output.")
+    parser.add_argument("--decision-quality-json-output", default=DEFAULT_PATHS["decision_quality_json_output"], help="Decision Quality State JSON output.")
+    parser.add_argument("--decision-quality-report-output", help="Decision Quality markdown report output; defaults to reports/{as_of_date}/decision_quality_report.md.")
     parser.add_argument("--portfolio-archive", default=DEFAULT_PATHS["portfolio_archive"], help="Portfolio snapshot archive path.")
     parser.add_argument("--portfolio-timeseries-output", default=DEFAULT_PATHS["portfolio_timeseries_output"], help="Portfolio timeseries output.")
     parser.add_argument("--portfolio-history-summary-output", default=DEFAULT_PATHS["portfolio_history_summary_output"], help="Portfolio history summary output.")
@@ -2138,6 +2239,11 @@ def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
         cash_refill_report_output=args.cash_refill_report_output,
         rebalance_review_csv_output=args.rebalance_review_csv_output,
         rebalance_review_report_output=args.rebalance_review_report_output,
+        personal_input_closure_report=args.personal_input_closure_report,
+        personal_decision_state_capture=args.personal_decision_state_capture,
+        decision_quality_csv_output=args.decision_quality_csv_output,
+        decision_quality_json_output=args.decision_quality_json_output,
+        decision_quality_report_output=args.decision_quality_report_output,
         portfolio_archive=args.portfolio_archive,
         portfolio_timeseries_output=args.portfolio_timeseries_output,
         portfolio_history_summary_output=args.portfolio_history_summary_output,

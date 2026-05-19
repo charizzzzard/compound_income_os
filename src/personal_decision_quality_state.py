@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 import subprocess
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
@@ -24,6 +25,9 @@ DEFAULT_SCORE_AUDIT = "data/processed/personal_score_audit.csv"
 DEFAULT_OUT_CSV = "data/processed/decision_quality_state.csv"
 DEFAULT_OUT_JSON = "data/processed/decision_quality_state.json"
 DEFAULT_REPORT_PATTERN = "reports/{as_of_date}/decision_quality_report.md"
+
+WINDOWS_ABSOLUTE_RE = re.compile(r"^[A-Za-z]:[\\/]")
+UNC_PATH_RE = re.compile(r"^(?:\\\\|//)[^\\/]+[\\/][^\\/]+")
 
 FIELDNAMES = [
     "run_id",
@@ -127,13 +131,17 @@ def _repo_root() -> Path:
 def _normalize_path_for_output(path_value: str | Path, label: str) -> tuple[str, bool]:
     raw = str(path_value)
     path = Path(raw)
-    if path.is_absolute():
+    if path.is_absolute() or WINDOWS_ABSOLUTE_RE.match(raw) or UNC_PATH_RE.match(raw):
         try:
             rel = path.resolve().relative_to(_repo_root())
         except ValueError:
             return f"EXTERNAL_PATH_REDACTED:{label}", True
         return rel.as_posix(), False
-    return Path(raw).as_posix(), False
+    try:
+        rel = resolve_repo_path(raw).resolve().relative_to(_repo_root())
+    except ValueError:
+        return f"EXTERNAL_PATH_REDACTED:{label}", True
+    return rel.as_posix(), False
 
 
 def _is_private_or_absolute_lineage_value(value: str) -> bool:
@@ -143,11 +151,15 @@ def _is_private_or_absolute_lineage_value(value: str) -> bool:
     lowered = text.replace("\\", "/").lower()
     if "data/raw/private" in lowered:
         return True
-    if Path(text).is_absolute():
+    if Path(text).is_absolute() or WINDOWS_ABSOLUTE_RE.match(text) or UNC_PATH_RE.match(text):
         try:
             Path(text).resolve().relative_to(_repo_root())
         except ValueError:
             return True
+    try:
+        resolve_repo_path(text).resolve().relative_to(_repo_root())
+    except ValueError:
+        return True
     return False
 
 

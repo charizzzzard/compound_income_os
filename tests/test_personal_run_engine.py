@@ -22,7 +22,7 @@ from src.fundamentals_overlay_engine import DEFAULT_SCHEMA_PATH as DEFAULT_OVERL
 from src.fundamentals_profile_engine import PROFILE_REVIEW_INPUT_FIELDS
 from src.fundamentals_snapshot_ingestion import SNAPSHOT_INPUT_FIELDS, SUMMARY_FIELDS
 from src.fundamentals_snapshot_review import SNAPSHOT_REVIEW_INPUT_FIELDS, SNAPSHOT_REVIEW_SUMMARY_FIELDS
-from src.personal_run_engine import DEFAULT_PATHS, STAGE_ORDER, STAGE_RUNNERS, USED_INPUT_FIELDS, PersonalRunOptions, options_from_args, parse_args, run_personal_run_engine
+from src.personal_run_engine import DEFAULT_PATHS, STAGE_ORDER, STAGE_RUNNERS, SUCCESS, USED_INPUT_FIELDS, PersonalRunOptions, options_from_args, parse_args, run_personal_run_engine, stage_result
 from src.savings_plan_registry import REGISTRY_FIELDS
 
 
@@ -488,6 +488,11 @@ class PersonalRunEngineTests(unittest.TestCase):
             cash_refill_report_output=str(self._path(f"_tmp_{prefix}_cash_refill_review.md")),
             rebalance_review_csv_output=str(self._path(f"_tmp_{prefix}_rebalance_review.csv")),
             rebalance_review_report_output=str(self._path(f"_tmp_{prefix}_rebalance_review.md")),
+            personal_input_closure_report=str(self._path(f"_tmp_{prefix}_personal_input_closure_report.csv")),
+            personal_decision_state_capture=str(self._path(f"_tmp_{prefix}_personal_decision_state_capture.csv")),
+            decision_quality_csv_output=str(self._path(f"_tmp_{prefix}_decision_quality_state.csv")),
+            decision_quality_json_output=str(self._path(f"_tmp_{prefix}_decision_quality_state.json")),
+            decision_quality_report_output=str(self._path(f"_tmp_{prefix}_decision_quality_report.md")),
             portfolio_archive=str(self._path(f"_tmp_{prefix}_portfolio_archive.csv")),
             portfolio_timeseries_output=str(self._path(f"_tmp_{prefix}_portfolio_timeseries.csv")),
             portfolio_history_summary_output=str(self._path(f"_tmp_{prefix}_portfolio_history_summary.csv")),
@@ -534,6 +539,78 @@ class PersonalRunEngineTests(unittest.TestCase):
         options.source_name = f"{prefix}_source"
         return options
 
+    def _write_decision_quality_inputs(self, options: PersonalRunOptions) -> None:
+        self._write_csv(
+            Path(options.personal_input_closure_report),
+            [
+                "input_area",
+                "artifact_path",
+                "status",
+                "blocker_severity",
+                "missing_or_review_items_count",
+                "sample_or_synthetic_flag",
+                "reason_codes",
+                "required_operator_action",
+                "downstream_impact",
+                "next_recommended_step",
+            ],
+            [
+                {
+                    "input_area": area,
+                    "artifact_path": f"tests/{area.lower()}_input.csv",
+                    "status": "READY",
+                    "blocker_severity": "NONE",
+                    "missing_or_review_items_count": "0",
+                    "sample_or_synthetic_flag": "false",
+                    "reason_codes": "",
+                    "required_operator_action": "",
+                    "downstream_impact": "",
+                    "next_recommended_step": "",
+                }
+                for area in ["WATCHLIST", "VALUATION", "DIVIDEND_FCF", "KPI_PROVENANCE"]
+            ],
+        )
+
+    def _write_minimal_decision_quality_review_inputs(self, options: PersonalRunOptions) -> None:
+        self._write_decision_quality_inputs(options)
+        self._write_csv(
+            Path(options.cash_refill_csv_output),
+            ["review_date", "status", "trigger", "data_quality_flag"],
+            [{"review_date": "2026-05-19", "status": "CASH_REFILL_NOT_REQUIRED", "trigger": "NONE", "data_quality_flag": "OK"}],
+        )
+        self._write_csv(
+            Path(options.rebalance_review_csv_output),
+            ["review_date", "bucket", "band_status", "recommended_action", "data_quality_flag"],
+            [{"review_date": "2026-05-19", "bucket": "CASH", "band_status": "WITHIN_BAND", "recommended_action": "HOLD", "data_quality_flag": "OK"}],
+        )
+        self._write_csv(
+            Path(options.personal_decision_state_capture),
+            [
+                "decision_id",
+                "decision_date",
+                "decision_scope",
+                "proposed_action",
+                "human_decision",
+                "decision_status",
+                "reasoning_3_sentences",
+                "dominant_uncertainty",
+                "benchmark_alternative",
+            ],
+            [
+                {
+                    "decision_id": "DECISION_20260519_0001",
+                    "decision_date": "2026-05-19",
+                    "decision_scope": "MONTHLY_REVIEW",
+                    "proposed_action": "NO_ACTION",
+                    "human_decision": "NO_ACTION",
+                    "decision_status": "CLOSED",
+                    "reasoning_3_sentences": "Reviewed. No action. Continue.",
+                    "dominant_uncertainty": "UNKNOWN",
+                    "benchmark_alternative": "CASH",
+                }
+            ],
+        )
+
     def _used_inputs_for_stage(self, rows: list[dict[str, str]], stage_name: str) -> dict[str, dict[str, str]]:
         return {row["input_role"]: row for row in rows if row["stage_name"] == stage_name}
 
@@ -561,6 +638,7 @@ class PersonalRunEngineTests(unittest.TestCase):
                 "cash_refill_review",
                 "rebalance_review",
                 "monthly",
+                "decision_quality",
                 "history",
                 "benchmark_archive",
                 "performance",
@@ -590,8 +668,10 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("portfolio_review") + 1], "cash_refill_review")
         self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("cash_refill_review") + 1], "rebalance_review")
         self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("rebalance_review") + 1], "monthly")
+        self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("monthly") + 1], "decision_quality")
         self.assertIn("cash_refill_review", STAGE_RUNNERS)
         self.assertIn("rebalance_review", STAGE_RUNNERS)
+        self.assertIn("decision_quality", STAGE_RUNNERS)
 
     def test_targeted_cash_refill_review_stage_writes_outputs(self) -> None:
         options = self._base_options("cash_refill_stage", ["cash_refill_review"])
@@ -1795,6 +1875,119 @@ class PersonalRunEngineTests(unittest.TestCase):
             monthly_inputs["portfolio_rules"],
             review_inputs["portfolio_rules"],
         ]))
+
+    def test_decision_quality_stage_generates_outputs_and_lineage(self) -> None:
+        options = self._core_options(
+            "decision_quality_e2e",
+            ["import", "fundamentals_seed", "scoring", "coverage", "watchlist", "cash_refill_review", "rebalance_review", "monthly", "decision_quality"],
+        )
+        options.portfolio_date = "2026-05-19"
+        self._write_decision_quality_inputs(options)
+
+        manifest = run_personal_run_engine(options)
+
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertTrue(Path(options.decision_quality_csv_output).exists())
+        self.assertTrue(Path(options.decision_quality_json_output).exists())
+        self.assertTrue(Path(options.decision_quality_report_output or "").exists())
+        self.assertLess(manifest["executed_stage_order"].index("monthly"), manifest["executed_stage_order"].index("decision_quality"))
+        decision_quality_result = next(row for row in manifest["stage_results"] if row["stage_name"] == "decision_quality")
+        self.assertEqual(decision_quality_result["status"], "SUCCESS")
+        artifact_rows = read_csv_rows(options.artifacts_output)
+        produced_roles = {row["artifact_role"] for row in artifact_rows if row["stage_name"] == "decision_quality" and row["produced"] == "True"}
+        self.assertEqual(produced_roles, {"decision_quality_report", "decision_quality_state_csv", "decision_quality_state_json"})
+        used_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "decision_quality")
+        self.assertIn("personal_run_manifest", used_inputs)
+        self.assertIn("personal_run_used_inputs", used_inputs)
+        self.assertIn("monthly_ranking_output", used_inputs)
+        self.assertIn("score_audit_output", used_inputs)
+        state = json.loads(Path(options.decision_quality_json_output).read_text(encoding="utf-8"))
+        self.assertEqual(state["decision_confidence_level"], "MEDIUM")
+        self.assertIs(state["review_required"], False)
+
+    def test_decision_quality_reports_review_when_monthly_stage_lacks_ranking_output(self) -> None:
+        options = self._core_options("decision_quality_missing_monthly", ["monthly", "decision_quality"])
+        options.portfolio_date = "2026-05-19"
+        self._write_minimal_decision_quality_review_inputs(options)
+        original_monthly = STAGE_RUNNERS["monthly"]
+
+        def fake_monthly_stage(fake_options: PersonalRunOptions):
+            return stage_result(
+                "monthly",
+                SUCCESS,
+                [],
+                produced_outputs={"monthly_buy_ranking": fake_options.monthly_ranking_output},
+                notes="Synthetic test stage intentionally did not write monthly ranking output.",
+            )
+
+        STAGE_RUNNERS["monthly"] = fake_monthly_stage
+        try:
+            manifest = run_personal_run_engine(options)
+        finally:
+            STAGE_RUNNERS["monthly"] = original_monthly
+
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        state = json.loads(Path(options.decision_quality_json_output).read_text(encoding="utf-8"))
+        self.assertEqual(state["decision_confidence_level"], "REVIEW")
+        self.assertIs(state["review_required"], True)
+        self.assertIn("monthly_ranking_output", state["missing_critical_fields"])
+
+    def test_decision_quality_reports_review_when_scoring_stage_lacks_score_audit(self) -> None:
+        options = self._core_options("decision_quality_missing_score", ["scoring", "decision_quality"])
+        options.portfolio_date = "2026-05-19"
+        self._write_minimal_decision_quality_review_inputs(options)
+        original_scoring = STAGE_RUNNERS["scoring"]
+
+        def fake_scoring_stage(fake_options: PersonalRunOptions):
+            return stage_result(
+                "scoring",
+                SUCCESS,
+                [],
+                produced_outputs={"score_audit": fake_options.score_audit_output},
+                notes="Synthetic test stage intentionally did not write score audit output.",
+            )
+
+        STAGE_RUNNERS["scoring"] = fake_scoring_stage
+        try:
+            manifest = run_personal_run_engine(options)
+        finally:
+            STAGE_RUNNERS["scoring"] = original_scoring
+
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        state = json.loads(Path(options.decision_quality_json_output).read_text(encoding="utf-8"))
+        self.assertEqual(state["decision_confidence_level"], "REVIEW")
+        self.assertIs(state["review_required"], True)
+        self.assertIn("score_audit_output", state["missing_critical_fields"])
+
+    def test_decision_quality_default_report_path_uses_as_of_date(self) -> None:
+        options = self._base_options("decision_quality_default_report", ["decision_quality"])
+        options.portfolio_date = "2026-05-19"
+        options.decision_quality_report_output = None
+        self._write_minimal_decision_quality_review_inputs(options)
+
+        manifest = run_personal_run_engine(options)
+        report_path = Path("reports/2026-05-19/decision_quality_report.md")
+
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertTrue(report_path.exists())
+        report_path.unlink()
+        try:
+            report_path.parent.rmdir()
+        except OSError:
+            pass
+
+    def test_decision_quality_output_has_no_forbidden_fields(self) -> None:
+        options = self._core_options(
+            "decision_quality_forbidden_fields",
+            ["import", "fundamentals_seed", "scoring", "coverage", "watchlist", "cash_refill_review", "rebalance_review", "monthly", "decision_quality"],
+        )
+        self._write_decision_quality_inputs(options)
+
+        run_personal_run_engine(options)
+
+        state = json.loads(Path(options.decision_quality_json_output).read_text(encoding="utf-8"))
+        forbidden = {"broker", "order_id", "execution_id", "filled_price", "tax_lot", "simulation", "backtest"}
+        self.assertTrue(forbidden.isdisjoint(state.keys()))
 
     def test_history_and_performance_run_uses_existing_single_benchmark_method(self) -> None:
         options = self._core_options("history_perf", ["import", "history", "performance"])

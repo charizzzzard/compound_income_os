@@ -222,6 +222,34 @@ class PersonalDecisionQualityStateTests(unittest.TestCase):
         self.assertIs(result.state["review_required"], True)
         self.assertIn("LINEAGE_INCOMPLETE", result.state["review_reason_codes"])
 
+    def test_windows_absolute_external_paths_are_redacted_and_block_review(self) -> None:
+        for raw_path in [r"C:\Users\Max\private.csv", r"D:\tmp\x.csv", "E:/data/file.csv"]:
+            result = self.run_state(cash_refill=raw_path)
+            output_text = self.out_json.read_text(encoding="utf-8") + self.out_csv.read_text(encoding="utf-8")
+            self.assertIn("EXTERNAL_PATH_REDACTED:cash_refill_review", output_text)
+            self.assertNotIn(raw_path, output_text)
+            self.assertEqual(result.state["decision_confidence_level"], "REVIEW")
+            self.assertIs(result.state["review_required"], True)
+            self.assertIn("LINEAGE_INCOMPLETE", result.state["review_reason_codes"])
+
+    def test_unc_external_path_is_redacted_and_blocks_review(self) -> None:
+        raw_path = r"\\server\share\x.csv"
+        result = self.run_state(cash_refill=raw_path)
+        output_text = self.out_json.read_text(encoding="utf-8") + self.out_csv.read_text(encoding="utf-8")
+        self.assertIn("EXTERNAL_PATH_REDACTED:cash_refill_review", output_text)
+        self.assertNotIn(raw_path, output_text)
+        self.assertEqual(result.state["decision_confidence_level"], "REVIEW")
+        self.assertIs(result.state["review_required"], True)
+
+    def test_relative_traversal_outside_repo_is_redacted_and_blocks_review(self) -> None:
+        raw_path = "../outside.csv"
+        result = self.run_state(cash_refill=raw_path)
+        output_text = self.out_json.read_text(encoding="utf-8") + self.out_csv.read_text(encoding="utf-8")
+        self.assertIn("EXTERNAL_PATH_REDACTED:cash_refill_review", output_text)
+        self.assertNotIn(raw_path, output_text)
+        self.assertEqual(result.state["decision_confidence_level"], "REVIEW")
+        self.assertIs(result.state["review_required"], True)
+
     def test_empty_run_used_inputs_is_lineage_hard_blocker(self) -> None:
         write_csv(self.run_used_inputs, ["artifact_path", "status"], [])
         result = self.run_state()

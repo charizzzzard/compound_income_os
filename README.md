@@ -116,6 +116,11 @@ If `--report` is omitted, the report path is derived from the effective
 `as_of_date` from the run manifest and falls back to today's date only when no
 manifest date is available.
 
+The same producer is available as the read-only `decision_quality` stage in
+`src.personal_run_engine`. The run engine writes provisional current-run
+manifest and used-input lineage before calling the producer, then writes the
+final manifest and artifact index after all selected stages complete.
+
 In Phase 1.5B, Ranking Robustness, Sensitivity, Scenario and Tail Risk remain
 `NOT_EVALUATED`. Ranking/Sensitivity `NOT_EVALUATED` caps process confidence at
 `MEDIUM` but does not by itself require review. Hard blockers such as missing
