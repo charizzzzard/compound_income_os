@@ -1,21 +1,21 @@
-# Compound Income OS External LLM Review Packet - Decision Quality Contract Consistency Fix
+# Compound Income OS External LLM Review Packet - Minimal Decision Quality Producer
 
 Dies ist der Einstiegspunkt fuer die externe LLM-Review von `compound_income_os`
-nach dem Docs-only Fix `docs: fix decision quality contract consistency`.
+nach Phase 1.5B `feat: add minimal decision quality state producer`.
 
 ## Current Review Head
 
 - project: `compound_income_os`
 - branch: `main`
-- current_handoff_head: `d913567c3f5d9b80f910ee68db1fc82b1dfc20c7`
-- current_handoff_short_head: `d913567`
-- current_patch_context: `docs: fix decision quality contract consistency`
-- previous_repo_head: `fc0d879d3c5618621eaff93ce6eb41882082632e`
-- previous_handoff_head: `54156127153f45614d165414e4a97a9be2aba1ed`
+- current_handoff_head: `dcc85269c911ffdde22ddcf8fced3d9b41ca2528`
+- current_handoff_short_head: `dcc8526`
+- current_patch_context: `feat: add minimal decision quality state producer`
+- previous_repo_head: `6bef7e2f1ec6c949d4906bff1eabcdf97b720603`
+- previous_handoff_head: `d913567c3f5d9b80f910ee68db1fc82b1dfc20c7`
 - canonical_contract:
   `docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md`
 
-Das vorherige externe Packet fuer `54156127153f45614d165414e4a97a9be2aba1ed`
+Das vorherige externe Packet fuer `d913567c3f5d9b80f910ee68db1fc82b1dfc20c7`
 ist durch dieses Packet superseded.
 
 ## Source-of-Truth / Precedence
@@ -45,14 +45,14 @@ Reviewer sollen in dieser Reihenfolge lesen:
    - `HANDOFF_VALIDATION.txt`
    - `HANDOFF_MANIFEST.csv`
    - `HANDOFF_ARTIFACT_INDEX.csv`
+   - `src/personal_decision_quality_state.py`
+   - `tests/test_personal_decision_quality_state.py`
    - `docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md`
    - `docs/architecture/DECISION_QUALITY_LAYER.md`
    - `docs/governance/BASELINE_VS_CANDIDATE_VALIDATION.md`
    - `docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md`
    - `src/personal_input_closure.py`
    - `src/personal_decision_state_capture.py`
-   - `docs/architecture/05_ARCHITECTURE_BACKLOG.csv`
-   - `docs/architecture/06_ADOPTED_DECISIONS.yaml`
 
 ## Dirty-State Interpretation
 
@@ -63,28 +63,29 @@ Regeneration, kein Patch-Source-Dirty-State.
 
 Der finale Repo-HEAD kann nach diesem Packet ein separater
 Handoff-Metadatencommit sein. Der aktuelle Handoff-Head bleibt der
-Implementierungscommit `d913567c3f5d9b80f910ee68db1fc82b1dfc20c7`.
+Implementierungscommit `dcc85269c911ffdde22ddcf8fced3d9b41ca2528`.
 
 ## Patch Scope
 
-Dieses Packet enthaelt einen minimalen Docs-only Contract-Fix:
+Dieses Packet enthaelt Phase 1.5B:
 
-- kritische `missing_critical_fields` sind jetzt eindeutige `REVIEW` Hard
-  Blocker
-- `review_required=true` ist auf Hard Blocker begrenzt
-- Ranking/Sensitivity `NOT_EVALUATED` cappt in Phase 1.5 nur Confidence auf
-  maximal `MEDIUM`
-- `evidence_coverage_pct`/nicht messbare Coverage ist ohne Evidence-Enum-
-  Erweiterung geklaert
-- Beispiele verwenden contract-konforme lowercase Booleans
-- Patch 1.5A bleibt ohne Producer; Phase 1.5B ist die erste moegliche
-  Implementierung
+- `src/personal_decision_quality_state.py`
+- `tests/test_personal_decision_quality_state.py`
+- Contract-Beispiel-Fix in
+  `docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md`
+- minimale README-/Module-/Roadmap-Referenzen
+
+Der Producer aggregiert bestehende processed/readiness/run/review-Artefakte zu
+`decision_quality_state.csv`, `decision_quality_state.json` und einem Markdown-
+Report. Er erzeugt keine neuen Fundamentals, keine Scores, keine Portfolio-
+Regeln, keine Orders und keine Simulation/Backtesting/Outcome-Attribution.
 
 ## Reviewer Rules
 
 - Vollstaendige relative Pfade verwenden.
-- `docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md` als kanonischen Einstieg
-  fuer diesen Fix behandeln.
+- `src/personal_decision_quality_state.py` und
+  `tests/test_personal_decision_quality_state.py` als aktuelle Producer-
+  Review-Einstiege behandeln.
 - Keine ausgelassenen privaten oder rohen Dateien inferieren.
 - Keine Broker-Writes, HTTP-Calls, Order-Ausfuehrung, Auto-Trading,
   Steuerquantifizierung oder Runtime-LLM-Entscheidungen inferieren.
