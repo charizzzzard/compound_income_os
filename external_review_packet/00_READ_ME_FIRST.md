@@ -1,21 +1,21 @@
-# Compound Income OS External LLM Review Packet - Decision Quality Stage Integration
+# Compound Income OS External LLM Review Packet - Decision Quality Path Redaction and Report Surface
 
 Dies ist der Einstiegspunkt fuer die externe LLM-Review von `compound_income_os`
-nach `feat: integrate decision quality stage into personal run engine`.
+nach `feat: surface decision quality in reports`.
 
 ## Current Review Head
 
 - project: `compound_income_os`
 - branch: `main`
-- current_handoff_head: `05c6b01eb6ef21c9b4f4833327ab3bb39d00b56a`
-- current_handoff_short_head: `05c6b01`
-- current_patch_context: `feat: integrate decision quality stage into personal run engine`
-- previous_repo_head: `1d141fb2cd6274957b9ba2aab8e559076bebc540`
-- previous_handoff_head: `373db5da583fb3fdf558203d85d683750a8ed656`
+- current_handoff_head: `785196fde4268eae4199bd0c6351419b8e3b18bf`
+- current_handoff_short_head: `785196f`
+- current_patch_context: `feat: surface decision quality in reports`
+- previous_repo_head: `e8741657a56e9e31f6ea4757c59d7d518a27fce6`
+- previous_handoff_head: `05c6b01eb6ef21c9b4f4833327ab3bb39d00b56a`
 - canonical_contract:
   `docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md`
 
-Das vorherige externe Packet fuer `373db5da583fb3fdf558203d85d683750a8ed656`
+Das vorherige externe Packet fuer `05c6b01eb6ef21c9b4f4833327ab3bb39d00b56a`
 ist durch dieses Packet superseded.
 
 ## Source-of-Truth / Precedence
@@ -45,10 +45,12 @@ Reviewer sollen in dieser Reihenfolge lesen:
    - `HANDOFF_VALIDATION.txt`
    - `HANDOFF_MANIFEST.csv`
    - `HANDOFF_ARTIFACT_INDEX.csv`
-   - `src/personal_run_engine.py`
-   - `tests/test_personal_run_engine.py`
    - `src/personal_decision_quality_state.py`
    - `tests/test_personal_decision_quality_state.py`
+   - `src/personal_run_engine.py`
+   - `tests/test_personal_run_engine.py`
+   - `src/build_monthly_decision_report.py`
+   - `tests/test_monthly_decision_report.py`
    - `docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md`
    - `docs/architecture/DECISION_QUALITY_LAYER.md`
    - `docs/governance/BASELINE_VS_CANDIDATE_VALIDATION.md`
@@ -65,38 +67,40 @@ Regeneration, kein Patch-Source-Dirty-State.
 
 Der finale Repo-HEAD kann nach diesem Packet ein separater
 Handoff-Metadatencommit sein. Der aktuelle Handoff-Head bleibt der
-Implementierungscommit `05c6b01eb6ef21c9b4f4833327ab3bb39d00b56a`.
+Implementierungscommit `785196fde4268eae4199bd0c6351419b8e3b18bf`.
 
 ## Patch Scope
 
-Dieses Packet enthaelt die read-only Integration des Decision-Quality-Producers
-in `src.personal_run_engine`:
+Dieses Packet enthaelt den Bugfix fuer host-unabhaengige Windows-/UNC-/
+Traversal-Pfad-Redaction und eine minimale Decision-Quality-Surface in
+bestehenden Reportflaechen:
 
 - `src/personal_decision_quality_state.py`
 - `tests/test_personal_decision_quality_state.py`
 - `src/personal_run_engine.py`
 - `tests/test_personal_run_engine.py`
+- `src/build_monthly_decision_report.py`
+- `tests/test_monthly_decision_report.py`
 - minimale README-/Modulvertrag-/Roadmap-Referenzen
 
-Der Producer ist als Stage `decision_quality` verfuegbar. Die Stage schreibt
-`decision_quality_state.csv`, `decision_quality_state.json` und
-`decision_quality_report.md` aus bestehenden processed/readiness/run/review-
-Artefakten. Sie erzeugt keine neuen Fundamentals, keine Scores, keine
-Portfolio-Regeln, keine Orders und keine Simulation/Backtesting/Outcome-
-Attribution.
+Der Producer erkennt Windows-Absolute-, UNC- und Traversal-Pfade vor Host-Path-
+Resolution und schreibt keine lokalen Laufwerke, Usernamen, UNC-Servernamen
+oder externe absolute Pfade in CSV/JSON/Markdown. Der Personal Run Report
+rendert eine Decision-Quality-Sektion aus dem erzeugten State oder
+`NOT_AVAILABLE`, wenn die Stage nicht gelaufen ist. Der Monthly Decision Report
+Builder kann dieselbe Surface aus einem explizit uebergebenen State rendern.
 
-Dieser Patch haertet zusaetzlich host-unabhaengige Windows-/UNC-/Traversal-
-Pfad-Redaction im Producer. Die Run Engine schreibt vor `decision_quality` eine
-vorlaeufige aktuelle Manifest-/Used-Inputs-Lineage und finalisiert nach dem Run
-Manifest und Artifact Index erneut.
+Die Surface zeigt `decision_confidence_level` als Prozess-/Review-Confidence,
+nicht als Investment-Confidence, Erfolgswahrscheinlichkeit, Alpha-Prognose oder
+Order-Freigabe. `NOT_EVALUATED` fuer Ranking Robustness, Sensitivity, Scenario
+und Tail Risk bleibt sichtbar.
 
 ## Reviewer Rules
 
 - Vollstaendige relative Pfade verwenden.
-- `src/personal_run_engine.py`, `src/personal_decision_quality_state.py`,
-  `tests/test_personal_run_engine.py` und
-  `tests/test_personal_decision_quality_state.py` als aktuelle Review-
-  Einstiege behandeln.
+- `src/personal_decision_quality_state.py`, `src/personal_run_engine.py`,
+  `src/build_monthly_decision_report.py` und die zugehoerigen Tests als
+  aktuelle Review-Einstiege behandeln.
 - Keine ausgelassenen privaten oder rohen Dateien inferieren.
 - Keine Broker-Writes, HTTP-Calls, Order-Ausfuehrung, Auto-Trading,
   Steuerquantifizierung oder Runtime-LLM-Entscheidungen inferieren.
