@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 from pathlib import Path
+from typing import Any, Mapping
 
 from src.common import ensure_parent_dir, read_csv_rows, require_columns, require_unique_tickers, resolve_repo_path, round2, to_bool, to_float
 from src.portfolio_rules import load_portfolio_rules
@@ -15,6 +17,115 @@ COVERAGE_REQUIRED_COLUMNS = [
     "missing_required_kpis",
     "needs_research_flag",
 ]
+
+DECISION_QUALITY_SURFACE_FIELDS = [
+    "decision_confidence_level",
+    "review_required",
+    "evidence_coverage_status",
+    "evidence_coverage_pct",
+    "data_quality_status",
+    "portfolio_health_status",
+    "cash_refill_status",
+    "rebalance_status",
+    "missing_critical_fields",
+    "confidence_reason_codes",
+    "review_reason_codes",
+    "ranking_stability_status",
+    "sensitivity_status",
+    "scenario_status",
+    "tail_risk_status",
+]
+
+DECISION_QUALITY_NOT_EVALUATED_FIELDS = [
+    "ranking_stability_status",
+    "sensitivity_status",
+    "scenario_status",
+    "tail_risk_status",
+    "scenario_robustness_score",
+]
+
+DECISION_QUALITY_NON_SCOPE_NOTES = [
+    "no broker/order/trading",
+    "no score formula change",
+    "no portfolio rule change",
+    "no silent data enrichment",
+    "no simulation/backtesting",
+    "no outcome attribution",
+    "no runtime LLM decisioning",
+    "no tax quantification",
+    "no portfolio event ledger",
+    "no private raw data",
+]
+
+
+def _display_value(value: Any) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, list):
+        return ";".join(str(item) for item in value) or "None"
+    if value is None:
+        return ""
+    text = str(value).strip()
+    return text or "None"
+
+
+def read_decision_quality_state(path_value: str | None) -> dict[str, Any] | None:
+    if not path_value:
+        return None
+    path = resolve_repo_path(path_value)
+    if not path.exists():
+        return None
+    try:
+        if path.suffix.lower() == ".json":
+            data = json.loads(path.read_text(encoding="utf-8"))
+            return data if isinstance(data, dict) else None
+        with path.open("r", encoding="utf-8-sig", newline="") as handle:
+            rows = list(csv.DictReader(handle))
+        return rows[0] if rows else None
+    except (OSError, json.JSONDecodeError, csv.Error):
+        return None
+
+
+def build_decision_quality_surface_lines(
+    decision_quality_state: Mapping[str, Any] | None = None,
+    *,
+    source_path: str | None = None,
+    include_heading: bool = True,
+) -> list[str]:
+    lines: list[str] = []
+    if include_heading:
+        lines.extend(["## Decision Quality", ""])
+
+    if not decision_quality_state:
+        lines.extend(
+            [
+                "- Decision Quality: `NOT_AVAILABLE`",
+                "- Grund: Decision-Quality-State-Artefakt fehlt, ist nicht lesbar oder die Stage ist nicht gelaufen.",
+                "- Semantik: `decision_confidence_level` ist Prozess-/Review-Confidence, keine Investment-Confidence, keine Erfolgswahrscheinlichkeit, keine Alpha-Prognose und keine Order-Freigabe.",
+            ]
+        )
+    else:
+        if source_path:
+            lines.append(f"- Source artifact: `{source_path}`")
+        lines.append("- Semantik: `decision_confidence_level` ist Prozess-/Review-Confidence, keine Investment-Confidence, keine Erfolgswahrscheinlichkeit, keine Alpha-Prognose und keine Order-Freigabe.")
+        lines.extend(["", "| Field | Value |", "| --- | --- |"])
+        for field in DECISION_QUALITY_SURFACE_FIELDS:
+            lines.append(f"| `{field}` | `{_display_value(decision_quality_state.get(field))}` |")
+        not_evaluated = [
+            field
+            for field in DECISION_QUALITY_NOT_EVALUATED_FIELDS
+            if str(decision_quality_state.get(field, "")).upper() == "NOT_EVALUATED"
+        ]
+        lines.extend(
+            [
+                "",
+                f"- phase_1_5_not_evaluated_fields: `{';'.join(not_evaluated) or 'None'}`",
+            ]
+        )
+
+    lines.extend(["", "### Decision Quality Non-Scope", ""])
+    lines.extend(f"- {note}" for note in DECISION_QUALITY_NON_SCOPE_NOTES)
+    return lines
 
 
 def coverage_label(row: dict[str, str]) -> str:
@@ -136,6 +247,8 @@ def build_monthly_decision_report(
     coverage_rows: list[dict[str, str]] | None = None,
     cash_refill_rows: list[dict[str, str]] | None = None,
     rebalance_rows: list[dict[str, str]] | None = None,
+    decision_quality_state: Mapping[str, Any] | None = None,
+    decision_quality_source_path: str | None = None,
 ) -> Path:
     rules = load_portfolio_rules(rules_path)
     monthly_cash = to_float(rules["monthly_new_cash_eur"])
@@ -161,6 +274,14 @@ def build_monthly_decision_report(
         "",
     ]
     lines.extend(build_portfolio_health_lines(cash_refill_rows, rebalance_rows))
+    lines.extend([""])
+    lines.extend(
+        build_decision_quality_surface_lines(
+            decision_quality_state,
+            source_path=decision_quality_source_path,
+            include_heading=True,
+        )
+    )
     lines.extend(
         [
         "",
@@ -280,6 +401,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--coverage", help="Optional personal fundamentals coverage CSV.")
     parser.add_argument("--cash-refill-review", help="Optional Cash-Refill Review CSV.")
     parser.add_argument("--rebalance-review", help="Optional Rebalance Review CSV.")
+    parser.add_argument("--decision-quality-state", help="Optional Decision Quality State CSV or JSON.")
     parser.add_argument("--rules", default="configs/portfolio_rules.yaml", help="Portfolio rules config path.")
     return parser.parse_args()
 
@@ -292,6 +414,7 @@ def main() -> None:
     coverage_rows = read_coverage_rows(args.coverage) if args.coverage else None
     cash_refill_rows = read_csv_rows(args.cash_refill_review) if args.cash_refill_review and resolve_repo_path(args.cash_refill_review).exists() else None
     rebalance_rows = read_csv_rows(args.rebalance_review) if args.rebalance_review and resolve_repo_path(args.rebalance_review).exists() else None
+    decision_quality_state = read_decision_quality_state(args.decision_quality_state) if args.decision_quality_state else None
     require_columns(
         score_rows,
         ["ticker", "classification", "data_quality_flag", "held_in_portfolio", "main_risks"],
@@ -313,6 +436,8 @@ def main() -> None:
         coverage_rows,
         cash_refill_rows=cash_refill_rows,
         rebalance_rows=rebalance_rows,
+        decision_quality_state=decision_quality_state,
+        decision_quality_source_path=args.decision_quality_state,
     )
 
 

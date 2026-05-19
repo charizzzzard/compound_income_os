@@ -233,22 +233,22 @@ class PersonalDecisionQualityStateTests(unittest.TestCase):
             self.assertIn("LINEAGE_INCOMPLETE", result.state["review_reason_codes"])
 
     def test_unc_external_path_is_redacted_and_blocks_review(self) -> None:
-        raw_path = r"\\server\share\x.csv"
-        result = self.run_state(cash_refill=raw_path)
-        output_text = self.out_json.read_text(encoding="utf-8") + self.out_csv.read_text(encoding="utf-8")
-        self.assertIn("EXTERNAL_PATH_REDACTED:cash_refill_review", output_text)
-        self.assertNotIn(raw_path, output_text)
-        self.assertEqual(result.state["decision_confidence_level"], "REVIEW")
-        self.assertIs(result.state["review_required"], True)
+        for raw_path in [r"\\server\share\x.csv", "//server/share/x.csv"]:
+            result = self.run_state(cash_refill=raw_path)
+            output_text = self.out_json.read_text(encoding="utf-8") + self.out_csv.read_text(encoding="utf-8")
+            self.assertIn("EXTERNAL_PATH_REDACTED:cash_refill_review", output_text)
+            self.assertNotIn(raw_path, output_text)
+            self.assertEqual(result.state["decision_confidence_level"], "REVIEW")
+            self.assertIs(result.state["review_required"], True)
 
     def test_relative_traversal_outside_repo_is_redacted_and_blocks_review(self) -> None:
-        raw_path = "../outside.csv"
-        result = self.run_state(cash_refill=raw_path)
-        output_text = self.out_json.read_text(encoding="utf-8") + self.out_csv.read_text(encoding="utf-8")
-        self.assertIn("EXTERNAL_PATH_REDACTED:cash_refill_review", output_text)
-        self.assertNotIn(raw_path, output_text)
-        self.assertEqual(result.state["decision_confidence_level"], "REVIEW")
-        self.assertIs(result.state["review_required"], True)
+        for raw_path in ["../outside.csv", r"..\outside.csv", "subdir/../../outside.csv"]:
+            result = self.run_state(cash_refill=raw_path)
+            output_text = self.out_json.read_text(encoding="utf-8") + self.out_csv.read_text(encoding="utf-8")
+            self.assertIn("EXTERNAL_PATH_REDACTED:cash_refill_review", output_text)
+            self.assertNotIn(raw_path, output_text)
+            self.assertEqual(result.state["decision_confidence_level"], "REVIEW")
+            self.assertIs(result.state["review_required"], True)
 
     def test_empty_run_used_inputs_is_lineage_hard_blocker(self) -> None:
         write_csv(self.run_used_inputs, ["artifact_path", "status"], [])
@@ -274,6 +274,24 @@ class PersonalDecisionQualityStateTests(unittest.TestCase):
         self.assertIs(result.state["review_required"], True)
         self.assertIn("run_used_inputs_private_or_external_path", result.state["missing_critical_fields"])
         self.assertNotIn("statement.csv", output_text)
+
+    def test_run_used_inputs_windows_unc_and_traversal_paths_are_not_emitted_raw(self) -> None:
+        raw_values = [
+            r"C:\Users\Max\private.csv",
+            r"D:\tmp\x.csv",
+            "E:/data/file.csv",
+            r"\\server\share\x.csv",
+            "//server/share/x.csv",
+            r"..\outside.csv",
+        ]
+        for raw_value in raw_values:
+            write_csv(self.run_used_inputs, ["artifact_path", "status"], [{"artifact_path": raw_value, "status": "USED"}])
+            result = self.run_state()
+            output_text = self.out_json.read_text(encoding="utf-8") + self.out_csv.read_text(encoding="utf-8")
+            self.assertEqual(result.state["decision_confidence_level"], "REVIEW")
+            self.assertIs(result.state["review_required"], True)
+            self.assertIn("run_used_inputs_private_or_external_path", result.state["missing_critical_fields"])
+            self.assertNotIn(raw_value, output_text)
 
     def test_not_evaluated_ranking_and_sensitivity_cap_medium_without_review(self) -> None:
         result = self.run_state()

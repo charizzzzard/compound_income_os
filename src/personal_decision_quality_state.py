@@ -128,19 +128,51 @@ def _repo_root() -> Path:
     return resolve_repo_path(".").resolve()
 
 
+def _redacted_path(label: str) -> str:
+    return f"EXTERNAL_PATH_REDACTED:{label}"
+
+
+def _is_windows_absolute_path(raw: str) -> bool:
+    return bool(WINDOWS_ABSOLUTE_RE.match(raw))
+
+
+def _is_unc_path(raw: str) -> bool:
+    return bool(UNC_PATH_RE.match(raw))
+
+
+def _repo_relative_native_absolute(raw: str) -> str | None:
+    path = Path(raw)
+    if not path.is_absolute():
+        return None
+    try:
+        return path.resolve().relative_to(_repo_root()).as_posix()
+    except ValueError:
+        return None
+
+
+def _resolve_relative_candidate(raw: str) -> Path:
+    return (_repo_root() / raw.replace("\\", "/")).resolve()
+
+
 def _normalize_path_for_output(path_value: str | Path, label: str) -> tuple[str, bool]:
     raw = str(path_value)
+    if _is_windows_absolute_path(raw) or _is_unc_path(raw):
+        native_relative = _repo_relative_native_absolute(raw)
+        if native_relative is not None:
+            return native_relative, False
+        return _redacted_path(label), True
+
     path = Path(raw)
-    if path.is_absolute() or WINDOWS_ABSOLUTE_RE.match(raw) or UNC_PATH_RE.match(raw):
-        try:
-            rel = path.resolve().relative_to(_repo_root())
-        except ValueError:
-            return f"EXTERNAL_PATH_REDACTED:{label}", True
-        return rel.as_posix(), False
+    if path.is_absolute():
+        native_relative = _repo_relative_native_absolute(raw)
+        if native_relative is not None:
+            return native_relative, False
+        return _redacted_path(label), True
+
     try:
-        rel = resolve_repo_path(raw).resolve().relative_to(_repo_root())
+        rel = _resolve_relative_candidate(raw).relative_to(_repo_root())
     except ValueError:
-        return f"EXTERNAL_PATH_REDACTED:{label}", True
+        return _redacted_path(label), True
     return rel.as_posix(), False
 
 
@@ -151,13 +183,12 @@ def _is_private_or_absolute_lineage_value(value: str) -> bool:
     lowered = text.replace("\\", "/").lower()
     if "data/raw/private" in lowered:
         return True
-    if Path(text).is_absolute() or WINDOWS_ABSOLUTE_RE.match(text) or UNC_PATH_RE.match(text):
-        try:
-            Path(text).resolve().relative_to(_repo_root())
-        except ValueError:
-            return True
+    if _is_windows_absolute_path(text) or _is_unc_path(text):
+        return _repo_relative_native_absolute(text) is None
+    if Path(text).is_absolute():
+        return _repo_relative_native_absolute(text) is None
     try:
-        resolve_repo_path(text).resolve().relative_to(_repo_root())
+        _resolve_relative_candidate(text).relative_to(_repo_root())
     except ValueError:
         return True
     return False

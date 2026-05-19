@@ -119,7 +119,11 @@ manifest date is available.
 The same producer is available as the read-only `decision_quality` stage in
 `src.personal_run_engine`. The run engine writes provisional current-run
 manifest and used-input lineage before calling the producer, then writes the
-final manifest and artifact index after all selected stages complete.
+final manifest and artifact index after all selected stages complete. The
+Personal Run Report renders a Decision Quality section from the produced
+state; if the state is missing, the section is shown as `NOT_AVAILABLE` instead
+of inferring values. The Monthly Decision Report builder can render the same
+Decision Quality surface from an explicit state CSV/JSON path.
 
 In Phase 1.5B, Ranking Robustness, Sensitivity, Scenario and Tail Risk remain
 `NOT_EVALUATED`. Ranking/Sensitivity `NOT_EVALUATED` caps process confidence at

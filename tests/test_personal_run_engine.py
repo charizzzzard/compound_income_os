@@ -1904,6 +1904,27 @@ class PersonalRunEngineTests(unittest.TestCase):
         state = json.loads(Path(options.decision_quality_json_output).read_text(encoding="utf-8"))
         self.assertEqual(state["decision_confidence_level"], "MEDIUM")
         self.assertIs(state["review_required"], False)
+        run_report = Path(options.report_output or "").read_text(encoding="utf-8")
+        self.assertIn("## Decision Quality", run_report)
+        self.assertIn("decision_confidence_level", run_report)
+        self.assertIn("review_required", run_report)
+        self.assertIn("ranking_stability_status", run_report)
+        self.assertIn("sensitivity_status", run_report)
+        self.assertIn("scenario_status", run_report)
+        self.assertIn("tail_risk_status", run_report)
+        self.assertIn("Prozess-/Review-Confidence", run_report)
+        self.assertIn("no broker/order/trading", run_report)
+        self.assertIn("no simulation/backtesting", run_report)
+
+    def test_run_report_renders_decision_quality_not_available_when_stage_missing(self) -> None:
+        options = self._core_options("decision_quality_run_report_missing", ["import"])
+
+        manifest = run_personal_run_engine(options)
+
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        run_report = Path(options.report_output or "").read_text(encoding="utf-8")
+        self.assertIn("## Decision Quality", run_report)
+        self.assertIn("Decision Quality: `NOT_AVAILABLE`", run_report)
 
     def test_decision_quality_reports_review_when_monthly_stage_lacks_ranking_output(self) -> None:
         options = self._core_options("decision_quality_missing_monthly", ["monthly", "decision_quality"])

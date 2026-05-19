@@ -284,3 +284,57 @@ class MonthlyDecisionReportTests(unittest.TestCase):
                 rules_path.unlink()
             if output_path.exists():
                 output_path.unlink()
+
+    def test_report_renders_decision_quality_state_surface(self) -> None:
+        output_path = Path("tests") / "_tmp_monthly_report_decision_quality.md"
+        try:
+            build_monthly_decision_report(
+                positions_rows=[],
+                score_rows=[],
+                ranking_rows=[],
+                output_path=str(output_path),
+                decision_quality_state={
+                    "decision_confidence_level": "MEDIUM",
+                    "review_required": False,
+                    "evidence_coverage_status": "COVERED",
+                    "evidence_coverage_pct": 1.0,
+                    "data_quality_status": "COVERED",
+                    "portfolio_health_status": "PASS",
+                    "cash_refill_status": "PASS",
+                    "rebalance_status": "PASS",
+                    "missing_critical_fields": [],
+                    "confidence_reason_codes": ["RANKING_STABILITY_NOT_EVALUATED", "SENSITIVITY_NOT_EVALUATED"],
+                    "review_reason_codes": [],
+                    "ranking_stability_status": "NOT_EVALUATED",
+                    "sensitivity_status": "NOT_EVALUATED",
+                    "scenario_status": "NOT_EVALUATED",
+                    "tail_risk_status": "NOT_EVALUATED",
+                    "scenario_robustness_score": "NOT_EVALUATED",
+                },
+                decision_quality_source_path="data/processed/decision_quality_state.json",
+            )
+            report = output_path.read_text(encoding="utf-8")
+            self.assertIn("## Decision Quality", report)
+            self.assertIn("decision_confidence_level", report)
+            self.assertIn("review_required", report)
+            self.assertIn("RANKING_STABILITY_NOT_EVALUATED", report)
+            self.assertIn("phase_1_5_not_evaluated_fields", report)
+            self.assertIn("Prozess-/Review-Confidence", report)
+            self.assertIn("keine Erfolgswahrscheinlichkeit", report)
+            self.assertIn("no broker/order/trading", report)
+            self.assertIn("no simulation/backtesting", report)
+        finally:
+            if output_path.exists():
+                output_path.unlink()
+
+    def test_report_renders_decision_quality_missing_as_not_available(self) -> None:
+        output_path = Path("tests") / "_tmp_monthly_report_decision_quality_missing.md"
+        try:
+            build_monthly_decision_report([], [], [], str(output_path))
+            report = output_path.read_text(encoding="utf-8")
+            self.assertIn("## Decision Quality", report)
+            self.assertIn("Decision Quality: `NOT_AVAILABLE`", report)
+            self.assertIn("Stage ist nicht gelaufen", report)
+        finally:
+            if output_path.exists():
+                output_path.unlink()

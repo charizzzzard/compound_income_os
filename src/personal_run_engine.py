@@ -12,7 +12,12 @@ from src import monthly_ranking_engine
 from src import scoring_engine
 from src import watchlist_engine
 from src.benchmark_history_engine import run_benchmark_history_engine
-from src.build_monthly_decision_report import build_monthly_decision_report, read_coverage_rows as read_report_coverage_rows
+from src.build_monthly_decision_report import (
+    build_decision_quality_surface_lines,
+    build_monthly_decision_report,
+    read_coverage_rows as read_report_coverage_rows,
+    read_decision_quality_state,
+)
 from src.build_portfolio_snapshot import build_portfolio_snapshot_report, read_coverage_rows as read_snapshot_coverage_rows
 from src.cash_refill_review import DEFAULT_CSV_OUTPUT as DEFAULT_CASH_REFILL_CSV_OUTPUT
 from src.cash_refill_review import DEFAULT_THRESHOLDS_PATH as DEFAULT_PORTFOLIO_HEALTH_THRESHOLDS_PATH
@@ -1854,6 +1859,18 @@ def write_manifest(path_value: str, manifest: dict[str, Any]) -> Path:
     return path
 
 
+def decision_quality_state_from_artifacts(artifact_rows: list[dict[str, str]]) -> tuple[dict[str, Any] | None, str]:
+    for role in ("decision_quality_state_json", "decision_quality_state_csv"):
+        for row in artifact_rows:
+            if row["artifact_role"] != role or row["produced"] != "True":
+                continue
+            artifact_path = row["artifact_path"]
+            state = read_decision_quality_state(artifact_path)
+            if state:
+                return state, artifact_path
+    return None, ""
+
+
 def write_run_report(path_value: str, manifest: dict[str, Any], artifact_rows: list[dict[str, str]]) -> Path:
     lines = [
         "# Personal Run Report",
@@ -1880,6 +1897,15 @@ def write_run_report(path_value: str, manifest: dict[str, Any], artifact_rows: l
             lines.append(f"- `{row['stage_name']}` {row['artifact_role']}: `{row['artifact_path']}`")
     else:
         lines.append("- Keine Artefakte erzeugt.")
+    decision_quality_state, decision_quality_path = decision_quality_state_from_artifacts(artifact_rows)
+    lines.extend(["", "## Decision Quality", ""])
+    lines.extend(
+        build_decision_quality_surface_lines(
+            decision_quality_state,
+            source_path=decision_quality_path or None,
+            include_heading=False,
+        )
+    )
     lines.extend(
         [
             "",
