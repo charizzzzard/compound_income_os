@@ -8,7 +8,7 @@ import sys
 import unittest
 from pathlib import Path
 
-from src.personal_decision_journal_validation import QUEUE_FIELDS, VALIDATION_FIELDS, run_decision_journal_validation
+from src.personal_decision_journal_validation import QUEUE_FIELDS, VALIDATION_FIELDS, build_decision_journal_surface_lines, run_decision_journal_validation
 from src.personal_decision_state_capture import FIELDS
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -156,6 +156,23 @@ class DecisionJournalValidationTests(unittest.TestCase):
         result = self.run_validation()
         self.assertIn("DECISION_FIELD_MISSING", {row["reason_code"] for row in result.validation_rows})
         self.assertIn("proposed_action", {row["field_name"] for row in result.validation_rows})
+        self.assertGreater(result.summary["validation_findings_count"], 0)
+        self.assertGreater(result.summary["validation_high_count"], 0)
+
+    def test_duplicate_decision_id_is_blocker_and_does_not_mutate_journal(self) -> None:
+        duplicate = self.base_row(asset_id="AAPL", ticker="AAPL")
+        self.write_journal([self.base_row(), duplicate])
+        before = self.journal.read_bytes()
+
+        result = self.run_validation()
+        after = self.journal.read_bytes()
+
+        self.assertEqual(before, after)
+        duplicate_findings = [row for row in result.validation_rows if row["reason_code"] == "DECISION_ID_DUPLICATE"]
+        self.assertEqual(len(duplicate_findings), 1)
+        self.assertEqual(duplicate_findings[0]["priority"], "BLOCKER")
+        self.assertGreaterEqual(result.summary["validation_blocker_count"], 1)
+        self.assertTrue(any("DECISION_ID_DUPLICATE" in row["reason_codes"] for row in result.queue_rows))
 
     def test_review_date_due_creates_high_queue_item(self) -> None:
         result = self.run_validation()
@@ -184,6 +201,8 @@ class DecisionJournalValidationTests(unittest.TestCase):
         self.write_decision_quality(review_required=False, as_of_date="2026-05-18", source_commit_sha="abc123", confidence="MEDIUM")
         result = self.run_validation()
         self.assertTrue(any("DECISION_QUALITY_STALE" in row["reason_codes"] for row in result.queue_rows))
+        report_text = self.report.read_text(encoding="utf-8")
+        self.assertIn("MAX_DECISION_QUALITY_AGE_DAYS=0", report_text)
 
     def test_source_commit_mismatch_creates_queue_item(self) -> None:
         self.write_decision_quality(review_required=False, as_of_date="2026-05-20", source_commit_sha="different", confidence="MEDIUM")
@@ -197,6 +216,31 @@ class DecisionJournalValidationTests(unittest.TestCase):
         self.assertIn("not investment confidence", text)
         self.assertIn("no broker/order/trading", text)
         self.assertIn("no simulation/backtesting", text)
+        self.assertIn("## Priority Taxonomy", text)
+        self.assertIn("LOW: Reserved", text)
+        self.assertIn("NOTE: Reserved", text)
+
+    def test_surface_shows_validation_counts_without_queue_items(self) -> None:
+        validation_rows = [
+            {
+                "validation_id": "VAL_20260520_0001",
+                "as_of_date": "2026-05-20",
+                "validation_status": "REVIEW",
+                "decision_id": "DECISION_1",
+                "field_name": "proposed_action",
+                "reason_code": "DECISION_FIELD_MISSING",
+                "priority": "HIGH",
+                "source_artifact": "data/processed/personal_decision_state_capture.csv",
+                "message": "missing proposed_action",
+            }
+        ]
+
+        lines = "\n".join(build_decision_journal_surface_lines(validation_rows, []))
+
+        self.assertIn("validation_findings_count: `1`", lines)
+        self.assertIn("validation_high_count: `1`", lines)
+        self.assertIn("queue_items: `0`", lines)
+        self.assertIn("queue_high_count: `0`", lines)
 
     def test_csv_serialization_and_no_private_raw_paths(self) -> None:
         private_journal = "data/raw/private/decision.csv"

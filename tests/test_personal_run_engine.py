@@ -2078,6 +2078,8 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertTrue(any("REVIEW_DATE_DUE" in row["reason_codes"] for row in queue_rows))
         run_report = Path(options.report_output or "").read_text(encoding="utf-8")
         self.assertIn("## Decision Journal Validation", run_report)
+        self.assertIn("validation_findings_count", run_report)
+        self.assertIn("queue_high_count", run_report)
         self.assertIn("queue_items", run_report)
 
     def test_run_report_renders_decision_journal_validation_not_available_when_stage_missing(self) -> None:

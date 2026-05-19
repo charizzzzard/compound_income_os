@@ -373,7 +373,10 @@ class MonthlyDecisionReportTests(unittest.TestCase):
             report = output_path.read_text(encoding="utf-8")
             self.assertIn("## Decision Journal Validation", report)
             self.assertIn("validation_status", report)
+            self.assertIn("validation_findings_count", report)
+            self.assertIn("validation_high_count", report)
             self.assertIn("queue_items", report)
+            self.assertIn("queue_high_count", report)
             self.assertIn("Process/Review Confidence", report)
         finally:
             if output_path.exists():

@@ -71,6 +71,15 @@ NON_SCOPE_NOTES = [
     "no private raw data",
 ]
 
+PRIORITY_TAXONOMY = {
+    "BLOCKER": "Missing/unreadable/empty journal, duplicate decision_id, broken active-decision lineage or schema/contract violation.",
+    "HIGH": "Due review date, missing review_date for active decisions, incomplete rationale or Decision Quality review_required=true.",
+    "MEDIUM": "Stale Decision Quality State, source_commit mismatch or process/review confidence follow-up.",
+    "LOW": "Reserved for non-blocking cleanup hints.",
+    "NOTE": "Reserved for informational hints.",
+}
+MAX_DECISION_QUALITY_AGE_DAYS = 0
+
 ACTIVE_STATUSES = {"OPEN", "BLOCKED", "REVIEW_SCHEDULED", "NOT_AVAILABLE", "INSUFFICIENT_EVIDENCE"}
 ACTIVE_HUMAN_DECISIONS = {"PENDING_REVIEW", "DEFERRED", "APPROVED_FOR_MANUAL_ACTION", "NOT_REVIEWED"}
 ACTIVE_ACTIONS = {"HOLD_REVIEW", "TRIM_REVIEW", "EXIT_REVIEW", "WAIT_FOR_EVIDENCE", "WAIT_FOR_PRICE", "WAIT_FOR_REVIEW", "RESEARCH_MORE", "CASH_DEPLOYMENT"}
@@ -364,6 +373,18 @@ def _date_days_overdue(review_date: str, as_of_date: str) -> str:
     return str(max((as_of - review).days, 0))
 
 
+def _summary_counts(validation_rows: list[dict[str, str]], queue_rows: list[dict[str, str]]) -> dict[str, int]:
+    return {
+        "validation_findings_count": len(validation_rows),
+        "validation_blocker_count": sum(1 for row in validation_rows if row.get("priority") == "BLOCKER"),
+        "validation_high_count": sum(1 for row in validation_rows if row.get("priority") == "HIGH"),
+        "queue_items": len(queue_rows),
+        "queue_blocker_count": sum(1 for row in queue_rows if row.get("priority") == "BLOCKER"),
+        "queue_high_count": sum(1 for row in queue_rows if row.get("priority") == "HIGH"),
+        "stale_state_count": sum(1 for row in queue_rows if "DECISION_QUALITY_STALE" in row.get("reason_codes", "")),
+    }
+
+
 def build_decision_journal_validation(
     *,
     journal: str = DEFAULT_JOURNAL,
@@ -457,8 +478,38 @@ def build_decision_journal_validation(
             recommended_operator_action="Record reviewed decisions or an explicit no-action entry after the monthly review.",
         )
 
+    seen_decision_ids: dict[str, int] = {}
+    duplicate_decision_ids: set[str] = set()
     for row in journal_rows:
         decision_id = row.get("decision_id", "")
+        if decision_id:
+            seen_decision_ids[decision_id] = seen_decision_ids.get(decision_id, 0) + 1
+            if seen_decision_ids[decision_id] == 2:
+                duplicate_decision_ids.add(decision_id)
+                duplicate_decision = {"decision_id": decision_id}
+                _append_validation(
+                    validation_rows,
+                    as_of_date=effective_as_of,
+                    status="REVIEW",
+                    decision_id=decision_id,
+                    field_name="decision_id",
+                    reason_code="DECISION_ID_DUPLICATE",
+                    priority="BLOCKER",
+                    source_artifact=journal_artifact,
+                    message="decision_id appears more than once in the append-only Decision Capture journal.",
+                )
+                _append_queue(
+                    queue_rows,
+                    as_of_date=effective_as_of,
+                    decision=duplicate_decision,
+                    priority="BLOCKER",
+                    reason_codes=["DECISION_ID_DUPLICATE"],
+                    process_confidence_level=process_confidence,
+                    decision_quality_status=dq_status,
+                    source_commit_sha=source_commit,
+                    source_artifact=journal_artifact,
+                    recommended_operator_action="Review duplicate decision_id entries and correct the append-only journal.",
+                )
         for field in REQUIRED_ROW_FIELDS:
             if not str(row.get(field, "") or "").strip():
                 _append_validation(
@@ -551,6 +602,8 @@ def build_decision_journal_validation(
 
     if decision_quality:
         dq_as_of = str(decision_quality.get("as_of_date", "") or "")
+        # Phase 1.6B MVP is governance-conservative: any older Decision Quality
+        # as_of_date is stale. MAX_DECISION_QUALITY_AGE_DAYS is intentionally 0.
         if dq_as_of and parse_iso_date(dq_as_of) and parse_iso_date(dq_as_of) < parse_iso_date(effective_as_of):
             _append_queue(
                 queue_rows,
@@ -604,14 +657,14 @@ def build_decision_journal_validation(
         )
 
     validation_status = "REVIEW" if validation_rows or any(row["priority"] in {"BLOCKER", "HIGH"} for row in queue_rows) else "PASS"
+    counts = _summary_counts(validation_rows, queue_rows)
     summary = {
         "as_of_date": effective_as_of,
         "validation_status": validation_status,
         "total_decisions": len(journal_rows),
-        "queue_items": len(queue_rows),
-        "blocker_count": sum(1 for row in queue_rows if row["priority"] == "BLOCKER"),
-        "high_count": sum(1 for row in queue_rows if row["priority"] == "HIGH"),
-        "stale_state_count": sum(1 for row in queue_rows if "DECISION_QUALITY_STALE" in row["reason_codes"]),
+        **counts,
+        "blocker_count": counts["queue_blocker_count"],
+        "high_count": counts["queue_high_count"],
         "decision_quality_status": dq_status,
         "decision_quality_as_of_date": str(decision_quality.get("as_of_date", "") or ""),
         "decision_quality_source_commit_sha": dq_source_commit,
@@ -662,12 +715,12 @@ def summarize_surface(validation_rows: list[dict[str, str]], queue_rows: list[di
     validation_status = "REVIEW" if validation_rows or queue_rows else "PASS"
     if validation_rows:
         validation_status = "REVIEW" if any(row.get("validation_status") == "REVIEW" for row in validation_rows) else validation_rows[0].get("validation_status", "PASS")
+    counts = _summary_counts(validation_rows, queue_rows)
     return {
         "validation_status": validation_status,
-        "queue_items": len(queue_rows),
-        "blocker_count": sum(1 for row in queue_rows if row.get("priority") == "BLOCKER"),
-        "high_count": sum(1 for row in queue_rows if row.get("priority") == "HIGH"),
-        "stale_state_count": sum(1 for row in queue_rows if "DECISION_QUALITY_STALE" in row.get("reason_codes", "")),
+        **counts,
+        "blocker_count": counts["queue_blocker_count"],
+        "high_count": counts["queue_high_count"],
     }
 
 
@@ -700,9 +753,12 @@ def build_decision_journal_surface_lines(
     lines.extend(
         [
             f"- validation_status: `{summary['validation_status']}`",
+            f"- validation_findings_count: `{summary['validation_findings_count']}`",
+            f"- validation_blocker_count: `{summary['validation_blocker_count']}`",
+            f"- validation_high_count: `{summary['validation_high_count']}`",
             f"- queue_items: `{summary['queue_items']}`",
-            f"- blocker_count: `{summary['blocker_count']}`",
-            f"- high_count: `{summary['high_count']}`",
+            f"- queue_blocker_count: `{summary['queue_blocker_count']}`",
+            f"- queue_high_count: `{summary['queue_high_count']}`",
             f"- stale_state_count: `{summary['stale_state_count']}`",
             "- Semantik: Process/Review Confidence ist keine Investment Confidence, keine Erfolgswahrscheinlichkeit, keine Alpha-Prognose und keine Order-Freigabe.",
         ]
@@ -723,23 +779,35 @@ def render_report(
         "",
         f"- validation_status: `{summary['validation_status']}`",
         f"- total_decisions: `{summary['total_decisions']}`",
+        f"- validation_findings_count: `{summary['validation_findings_count']}`",
+        f"- validation_blocker_count: `{summary['validation_blocker_count']}`",
+        f"- validation_high_count: `{summary['validation_high_count']}`",
         f"- queue_items: `{summary['queue_items']}`",
-        f"- blocker_count: `{summary['blocker_count']}`",
-        f"- high_count: `{summary['high_count']}`",
+        f"- queue_blocker_count: `{summary['queue_blocker_count']}`",
+        f"- queue_high_count: `{summary['queue_high_count']}`",
         f"- stale_state_count: `{summary['stale_state_count']}`",
+        f"- stale_state_semantics: Decision Quality as_of_date older than the effective as_of_date is stale in the Phase 1.6B MVP (`MAX_DECISION_QUALITY_AGE_DAYS={MAX_DECISION_QUALITY_AGE_DAYS}`).",
         "",
-        "## Decision Quality Linkage",
-        "",
-        f"- decision_quality_status: `{summary['decision_quality_status']}`",
-        f"- as_of_date: `{summary['decision_quality_as_of_date']}`",
-        f"- source_commit_sha: `{summary['decision_quality_source_commit_sha']}`",
-        f"- review_required: `{summary['decision_quality_review_required']}`",
-        f"- process_confidence_level: `{summary['process_confidence_level']}`",
-        "- Process/Review Confidence is not investment confidence, not a success probability, not an alpha forecast and not an order approval.",
-        "",
-        "## Review Queue",
+        "## Priority Taxonomy",
         "",
     ]
+    lines.extend(f"- {priority}: {description}" for priority, description in PRIORITY_TAXONOMY.items())
+    lines.extend(
+        [
+            "",
+            "## Decision Quality Linkage",
+            "",
+            f"- decision_quality_status: `{summary['decision_quality_status']}`",
+            f"- as_of_date: `{summary['decision_quality_as_of_date']}`",
+            f"- source_commit_sha: `{summary['decision_quality_source_commit_sha']}`",
+            f"- review_required: `{summary['decision_quality_review_required']}`",
+            f"- process_confidence_level: `{summary['process_confidence_level']}`",
+            "- Process/Review Confidence is not investment confidence, not a success probability, not an alpha forecast and not an order approval.",
+            "",
+            "## Review Queue",
+            "",
+        ]
+    )
     if queue_rows:
         lines.extend(["| priority | decision_id | symbol | reason_codes | recommended_operator_action |", "| --- | --- | --- | --- | --- |"])
         for row in queue_rows:

@@ -151,6 +151,14 @@ Report renders a Decision Journal Validation section from the produced
 validation and queue artifacts; if the stage is missing, it is shown as
 `NOT_AVAILABLE` instead of inferring status.
 
+Review Queue priorities are intentionally conservative in the MVP:
+`BLOCKER` covers missing/unreadable/empty journals, duplicate `decision_id`
+values and broken active-decision lineage; `HIGH` covers due reviews, missing
+review dates, incomplete rationale and Decision Quality `review_required=true`;
+`MEDIUM` covers stale Decision Quality State and source-commit mismatches.
+`LOW` and `NOTE` are reserved. Any older Decision Quality `as_of_date` is
+treated as stale in this phase.
+
 ## Decision Capture
 
 `src.personal_decision_state_capture` is the first minimal producer from the
