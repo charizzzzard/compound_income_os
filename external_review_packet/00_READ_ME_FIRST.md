@@ -1,23 +1,23 @@
-# Compound Income OS External LLM Review Packet - Decision Journal Validation / Review Queue
+# Compound Income OS External LLM Review Packet - Review Queue Semantics + Surface Hardening
 
 Dies ist der Einstiegspunkt fuer die externe LLM-Review von `compound_income_os`
-nach `feat: add decision journal validation and review queue`.
+nach `fix: harden decision review queue semantics`.
 
 ## Current Review Head
 
 - project: `compound_income_os`
 - branch: `main`
-- current_handoff_head: `8ea648d75260cd062de385c6b1fe59f101b225ac`
-- current_handoff_short_head: `8ea648d`
-- current_patch_context: `feat: add decision journal validation and review queue`
-- previous_repo_head: `024d8770d30f53b94f3d3bc01ab34b474c0d4a5f`
-- previous_handoff_head: `785196fde4268eae4199bd0c6351419b8e3b18bf`
+- current_handoff_head: `95713e85f85f756f3bb3b9bdd6beec992416a56f`
+- current_handoff_short_head: `95713e8`
+- current_patch_context: `fix: harden decision review queue semantics`
+- previous_repo_head: `1f55b0a281ebeb1769e0ebf39d1feb176b29b8bd`
+- previous_handoff_head: `8ea648d75260cd062de385c6b1fe59f101b225ac`
 - canonical_decision_state_contract:
   `docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md`
 - canonical_decision_quality_contract:
   `docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md`
 
-Das vorherige externe Packet fuer `785196fde4268eae4199bd0c6351419b8e3b18bf`
+Das vorherige externe Packet fuer `8ea648d75260cd062de385c6b1fe59f101b225ac`
 ist durch dieses Packet superseded.
 
 ## Source-of-Truth / Precedence
@@ -49,7 +49,6 @@ Reviewer sollen in dieser Reihenfolge lesen:
    - `HANDOFF_ARTIFACT_INDEX.csv`
    - `src/personal_decision_journal_validation.py`
    - `tests/test_personal_decision_journal_validation.py`
-   - `src/personal_decision_quality_state.py`
    - `src/personal_run_engine.py`
    - `tests/test_personal_run_engine.py`
    - `src/build_monthly_decision_report.py`
@@ -57,8 +56,6 @@ Reviewer sollen in dieser Reihenfolge lesen:
    - `docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md`
    - `docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md`
    - `docs/architecture/DECISION_QUALITY_LAYER.md`
-   - `src/personal_decision_state_capture.py`
-   - `src/personal_input_closure.py`
 
 ## Dirty-State Interpretation
 
@@ -69,31 +66,22 @@ Regeneration, kein Patch-Source-Dirty-State.
 
 Der finale Repo-HEAD kann nach diesem Packet ein separater
 Handoff-Metadatencommit sein. Der aktuelle Handoff-Head bleibt der
-Implementierungscommit `8ea648d75260cd062de385c6b1fe59f101b225ac`.
+Implementierungscommit `95713e85f85f756f3bb3b9bdd6beec992416a56f`.
 
 ## Patch Scope
 
-Dieses Packet enthaelt Phase 1.6A Decision Journal Validation / Review Queue:
+Dieses Packet enthaelt Phase 1.6B Review Queue Semantics + Surface Hardening:
 
-- `src/personal_decision_journal_validation.py`
-- `tests/test_personal_decision_journal_validation.py`
-- `src/personal_run_engine.py`
-- `tests/test_personal_run_engine.py`
-- `src/build_monthly_decision_report.py`
-- `tests/test_monthly_decision_report.py`
-- minimale README-/Modulvertrag-/Roadmap-Referenzen
+- Duplicate `decision_id` wird als `DECISION_ID_DUPLICATE` mit Priority
+  `BLOCKER` sichtbar.
+- Validation-Finding-Counts und Queue-Counts werden getrennt in Report-Surfaces
+  gerendert.
+- Die MVP-Prioritaetentaxonomie ist stabil dokumentiert.
+- Stale-State-Semantik bleibt konservativ: jedes aeltere Decision-Quality-
+  `as_of_date` ist stale.
 
-Der neue Producer validiert das bestehende append-only Decision-Capture-Journal
-read-only und erzeugt eine Operator Review Queue. Er macht fehlende oder leere
-Journale, fehlende Pflichtfelder, due/missing Review Dates, unvollstaendige
-Rationale, Decision-Quality-Review-Flags, Stale State und Source-Commit-
-Mismatches sichtbar. Er erzeugt keine Decisions, keine Orders, keine
-Portfolio-Events und keine Outcome Attribution.
-
-Die Stage `decision_journal_validation` laeuft in `src.personal_run_engine`
-nach `decision_quality`. Personal Run Report und Monthly Decision Report
-koennen die Decision-Journal-Validation-Surface anzeigen oder `NOT_AVAILABLE`
-rendern, wenn die Artefakte fehlen.
+Der Patch erzeugt keine Decisions, keine Orders, keine Portfolio-Events und
+keine Outcome Attribution.
 
 ## Handoff Reproducibility Note
 

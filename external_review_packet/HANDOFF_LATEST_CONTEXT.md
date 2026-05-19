@@ -1,16 +1,16 @@
-# HANDOFF LATEST CONTEXT - Decision Journal Validation / Review Queue
+# HANDOFF LATEST CONTEXT - Review Queue Semantics + Surface Hardening
 
 project_name: compound_income_os
 profile: full_review
 bundle_name: HANDOFF_LATEST
-bundle_purpose: external_llm_validation_after_decision_journal_validation_review_queue
-created_at_utc: 2026-05-19T22:19:33.7166075Z
+bundle_purpose: external_llm_validation_after_review_queue_semantics_surface_hardening
+created_at_utc: 2026-05-19T22:48:48.0118142Z
 branch: main
-current_handoff_head: 8ea648d75260cd062de385c6b1fe59f101b225ac
-current_handoff_short_head: 8ea648d
-implementation_commit_message: feat: add decision journal validation and review queue
-previous_repo_head: 024d8770d30f53b94f3d3bc01ab34b474c0d4a5f
-previous_handoff_head: 785196fde4268eae4199bd0c6351419b8e3b18bf
+current_handoff_head: 95713e85f85f756f3bb3b9bdd6beec992416a56f
+current_handoff_short_head: 95713e8
+implementation_commit_message: fix: harden decision review queue semantics
+previous_repo_head: 1f55b0a281ebeb1769e0ebf39d1feb176b29b8bd
+previous_handoff_head: 8ea648d75260cd062de385c6b1fe59f101b225ac
 final_repo_head_note: final repo HEAD may be a separate handoff metadata commit after this context update
 tracked_worktree_clean_after_implementation_commit_before_handoff_cleanup: True
 zip_internal_dirty_worktree_present: True
@@ -25,14 +25,13 @@ canonical_review_bundle: external_review_packet/HANDOFF_LATEST.zip
 canonical_checksum: external_review_packet/HANDOFF_LATEST.sha256
 
 zip_file_count: 443
-zip_size_bytes: 12925889
-zip_sha256: bcf25f34bed7b04b84d910a0fd4513c9fd76321c72474e248ff0a65ef4c521c4
+zip_size_bytes: 12927420
+zip_sha256: 249154a57053eef32534519ceb2342f2348e0657b2bad73f8bdcc6dd7b690b27
 forbidden_match_count: 0
 nested_zip_count: 0
 missing_required: []
 decision_journal_validation_producer_in_zip: True
 decision_journal_validation_tests_in_zip: True
-decision_quality_producer_in_zip: True
 personal_run_engine_in_zip: True
 personal_run_engine_tests_in_zip: True
 monthly_report_builder_in_zip: True
@@ -70,44 +69,37 @@ autoritativ fuer Head, Scope, SHA und Dirty-State-Interpretation.
 ## Current Packet Scope
 
 Dieses Packet synchronisiert den externen Review-Kontext auf den committed
-Repo-Stand `8ea648d75260cd062de385c6b1fe59f101b225ac` nach
-`feat: add decision journal validation and review queue`.
+Repo-Stand `95713e85f85f756f3bb3b9bdd6beec992416a56f` nach
+`fix: harden decision review queue semantics`.
 
 Review-Schwerpunkte:
 
 - `src/personal_decision_journal_validation.py`
 - `tests/test_personal_decision_journal_validation.py`
-- `src/personal_decision_quality_state.py`
 - `src/personal_run_engine.py`
 - `tests/test_personal_run_engine.py`
 - `src/build_monthly_decision_report.py`
 - `tests/test_monthly_decision_report.py`
 - `docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md`
 - `docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md`
+- `docs/architecture/DECISION_QUALITY_LAYER.md`
 - `README.md`
 - `docs/MODULE_CONTRACTS.md`
 - `docs/CONTEXT_AND_ROADMAP.md`
 
-Der Patch fuehrt einen read-only Decision-Journal-Validation-Producer ein. Er
-validiert das bestehende append-only Decision-Capture-Journal, erzeugt eine
-Review Queue und verlinkt optional den vorhandenen Decision-Quality-State.
+Semantik-Haertung:
 
-Sichtbar gemacht werden:
-
-- fehlendes oder leeres Decision-Capture-Journal
-- fehlende Pflichtfelder und Contract-Validation-Findings
-- due Review Dates
-- fehlende Review Dates bei offenen Entscheidungen
-- unvollstaendige Rationale
-- gebrochene oder fehlende Source-/Lineage-Referenzen
-- Decision-Quality-State `review_required=true`
-- stale Decision-Quality-State
-- Source-Commit-Mismatch zwischen Decision Quality und Manifest/Repo
-
-Die Stage `decision_journal_validation` ist in `src.personal_run_engine` nach
-`decision_quality` integriert. Personal Run Report und Monthly Decision Report
-koennen eine Decision-Journal-Validation-Surface anzeigen; bei fehlenden
-Artefakten rendern sie `NOT_AVAILABLE` statt Status zu inferieren.
+- Duplicate `decision_id` erzeugt `DECISION_ID_DUPLICATE`,
+  `validation_status=REVIEW` und Priority `BLOCKER`.
+- Das Journal wird nicht mutiert und nicht automatisch korrigiert.
+- Surface Summary trennt `validation_findings_count`,
+  `validation_blocker_count`, `validation_high_count`, `queue_items`,
+  `queue_blocker_count`, `queue_high_count` und `stale_state_count`.
+- Wenn Validation-Findings existieren, aber keine Queue Items, bleibt die
+  Surface sichtbar nicht-harmlos.
+- `LOW` und `NOTE` sind fuer spaetere nicht-blockierende Hinweise reserviert.
+- Stale-State-MVP: jedes Decision-Quality-`as_of_date` vor dem effektiven
+  `as_of_date` ist stale; es gibt in diesem Patch keine YAML-Config.
 
 ## Handoff Reproducibility Note
 
@@ -138,17 +130,17 @@ Rohdaten, Brokerdokumente oder lokalen User-Pfade sind Teil dieses Packets.
 Implementation validation:
 
 - `python -m unittest tests.test_personal_decision_journal_validation -v`
-  - result: `Ran 12 tests in 1.150s`, `OK`.
-- `python -m unittest tests.test_personal_decision_quality_state -v`
-  - result: `Ran 26 tests in 4.314s`, `OK`.
-- `python -m unittest tests.test_personal_run_engine -v`
-  - result: `Ran 57 tests in 13.011s`, `OK`.
+  - result: `Ran 14 tests in 1.311s`, `OK`.
 - `python -m unittest tests.test_monthly_decision_report -v`
-  - result: `Ran 11 tests in 0.477s`, `OK`.
-- `python -m unittest tests.test_personal_input_closure tests.test_personal_decision_state_capture tests.test_cash_refill_review tests.test_rebalance_review -v`
-  - result: `Ran 72 tests in 2.995s`, `OK`.
+  - result: `Ran 11 tests in 0.494s`, `OK`.
+- `python -m unittest tests.test_personal_run_engine -v`
+  - result: `Ran 57 tests in 13.047s`, `OK`.
+- `python -m unittest tests.test_personal_decision_quality_state -v`
+  - result: `Ran 26 tests in 4.733s`, `OK`.
 - `python -m unittest tests.test_readme_and_reports -v`
-  - result: `Ran 7 tests in 1.508s`, `OK`.
+  - result: `Ran 7 tests in 1.653s`, `OK`.
+- `python -m unittest tests.test_personal_input_closure tests.test_personal_decision_state_capture tests.test_cash_refill_review tests.test_rebalance_review -v`
+  - result: `Ran 72 tests in 3.145s`, `OK`.
 - `git diff --check`
   - result: exit code `0`; only Git line-ending warnings for touched Python files, no whitespace errors reported.
 
@@ -157,10 +149,10 @@ No full test suite is claimed by this context file.
 Handoff artifact generation:
 
 - `python -m src.handoff_zip_export --profile full_review --name HANDOFF_LATEST --output-path ".\external_review_packet\HANDOFF_LATEST.zip"`
-  - result: generated ZIP for head `8ea648d75260cd062de385c6b1fe59f101b225ac`
+  - result: generated ZIP for head `95713e85f85f756f3bb3b9bdd6beec992416a56f`
   - file_count: `443`
-  - size_bytes: `12925889`
-  - zip_sha256: `BCF25F34BED7B04B84D910A0FD4513C9FD76321C72474E248FF0A65EF4C521C4`
+  - size_bytes: `12927420`
+  - zip_sha256: `249154A57053EEF32534519CEB2342F2348E0657B2BAD73F8BDCC6DD7B690B27`
   - forbidden_match_count: `0`
 
 Additional validation performed after handoff generation:
@@ -168,8 +160,8 @@ Additional validation performed after handoff generation:
 - ZIP integrity:
   - result: `None`
 - SHA verification:
-  - sha_file: `bcf25f34bed7b04b84d910a0fd4513c9fd76321c72474e248ff0a65ef4c521c4  HANDOFF_LATEST.zip`
-  - Get-FileHash: `BCF25F34BED7B04B84D910A0FD4513C9FD76321C72474E248FF0A65EF4C521C4`
+  - sha_file: `249154a57053eef32534519ceb2342f2348e0657b2bad73f8bdcc6dd7b690b27  HANDOFF_LATEST.zip`
+  - Get-FileHash: `249154A57053EEF32534519CEB2342F2348E0657B2BAD73F8BDCC6DD7B690B27`
   - sha_match: `True`
 - ZIP required-file check:
   - entry_count: `443`
