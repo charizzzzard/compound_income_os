@@ -108,6 +108,11 @@ from src.fundamentals_snapshot_review import (
 from src.multi_benchmark_performance_engine import run_multi_benchmark_performance_engine
 from src.performance_engine import run_performance_engine
 from src.personal_decision_quality_state import run_decision_quality_state
+from src.personal_decision_journal_validation import (
+    build_decision_journal_surface_lines,
+    read_decision_journal_surface,
+    run_decision_journal_validation,
+)
 from src.portfolio_history_engine import run_portfolio_history_engine
 from src.portfolio_review import DEFAULT_RULES_PATH as DEFAULT_PORTFOLIO_REVIEW_RULES_PATH
 from src.rebalance_review import DEFAULT_CSV_OUTPUT as DEFAULT_REBALANCE_REVIEW_CSV_OUTPUT
@@ -142,6 +147,7 @@ STAGE_ORDER = [
     "rebalance_review",
     "monthly",
     "decision_quality",
+    "decision_journal_validation",
     "history",
     "benchmark_archive",
     "performance",
@@ -230,6 +236,8 @@ DEFAULT_PATHS = {
     "personal_decision_state_capture": "data/processed/personal_decision_state_capture.csv",
     "decision_quality_csv_output": "data/processed/decision_quality_state.csv",
     "decision_quality_json_output": "data/processed/decision_quality_state.json",
+    "decision_journal_validation_output": "data/processed/decision_journal_validation.csv",
+    "decision_review_queue_output": "data/processed/decision_review_queue.csv",
     "portfolio_archive": "data/processed/portfolio_snapshot_archive.csv",
     "portfolio_timeseries_output": "data/processed/portfolio_timeseries.csv",
     "portfolio_history_summary_output": "data/processed/portfolio_history_summary.csv",
@@ -392,6 +400,9 @@ class PersonalRunOptions:
     decision_quality_csv_output: str = DEFAULT_PATHS["decision_quality_csv_output"]
     decision_quality_json_output: str = DEFAULT_PATHS["decision_quality_json_output"]
     decision_quality_report_output: str | None = None
+    decision_journal_validation_output: str = DEFAULT_PATHS["decision_journal_validation_output"]
+    decision_review_queue_output: str = DEFAULT_PATHS["decision_review_queue_output"]
+    decision_journal_validation_report_output: str | None = None
     portfolio_archive: str = DEFAULT_PATHS["portfolio_archive"]
     portfolio_timeseries_output: str = DEFAULT_PATHS["portfolio_timeseries_output"]
     portfolio_history_summary_output: str = DEFAULT_PATHS["portfolio_history_summary_output"]
@@ -464,6 +475,8 @@ class PersonalRunOptions:
             self.cost_tax_report_output = default_dated_report_path("cost_tax_report.md")
         if self.dashboard_report_output is None:
             self.dashboard_report_output = default_dated_report_path("dashboard_report.md")
+        if self.decision_journal_validation_report_output is None:
+            self.decision_journal_validation_report_output = default_dated_report_path("decision_journal_validation_report.md")
         if self.report_output is None:
             self.report_output = default_dated_report_path("personal_run_report.md")
         return self
@@ -635,6 +648,9 @@ def input_snapshot(options: PersonalRunOptions) -> dict[str, Any]:
         "decision_quality_csv_output": options.decision_quality_csv_output,
         "decision_quality_json_output": options.decision_quality_json_output,
         "decision_quality_report_output": options.decision_quality_report_output or "",
+        "decision_journal_validation_output": options.decision_journal_validation_output,
+        "decision_review_queue_output": options.decision_review_queue_output,
+        "decision_journal_validation_report_output": options.decision_journal_validation_report_output or "",
     }
 
 
@@ -1435,6 +1451,48 @@ def run_decision_quality_stage(options: PersonalRunOptions) -> StageResult:
     )
 
 
+def run_decision_journal_validation_stage(options: PersonalRunOptions) -> StageResult:
+    stage = "decision_journal_validation"
+    result = run_decision_journal_validation(
+        journal=options.personal_decision_state_capture,
+        decision_quality_csv=options.decision_quality_csv_output,
+        decision_quality_json=options.decision_quality_json_output,
+        run_manifest=options.manifest_output,
+        run_used_inputs=options.used_inputs_output,
+        validation_output=options.decision_journal_validation_output,
+        queue_output=options.decision_review_queue_output,
+        report=options.decision_journal_validation_report_output,
+        as_of_date=options.portfolio_date,
+    )
+    warnings = []
+    if result.summary.get("validation_status") != "PASS" or result.queue_rows:
+        warnings.append("Decision Journal Validation produced review queue items.")
+    return stage_result(
+        stage,
+        SUCCESS,
+        [
+            "personal_decision_state_capture",
+            "decision_quality_state",
+            "personal_run_manifest",
+            "personal_run_used_inputs",
+        ],
+        used_inputs={
+            "personal_decision_state_capture": options.personal_decision_state_capture,
+            "decision_quality_state_csv": options.decision_quality_csv_output,
+            "decision_quality_state_json": options.decision_quality_json_output,
+            "personal_run_manifest": options.manifest_output,
+            "personal_run_used_inputs": options.used_inputs_output,
+        },
+        produced_outputs={
+            "decision_journal_validation": str(result.validation_output),
+            "decision_review_queue": str(result.queue_output),
+            "decision_journal_validation_report": str(result.report_output),
+        },
+        warnings=warnings,
+        notes="Read-only Decision Journal Validation and Review Queue generated from existing journal and Decision Quality artifacts.",
+    )
+
+
 def run_history_stage(options: PersonalRunOptions) -> StageResult:
     stage = "history"
     positions_path = require_existing_path(options.positions_output, "positions snapshot", stage)
@@ -1688,6 +1746,7 @@ STAGE_RUNNERS: dict[str, Callable[[PersonalRunOptions], StageResult]] = {
     "rebalance_review": run_rebalance_review_stage,
     "monthly": run_monthly_stage,
     "decision_quality": run_decision_quality_stage,
+    "decision_journal_validation": run_decision_journal_validation_stage,
     "history": run_history_stage,
     "benchmark_archive": run_benchmark_archive_stage,
     "performance": run_performance_stage,
@@ -1841,6 +1900,9 @@ def build_manifest(
             "decision_quality_csv_output": options.decision_quality_csv_output,
             "decision_quality_json_output": options.decision_quality_json_output,
             "decision_quality_report_output": options.decision_quality_report_output or "",
+            "decision_journal_validation_output": options.decision_journal_validation_output,
+            "decision_review_queue_output": options.decision_review_queue_output,
+            "decision_journal_validation_report_output": options.decision_journal_validation_report_output or "",
             "data_source_status_output": options.data_source_status_output,
             "data_source_resolved_output": options.data_source_resolved_output,
             "report_output": options.report_output or "",
@@ -1869,6 +1931,20 @@ def decision_quality_state_from_artifacts(artifact_rows: list[dict[str, str]]) -
             if state:
                 return state, artifact_path
     return None, ""
+
+
+def decision_journal_surface_from_artifacts(artifact_rows: list[dict[str, str]]) -> tuple[list[dict[str, str]], list[dict[str, str]], str, str]:
+    validation_path = ""
+    queue_path = ""
+    for row in artifact_rows:
+        if row["produced"] != "True":
+            continue
+        if row["artifact_role"] == "decision_journal_validation":
+            validation_path = row["artifact_path"]
+        elif row["artifact_role"] == "decision_review_queue":
+            queue_path = row["artifact_path"]
+    validation_rows, queue_rows = read_decision_journal_surface(validation_path or None, queue_path or None)
+    return validation_rows, queue_rows, validation_path, queue_path
 
 
 def write_run_report(path_value: str, manifest: dict[str, Any], artifact_rows: list[dict[str, str]]) -> Path:
@@ -1903,6 +1979,17 @@ def write_run_report(path_value: str, manifest: dict[str, Any], artifact_rows: l
         build_decision_quality_surface_lines(
             decision_quality_state,
             source_path=decision_quality_path or None,
+            include_heading=False,
+        )
+    )
+    validation_rows, queue_rows, validation_path, queue_path = decision_journal_surface_from_artifacts(artifact_rows)
+    lines.extend(["", "## Decision Journal Validation", ""])
+    lines.extend(
+        build_decision_journal_surface_lines(
+            validation_rows,
+            queue_rows,
+            validation_path=validation_path or None,
+            queue_path=queue_path or None,
             include_heading=False,
         )
     )
@@ -2007,7 +2094,7 @@ def write_decision_quality_preflight_lineage(
         utc_now_text(),
         SUCCESS,
         warnings,
-        "Provisional manifest written before decision_quality stage.",
+        "Provisional manifest written before read-only review-state stage.",
     )
     write_manifest(options.manifest_output, manifest)
 
@@ -2030,7 +2117,7 @@ def run_personal_run_engine(options: PersonalRunOptions) -> dict[str, Any]:
             stage_results_by_name[stage_name] = skipped_result(stage_name, failed_stage)
             continue
         try:
-            if stage_name == "decision_quality":
+            if stage_name in {"decision_quality", "decision_journal_validation"}:
                 write_decision_quality_preflight_lineage(options, selected_stages, executed_stage_order, stage_results_by_name, run_started_at, warnings)
             executed_stage_order.append(stage_name)
             result = STAGE_RUNNERS[stage_name](options)
@@ -2147,6 +2234,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--decision-quality-csv-output", default=DEFAULT_PATHS["decision_quality_csv_output"], help="Decision Quality State CSV output.")
     parser.add_argument("--decision-quality-json-output", default=DEFAULT_PATHS["decision_quality_json_output"], help="Decision Quality State JSON output.")
     parser.add_argument("--decision-quality-report-output", help="Decision Quality markdown report output; defaults to reports/{as_of_date}/decision_quality_report.md.")
+    parser.add_argument("--decision-journal-validation-output", default=DEFAULT_PATHS["decision_journal_validation_output"], help="Decision Journal Validation CSV output.")
+    parser.add_argument("--decision-review-queue-output", default=DEFAULT_PATHS["decision_review_queue_output"], help="Decision Review Queue CSV output.")
+    parser.add_argument("--decision-journal-validation-report-output", help="Decision Journal Validation markdown report output.")
     parser.add_argument("--portfolio-archive", default=DEFAULT_PATHS["portfolio_archive"], help="Portfolio snapshot archive path.")
     parser.add_argument("--portfolio-timeseries-output", default=DEFAULT_PATHS["portfolio_timeseries_output"], help="Portfolio timeseries output.")
     parser.add_argument("--portfolio-history-summary-output", default=DEFAULT_PATHS["portfolio_history_summary_output"], help="Portfolio history summary output.")
@@ -2270,6 +2360,9 @@ def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
         decision_quality_csv_output=args.decision_quality_csv_output,
         decision_quality_json_output=args.decision_quality_json_output,
         decision_quality_report_output=args.decision_quality_report_output,
+        decision_journal_validation_output=args.decision_journal_validation_output,
+        decision_review_queue_output=args.decision_review_queue_output,
+        decision_journal_validation_report_output=args.decision_journal_validation_report_output,
         portfolio_archive=args.portfolio_archive,
         portfolio_timeseries_output=args.portfolio_timeseries_output,
         portfolio_history_summary_output=args.portfolio_history_summary_output,

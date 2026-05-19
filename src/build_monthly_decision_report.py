@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from src.common import ensure_parent_dir, read_csv_rows, require_columns, require_unique_tickers, resolve_repo_path, round2, to_bool, to_float
+from src.personal_decision_journal_validation import build_decision_journal_surface_lines, read_decision_journal_surface
 from src.portfolio_rules import load_portfolio_rules
 
 COVERAGE_REQUIRED_COLUMNS = [
@@ -249,6 +250,10 @@ def build_monthly_decision_report(
     rebalance_rows: list[dict[str, str]] | None = None,
     decision_quality_state: Mapping[str, Any] | None = None,
     decision_quality_source_path: str | None = None,
+    decision_journal_validation_rows: list[dict[str, str]] | None = None,
+    decision_review_queue_rows: list[dict[str, str]] | None = None,
+    decision_journal_validation_source_path: str | None = None,
+    decision_review_queue_source_path: str | None = None,
 ) -> Path:
     rules = load_portfolio_rules(rules_path)
     monthly_cash = to_float(rules["monthly_new_cash_eur"])
@@ -279,6 +284,16 @@ def build_monthly_decision_report(
         build_decision_quality_surface_lines(
             decision_quality_state,
             source_path=decision_quality_source_path,
+            include_heading=True,
+        )
+    )
+    lines.extend([""])
+    lines.extend(
+        build_decision_journal_surface_lines(
+            decision_journal_validation_rows,
+            decision_review_queue_rows,
+            validation_path=decision_journal_validation_source_path,
+            queue_path=decision_review_queue_source_path,
             include_heading=True,
         )
     )
@@ -402,6 +417,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cash-refill-review", help="Optional Cash-Refill Review CSV.")
     parser.add_argument("--rebalance-review", help="Optional Rebalance Review CSV.")
     parser.add_argument("--decision-quality-state", help="Optional Decision Quality State CSV or JSON.")
+    parser.add_argument("--decision-journal-validation", help="Optional Decision Journal Validation CSV.")
+    parser.add_argument("--decision-review-queue", help="Optional Decision Review Queue CSV.")
     parser.add_argument("--rules", default="configs/portfolio_rules.yaml", help="Portfolio rules config path.")
     return parser.parse_args()
 
@@ -415,6 +432,7 @@ def main() -> None:
     cash_refill_rows = read_csv_rows(args.cash_refill_review) if args.cash_refill_review and resolve_repo_path(args.cash_refill_review).exists() else None
     rebalance_rows = read_csv_rows(args.rebalance_review) if args.rebalance_review and resolve_repo_path(args.rebalance_review).exists() else None
     decision_quality_state = read_decision_quality_state(args.decision_quality_state) if args.decision_quality_state else None
+    decision_journal_validation_rows, decision_review_queue_rows = read_decision_journal_surface(args.decision_journal_validation, args.decision_review_queue)
     require_columns(
         score_rows,
         ["ticker", "classification", "data_quality_flag", "held_in_portfolio", "main_risks"],
@@ -438,6 +456,10 @@ def main() -> None:
         rebalance_rows=rebalance_rows,
         decision_quality_state=decision_quality_state,
         decision_quality_source_path=args.decision_quality_state,
+        decision_journal_validation_rows=decision_journal_validation_rows,
+        decision_review_queue_rows=decision_review_queue_rows,
+        decision_journal_validation_source_path=args.decision_journal_validation,
+        decision_review_queue_source_path=args.decision_review_queue,
     )
 
 

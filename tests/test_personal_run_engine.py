@@ -22,6 +22,7 @@ from src.fundamentals_overlay_engine import DEFAULT_SCHEMA_PATH as DEFAULT_OVERL
 from src.fundamentals_profile_engine import PROFILE_REVIEW_INPUT_FIELDS
 from src.fundamentals_snapshot_ingestion import SNAPSHOT_INPUT_FIELDS, SUMMARY_FIELDS
 from src.fundamentals_snapshot_review import SNAPSHOT_REVIEW_INPUT_FIELDS, SNAPSHOT_REVIEW_SUMMARY_FIELDS
+from src.personal_decision_state_capture import FIELDS as DECISION_CAPTURE_FIELDS
 from src.personal_run_engine import DEFAULT_PATHS, STAGE_ORDER, STAGE_RUNNERS, SUCCESS, USED_INPUT_FIELDS, PersonalRunOptions, options_from_args, parse_args, run_personal_run_engine, stage_result
 from src.savings_plan_registry import REGISTRY_FIELDS
 
@@ -493,6 +494,9 @@ class PersonalRunEngineTests(unittest.TestCase):
             decision_quality_csv_output=str(self._path(f"_tmp_{prefix}_decision_quality_state.csv")),
             decision_quality_json_output=str(self._path(f"_tmp_{prefix}_decision_quality_state.json")),
             decision_quality_report_output=str(self._path(f"_tmp_{prefix}_decision_quality_report.md")),
+            decision_journal_validation_output=str(self._path(f"_tmp_{prefix}_decision_journal_validation.csv")),
+            decision_review_queue_output=str(self._path(f"_tmp_{prefix}_decision_review_queue.csv")),
+            decision_journal_validation_report_output=str(self._path(f"_tmp_{prefix}_decision_journal_validation_report.md")),
             portfolio_archive=str(self._path(f"_tmp_{prefix}_portfolio_archive.csv")),
             portfolio_timeseries_output=str(self._path(f"_tmp_{prefix}_portfolio_timeseries.csv")),
             portfolio_history_summary_output=str(self._path(f"_tmp_{prefix}_portfolio_history_summary.csv")),
@@ -611,6 +615,42 @@ class PersonalRunEngineTests(unittest.TestCase):
             ],
         )
 
+    def _write_decision_journal_validation_inputs(self, options: PersonalRunOptions, *, review_date: str = "2026-05-19") -> None:
+        self._write_minimal_decision_quality_review_inputs(options)
+        primary_report = self._path("_tmp_decision_journal_validation_primary_report.md")
+        primary_report.write_text("# monthly report\n", encoding="utf-8")
+        row = {field: "" for field in DECISION_CAPTURE_FIELDS}
+        row.update(
+            {
+                "decision_id": "DECISION_20260519_0001",
+                "decision_date": "2026-05-19",
+                "decision_scope": "ASSET",
+                "asset_id": "MSFT",
+                "ticker": "MSFT",
+                "asset_name": "Microsoft Corp.",
+                "asset_type": "STOCK",
+                "proposed_action": "WAIT_FOR_PRICE",
+                "human_decision": "DEFERRED",
+                "decision_status": "REVIEW_SCHEDULED",
+                "reasoning_3_sentences": "The candidate remains high quality. Valuation is not attractive enough. Review after updated valuation and cash context.",
+                "dominant_uncertainty": "VALUATION",
+                "benchmark_alternative": "CASH",
+                "benchmark_ref_or_label": "CASH",
+                "review_date": review_date,
+                "created_at": "2026-05-19T00:00:00",
+                "run_id": "2026-05-19-monthly",
+                "manifest_path": options.manifest_output,
+                "primary_report_path": primary_report.as_posix(),
+                "source_snapshot_date": "2026-05-19",
+                "accounting_basis": "SNAPSHOT_ONLY",
+                "policy_ref": "docs/architecture/COMPOUND_INCOME_OS_SYSTEM_DEFINITION.md",
+                "operator_state": "NORMAL",
+                "decision_pressure": "NORMAL",
+                "cash_context": "AVAILABLE_CASH",
+            }
+        )
+        self._write_csv(Path(options.personal_decision_state_capture), DECISION_CAPTURE_FIELDS, [row])
+
     def _used_inputs_for_stage(self, rows: list[dict[str, str]], stage_name: str) -> dict[str, dict[str, str]]:
         return {row["input_role"]: row for row in rows if row["stage_name"] == stage_name}
 
@@ -639,6 +679,7 @@ class PersonalRunEngineTests(unittest.TestCase):
                 "rebalance_review",
                 "monthly",
                 "decision_quality",
+                "decision_journal_validation",
                 "history",
                 "benchmark_archive",
                 "performance",
@@ -669,9 +710,11 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("cash_refill_review") + 1], "rebalance_review")
         self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("rebalance_review") + 1], "monthly")
         self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("monthly") + 1], "decision_quality")
+        self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("decision_quality") + 1], "decision_journal_validation")
         self.assertIn("cash_refill_review", STAGE_RUNNERS)
         self.assertIn("rebalance_review", STAGE_RUNNERS)
         self.assertIn("decision_quality", STAGE_RUNNERS)
+        self.assertIn("decision_journal_validation", STAGE_RUNNERS)
 
     def test_targeted_cash_refill_review_stage_writes_outputs(self) -> None:
         options = self._base_options("cash_refill_stage", ["cash_refill_review"])
@@ -2009,6 +2052,43 @@ class PersonalRunEngineTests(unittest.TestCase):
         state = json.loads(Path(options.decision_quality_json_output).read_text(encoding="utf-8"))
         forbidden = {"broker", "order_id", "execution_id", "filled_price", "tax_lot", "simulation", "backtest"}
         self.assertTrue(forbidden.isdisjoint(state.keys()))
+
+    def test_decision_journal_validation_stage_generates_outputs_and_lineage(self) -> None:
+        options = self._core_options(
+            "decision_journal_validation_e2e",
+            ["import", "fundamentals_seed", "scoring", "coverage", "watchlist", "cash_refill_review", "rebalance_review", "monthly", "decision_quality", "decision_journal_validation"],
+        )
+        options.portfolio_date = "2026-05-19"
+        self._write_decision_journal_validation_inputs(options)
+
+        manifest = run_personal_run_engine(options)
+
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertLess(manifest["executed_stage_order"].index("decision_quality"), manifest["executed_stage_order"].index("decision_journal_validation"))
+        self.assertTrue(Path(options.decision_journal_validation_output).exists())
+        self.assertTrue(Path(options.decision_review_queue_output).exists())
+        self.assertTrue(Path(options.decision_journal_validation_report_output or "").exists())
+        artifact_rows = read_csv_rows(options.artifacts_output)
+        produced_roles = {row["artifact_role"] for row in artifact_rows if row["stage_name"] == "decision_journal_validation" and row["produced"] == "True"}
+        self.assertEqual(produced_roles, {"decision_journal_validation", "decision_journal_validation_report", "decision_review_queue"})
+        used_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "decision_journal_validation")
+        self.assertIn("personal_decision_state_capture", used_inputs)
+        self.assertIn("decision_quality_state_json", used_inputs)
+        queue_rows = read_csv_rows(options.decision_review_queue_output)
+        self.assertTrue(any("REVIEW_DATE_DUE" in row["reason_codes"] for row in queue_rows))
+        run_report = Path(options.report_output or "").read_text(encoding="utf-8")
+        self.assertIn("## Decision Journal Validation", run_report)
+        self.assertIn("queue_items", run_report)
+
+    def test_run_report_renders_decision_journal_validation_not_available_when_stage_missing(self) -> None:
+        options = self._core_options("decision_journal_validation_missing_surface", ["import"])
+
+        manifest = run_personal_run_engine(options)
+
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        run_report = Path(options.report_output or "").read_text(encoding="utf-8")
+        self.assertIn("## Decision Journal Validation", run_report)
+        self.assertIn("Decision Journal Validation: `NOT_AVAILABLE`", run_report)
 
     def test_history_and_performance_run_uses_existing_single_benchmark_method(self) -> None:
         options = self._core_options("history_perf", ["import", "history", "performance"])

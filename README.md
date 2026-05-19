@@ -131,6 +131,26 @@ In Phase 1.5B, Ranking Robustness, Sensitivity, Scenario and Tail Risk remain
 mandatory inputs or blocked Input Closure set `decision_confidence_level=REVIEW`
 and `review_required=true`.
 
+## Decision Journal Validation
+
+`src.personal_decision_journal_validation` validates the append-only Decision
+Capture journal and builds a deterministic operator review queue. It reads the
+existing Decision Capture CSV plus optional Decision Quality, run manifest and
+used-input artifacts. It writes `decision_journal_validation.csv`,
+`decision_review_queue.csv` and a dated Markdown report. The module does not
+create decisions, execute orders, change scores, change portfolio rules,
+simulate, backtest or attribute outcomes.
+
+```powershell
+python -m src.personal_decision_journal_validation --journal data/processed/personal_decision_state_capture.csv --decision-quality-json data/processed/decision_quality_state.json --run-manifest data/processed/personal_run_manifest.json --run-used-inputs data/processed/personal_run_used_inputs.csv --validation-output data/processed/decision_journal_validation.csv --queue-output data/processed/decision_review_queue.csv --report reports/YYYY-MM-DD/decision_journal_validation_report.md
+```
+
+The same producer is available as the read-only `decision_journal_validation`
+stage in `src.personal_run_engine` after `decision_quality`. The Personal Run
+Report renders a Decision Journal Validation section from the produced
+validation and queue artifacts; if the stage is missing, it is shown as
+`NOT_AVAILABLE` instead of inferring status.
+
 ## Decision Capture
 
 `src.personal_decision_state_capture` is the first minimal producer from the

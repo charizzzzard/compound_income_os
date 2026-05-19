@@ -338,3 +338,54 @@ class MonthlyDecisionReportTests(unittest.TestCase):
         finally:
             if output_path.exists():
                 output_path.unlink()
+
+    def test_report_renders_decision_journal_validation_surface(self) -> None:
+        output_path = Path("tests") / "_tmp_monthly_report_decision_journal_validation.md"
+        try:
+            build_monthly_decision_report(
+                [],
+                [],
+                [],
+                str(output_path),
+                decision_journal_validation_rows=[
+                    {
+                        "validation_id": "VAL_20260520_0001",
+                        "as_of_date": "2026-05-20",
+                        "validation_status": "REVIEW",
+                        "decision_id": "DECISION_1",
+                        "field_name": "review_date",
+                        "reason_code": "REVIEW_DATE_MISSING",
+                        "priority": "HIGH",
+                        "source_artifact": "data/processed/personal_decision_state_capture.csv",
+                        "message": "missing review date",
+                    }
+                ],
+                decision_review_queue_rows=[
+                    {
+                        "queue_id": "QUEUE_20260520_0001",
+                        "priority": "HIGH",
+                        "reason_codes": "REVIEW_DATE_MISSING",
+                    }
+                ],
+                decision_journal_validation_source_path="data/processed/decision_journal_validation.csv",
+                decision_review_queue_source_path="data/processed/decision_review_queue.csv",
+            )
+            report = output_path.read_text(encoding="utf-8")
+            self.assertIn("## Decision Journal Validation", report)
+            self.assertIn("validation_status", report)
+            self.assertIn("queue_items", report)
+            self.assertIn("Process/Review Confidence", report)
+        finally:
+            if output_path.exists():
+                output_path.unlink()
+
+    def test_report_renders_decision_journal_validation_missing_as_not_available(self) -> None:
+        output_path = Path("tests") / "_tmp_monthly_report_decision_journal_validation_missing.md"
+        try:
+            build_monthly_decision_report([], [], [], str(output_path))
+            report = output_path.read_text(encoding="utf-8")
+            self.assertIn("## Decision Journal Validation", report)
+            self.assertIn("Decision Journal Validation: `NOT_AVAILABLE`", report)
+        finally:
+            if output_path.exists():
+                output_path.unlink()
