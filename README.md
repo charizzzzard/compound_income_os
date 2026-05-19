@@ -112,6 +112,10 @@ attribute outcomes or execute orders.
 python -m src.personal_decision_quality_state --input-closure data/processed/personal_input_closure_report.csv --decision-capture data/processed/personal_decision_state_capture.csv --cash-refill data/processed/personal_cash_refill_review.csv --rebalance data/processed/personal_rebalance_review.csv --run-manifest data/processed/personal_run_manifest.json --run-used-inputs data/processed/personal_run_used_inputs.csv --monthly-ranking data/processed/personal_monthly_buy_ranking.csv --score-audit data/processed/personal_score_audit.csv --out-csv data/processed/decision_quality_state.csv --out-json data/processed/decision_quality_state.json --report reports/YYYY-MM-DD/decision_quality_report.md
 ```
 
+If `--report` is omitted, the report path is derived from the effective
+`as_of_date` from the run manifest and falls back to today's date only when no
+manifest date is available.
+
 In Phase 1.5B, Ranking Robustness, Sensitivity, Scenario and Tail Risk remain
 `NOT_EVALUATED`. Ranking/Sensitivity `NOT_EVALUATED` caps process confidence at
 `MEDIUM` but does not by itself require review. Hard blockers such as missing

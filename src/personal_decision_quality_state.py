@@ -23,7 +23,7 @@ DEFAULT_MONTHLY_RANKING = "data/processed/personal_monthly_buy_ranking.csv"
 DEFAULT_SCORE_AUDIT = "data/processed/personal_score_audit.csv"
 DEFAULT_OUT_CSV = "data/processed/decision_quality_state.csv"
 DEFAULT_OUT_JSON = "data/processed/decision_quality_state.json"
-DEFAULT_REPORT = f"reports/{date.today().isoformat()}/decision_quality_report.md"
+DEFAULT_REPORT_PATTERN = "reports/{as_of_date}/decision_quality_report.md"
 
 FIELDNAMES = [
     "run_id",
@@ -62,8 +62,13 @@ NON_SCOPE_CONFIRMATIONS = [
     "NO_AUTO_TRADING",
     "NO_SCORE_FORMULA_CHANGE",
     "NO_PORTFOLIO_RULE_CHANGE",
+    "NO_SILENT_DATA_ENRICHMENT",
     "NO_SIMULATION_OR_BACKTESTING",
     "NO_OUTCOME_ATTRIBUTION",
+    "NO_RUNTIME_LLM_DECISIONING",
+    "NO_TAX_QUANTIFICATION",
+    "NO_PORTFOLIO_EVENT_LEDGER",
+    "NO_PRIVATE_RAW_DATA",
 ]
 
 
@@ -76,6 +81,7 @@ class InputRead:
     readable: bool
     rows: list[dict[str, str]]
     error: str = ""
+    external_path: bool = False
 
 
 @dataclass(frozen=True)
@@ -114,15 +120,58 @@ def _read_json(path_value: str | Path) -> tuple[dict[str, Any], str]:
     return data if isinstance(data, dict) else {}, ""
 
 
+def _repo_root() -> Path:
+    return resolve_repo_path(".").resolve()
+
+
+def _normalize_path_for_output(path_value: str | Path, label: str) -> tuple[str, bool]:
+    raw = str(path_value)
+    path = Path(raw)
+    if path.is_absolute():
+        try:
+            rel = path.resolve().relative_to(_repo_root())
+        except ValueError:
+            return f"EXTERNAL_PATH_REDACTED:{label}", True
+        return rel.as_posix(), False
+    return Path(raw).as_posix(), False
+
+
+def _is_private_or_absolute_lineage_value(value: str) -> bool:
+    text = value.strip()
+    if not text:
+        return False
+    lowered = text.replace("\\", "/").lower()
+    if "data/raw/private" in lowered:
+        return True
+    if Path(text).is_absolute():
+        try:
+            Path(text).resolve().relative_to(_repo_root())
+        except ValueError:
+            return True
+    return False
+
+
 def _read_input(label: str, path_value: str, *, mandatory: bool) -> InputRead:
+    output_path, external_path = _normalize_path_for_output(path_value, label)
+    if external_path:
+        return InputRead(
+            label=label,
+            path=output_path,
+            mandatory=mandatory,
+            exists=False,
+            readable=False,
+            rows=[],
+            error="external path redacted",
+            external_path=True,
+        )
     path = resolve_repo_path(path_value)
     if not path.exists():
-        return InputRead(label=label, path=path_value, mandatory=mandatory, exists=False, readable=False, rows=[])
+        return InputRead(label=label, path=output_path, mandatory=mandatory, exists=False, readable=False, rows=[])
     try:
         rows = read_csv_rows(path)
     except Exception as exc:  # noqa: BLE001 - converted into deterministic state
-        return InputRead(label=label, path=path_value, mandatory=mandatory, exists=True, readable=False, rows=[], error=str(exc))
-    return InputRead(label=label, path=path_value, mandatory=mandatory, exists=True, readable=True, rows=rows)
+        return InputRead(label=label, path=output_path, mandatory=mandatory, exists=True, readable=False, rows=[], error=str(exc))
+    return InputRead(label=label, path=output_path, mandatory=mandatory, exists=True, readable=True, rows=rows)
 
 
 def _artifact_status(item: InputRead) -> str:
@@ -139,7 +188,27 @@ def _manifest_stage_executed(manifest: dict[str, Any], needle: str) -> bool:
         value = manifest.get(key)
         if isinstance(value, list):
             stages.extend(str(item) for item in value)
-    return any(needle in stage for stage in stages)
+    lowered_needle = needle.lower()
+    return any(lowered_needle in stage.lower() for stage in stages)
+
+
+def _manifest_text_values(value: Any) -> list[str]:
+    values: list[str] = []
+    if isinstance(value, dict):
+        for key, nested in value.items():
+            values.append(str(key))
+            values.extend(_manifest_text_values(nested))
+    elif isinstance(value, list):
+        for nested in value:
+            values.extend(_manifest_text_values(nested))
+    else:
+        values.append(str(value))
+    return values
+
+
+def _manifest_output_ref_exists(manifest: dict[str, Any], *needles: str) -> bool:
+    haystack = "\n".join(_manifest_text_values(manifest)).replace("\\", "/").lower()
+    return any(needle.lower() in haystack for needle in needles)
 
 
 def _derive_run_id(manifest: dict[str, Any], fallback: str) -> str:
@@ -251,6 +320,38 @@ def _decision_capture_status(item: InputRead) -> tuple[str, str]:
     return "PASS", "PASS"
 
 
+def _run_used_inputs_findings(item: InputRead) -> tuple[list[str], list[str]]:
+    if not item.readable:
+        return [], []
+    if not item.rows:
+        return ["run_used_inputs"], ["LINEAGE_INCOMPLETE"]
+
+    columns = list(item.rows[0].keys())
+    path_columns = [
+        column
+        for column in columns
+        if column.lower() in {"path", "input_path", "artifact", "artifact_path", "source", "resolved_path"}
+        or "path" in column.lower()
+        or "artifact" in column.lower()
+    ]
+    if not path_columns:
+        return ["run_used_inputs_lineage"], ["LINEAGE_INCOMPLETE"]
+
+    status_columns = [column for column in columns if column.lower() in {"status", "input_status", "artifact_status"}]
+    missing: list[str] = []
+    reasons: list[str] = []
+    for row in item.rows:
+        if any(_is_private_or_absolute_lineage_value(str(row.get(column, "") or "")) for column in path_columns):
+            _append_unique(missing, "run_used_inputs_private_or_external_path")
+            _append_unique(reasons, "LINEAGE_INCOMPLETE")
+        for column in status_columns:
+            status = str(row.get(column, "") or "").strip().upper()
+            if status in {"MISSING", "UNREADABLE", "REVIEW", "INVALID"}:
+                _append_unique(missing, "run_used_inputs_status")
+                _append_unique(reasons, "LINEAGE_INCOMPLETE")
+    return missing, reasons
+
+
 def build_decision_quality_state(
     *,
     input_closure: str = DEFAULT_INPUT_CLOSURE,
@@ -265,16 +366,29 @@ def build_decision_quality_state(
     generated_at: str | None = None,
     run_id: str | None = None,
 ) -> dict[str, Any]:
+    manifest_output_path, manifest_external_path = _normalize_path_for_output(run_manifest, "run_manifest")
     manifest_path = resolve_repo_path(run_manifest)
     manifest_exists = manifest_path.exists()
-    manifest, manifest_error = _read_json(run_manifest) if manifest_exists else ({}, "missing")
+    if manifest_external_path:
+        manifest_exists = False
+        manifest, manifest_error = {}, "external path redacted"
+    else:
+        manifest, manifest_error = _read_json(run_manifest) if manifest_exists else ({}, "missing")
     fallback_date = as_of_date or date.today().isoformat()
     effective_as_of = _derive_as_of_date(manifest, fallback_date)
     effective_run_id = run_id or _derive_run_id(manifest, f"{effective_as_of}-monthly")
     source_commit = _derive_source_commit(manifest)
 
-    ranking_required = _manifest_stage_executed(manifest, "monthly_ranking")
-    score_required = _manifest_stage_executed(manifest, "score")
+    ranking_required = (
+        _manifest_stage_executed(manifest, "monthly")
+        or _manifest_stage_executed(manifest, "monthly_ranking")
+        or _manifest_output_ref_exists(manifest, "monthly_buy_ranking", "personal_monthly_buy_ranking")
+    )
+    score_required = (
+        _manifest_stage_executed(manifest, "scoring")
+        or _manifest_stage_executed(manifest, "score")
+        or _manifest_output_ref_exists(manifest, "score_audit", "personal_score_audit", "company_scores")
+    )
 
     inputs = [
         _read_input("personal_input_closure_report", input_closure, mandatory=True),
@@ -282,11 +396,13 @@ def build_decision_quality_state(
         _read_input("cash_refill_review", cash_refill, mandatory=True),
         _read_input("rebalance_review", rebalance, mandatory=True),
         _read_input("run_used_inputs", run_used_inputs, mandatory=True),
-        _read_input("monthly_ranking", monthly_ranking, mandatory=ranking_required),
-        _read_input("score_audit", score_audit, mandatory=score_required),
+        _read_input("monthly_ranking_output", monthly_ranking, mandatory=ranking_required),
+        _read_input("score_audit_output", score_audit, mandatory=score_required),
     ]
 
-    input_artifacts = [f"run_manifest={run_manifest}:{'AVAILABLE' if manifest_exists and not manifest_error else 'MISSING' if not manifest_exists else 'UNREADABLE'}"]
+    input_artifacts = [
+        f"run_manifest={manifest_output_path}:{'AVAILABLE' if manifest_exists and not manifest_error else 'MISSING' if not manifest_exists else 'UNREADABLE'}"
+    ]
     input_artifacts.extend(f"{item.label}={item.path}:{_artifact_status(item)}" for item in inputs)
 
     hard_blockers: list[str] = []
@@ -307,10 +423,18 @@ def build_decision_quality_state(
 
     for item in inputs:
         if item.mandatory and not item.readable:
-            _append_unique(hard_blockers, "LINEAGE_INCOMPLETE" if item.label in {"run_used_inputs"} else "EVIDENCE_MISSING")
+            _append_unique(hard_blockers, "LINEAGE_INCOMPLETE" if item.label in {"run_used_inputs"} or item.external_path else "EVIDENCE_MISSING")
             _append_unique(missing_critical_fields, item.label)
-            _append_unique(confidence_reason_codes, "LINEAGE_INCOMPLETE" if item.label == "run_used_inputs" else "EVIDENCE_MISSING")
-            _append_unique(review_reason_codes, "LINEAGE_INCOMPLETE" if item.label == "run_used_inputs" else "EVIDENCE_MISSING")
+            _append_unique(confidence_reason_codes, "LINEAGE_INCOMPLETE" if item.label == "run_used_inputs" or item.external_path else "EVIDENCE_MISSING")
+            _append_unique(review_reason_codes, "LINEAGE_INCOMPLETE" if item.label == "run_used_inputs" or item.external_path else "EVIDENCE_MISSING")
+
+    run_used_missing, run_used_reasons = _run_used_inputs_findings(inputs[4])
+    for field in run_used_missing:
+        _append_unique(missing_critical_fields, field)
+    for reason in run_used_reasons:
+        _append_unique(confidence_reason_codes, reason)
+        _append_unique(review_reason_codes, reason)
+        _append_unique(hard_blockers, reason)
 
     input_closure_item = inputs[0]
     evidence_status, data_quality_status, evidence_pct, closure_missing, closure_reasons, closure_blocked = _input_closure_signals(input_closure_item)
@@ -479,8 +603,14 @@ def render_report(state: dict[str, Any]) -> str:
         "",
         "- no broker/order/trading",
         "- no score formula change",
+        "- no portfolio rule change",
+        "- no silent data enrichment",
         "- no simulation/backtesting",
         "- no outcome attribution",
+        "- no runtime LLM decisioning",
+        "- no tax quantification",
+        "- no portfolio event ledger",
+        "- no private raw data",
         "",
     ]
     return "\n".join(lines)
@@ -504,7 +634,7 @@ def run_decision_quality_state(
     score_audit: str = DEFAULT_SCORE_AUDIT,
     out_csv: str = DEFAULT_OUT_CSV,
     out_json: str = DEFAULT_OUT_JSON,
-    report: str = DEFAULT_REPORT,
+    report: str | None = None,
     as_of_date: str | None = None,
     generated_at: str | None = None,
     run_id: str | None = None,
@@ -524,7 +654,8 @@ def run_decision_quality_state(
     )
     csv_path = write_state_csv(state, out_csv)
     json_path = write_state_json(state, out_json)
-    report_path = write_report(state, report)
+    effective_report = report or DEFAULT_REPORT_PATTERN.format(as_of_date=state["as_of_date"])
+    report_path = write_report(state, effective_report)
     return DecisionQualityResult(csv_output=csv_path, json_output=json_path, report_output=report_path, state=state)
 
 
@@ -540,7 +671,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--score-audit", default=DEFAULT_SCORE_AUDIT)
     parser.add_argument("--out-csv", default=DEFAULT_OUT_CSV)
     parser.add_argument("--out-json", default=DEFAULT_OUT_JSON)
-    parser.add_argument("--report", default=DEFAULT_REPORT)
+    parser.add_argument("--report", default=None)
     parser.add_argument("--as-of-date", default=None)
     parser.add_argument("--generated-at", default=None)
     parser.add_argument("--run-id", default=None)

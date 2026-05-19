@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -178,6 +180,73 @@ class PersonalDecisionQualityStateTests(unittest.TestCase):
         self.assertIs(result.state["review_required"], True)
         self.assertIn("run_used_inputs", result.state["missing_critical_fields"])
 
+    def test_real_monthly_stage_requires_monthly_ranking_output(self) -> None:
+        self.run_manifest.write_text(
+            json.dumps({"run_id": "2026-05-18-monthly", "as_of_date": "2026-05-18", "source_commit_sha": "abc123", "executed_stage_order": ["scoring", "monthly"]}, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        self.monthly_ranking.unlink()
+        result = self.run_state()
+        self.assertEqual(result.state["decision_confidence_level"], "REVIEW")
+        self.assertIs(result.state["review_required"], True)
+        self.assertIn("monthly_ranking_output", result.state["missing_critical_fields"])
+        self.assertTrue(result.state["review_reason_codes"])
+
+    def test_real_scoring_stage_requires_score_audit_output(self) -> None:
+        self.run_manifest.write_text(
+            json.dumps({"run_id": "2026-05-18-monthly", "as_of_date": "2026-05-18", "source_commit_sha": "abc123", "executed_stage_order": ["scoring", "monthly"]}, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        self.score_audit.unlink()
+        result = self.run_state()
+        self.assertEqual(result.state["decision_confidence_level"], "REVIEW")
+        self.assertIs(result.state["review_required"], True)
+        self.assertIn("score_audit_output", result.state["missing_critical_fields"])
+        self.assertTrue(result.state["review_reason_codes"])
+
+    def test_absolute_input_path_inside_repo_is_stored_relative(self) -> None:
+        result = self.run_state(input_closure=str(self.input_closure.resolve()))
+        artifact_text = ";".join(result.state["input_artifacts"])
+        self.assertIn("tests/_tmp_personal_decision_quality_state/personal_input_closure_report.csv:AVAILABLE", artifact_text)
+        self.assertNotIn(str(self.input_closure.resolve()), artifact_text)
+
+    def test_external_absolute_mandatory_path_is_redacted_and_blocks_review(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            external_path = Path(directory) / "personal_cash_refill_review.csv"
+            write_csv(external_path, ["review_date", "status", "trigger", "data_quality_flag"], [{"review_date": "2026-05-18", "status": "OK", "trigger": "NONE", "data_quality_flag": "OK"}])
+            result = self.run_state(cash_refill=str(external_path))
+        artifact_text = ";".join(result.state["input_artifacts"])
+        self.assertIn("EXTERNAL_PATH_REDACTED:cash_refill_review", artifact_text)
+        self.assertNotIn(str(external_path), artifact_text)
+        self.assertEqual(result.state["decision_confidence_level"], "REVIEW")
+        self.assertIs(result.state["review_required"], True)
+        self.assertIn("LINEAGE_INCOMPLETE", result.state["review_reason_codes"])
+
+    def test_empty_run_used_inputs_is_lineage_hard_blocker(self) -> None:
+        write_csv(self.run_used_inputs, ["artifact_path", "status"], [])
+        result = self.run_state()
+        self.assertEqual(result.state["decision_confidence_level"], "REVIEW")
+        self.assertIs(result.state["review_required"], True)
+        self.assertIn("run_used_inputs", result.state["missing_critical_fields"])
+        self.assertIn("LINEAGE_INCOMPLETE", result.state["review_reason_codes"])
+
+    def test_run_used_inputs_without_path_column_is_lineage_hard_blocker(self) -> None:
+        write_csv(self.run_used_inputs, ["role", "status"], [{"role": "processed", "status": "USED"}])
+        result = self.run_state()
+        self.assertEqual(result.state["decision_confidence_level"], "REVIEW")
+        self.assertIs(result.state["review_required"], True)
+        self.assertIn("run_used_inputs_lineage", result.state["missing_critical_fields"])
+        self.assertIn("LINEAGE_INCOMPLETE", result.state["review_reason_codes"])
+
+    def test_run_used_inputs_private_or_external_paths_are_not_emitted_raw(self) -> None:
+        write_csv(self.run_used_inputs, ["artifact_path", "status"], [{"artifact_path": "data/raw/private/statement.csv", "status": "USED"}])
+        result = self.run_state()
+        output_text = self.out_json.read_text(encoding="utf-8") + self.out_csv.read_text(encoding="utf-8")
+        self.assertEqual(result.state["decision_confidence_level"], "REVIEW")
+        self.assertIs(result.state["review_required"], True)
+        self.assertIn("run_used_inputs_private_or_external_path", result.state["missing_critical_fields"])
+        self.assertNotIn("statement.csv", output_text)
+
     def test_not_evaluated_ranking_and_sensitivity_cap_medium_without_review(self) -> None:
         result = self.run_state()
         self.assertEqual(result.state["ranking_stability_status"], "NOT_EVALUATED")
@@ -247,10 +316,41 @@ class PersonalDecisionQualityStateTests(unittest.TestCase):
         self.assertTrue(self.out_json.exists())
         self.assertTrue(self.report.exists())
 
-    def test_producer_does_not_mutate_inputs(self) -> None:
-        before = {path: path.read_text(encoding="utf-8") for path in [self.input_closure, self.cash_refill, self.rebalance, self.run_manifest]}
+    def test_default_report_path_uses_effective_as_of_date(self) -> None:
+        self.run_manifest.write_text(
+            json.dumps({"run_id": "2026-05-19-monthly", "as_of_date": "2026-05-19", "source_commit_sha": "abc123", "executed_stage_order": []}, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        result = self.run_state(report=None)
+        self.assertEqual(result.report_output.as_posix(), (ROOT / "reports" / "2026-05-19" / "decision_quality_report.md").as_posix())
+        self.assertTrue(result.report_output.exists())
+        result.report_output.unlink()
+        try:
+            result.report_output.parent.rmdir()
+        except OSError:
+            pass
+
+    def test_report_contains_full_non_scope_list(self) -> None:
         self.run_state()
-        after = {path: path.read_text(encoding="utf-8") for path in before}
+        text = self.report.read_text(encoding="utf-8")
+        for phrase in [
+            "no broker/order/trading",
+            "no score formula change",
+            "no portfolio rule change",
+            "no silent data enrichment",
+            "no simulation/backtesting",
+            "no outcome attribution",
+            "no runtime LLM decisioning",
+            "no tax quantification",
+            "no portfolio event ledger",
+            "no private raw data",
+        ]:
+            self.assertIn(phrase, text)
+
+    def test_producer_does_not_mutate_inputs(self) -> None:
+        before = {path: hashlib.sha256(path.read_bytes()).hexdigest() for path in [self.input_closure, self.cash_refill, self.rebalance, self.run_manifest]}
+        self.run_state()
+        after = {path: hashlib.sha256(path.read_bytes()).hexdigest() for path in before}
         self.assertEqual(before, after)
 
 
