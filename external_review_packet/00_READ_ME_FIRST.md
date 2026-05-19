@@ -1,21 +1,21 @@
-# Compound Income OS External LLM Review Packet - Minimal Decision Quality Producer
+# Compound Income OS External LLM Review Packet - Decision Quality Producer Integration-Readiness Fix
 
 Dies ist der Einstiegspunkt fuer die externe LLM-Review von `compound_income_os`
-nach Phase 1.5B `feat: add minimal decision quality state producer`.
+nach dem Phase-1.5B-Fix `fix: harden decision quality producer integration readiness`.
 
 ## Current Review Head
 
 - project: `compound_income_os`
 - branch: `main`
-- current_handoff_head: `dcc85269c911ffdde22ddcf8fced3d9b41ca2528`
-- current_handoff_short_head: `dcc8526`
-- current_patch_context: `feat: add minimal decision quality state producer`
-- previous_repo_head: `6bef7e2f1ec6c949d4906bff1eabcdf97b720603`
-- previous_handoff_head: `d913567c3f5d9b80f910ee68db1fc82b1dfc20c7`
+- current_handoff_head: `373db5da583fb3fdf558203d85d683750a8ed656`
+- current_handoff_short_head: `373db5d`
+- current_patch_context: `fix: harden decision quality producer integration readiness`
+- previous_repo_head: `9bf67f18fb4d8249d0d84c24656dcf5020c2a734`
+- previous_handoff_head: `dcc85269c911ffdde22ddcf8fced3d9b41ca2528`
 - canonical_contract:
   `docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md`
 
-Das vorherige externe Packet fuer `d913567c3f5d9b80f910ee68db1fc82b1dfc20c7`
+Das vorherige externe Packet fuer `dcc85269c911ffdde22ddcf8fced3d9b41ca2528`
 ist durch dieses Packet superseded.
 
 ## Source-of-Truth / Precedence
@@ -63,22 +63,26 @@ Regeneration, kein Patch-Source-Dirty-State.
 
 Der finale Repo-HEAD kann nach diesem Packet ein separater
 Handoff-Metadatencommit sein. Der aktuelle Handoff-Head bleibt der
-Implementierungscommit `dcc85269c911ffdde22ddcf8fced3d9b41ca2528`.
+Implementierungscommit `373db5da583fb3fdf558203d85d683750a8ed656`.
 
 ## Patch Scope
 
-Dieses Packet enthaelt Phase 1.5B:
+Dieses Packet enthaelt den Integration-Readiness-Fix nach Phase 1.5B:
 
 - `src/personal_decision_quality_state.py`
 - `tests/test_personal_decision_quality_state.py`
-- Contract-Beispiel-Fix in
-  `docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md`
-- minimale README-/Module-/Roadmap-Referenzen
+- minimale README-Referenz zum Default-Report-Pfad
 
 Der Producer aggregiert bestehende processed/readiness/run/review-Artefakte zu
 `decision_quality_state.csv`, `decision_quality_state.json` und einem Markdown-
 Report. Er erzeugt keine neuen Fundamentals, keine Scores, keine Portfolio-
 Regeln, keine Orders und keine Simulation/Backtesting/Outcome-Attribution.
+
+Der Fix haertet reale `personal_run_engine`-Stage-Erkennung (`monthly`,
+`scoring`), Pflichtartefakt-Erkennung, Pfad-Redaktion, minimale
+`run_used_inputs`-Lineage-Pruefung, Report-Non-Scope und den aus `as_of_date`
+abgeleiteten Default-Report-Pfad. Er integriert den Producer noch nicht in
+`personal_run_engine`.
 
 ## Reviewer Rules
 
