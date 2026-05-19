@@ -1,29 +1,40 @@
-# HANDOFF LATEST CONTEXT - Decision Capture Operationalization
+# HANDOFF LATEST CONTEXT - Decision Quality Layer Design
 
 project_name: compound_income_os
 profile: full_review
 bundle_name: HANDOFF_LATEST
-bundle_purpose: external_llm_validation_after_decision_capture_operationalization
-created_at_utc: 2026-05-18T13:15:25+00:00
+bundle_purpose: external_llm_validation_after_decision_quality_layer_design
+created_at_utc: 2026-05-19T16:50:50.9732376Z
 branch: main
-current_handoff_head: 8342bb34fd997165d1f0f96b757f8ad8bb699b4d
-current_handoff_short_head: 8342bb3
-implementation_commit_message: feat: operationalize personal decision capture
-previous_handoff_head: e5b7afb855cbdece18d37183f288429a65b6d5af
+current_handoff_head: 362cc6522626556d3f41e18c8d27148ce3b1110e
+current_handoff_short_head: 362cc65
+implementation_commit_message: docs: add decision quality layer architecture
+previous_local_start_head: 0da74ca0f8c3116524eb0d03b2e7f5dd32655b2e
+previous_handoff_head: 8342bb34fd997165d1f0f96b757f8ad8bb699b4d
 dirty_worktree_present_before_handoff_artifact_generation: False
 
 canonical_system_definition: docs/architecture/COMPOUND_INCOME_OS_SYSTEM_DEFINITION.md
+canonical_decision_quality_layer: docs/architecture/DECISION_QUALITY_LAYER.md
+canonical_decision_quality_contract: docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md
+canonical_baseline_candidate_governance: docs/governance/BASELINE_VS_CANDIDATE_VALIDATION.md
+canonical_research_inputs:
+  - docs/research/SCIENTIFIC_ARCHITECTURE_REVIEW_CIOS.md
+  - docs/research/UNCERTAINTY_DECISION_FRAMEWORK_CIOS.md
 canonical_review_bundle: external_review_packet/HANDOFF_LATEST.zip
 canonical_checksum: external_review_packet/HANDOFF_LATEST.sha256
 
-zip_file_count: 432
-zip_size_bytes: 12841215
-zip_sha256: 6C2903730702CC5A8DAA052C6FA09996DBBC9D70C96EECB1873E370ADDEE0454
+zip_file_count: 439
+zip_size_bytes: 12891297
+zip_sha256: 5faf7465d61d1da7fff99f74c1efb343901e127ee3754a1aaa075e18ab0d54be
 forbidden_match_count: 0
 nested_zip_count: 0
 system_definition_in_zip: True
+decision_quality_layer_in_zip: True
+decision_quality_contract_in_zip: True
+baseline_candidate_governance_in_zip: True
+research_inputs_in_zip: True
 decision_capture_source_in_zip: True
-decision_capture_tests_in_zip: True
+personal_input_closure_source_in_zip: True
 
 ## Source-of-Truth / Precedence
 
@@ -51,16 +62,18 @@ Head/SHA/Scope, Precedence und Reviewer-Instruktionen.
   - `HANDOFF_MANIFEST.csv`
   - `HANDOFF_ARTIFACT_INDEX.csv`
   - `docs/architecture/COMPOUND_INCOME_OS_SYSTEM_DEFINITION.md`
+  - `docs/architecture/DECISION_QUALITY_LAYER.md`
+  - `docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md`
+  - `docs/governance/BASELINE_VS_CANDIDATE_VALIDATION.md`
+  - `docs/research/SCIENTIFIC_ARCHITECTURE_REVIEW_CIOS.md`
+  - `docs/research/UNCERTAINTY_DECISION_FRAMEWORK_CIOS.md`
   - `docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md`
-  - `docs/policies/LLM_CODEX_OPERATING_POLICY.md`
+  - `src/personal_input_closure.py`
   - `src/personal_decision_state_capture.py`
-  - `tests/test_personal_decision_state_capture.py`
   - `README.md`
   - `docs/CONTEXT_AND_ROADMAP.md`
   - `docs/architecture/05_ARCHITECTURE_BACKLOG.csv`
-  - `src/`
-  - `tests/`
-  - `configs/`
+  - `docs/architecture/06_ADOPTED_DECISIONS.yaml`
 
 ## Included Artifact Groups
 
@@ -81,36 +94,36 @@ Head/SHA/Scope, Precedence und Reviewer-Instruktionen.
 ## Current Packet Scope
 
 Dieses Packet synchronisiert den externen Review-Kontext auf den committed
-Repo-Stand `8342bb34fd997165d1f0f96b757f8ad8bb699b4d` nach dem
-Decision-Capture-Operationalization-Patch.
+Repo-Stand `362cc6522626556d3f41e18c8d27148ce3b1110e` nach Patch 1.4
+`docs: add decision quality layer architecture`.
 
 Enthaltene aktuelle Review-Schwerpunkte:
 
-- `src/personal_decision_state_capture.py`
-- `tests/test_personal_decision_state_capture.py`
-- `docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md`
-- `docs/architecture/COMPOUND_INCOME_OS_SYSTEM_DEFINITION.md`
+- `docs/architecture/DECISION_QUALITY_LAYER.md`
+- `docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md`
+- `docs/governance/BASELINE_VS_CANDIDATE_VALIDATION.md`
+- `docs/research/SCIENTIFIC_ARCHITECTURE_REVIEW_CIOS.md`
+- `docs/research/UNCERTAINTY_DECISION_FRAMEWORK_CIOS.md`
+- `docs/architecture/05_ARCHITECTURE_BACKLOG.csv`
+- `docs/architecture/06_ADOPTED_DECISIONS.yaml`
 
-Das vorherige externe Packet fuer `e5b7afb855cbdece18d37183f288429a65b6d5af`
+Das vorherige externe Packet fuer `8342bb34fd997165d1f0f96b757f8ad8bb699b4d`
 ist superseded. Aeltere Phase-1.2-/Phase-1.3-Metadaten, fruehere
 `HANDOFF_LATEST`-Artefakte und historische Head-Angaben duerfen nicht mit diesem
 Packet vermischt werden.
 
-## Decision-Capture Review Context
+## Decision Quality Review Context
 
-- Decision Capture ist human-operated.
-- Decision Capture ist append-only auf Decision-State-Ebene.
-- Primaerer Output bleibt `data/processed/personal_decision_state_capture.csv`.
-- Primaerer Report bleibt
-  `reports/<YYYY-MM-DD>/personal_decision_state_capture_report.md`.
-- Decision Capture nutzt Contract-v2-Felder und -Enums.
-- Decision Capture erzeugt keine Kaufentscheidung.
-- Decision Capture fuehrt keine Order aus.
-- Es gibt keine Broker-/Order-/Auto-Trading-Logik.
-- Es gibt keine Runtime-LLM-Abhaengigkeit.
-- Outcome Attribution bleibt deferred.
-- Portfolio Event Ledger bleibt deferred.
-- Policy Feedback bleibt deferred.
+- Decision Quality ist ein Review- und Governance-Layer.
+- `decision_confidence` ist Prozessvertrauen, keine Erfolgswahrscheinlichkeit.
+- Der Layer konsolidiert Data Quality, Evidence Coverage, Decision Journal
+  Validation, Ranking Robustness, Sensitivity und Baseline-vs-Candidate
+  Governance als Architekturzielbild.
+- Scenario/Tail Risk bleibt fuer diesen Patch design-only.
+- Quantitative und stochastische Methoden muessen Review-Artefakte ausgeben,
+  keine selbst ausfuehrenden Empfehlungen.
+- Simulation, Monte Carlo und Backtesting bleiben deferred.
+- Outcome Ledger, Scoreboard, Calibration und Regret bleiben deferred.
 
 ## Historical Phase Reports
 
@@ -130,74 +143,50 @@ ueberschreiben nicht `00_READ_ME_FIRST.md` oder diese Kontextdatei.
 - keine Finanzlogik
 - keine Scoring-Formel- oder Weight-Aenderung
 - keine Portfolio-Regel-Aenderung
-- keine Decision-State-Enum-Aenderung
+- keine Decision-State-Capture-Contract-Aenderung
 - keine Broker/API/HTTP-Write-Logik
 - keine Orderausfuehrung
 - keine Auto-Trading-Logik
 - keine privaten Rohdaten, Credentials, lokalen User-Agent-Werte oder Secrets
 - keine erfundenen Fundamentals, KPIs oder Readiness-Ergebnisse
-- keine Runtime-LLM-Abhaengigkeit
+- keine Runtime-LLM-Implementierung
 - keine Steuerquantifizierung
 - keine Outcome Attribution
 - kein Portfolio Event Ledger
+- keine Simulation-/Backtesting-Implementierung
 
 ## Validation Actually Performed
+
+Implementation validation before commit:
+
+- `git diff -- docs/research docs/architecture/DECISION_QUALITY_LAYER.md docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md docs/governance/BASELINE_VS_CANDIDATE_VALIDATION.md docs/architecture/05_ARCHITECTURE_BACKLOG.csv docs/architecture/06_ADOPTED_DECISIONS.yaml`
+  - result: tracked diff reviewed for backlog and adopted-decision updates; untracked new files were visible via `git status --short`.
+- `git diff --check`
+  - result: no whitespace errors reported; Git emitted CRLF normalization warnings for `docs/architecture/05_ARCHITECTURE_BACKLOG.csv` and `docs/architecture/06_ADOPTED_DECISIONS.yaml`.
+- `git status --short`
+  - result before implementation commit: only intended docs/research/governance/contract changes were present.
 
 Handoff artifact generation:
 
 - `python -m src.handoff_zip_export --profile full_review --name HANDOFF_LATEST --output-path ".\external_review_packet\HANDOFF_LATEST.zip"`
-  - result: generated ZIP for head `8342bb34fd997165d1f0f96b757f8ad8bb699b4d`
-  - file_count: `432`
-  - size_bytes: `12841215`
-  - zip_sha256: `6C2903730702CC5A8DAA052C6FA09996DBBC9D70C96EECB1873E370ADDEE0454`
+  - result: generated ZIP for head `362cc6522626556d3f41e18c8d27148ce3b1110e`
+  - file_count: `439`
+  - size_bytes: `12891297`
+  - zip_sha256: `5FAF7465D61D1DA7FFF99F74C1EFB343901E127EE3754A1AAA075E18AB0D54BE`
   - forbidden_match_count: `0`
-
-The ZIP-internal `HANDOFF_VALIDATION.txt` records exporter self-validation:
-
-- zip_integrity: `OK`
-- file_count: `432`
-- forbidden_count: `0`
-- nested_zip_count: `0`
-- validation_status: `SELF_VALIDATION_RECORDED`
 
 Additional validation performed after handoff generation:
 
-- ZIP required-entry check:
-  - testzip: `None`
-  - entry_count: `432`
-  - nested_zip_count: `0`
-  - missing_required: `[]`
-  - contains_system_definition: `True`
-  - contains_decision_capture_source: `True`
-  - contains_decision_capture_tests: `True`
-
-Further validation commands and their exact results are recorded in the operator
-response for this patch. Summary of additional checks:
-
-- `git diff --check`
-  - result: no output; no whitespace errors reported.
-- `python -m src.handoff_zip_export --help`
-  - result: help/usage displayed successfully.
-- PowerShell path checks:
-  - `external_review_packet/HANDOFF_LATEST.zip`: `True`
-  - `external_review_packet/HANDOFF_LATEST.sha256`: `True`
-- PowerShell SHA check:
-  - zip_hash:
-    `6C2903730702CC5A8DAA052C6FA09996DBBC9D70C96EECB1873E370ADDEE0454`
-  - sha_file:
-    `6C2903730702CC5A8DAA052C6FA09996DBBC9D70C96EECB1873E370ADDEE0454`
+- ZIP integrity:
+  - command: `python -c "import zipfile; z=zipfile.ZipFile(r'external_review_packet\HANDOFF_LATEST.zip'); print(z.testzip())"`
+  - result: `None`
+- SHA verification:
+  - zip_hash: `5faf7465d61d1da7fff99f74c1efb343901e127ee3754a1aaa075e18ab0d54be`
+  - sha_file: `5faf7465d61d1da7fff99f74c1efb343901e127ee3754a1aaa075e18ab0d54be  HANDOFF_LATEST.zip`
   - sha_match: `True`
-- Required-entry ZIP check:
-  - testzip: `None`
-  - entry_count: `432`
+- ZIP entry check:
+  - entry_count: `439`
   - nested_zip_count: `0`
   - missing_required: `[]`
-  - contains_system_definition: `True`
-  - contains_decision_capture_source: `True`
-  - contains_decision_capture_tests: `True`
-- `python -m unittest tests.test_handoff_bundle tests.test_handoff_zip_export -v`
-  - result: `Ran 23 tests in 52.186s`, `OK`
-- `python -m unittest tests.test_personal_decision_state_capture -v`
-  - result: `Ran 25 tests in 1.382s`, `OK`
 
-No other tests are claimed by this context file.
+No full test suite is claimed by this context file.
