@@ -1,16 +1,16 @@
-# HANDOFF LATEST CONTEXT - Decision Quality Producer Integration-Readiness Fix
+# HANDOFF LATEST CONTEXT - Decision Quality Stage Integration
 
 project_name: compound_income_os
 profile: full_review
 bundle_name: HANDOFF_LATEST
-bundle_purpose: external_llm_validation_after_decision_quality_producer_integration_readiness_fix
-created_at_utc: 2026-05-19T20:02:50.8833944Z
+bundle_purpose: external_llm_validation_after_decision_quality_stage_integration
+created_at_utc: 2026-05-19T20:29:22.0318301Z
 branch: main
-current_handoff_head: 373db5da583fb3fdf558203d85d683750a8ed656
-current_handoff_short_head: 373db5d
-implementation_commit_message: fix: harden decision quality producer integration readiness
-previous_repo_head: 9bf67f18fb4d8249d0d84c24656dcf5020c2a734
-previous_handoff_head: dcc85269c911ffdde22ddcf8fced3d9b41ca2528
+current_handoff_head: 05c6b01eb6ef21c9b4f4833327ab3bb39d00b56a
+current_handoff_short_head: 05c6b01
+implementation_commit_message: feat: integrate decision quality stage into personal run engine
+previous_repo_head: 1d141fb2cd6274957b9ba2aab8e559076bebc540
+previous_handoff_head: 373db5da583fb3fdf558203d85d683750a8ed656
 final_repo_head_note: final repo HEAD may be a separate handoff metadata commit after this context update
 tracked_worktree_clean_after_implementation_commit_before_handoff_cleanup: True
 zip_internal_dirty_worktree_present: True
@@ -25,13 +25,15 @@ canonical_review_bundle: external_review_packet/HANDOFF_LATEST.zip
 canonical_checksum: external_review_packet/HANDOFF_LATEST.sha256
 
 zip_file_count: 441
-zip_size_bytes: 12907438
-zip_sha256: e08768df58e36f97ec2f195394c18d28b51281b71552f9bfc8661dcbf7295189
+zip_size_bytes: 12910494
+zip_sha256: a2c42c6bdf0c3cc85115fd0c081c2182bb10a29e33cde7c9f2124ec41c5b8f2e
 forbidden_match_count: 0
 nested_zip_count: 0
 missing_required: []
 decision_quality_producer_in_zip: True
 decision_quality_tests_in_zip: True
+personal_run_engine_in_zip: True
+personal_run_engine_tests_in_zip: True
 decision_quality_contract_in_zip: True
 decision_quality_layer_in_zip: True
 baseline_candidate_governance_in_zip: True
@@ -57,7 +59,7 @@ Head/SHA/Scope, Precedence und Reviewer-Instruktionen.
 
 ZIP-internes `HANDOFF_CONTEXT.md` meldet fuer dieses Packet:
 
-- head: `373db5da583fb3fdf558203d85d683750a8ed656`
+- head: `05c6b01eb6ef21c9b4f4833327ab3bb39d00b56a`
 - dirty_worktree_present: `True`
 
 Diese Dirty-Angabe entstand durch die Handoff-Cleanup-Sequenz, bei der
@@ -72,31 +74,33 @@ autoritativ fuer Head, Scope, SHA und Dirty-State-Interpretation.
 ## Current Packet Scope
 
 Dieses Packet synchronisiert den externen Review-Kontext auf den committed
-Repo-Stand `373db5da583fb3fdf558203d85d683750a8ed656` nach dem Phase-1.5B-Fix
-`fix: harden decision quality producer integration readiness`.
+Repo-Stand `05c6b01eb6ef21c9b4f4833327ab3bb39d00b56a` nach
+`feat: integrate decision quality stage into personal run engine`.
 
 Review-Schwerpunkte:
 
 - `src/personal_decision_quality_state.py`
 - `tests/test_personal_decision_quality_state.py`
+- `src/personal_run_engine.py`
+- `tests/test_personal_run_engine.py`
 - `README.md`
+- `docs/MODULE_CONTRACTS.md`
+- `docs/CONTEXT_AND_ROADMAP.md`
 
-Der Producer schreibt nur explizit angegebene Output-Pfade, liest bestehende
-processed/readiness/run/review-Artefakte, serialisiert CSV/JSON contract-konform
-und setzt Phase-1.5B-Defaults fuer Ranking Robustness, Sensitivity, Scenario und
-Tail Risk auf `NOT_EVALUATED`.
+Der Producer ist read-only als Stage `decision_quality` in
+`src.personal_run_engine` integriert. Die Stage schreibt nur explizit angegebene
+Output-Pfade, liest bestehende processed/readiness/run/review-Artefakte,
+serialisiert CSV/JSON contract-konform und setzt Phase-1.5B-Defaults fuer
+Ranking Robustness, Sensitivity, Scenario und Tail Risk auf `NOT_EVALUATED`.
 
-Der Fix haertet:
+Dieser Patch haertet:
 
-- reale `personal_run_engine`-Stage-Erkennung fuer `monthly` und `scoring`
-- Pflichtartefakt-Erkennung fuer Monthly Ranking und Score-/Score-Audit
-- Pfad-Redaktion fuer absolute CLI-Inputs
-- minimale `run_used_inputs`-Lineage-Pruefung
-- vollstaendige Report-Non-Scope-Liste
-- Default-Report-Pfad aus effektivem `as_of_date`
-
-Der Producer wird in diesem Patch noch nicht in `personal_run_engine`
-integriert.
+- host-unabhaengige Windows-/UNC-/Traversal-Pfad-Redaction im Producer
+- Stage-Registration `decision_quality`
+- CLI-Output-Defaults fuer Decision Quality CSV/JSON/Report
+- vorlaeufige aktuelle Manifest-/Used-Inputs-Lineage vor `decision_quality`
+- finale Manifest-/Artifact-Index-Sichtbarkeit der Decision-Quality-Outputs
+- End-to-End-Tests ueber `personal_run_engine`
 
 ## Explicit Non-Scope
 
@@ -120,11 +124,15 @@ Implementation validation:
 
 - `python -m pytest tests/test_personal_decision_quality_state.py`
   - result: failed before collection because local Python environment has no `pytest` module.
+- `python -m pytest tests/test_personal_run_engine.py`
+  - result: failed before collection because local Python environment has no `pytest` module.
 - `python -m unittest tests.test_personal_decision_quality_state -v`
-  - result: `Ran 22 tests in 2.774s`, `OK`.
+  - result: `Ran 25 tests in 3.776s`, `OK`.
+- `python -m unittest tests.test_personal_run_engine -v`
+  - result: `Ran 54 tests in 10.998s`, `OK`.
 - `python -m unittest tests.test_personal_input_closure tests.test_personal_decision_state_capture tests.test_cash_refill_review tests.test_rebalance_review -v`
-  - result: `Ran 72 tests in 2.740s`, `OK`.
-- `git diff -- src/personal_decision_quality_state.py tests/test_personal_decision_quality_state.py README.md docs/MODULE_CONTRACTS.md docs/CONTEXT_AND_ROADMAP.md`
+  - result: `Ran 72 tests in 2.852s`, `OK`.
+- `git diff -- src/personal_decision_quality_state.py src/personal_run_engine.py tests/test_personal_decision_quality_state.py tests/test_personal_run_engine.py README.md docs/MODULE_CONTRACTS.md docs/CONTEXT_AND_ROADMAP.md`
   - result: targeted diff reviewed.
 - `git diff --check`
   - result: exit code `0`; only Git line-ending warnings for touched Python files, no whitespace errors reported.
@@ -132,10 +140,10 @@ Implementation validation:
 Handoff artifact generation:
 
 - `python -m src.handoff_zip_export --profile full_review --name HANDOFF_LATEST --output-path ".\external_review_packet\HANDOFF_LATEST.zip"`
-  - result: generated ZIP for head `373db5da583fb3fdf558203d85d683750a8ed656`
+  - result: generated ZIP for head `05c6b01eb6ef21c9b4f4833327ab3bb39d00b56a`
   - file_count: `441`
-  - size_bytes: `12907438`
-  - zip_sha256: `E08768DF58E36F97EC2F195394C18D28B51281B71552F9BFC8661DCBF7295189`
+  - size_bytes: `12910494`
+  - zip_sha256: `A2C42C6BDF0C3CC85115FD0C081C2182BB10A29E33CDE7C9F2124EC41C5B8F2E`
   - forbidden_match_count: `0`
 
 Additional validation performed after handoff generation:
@@ -143,8 +151,8 @@ Additional validation performed after handoff generation:
 - ZIP integrity:
   - result: `None`
 - SHA verification:
-  - sha_file: `e08768df58e36f97ec2f195394c18d28b51281b71552f9bfc8661dcbf7295189  HANDOFF_LATEST.zip`
-  - Get-FileHash: `E08768DF58E36F97EC2F195394C18D28B51281B71552F9BFC8661DCBF7295189`
+  - sha_file: `a2c42c6bdf0c3cc85115fd0c081c2182bb10a29e33cde7c9f2124ec41c5b8f2e  HANDOFF_LATEST.zip`
+  - Get-FileHash: `A2C42C6BDF0C3CC85115FD0C081C2182BB10A29E33CDE7C9F2124EC41C5B8F2E`
   - sha_match: `True` ignoring case and filename suffix.
 - ZIP required-file check:
   - entry_count: `441`
