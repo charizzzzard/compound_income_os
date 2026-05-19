@@ -40,7 +40,9 @@ Future producers may write:
 - `data/processed/decision_quality_state.json`
 - `reports/<YYYY-MM-DD>/decision_quality_report.md`
 
-Patch 1.4 does not implement these outputs.
+Patch 1.4 does not implement these outputs. Patch 1.5A also does not
+implement these outputs; it only hardens the producer contract. The first
+possible implementation is Phase 1.5B Minimal Decision Quality Producer.
 
 ## Required State Fields
 
@@ -182,9 +184,9 @@ shape only; it does not implement a producer.
 | `contract_version` | string | yes | no | scalar | string | `v1-design` until promoted | empty invalid | must equal this contract version | mandatory |
 | `input_artifacts` | list[string] | yes | no | semicolon list | array | repo-relative paths | empty invalid | no absolute private paths | mandatory |
 | `evidence_coverage_status` | enum | yes | no | enum | string | `COVERED`;`PARTIAL`;`REVIEW`;`MISSING` | `MISSING` | must reflect evidence/provenance inputs | mandatory |
-| `evidence_coverage_pct` | decimal ratio | yes | yes when not measurable | decimal string | number or null | `0.0..1.0` | empty/null | blank only when coverage is `MISSING` or not measurable | mandatory if computable |
+| `evidence_coverage_pct` | decimal ratio | yes | yes when not measurable | decimal string | number or null | `0.0..1.0` | empty/null | must be numeric when measurable; otherwise status must be `MISSING` or `REVIEW` | mandatory if computable |
 | `data_quality_status` | enum | yes | no | enum | string | `COVERED`;`PARTIAL`;`REVIEW`;`MISSING` | `MISSING` | must not hide missing/sample-only inputs | mandatory |
-| `missing_critical_fields` | list[string] | yes | yes | semicolon list or empty | array | contract field names or input names | empty list | non-empty caps confidence | mandatory |
+| `missing_critical_fields` | list[string] | yes | yes | semicolon list or empty | array | contract field names or input names | empty list | non-empty is a `REVIEW` hard blocker | mandatory |
 | `stale_inputs` | list[string] | yes | yes | semicolon list or empty | array | repo-relative paths or input labels | empty list | stale basis must be visible | mandatory |
 | `conflicting_inputs` | list[string] | yes | yes | semicolon list or empty | array | repo-relative paths or input labels | empty list | non-empty blocks `HIGH` | mandatory |
 | `decision_capture_status` | enum | yes | no | enum | string | `PASS`;`WARN`;`FAIL`;`NOT_APPLICABLE`;`MISSING` | `MISSING` | empty journal may be `MISSING` or `NOT_APPLICABLE` only when explicitly justified | mandatory if artifact expected |
@@ -200,7 +202,7 @@ shape only; it does not implement a producer.
 | `scenario_robustness_score` | enum or empty | yes | yes | `NOT_EVALUATED` or empty | string or null | `NOT_EVALUATED` in Phase 1.5 | `NOT_EVALUATED` | must not be numeric until scenario contract exists | reserved only |
 | `decision_confidence_level` | enum | yes | no | enum | string | `HIGH`;`MEDIUM`;`LOW`;`REVIEW` | `REVIEW` | must be rule-derived by this contract | mandatory |
 | `confidence_reason_codes` | list[string] | yes | yes | semicolon list or empty | array | reason-code taxonomy | empty list | required when confidence below `HIGH` | mandatory |
-| `review_required` | boolean | yes | no | `true`/`false` | boolean | `true`;`false` | `true` | false only with no hard blockers and valid mandatory inputs | mandatory |
+| `review_required` | boolean | yes | no | `true`/`false` | boolean | `true`;`false` | `true` | true only when hard blockers exist; false only with no hard blockers and valid mandatory inputs | mandatory |
 | `review_reason_codes` | list[string] | yes | yes only when `review_required=false` | semicolon list or empty | array | reason-code taxonomy | empty list | non-empty required when `review_required=true` | mandatory |
 | `non_scope_confirmations` | list[string] | yes | no | semicolon list | array | explicit non-scope labels | empty invalid | must confirm no broker/order/trading/scoring mutation | mandatory |
 
@@ -210,19 +212,33 @@ shape only; it does not implement a producer.
 manual opinion and not a probability score. Producers must apply the most
 restrictive applicable rule.
 
-| condition | required result | required reason code |
-| --- | --- | --- |
-| Input Closure or equivalent input blocker is `BLOCKED`, `FAIL` or `REVIEW_REQUIRED` | `decision_confidence_level=REVIEW` | `INPUT_CLOSURE_BLOCKED` |
-| `missing_critical_fields` is not empty | maximum `LOW` | `EVIDENCE_MISSING` |
-| `data_quality_status=MISSING` | `decision_confidence_level=REVIEW` | `EVIDENCE_MISSING` |
-| `data_quality_status=REVIEW` | maximum `LOW` | `EVIDENCE_PARTIAL` or specific blocker code |
-| `evidence_coverage_status=PARTIAL` | maximum `MEDIUM` | `EVIDENCE_PARTIAL` |
-| `ranking_stability_status=NOT_EVALUATED` in Phase 1.5 | maximum `MEDIUM` | `RANKING_STABILITY_NOT_EVALUATED` |
-| `sensitivity_status=NOT_EVALUATED` in Phase 1.5 | maximum `MEDIUM` | `SENSITIVITY_NOT_EVALUATED` |
-| `scenario_status=NOT_EVALUATED` in Phase 1.5 | no hard blocker | optional `SCENARIO_NOT_EVALUATED` |
-| `tail_risk_status=NOT_EVALUATED` in Phase 1.5 | no hard blocker | optional `TAIL_RISK_NOT_EVALUATED` |
-| contract version mismatch | `decision_confidence_level=REVIEW` | `CONTRACT_VERSION_MISMATCH` |
-| lineage incomplete for mandatory inputs | `decision_confidence_level=REVIEW` | `LINEAGE_INCOMPLETE` |
+Hard blockers are:
+
+- contract version mismatch
+- incomplete lineage
+- Input Closure blocked
+- any critical mandatory input missing
+- `data_quality_status=MISSING`
+- mandatory input unreadable
+- mandatory input contract-invalid
+
+`ranking_stability_status=NOT_EVALUATED` and
+`sensitivity_status=NOT_EVALUATED` are not hard blockers in Phase 1.5. They cap
+`decision_confidence_level` at `MEDIUM`.
+
+| condition | required result | confidence reason code | review reason code |
+| --- | --- | --- | --- |
+| Input Closure or equivalent input blocker is `BLOCKED`, `FAIL` or `REVIEW_REQUIRED` | `decision_confidence_level=REVIEW`; `review_required=true` | `INPUT_CLOSURE_BLOCKED` | `INPUT_CLOSURE_BLOCKED` |
+| `missing_critical_fields` is not empty | `decision_confidence_level=REVIEW`; `review_required=true` | `EVIDENCE_MISSING` | `EVIDENCE_MISSING` |
+| `data_quality_status=MISSING` | `decision_confidence_level=REVIEW`; `review_required=true` | `EVIDENCE_MISSING` | `EVIDENCE_MISSING` |
+| `data_quality_status=REVIEW` without missing critical fields | maximum `LOW`; hard blocker only when caused by mandatory input failure | `EVIDENCE_PARTIAL` or specific blocker code | specific blocker code only if hard blocker exists |
+| `evidence_coverage_status=PARTIAL` | maximum `MEDIUM` | `EVIDENCE_PARTIAL` | none unless another hard blocker exists |
+| `ranking_stability_status=NOT_EVALUATED` in Phase 1.5 | maximum `MEDIUM`; no hard blocker | `RANKING_STABILITY_NOT_EVALUATED` | none |
+| `sensitivity_status=NOT_EVALUATED` in Phase 1.5 | maximum `MEDIUM`; no hard blocker | `SENSITIVITY_NOT_EVALUATED` | none |
+| `scenario_status=NOT_EVALUATED` in Phase 1.5 | no hard blocker | optional `SCENARIO_NOT_EVALUATED` | none |
+| `tail_risk_status=NOT_EVALUATED` in Phase 1.5 | no hard blocker | optional `TAIL_RISK_NOT_EVALUATED` | none |
+| contract version mismatch | `decision_confidence_level=REVIEW`; `review_required=true` | `CONTRACT_VERSION_MISMATCH` | `CONTRACT_VERSION_MISMATCH` |
+| lineage incomplete for mandatory inputs | `decision_confidence_level=REVIEW`; `review_required=true` | `LINEAGE_INCOMPLETE` | `LINEAGE_INCOMPLETE` |
 
 `HIGH` is allowed only when all of the following are true:
 
@@ -245,6 +261,10 @@ hard-blocked, but process confidence remains low.
 `REVIEW` is required when hard blockers exist, contract version does not match,
 lineage is incomplete, a critical input is missing, or Input Closure is blocked.
 
+`review_required=true` is only for hard blockers. `review_required=false` is
+valid when all Phase 1.5 mandatory inputs are present, readable and
+contract-valid, and no hard blockers exist.
+
 ## Minimal Producer Input Matrix For Phase 1.5
 
 | input_artifact | expected_path | producer_module | phase_1_5_required | missing_behavior | contribution_to_confidence | expected_status_if_not_available | notes |
@@ -260,13 +280,32 @@ lineage is incomplete, a critical input is missing, or Input Closure is blocked.
 | monthly_ranking output | `data/processed/personal_monthly_buy_ranking.csv` | `src.monthly_ranking_engine` | yes when ranking is part of monthly run | ranking unavailable | drives `ranking_available`; robustness remains separate | `MISSING` / `REVIEW` | no score formula change |
 | scoring output | `data/processed/personal_company_scores.csv`; `data/processed/personal_score_audit.csv` | `src.scoring_engine` | yes when ranking/score interpretation is reviewed | evidence/data-quality cap | supports evidence and score-audit context | `MISSING` / `REVIEW` | no score recomputation by DQ producer |
 | report refs / artifact index | run manifest and report paths | `src.personal_run_engine` / report builders | yes | lineage blocker | supports replay/review references | `MISSING` / `REVIEW` | full relative paths only |
-| ranking robustness | future robustness artifact | future producer | no | surface as not evaluated | caps confidence at `MEDIUM` | `NOT_EVALUATED` | optional in Phase 1.5 |
-| sensitivity | future sensitivity artifact | future producer | no | surface as not evaluated | caps confidence at `MEDIUM` | `NOT_EVALUATED` | optional in Phase 1.5 |
+| ranking robustness | future robustness artifact | future producer | no | surface as not evaluated | caps confidence at `MEDIUM`; no hard blocker | `NOT_EVALUATED` | optional in Phase 1.5 |
+| sensitivity | future sensitivity artifact | future producer | no | surface as not evaluated | caps confidence at `MEDIUM`; no hard blocker | `NOT_EVALUATED` | optional in Phase 1.5 |
 | scenario | future scenario artifact | future contract/producer | no | surface as not evaluated | no hard blocker in Phase 1.5 | `NOT_EVALUATED` | design-only |
 | tail risk | future tail-risk artifact | future contract/producer | no | surface as not evaluated | no hard blocker in Phase 1.5 | `NOT_EVALUATED` | design-only |
 | outcome scoreboard | future outcome artifact | deferred | no | surface as not evaluated or not applicable | no Phase 1.5 confidence input | `NOT_EVALUATED` / `NOT_APPLICABLE` | deferred |
 | calibration | future calibration artifact | deferred | no | surface as not evaluated | no Phase 1.5 confidence input | `NOT_EVALUATED` | deferred |
 | regret | future regret artifact | deferred | no | surface as not evaluated | no Phase 1.5 confidence input | `NOT_EVALUATED` | deferred |
+
+## Phase 1.5B Initial Run Type
+
+The initial Phase 1.5B run type is `monthly_review`.
+
+Mandatory for `monthly_review`:
+
+- `personal_input_closure_report`
+- `personal_run_manifest`
+- `personal_run_used_inputs` or equivalent report references
+- `cash_refill_review`
+- `rebalance_review`
+- monthly ranking output, if the monthly ranking stage was executed
+- scoring output and score audit, if scores are surfaced in the monthly report
+
+If a stage is not part of the executed run, the related status must use
+`NOT_APPLICABLE` only where the field enum allows it. Otherwise the producer
+must surface `NOT_EVALUATED` or `MISSING` according to this field contract. It
+must not infer a ready state from an omitted stage.
 
 ## Phase 1.5 Default Rules
 
@@ -277,7 +316,9 @@ lineage is incomplete, a critical input is missing, or Input Closure is blocked.
 - `tail_risk_status=NOT_EVALUATED`.
 - `scenario_robustness_score=NOT_EVALUATED` in CSV and JSON for Phase 1.5,
   unless a future Scenario/Tail-Risk contract changes this explicitly.
-- `review_required=true` when any hard blocker exists.
+- `ranking_stability_status=NOT_EVALUATED` and
+  `sensitivity_status=NOT_EVALUATED` are not hard blockers in Phase 1.5.
+- `review_required=true` only when any hard blocker exists.
 - `review_required=false` only when no hard blockers exist and all Phase 1.5
   mandatory inputs are present, readable and contract-valid.
 - `REVIEW`, `MISSING` and `NOT_EVALUATED` must be visible values, not silently
@@ -304,12 +345,16 @@ masked or rejected according to the relevant producer contract.
 
 - All required fields must be present.
 - Enum values must match this contract.
-- `decision_confidence_level=HIGH` is invalid if critical inputs are `MISSING`
-  or `INPUT_CLOSURE_BLOCKED`.
+- `decision_confidence_level=HIGH` is invalid if `missing_critical_fields` is
+  not empty or `INPUT_CLOSURE_BLOCKED` is present.
 - `decision_confidence_level` must not be described as success probability.
-- `evidence_coverage_pct` may be blank only when coverage is `MISSING` or
-  `NOT_APPLICABLE`.
-- `review_required=True` must include at least one `review_reason_codes` value.
+- `evidence_coverage_pct` must be numeric between `0.0` and `1.0` when coverage
+  is measurable.
+- If evidence coverage is not measurable, `evidence_coverage_status` must be
+  `MISSING` or `REVIEW`; CSV serializes `evidence_coverage_pct` as an empty
+  string and JSON serializes it as `null`.
+- `review_required=true` must include at least one `review_reason_codes` value.
+- `review_required=false` requires `review_reason_codes` to be empty.
 - `source_commit_sha` must be present when Git metadata is available.
 - `input_artifacts` must list full repo-relative paths.
 - Scenario and Tail Risk may remain `NOT_EVALUATED` in v1.
@@ -353,7 +398,7 @@ tail_risk_status=NOT_EVALUATED
 scenario_robustness_score=NOT_EVALUATED
 decision_confidence_level=REVIEW
 confidence_reason_codes=INPUT_CLOSURE_BLOCKED;KPI_PROVENANCE_INCOMPLETE;SENSITIVITY_NOT_EVALUATED;RANKING_STABILITY_NOT_EVALUATED
-review_required=True
+review_required=true
 review_reason_codes=INPUT_CLOSURE_BLOCKED;KPI_PROVENANCE_INCOMPLETE
 ```
 
@@ -372,6 +417,6 @@ tail_risk_status=NOT_EVALUATED
 scenario_robustness_score=NOT_EVALUATED
 decision_confidence_level=MEDIUM
 confidence_reason_codes=RANKING_STABILITY_NOT_EVALUATED;SENSITIVITY_NOT_EVALUATED
-review_required=True
-review_reason_codes=RANKING_STABILITY_NOT_EVALUATED;SENSITIVITY_NOT_EVALUATED
+review_required=false
+review_reason_codes=
 ```
