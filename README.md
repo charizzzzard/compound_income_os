@@ -99,6 +99,25 @@ readiness layer for better Monthly Review and Decision Capture quality; it does
 not replace the actual personal watchlist, valuation, Dividend/FCF or evidence
 inputs.
 
+## Decision Quality State
+
+`src.personal_decision_quality_state` builds the minimal Phase 1.5B Decision
+Quality State from existing processed readiness, Decision Capture, run-manifest,
+cash-refill, rebalance, ranking and score-audit artifacts. It writes a
+contract-shaped CSV, JSON and Markdown report. It does not compute new
+fundamentals, change scores, change portfolio rules, simulate, backtest,
+attribute outcomes or execute orders.
+
+```powershell
+python -m src.personal_decision_quality_state --input-closure data/processed/personal_input_closure_report.csv --decision-capture data/processed/personal_decision_state_capture.csv --cash-refill data/processed/personal_cash_refill_review.csv --rebalance data/processed/personal_rebalance_review.csv --run-manifest data/processed/personal_run_manifest.json --run-used-inputs data/processed/personal_run_used_inputs.csv --monthly-ranking data/processed/personal_monthly_buy_ranking.csv --score-audit data/processed/personal_score_audit.csv --out-csv data/processed/decision_quality_state.csv --out-json data/processed/decision_quality_state.json --report reports/YYYY-MM-DD/decision_quality_report.md
+```
+
+In Phase 1.5B, Ranking Robustness, Sensitivity, Scenario and Tail Risk remain
+`NOT_EVALUATED`. Ranking/Sensitivity `NOT_EVALUATED` caps process confidence at
+`MEDIUM` but does not by itself require review. Hard blockers such as missing
+mandatory inputs or blocked Input Closure set `decision_confidence_level=REVIEW`
+and `review_required=true`.
+
 ## Decision Capture
 
 `src.personal_decision_state_capture` is the first minimal producer from the
