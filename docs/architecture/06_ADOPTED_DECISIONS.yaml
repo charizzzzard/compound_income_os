@@ -51,6 +51,15 @@ decisions:
   simulation_backtesting_still_deferred_after_quality_layer:
     adopted: true
     summary: "Simulation and backtesting remain deferred until decision journal, replay, outcome and accounting foundations are ready."
+  decision_quality_producer_follows_contract_rules:
+    adopted: true
+    summary: "A Decision Quality producer must follow deterministic contract derivation rules for field serialization, status defaults and confidence levels."
+  decision_quality_not_evaluated_defaults:
+    adopted: true
+    summary: "Phase 1.5 must surface non-implemented robustness, scenario, tail-risk, outcome, calibration and regret areas as NOT_EVALUATED or NOT_APPLICABLE, not infer values."
+  decision_confidence_rule_derived:
+    adopted: true
+    summary: "decision_confidence_level must be derived from contract rules and blockers, not manually guessed."
 
 guardrails:
   missing_data_visible: true

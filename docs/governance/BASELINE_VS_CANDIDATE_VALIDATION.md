@@ -76,6 +76,11 @@ Metrics must be accompanied by input artifact paths, as-of dates and contract
 versions. Metrics must not be presented as investment performance claims unless
 an accepted outcome contract exists.
 
+For Phase 1.5, `scenario_robustness_score` is a reserved later governance
+field. It must be reported as `NOT_EVALUATED` until Scenario/Tail-Risk contracts
+and producers exist, and it must not be used as an acceptance criterion for the
+minimal Decision Quality producer.
+
 ## Bias And Failure-Mode Checks
 
 Every candidate review must explicitly consider:

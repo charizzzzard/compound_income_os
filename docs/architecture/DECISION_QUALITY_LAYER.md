@@ -80,6 +80,9 @@ The target output family is intentionally small and reviewable:
 - `baseline_candidate_validation_report`
 
 Patch 1.4 defines the architecture only. It does not implement these producers.
+Patch 1.5A hardens the Decision Quality State Contract for producer preflight;
+it is still not a producer. Patch 1.5B may implement a minimal producer only
+after the hardened contract is accepted.
 
 ## Module Boundaries
 
@@ -131,6 +134,10 @@ eligibility. They must not become Monte Carlo, backtesting or crash-prediction
 engines before the decision journal, replay, outcome and accounting foundations
 are ready.
 
+In Phase 1.5B, Scenario and Tail Risk must remain visible as `NOT_EVALUATED`
+unless a separate accepted contract and producer exist. They must not be
+silently calculated or used as hidden confidence inputs.
+
 ### Baseline-vs-Candidate Governance
 
 Baseline-vs-Candidate Governance requires any new analytical module or more
@@ -176,3 +183,8 @@ Patch 1.4 creates the design and contract basis. A later minimal producer may
 materialize a `decision_quality_state` only after this design is reviewed and
 accepted. Ranking Robustness, Sensitivity, Scenario, Tail Risk and Outcome
 Scoreboards remain separate later steps.
+
+Patch 1.5A is the producer preflight hardening step for field types,
+serialization, deterministic confidence derivation, Phase 1.5 input
+requirements and `NOT_EVALUATED` defaults. Patch 1.5B is the earliest point at
+which a minimal deterministic producer should be implemented.
