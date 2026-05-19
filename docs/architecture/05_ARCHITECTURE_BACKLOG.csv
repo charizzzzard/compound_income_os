@@ -24,6 +24,9 @@ P1,ARCH-P1-008,Research Case Workbench,planned,Only after minimum viable researc
 P1,ARCH-P1-009,Portfolio Event Ledger,planned,Operationalize the lightweight event-ledger MVP after contract and Decision Capture usage evidence,ARCH-P0N-001,after_contract_acceptance,No broker writes and no tax claims without evidence
 P1,ARCH-P1-010,Review Date Queue,planned,Surface due and overdue Decision Capture reviews,ARCH-P0-007,after_decision_capture_usage,No automatic decision status changes
 P1,ARCH-P1-011,Dashboard Operator Cockpit,planned,Consolidate operator actions blockers and reviews from processed artifacts,ARCH-P0-006,after_readiness_contracts,Dashboard remains consolidation only
+P1,ARCH-P1-012,Decision Quality Layer Design,done,Define Decision Quality and Robustness as a review and governance layer without trading forecast or simulation behavior,ARCH-P0-012,now,Implemented as docs/architecture/DECISION_QUALITY_LAYER.md
+P1,ARCH-P1-013,Decision Quality State Contract,done,Define future machine-readable process-confidence state fields enums reason codes and non-scope boundaries,ARCH-P1-012,now,Implemented as docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md; no producer yet
+P1,ARCH-P1-014,Baseline-vs-Candidate Governance,done,Require candidate analytical methods to beat current or simpler baselines on process-quality evidence not complexity,ARCH-P1-012,now,Implemented as docs/governance/BASELINE_VS_CANDIDATE_VALIDATION.md
 P2,ARCH-P2-001,Strategy Feedback Report,planned,Summarize recurring issues and candidate policy changes,ARCH-P1-004,after_outcome_history,Propose only; do not auto-change policy
 P2,ARCH-P2-002,Policy Change Proposal Template,planned,Standardize human-reviewed rule changes,ARCH-P2-001,after_strategy_feedback,No automatic scoring updates
 P2,ARCH-P2-003,Ledger hardening extensions,planned,Extend reviewed ledger behavior only after MVP usage evidence,ARCH-P1-009,after_event_ledger_mvp,No raw master mutation

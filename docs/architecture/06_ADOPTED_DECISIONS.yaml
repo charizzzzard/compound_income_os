@@ -39,6 +39,18 @@ decisions:
   raw_review_bundle_not_canonical_source:
     adopted: true
     summary: "Raw review transcripts, combined bundles and ZIPs remain source material, not canonical architecture docs."
+  decision_quality_layer_review_governance:
+    adopted: true
+    summary: "Decision Quality is a review and governance layer that aggregates process quality, evidence, lineage, journal and robustness signals without deciding or executing."
+  decision_confidence_is_process_confidence:
+    adopted: true
+    summary: "Decision confidence means process confidence, not probability of investment success, outperformance, alpha or execution quality."
+  quantitative_methods_emit_review_artifacts:
+    adopted: true
+    summary: "Quantitative and stochastic methods may emit review artifacts and diagnostics; they must not produce self-executing recommendations or hidden policy changes."
+  simulation_backtesting_still_deferred_after_quality_layer:
+    adopted: true
+    summary: "Simulation and backtesting remain deferred until decision journal, replay, outcome and accounting foundations are ready."
 
 guardrails:
   missing_data_visible: true
