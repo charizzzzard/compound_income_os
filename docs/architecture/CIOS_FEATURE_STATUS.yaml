@@ -479,6 +479,30 @@ capabilities:
       - "Read-only machine summary only; no visual dashboard server/UI changes and no new investment logic."
       - "Data Freshness counts are surfaced as governance state, but no visual dashboard freshness panel, replay gate or outcome attribution exists."
     next_action: "External review, then dashboard surface refinement."
+  - capability_id: meta_governance_baseline
+    display_name: Meta Governance Baseline
+    status: implemented
+    evidence_files:
+      - docs/governance/CIOS_SYSTEM_CONSTITUTION.md
+      - docs/governance/CIOS_OPERATING_MODEL.md
+      - docs/governance/CIOS_RISK_AND_CONTROL_FRAMEWORK.md
+      - docs/governance/CIOS_TRACEABILITY_STANDARD.md
+      - docs/governance/CIOS_EVOLUTION_GUARDRAILS.md
+      - docs/architecture/CIOS_META_ARCHITECTURE.md
+      - docs/architecture/CIOS_MATURITY_MODEL.yaml
+      - docs/governance/CIOS_FINAL_META_BASELINE_ACCEPTANCE.md
+    input_artifacts:
+      - docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md
+      - docs/architecture/CURRENT_KNOWN_GAPS.md
+    output_artifacts: []
+    report_surface:
+      - docs/governance/CIOS_FINAL_META_BASELINE_ACCEPTANCE.md
+    tests:
+      - tests/test_readme_and_reports.py
+    limitations:
+      - "Meta-baseline accepted with findings only; this is not feature, product, commercial, legal or investment readiness."
+      - "Domain gaps such as Instrument Master, Event Ledger, License Boundary, Replay and Outcome Attribution remain open."
+    next_action: "Data Source Strategy & License Boundary."
   - capability_id: portfolio_event_ledger
     display_name: Portfolio Event Ledger
     status: planned

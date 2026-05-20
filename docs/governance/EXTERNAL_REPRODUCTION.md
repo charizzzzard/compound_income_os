@@ -85,7 +85,15 @@ Then run any additional targeted tests named in
 Architecture review artifacts that are ZIP-review relevant include:
 
 - `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
+- `docs/architecture/CIOS_META_ARCHITECTURE.md`
+- `docs/architecture/CIOS_MATURITY_MODEL.yaml`
 - `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`
+- `docs/governance/CIOS_SYSTEM_CONSTITUTION.md`
+- `docs/governance/CIOS_OPERATING_MODEL.md`
+- `docs/governance/CIOS_RISK_AND_CONTROL_FRAMEWORK.md`
+- `docs/governance/CIOS_TRACEABILITY_STANDARD.md`
+- `docs/governance/CIOS_EVOLUTION_GUARDRAILS.md`
+- `docs/governance/CIOS_FINAL_META_BASELINE_ACCEPTANCE.md`
 - `docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md`
 - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
 - `docs/architecture/CURRENT_KNOWN_GAPS.md`

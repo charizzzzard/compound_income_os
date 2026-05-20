@@ -1,0 +1,275 @@
+{
+  "schema_version": 1,
+  "level_definitions": [
+    {"level": 0, "label": "NOT_STARTED"},
+    {"level": 1, "label": "DOCUMENTED_GAP"},
+    {"level": 2, "label": "CONTRACT_DEFINED"},
+    {"level": 3, "label": "IMPLEMENTED_MANUAL"},
+    {"level": 4, "label": "RUNTIME_INTEGRATED"},
+    {"level": 5, "label": "TESTED_RELEASED_OPERABLE"},
+    {"level": 6, "label": "OUTCOME_REVIEWED"}
+  ],
+  "status_values": [
+    "OPERABLE",
+    "PARTIAL",
+    "CONTRACT_ONLY",
+    "KNOWN_GAP",
+    "NOT_STARTED",
+    "REVIEW_REQUIRED"
+  ],
+  "kernels": [
+    {
+      "kernel_id": "meta_governance",
+      "maturity_level": 5,
+      "maturity_label": "TESTED_RELEASED_OPERABLE",
+      "status": "PARTIAL",
+      "next_level_required": "Outcome review of governance usefulness after several accepted patches.",
+      "blocking_gaps": [],
+      "current_evidence_files": [
+        "docs/governance/CIOS_FINAL_META_BASELINE_ACCEPTANCE.md",
+        "docs/architecture/CIOS_META_ARCHITECTURE.md"
+      ]
+    },
+    {
+      "kernel_id": "system_constitution",
+      "maturity_level": 5,
+      "maturity_label": "TESTED_RELEASED_OPERABLE",
+      "status": "PARTIAL",
+      "next_level_required": "Human operator acceptance in future release loop.",
+      "blocking_gaps": [],
+      "current_evidence_files": ["docs/governance/CIOS_SYSTEM_CONSTITUTION.md"]
+    },
+    {
+      "kernel_id": "operating_model",
+      "maturity_level": 5,
+      "maturity_label": "TESTED_RELEASED_OPERABLE",
+      "status": "PARTIAL",
+      "next_level_required": "Run-loop evidence across multiple operator cycles.",
+      "blocking_gaps": [],
+      "current_evidence_files": ["docs/governance/CIOS_OPERATING_MODEL.md"]
+    },
+    {
+      "kernel_id": "risk_control_framework",
+      "maturity_level": 2,
+      "maturity_label": "CONTRACT_DEFINED",
+      "status": "CONTRACT_ONLY",
+      "next_level_required": "Add risk-control checks or registries for high-priority risks.",
+      "blocking_gaps": ["license_boundary", "instrument_master", "event_ledger"],
+      "current_evidence_files": ["docs/governance/CIOS_RISK_AND_CONTROL_FRAMEWORK.md"]
+    },
+    {
+      "kernel_id": "traceability",
+      "maturity_level": 2,
+      "maturity_label": "CONTRACT_DEFINED",
+      "status": "CONTRACT_ONLY",
+      "next_level_required": "Implement traceability registry or manifest extension.",
+      "blocking_gaps": [],
+      "current_evidence_files": ["docs/governance/CIOS_TRACEABILITY_STANDARD.md"]
+    },
+    {
+      "kernel_id": "release_engineering",
+      "maturity_level": 4,
+      "maturity_label": "RUNTIME_INTEGRATED",
+      "status": "PARTIAL",
+      "next_level_required": "Dedicated release engineering standard and acceptance checklist.",
+      "blocking_gaps": [],
+      "current_evidence_files": ["docs/HANDOFF_CONTRACT.md", "src/handoff_bundle.py"]
+    },
+    {
+      "kernel_id": "handoff_governance",
+      "maturity_level": 5,
+      "maturity_label": "TESTED_RELEASED_OPERABLE",
+      "status": "OPERABLE",
+      "next_level_required": "Keep external reproduction matrix current.",
+      "blocking_gaps": [],
+      "current_evidence_files": [
+        "docs/governance/EXTERNAL_REPRODUCTION.md",
+        "src/handoff_zip_export.py",
+        "tests/test_handoff_bundle.py",
+        "tests/test_handoff_zip_export.py"
+      ]
+    },
+    {
+      "kernel_id": "data_source_strategy",
+      "maturity_level": 2,
+      "maturity_label": "CONTRACT_DEFINED",
+      "status": "PARTIAL",
+      "next_level_required": "Add data license boundary and provider adapter strategy.",
+      "blocking_gaps": ["data_license_boundary"],
+      "current_evidence_files": ["configs/personal_run_data_sources.yaml", "src/data_source_registry.py"]
+    },
+    {
+      "kernel_id": "data_freshness",
+      "maturity_level": 4,
+      "maturity_label": "RUNTIME_INTEGRATED",
+      "status": "PARTIAL",
+      "next_level_required": "Add dashboard freshness panel and replay freshness gate.",
+      "blocking_gaps": ["replay_gate", "dashboard_surface"],
+      "current_evidence_files": [
+        "docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md",
+        "configs/data_freshness_thresholds.yaml",
+        "src/data_freshness.py",
+        "tests/test_data_freshness.py"
+      ]
+    },
+    {
+      "kernel_id": "instrument_master",
+      "maturity_level": 1,
+      "maturity_label": "DOCUMENTED_GAP",
+      "status": "KNOWN_GAP",
+      "next_level_required": "Instrument Master contract.",
+      "blocking_gaps": ["identity_resolution"],
+      "current_evidence_files": []
+    },
+    {
+      "kernel_id": "portfolio_event_ledger",
+      "maturity_level": 1,
+      "maturity_label": "DOCUMENTED_GAP",
+      "status": "KNOWN_GAP",
+      "next_level_required": "Portfolio Event Ledger contract.",
+      "blocking_gaps": ["instrument_master"],
+      "current_evidence_files": ["docs/architecture/CURRENT_KNOWN_GAPS.md"]
+    },
+    {
+      "kernel_id": "broker_import_staging",
+      "maturity_level": 3,
+      "maturity_label": "IMPLEMENTED_MANUAL",
+      "status": "PARTIAL",
+      "next_level_required": "Identity and event-ledger contracts before production broker path.",
+      "blocking_gaps": ["instrument_master", "portfolio_event_ledger"],
+      "current_evidence_files": ["src/import_broker.py", "src/traderepublic_documents.py"]
+    },
+    {
+      "kernel_id": "corporate_actions",
+      "maturity_level": 1,
+      "maturity_label": "DOCUMENTED_GAP",
+      "status": "KNOWN_GAP",
+      "next_level_required": "Corporate Actions input contract.",
+      "blocking_gaps": ["instrument_master", "event_ledger"],
+      "current_evidence_files": ["docs/architecture/CURRENT_KNOWN_GAPS.md"]
+    },
+    {
+      "kernel_id": "fx_multi_currency",
+      "maturity_level": 1,
+      "maturity_label": "DOCUMENTED_GAP",
+      "status": "KNOWN_GAP",
+      "next_level_required": "FX and multi-currency exposure contract.",
+      "blocking_gaps": ["data_source_strategy"],
+      "current_evidence_files": []
+    },
+    {
+      "kernel_id": "investment_policy_statement",
+      "maturity_level": 2,
+      "maturity_label": "CONTRACT_DEFINED",
+      "status": "PARTIAL",
+      "next_level_required": "Formal IPS contract linked to scoring and review rules.",
+      "blocking_gaps": [],
+      "current_evidence_files": [
+        "docs/architecture/03_INVESTMENT_PHILOSOPHY_V1.md",
+        "docs/PROJECT_CHARTER.md"
+      ]
+    },
+    {
+      "kernel_id": "research_case",
+      "maturity_level": 1,
+      "maturity_label": "DOCUMENTED_GAP",
+      "status": "KNOWN_GAP",
+      "next_level_required": "Research Case Workbench contract.",
+      "blocking_gaps": [],
+      "current_evidence_files": ["docs/architecture/CURRENT_KNOWN_GAPS.md"]
+    },
+    {
+      "kernel_id": "valuation_methodology",
+      "maturity_level": 3,
+      "maturity_label": "IMPLEMENTED_MANUAL",
+      "status": "PARTIAL",
+      "next_level_required": "Valuation methodology contract before automation.",
+      "blocking_gaps": [],
+      "current_evidence_files": ["src/personal_valuation_input_contract.py"]
+    },
+    {
+      "kernel_id": "dividend_lifecycle",
+      "maturity_level": 3,
+      "maturity_label": "IMPLEMENTED_MANUAL",
+      "status": "PARTIAL",
+      "next_level_required": "Dividend lifecycle and cashflow forecast contract.",
+      "blocking_gaps": [],
+      "current_evidence_files": ["src/personal_dividend_fcf_input_contract.py"]
+    },
+    {
+      "kernel_id": "performance_measurement",
+      "maturity_level": 3,
+      "maturity_label": "IMPLEMENTED_MANUAL",
+      "status": "PARTIAL",
+      "next_level_required": "Separate performance measurement from outcome attribution contract.",
+      "blocking_gaps": ["event_ledger", "time_aware_replay"],
+      "current_evidence_files": ["src/performance_engine.py"]
+    },
+    {
+      "kernel_id": "benchmark_model",
+      "maturity_level": 3,
+      "maturity_label": "IMPLEMENTED_MANUAL",
+      "status": "PARTIAL",
+      "next_level_required": "Decision-level benchmark alternative contract.",
+      "blocking_gaps": ["decision_outcome_link"],
+      "current_evidence_files": ["src/benchmark_history_engine.py", "src/multi_benchmark_performance_engine.py"]
+    },
+    {
+      "kernel_id": "outcome_attribution",
+      "maturity_level": 1,
+      "maturity_label": "DOCUMENTED_GAP",
+      "status": "KNOWN_GAP",
+      "next_level_required": "Outcome Attribution contract after event ledger and replay.",
+      "blocking_gaps": ["portfolio_event_ledger", "time_aware_replay"],
+      "current_evidence_files": ["docs/architecture/CURRENT_KNOWN_GAPS.md"]
+    },
+    {
+      "kernel_id": "time_aware_replay",
+      "maturity_level": 1,
+      "maturity_label": "DOCUMENTED_GAP",
+      "status": "KNOWN_GAP",
+      "next_level_required": "Time-Aware Replay contract.",
+      "blocking_gaps": ["portfolio_event_ledger", "data_freshness_gate"],
+      "current_evidence_files": ["docs/architecture/CURRENT_KNOWN_GAPS.md"]
+    },
+    {
+      "kernel_id": "dashboard_operator_surface",
+      "maturity_level": 4,
+      "maturity_label": "RUNTIME_INTEGRATED",
+      "status": "PARTIAL",
+      "next_level_required": "Visual read-only dashboard surface refinement.",
+      "blocking_gaps": ["ui_surface_acceptance"],
+      "current_evidence_files": [
+        "docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md",
+        "src/dashboard_operator_summary.py"
+      ]
+    },
+    {
+      "kernel_id": "security_privacy",
+      "maturity_level": 3,
+      "maturity_label": "IMPLEMENTED_MANUAL",
+      "status": "PARTIAL",
+      "next_level_required": "Security/privacy boundary review before productization.",
+      "blocking_gaps": ["license_boundary", "commercial_boundary"],
+      "current_evidence_files": ["src/handoff_bundle.py", "docs/HANDOFF_CONTRACT.md"]
+    },
+    {
+      "kernel_id": "backup_recovery",
+      "maturity_level": 1,
+      "maturity_label": "DOCUMENTED_GAP",
+      "status": "KNOWN_GAP",
+      "next_level_required": "Backup and recovery operating standard.",
+      "blocking_gaps": [],
+      "current_evidence_files": []
+    },
+    {
+      "kernel_id": "product_commercial_boundary",
+      "maturity_level": 1,
+      "maturity_label": "DOCUMENTED_GAP",
+      "status": "KNOWN_GAP",
+      "next_level_required": "Data license and product/commercial boundary contract.",
+      "blocking_gaps": ["data_license_boundary", "legal_review"],
+      "current_evidence_files": []
+    }
+  ]
+}

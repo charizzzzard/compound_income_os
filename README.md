@@ -32,9 +32,16 @@ Das System fuehrt keine Orders aus. Es verarbeitet CSV-Inputs und lokale textbas
 - [docs/DOCUMENTATION_MAINTENANCE.md](docs/DOCUMENTATION_MAINTENANCE.md): Prozess gegen README-/Docs-Drift
 - [docs/CODEX_TASK_TEMPLATE.md](docs/CODEX_TASK_TEMPLATE.md): wiederverwendbares Task-Template
 - [docs/CODEX_TASKS/POST_ITERATION_QA.md](docs/CODEX_TASKS/POST_ITERATION_QA.md): standardisierter Post-Iteration-QA-/Bug-Hunt-Task
+- [docs/governance/CIOS_SYSTEM_CONSTITUTION.md](docs/governance/CIOS_SYSTEM_CONSTITUTION.md): oberste CIOS-Verfassung fuer Zweck, Nicht-Zweck, Autoritaet und Invarianten
+- [docs/governance/CIOS_OPERATING_MODEL.md](docs/governance/CIOS_OPERATING_MODEL.md): Rollen-, Authority- und Standard-Loop-Modell
+- [docs/governance/CIOS_RISK_AND_CONTROL_FRAMEWORK.md](docs/governance/CIOS_RISK_AND_CONTROL_FRAMEWORK.md): Risiko-/Kontrolltaxonomie fuer Daten-, Modell-, LLM-, Release- und Produktgrenzen
+- [docs/governance/CIOS_TRACEABILITY_STANDARD.md](docs/governance/CIOS_TRACEABILITY_STANDARD.md): Traceability-Regeln fuer Requirements, Contracts, Code, Tests, Outputs und Releases
+- [docs/governance/CIOS_EVOLUTION_GUARDRAILS.md](docs/governance/CIOS_EVOLUTION_GUARDRAILS.md): Evolutions- und Sequencing-Regeln gegen Lock-in und Premature Automation
 
 Canonical architecture baseline:
 
+- [docs/architecture/CIOS_META_ARCHITECTURE.md](docs/architecture/CIOS_META_ARCHITECTURE.md): Meta-Schichten von Constitution bis Operation/Outcome
+- [docs/architecture/CIOS_MATURITY_MODEL.yaml](docs/architecture/CIOS_MATURITY_MODEL.yaml): konservatives maschinenlesbares Kernel-Maturity-Modell
 - [docs/architecture/COMPOUND_INCOME_OS_SYSTEM_DEFINITION.md](docs/architecture/COMPOUND_INCOME_OS_SYSTEM_DEFINITION.md): kanonische Systemdefinition, Rollenmodell, Kernel, Operating Loop und Invarianten
 - [docs/architecture/00_META_SYNTHESIS.md](docs/architecture/00_META_SYNTHESIS.md): akzeptierte Meta-Architektur-Synthese
 - [docs/architecture/01_TARGET_OS_KERNEL_V1.md](docs/architecture/01_TARGET_OS_KERNEL_V1.md): sechs Kernel-Domaenen und Operating Loop
@@ -52,6 +59,7 @@ Canonical architecture baseline:
 - [docs/governance/EXTERNAL_REPRODUCTION.md](docs/governance/EXTERNAL_REPRODUCTION.md): Reproduzierbarkeitsmatrix fuer externe Handoff-Reviews
 - [docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md](docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md): naechster Producer-Vertrag, noch nicht implementiert
 - [docs/policies/LLM_CODEX_OPERATING_POLICY.md](docs/policies/LLM_CODEX_OPERATING_POLICY.md): LLM-/Codex-Grenzen
+- [docs/governance/CIOS_FINAL_META_BASELINE_ACCEPTANCE.md](docs/governance/CIOS_FINAL_META_BASELINE_ACCEPTANCE.md): Meta-Baseline-Abschluss; nicht Feature-, Product- oder Commercial-Completion
 
 Future Codex work must respect the six-kernel OS model, no-auto-trading,
 human-final-decision, deterministic Python as source of truth and Decision

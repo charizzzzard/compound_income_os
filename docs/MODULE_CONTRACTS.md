@@ -9,9 +9,17 @@
 ## Systemuebersicht und Feature-Status
 
 - [docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md](architecture/CIOS_CURRENT_SYSTEM_MAP.md): aktuelle System Map fuer externe Review, Stage-/Surface-Kontext und Dashboard-Readiness.
+- [docs/architecture/CIOS_META_ARCHITECTURE.md](architecture/CIOS_META_ARCHITECTURE.md): Meta-Schichten fuer Constitution, Operating Model, Risk, Architecture Governance, Engineering und Operation.
+- [docs/architecture/CIOS_MATURITY_MODEL.yaml](architecture/CIOS_MATURITY_MODEL.yaml): konservatives Kernel-Maturity-Modell fuer Meta-, Daten-, Replay-, Dashboard- und Produktgrenzen.
 - [docs/architecture/CIOS_FEATURE_STATUS.yaml](architecture/CIOS_FEATURE_STATUS.yaml): maschinenlesbarer Capability-Status mit Evidence-Dateien, Outputs, Tests, Limitations und Next Actions.
 - [docs/architecture/CURRENT_KNOWN_GAPS.md](architecture/CURRENT_KNOWN_GAPS.md): bekannte P0/P1/P2/Deferred-Gaps inklusive Dashboard-, Replay- und Outcome-Blockern.
 - [docs/architecture/PERSONAL_RUN_STAGE_DAG.md](architecture/PERSONAL_RUN_STAGE_DAG.md): kanonische Review-Dokumentation fuer `src.personal_run_engine`, Stage-Reihenfolge, Abhaengigkeiten und Failure-/Skip-Semantik.
+- [docs/governance/CIOS_SYSTEM_CONSTITUTION.md](governance/CIOS_SYSTEM_CONSTITUTION.md): CIOS-Verfassung fuer Zweck, Nicht-Zweck, Invarianten und finale Akzeptanzgrenzen.
+- [docs/governance/CIOS_OPERATING_MODEL.md](governance/CIOS_OPERATING_MODEL.md): Authority-Modell fuer Human Operator, Codex, externe LLMs, Tests, Repo und Releases.
+- [docs/governance/CIOS_RISK_AND_CONTROL_FRAMEWORK.md](governance/CIOS_RISK_AND_CONTROL_FRAMEWORK.md): Risiko-/Kontrolltaxonomie mit Status und Evidence-Gates.
+- [docs/governance/CIOS_TRACEABILITY_STANDARD.md](governance/CIOS_TRACEABILITY_STANDARD.md): Requirement-to-Outcome Traceability-Zielkette und minimale Felder.
+- [docs/governance/CIOS_EVOLUTION_GUARDRAILS.md](governance/CIOS_EVOLUTION_GUARDRAILS.md): Sequencing-, ADR- und Anti-Lock-in-Regeln.
+- [docs/governance/CIOS_FINAL_META_BASELINE_ACCEPTANCE.md](governance/CIOS_FINAL_META_BASELINE_ACCEPTANCE.md): Meta-Baseline-Acceptance ohne Feature-/Produkt-/Commercial-Completion-Claim.
 - [docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md](contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md): kanonischer Contract fuer `FRESH`, `STALE`, `MISSING`, `UNKNOWN`, `REVIEW_REQUIRED` und `NOT_APPLICABLE` als Data-Freshness-/Staleness-Semantik.
 - [docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md](contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md): read-only Operator-Surface-Vertrag fuer Decision Quality, Decision Journal Validation und Review Queue Summary.
 - [docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md](contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md): Zielvertrag fuer `review_queue_summary.json`, Statusregeln und Attention-Level.

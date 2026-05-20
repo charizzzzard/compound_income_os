@@ -11,6 +11,17 @@ a market prediction machine. The system may surface evidence, gaps, review
 states and operator actions, but the human operator remains the final decision
 maker.
 
+The meta-governance baseline is defined by:
+
+- `docs/governance/CIOS_SYSTEM_CONSTITUTION.md`
+- `docs/governance/CIOS_OPERATING_MODEL.md`
+- `docs/governance/CIOS_RISK_AND_CONTROL_FRAMEWORK.md`
+- `docs/governance/CIOS_TRACEABILITY_STANDARD.md`
+- `docs/governance/CIOS_EVOLUTION_GUARDRAILS.md`
+- `docs/architecture/CIOS_META_ARCHITECTURE.md`
+- `docs/architecture/CIOS_MATURITY_MODEL.yaml`
+- `docs/governance/CIOS_FINAL_META_BASELINE_ACCEPTANCE.md`
+
 ## Current System Capabilities
 
 - Portfolio Inputs: read-only import and normalization of local CSV and local
@@ -141,6 +152,12 @@ dashboard.
   - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
   - `docs/architecture/CURRENT_KNOWN_GAPS.md`
 - Governance docs:
+  - `docs/governance/CIOS_SYSTEM_CONSTITUTION.md`
+  - `docs/governance/CIOS_OPERATING_MODEL.md`
+  - `docs/governance/CIOS_RISK_AND_CONTROL_FRAMEWORK.md`
+  - `docs/governance/CIOS_TRACEABILITY_STANDARD.md`
+  - `docs/governance/CIOS_EVOLUTION_GUARDRAILS.md`
+  - `docs/governance/CIOS_FINAL_META_BASELINE_ACCEPTANCE.md`
   - `docs/MODULE_CONTRACTS.md`
   - `docs/CONTEXT_AND_ROADMAP.md`
   - `docs/governance/BASELINE_VS_CANDIDATE_VALIDATION.md`
@@ -226,9 +243,8 @@ with zero counts.
 
 ## Next Recommended Hardening Patches
 
-1. Dashboard Surface refinement for Decision Quality, Data Freshness and Review Queue Summary.
-2. Replay / Event Ledger contracts later.
-3. Ranking Robustness / Sensitivity producer later.
-4. Ranking Robustness / Sensitivity producer later.
-5. Portfolio Event Ledger later.
-6. Replay / Outcome later.
+1. Data Source Strategy & License Boundary.
+2. Instrument Master Contract.
+3. Release Engineering Standard.
+4. Portfolio Event Ledger Contract later.
+5. Time-Aware Replay / Outcome contracts later.

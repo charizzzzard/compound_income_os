@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import subprocess
 import unittest
 from pathlib import Path
@@ -62,6 +63,49 @@ class ReadmeAndReportTests(unittest.TestCase):
         self.assertIn("repo_evidence_files:", feature_status)
         self.assertIn("packet_evidence_files:", feature_status)
         self.assertIn("generated_review_artifacts:", feature_status)
+
+    def test_meta_governance_baseline_docs_are_linked_and_conservative(self) -> None:
+        required_paths = [
+            Path("docs/governance/CIOS_SYSTEM_CONSTITUTION.md"),
+            Path("docs/governance/CIOS_OPERATING_MODEL.md"),
+            Path("docs/governance/CIOS_RISK_AND_CONTROL_FRAMEWORK.md"),
+            Path("docs/governance/CIOS_TRACEABILITY_STANDARD.md"),
+            Path("docs/governance/CIOS_EVOLUTION_GUARDRAILS.md"),
+            Path("docs/architecture/CIOS_META_ARCHITECTURE.md"),
+            Path("docs/architecture/CIOS_MATURITY_MODEL.yaml"),
+            Path("docs/governance/CIOS_FINAL_META_BASELINE_ACCEPTANCE.md"),
+        ]
+        for path in required_paths:
+            with self.subTest(path=str(path)):
+                self.assertTrue(path.exists(), f"missing {path}")
+
+        readme = Path("README.md").read_text(encoding="utf-8")
+        system_map = Path("docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md").read_text(encoding="utf-8")
+        module_contracts = Path("docs/MODULE_CONTRACTS.md").read_text(encoding="utf-8")
+        for path in required_paths:
+            path_text = path.as_posix()
+            with self.subTest(reference=path_text):
+                self.assertIn(path_text, readme)
+                self.assertIn(path_text, system_map + "\n" + module_contracts)
+
+        constitution = Path("docs/governance/CIOS_SYSTEM_CONSTITUTION.md").read_text(encoding="utf-8")
+        acceptance = Path("docs/governance/CIOS_FINAL_META_BASELINE_ACCEPTANCE.md").read_text(encoding="utf-8")
+        self.assertIn("Compound Income OS", constitution)
+        self.assertIn("CIOS", constitution)
+        self.assertIn("CIOS_META_BASELINE_ACCEPTED_WITH_FINDINGS", acceptance)
+        self.assertIn("FEATURE_COMPLETE: false", acceptance)
+        self.assertIn("PRODUCT_COMPLETE: false", acceptance)
+        self.assertIn("COMMERCIAL_READY: false", acceptance)
+        self.assertNotIn("C:\\Users\\", constitution + acceptance)
+
+        maturity = json.loads(Path("docs/architecture/CIOS_MATURITY_MODEL.yaml").read_text(encoding="utf-8"))
+        self.assertIn("kernels", maturity)
+        self.assertGreaterEqual(len(maturity["kernels"]), 20)
+        for kernel in maturity["kernels"]:
+            with self.subTest(kernel=kernel["kernel_id"]):
+                self.assertLessEqual(kernel["maturity_level"], 5)
+        self.assertTrue(any(kernel["kernel_id"] == "portfolio_event_ledger" and kernel["status"] == "KNOWN_GAP" for kernel in maturity["kernels"]))
+        self.assertTrue(any(kernel["kernel_id"] == "meta_governance" for kernel in maturity["kernels"]))
 
     def test_personal_run_stage_dag_documents_current_stage_order(self) -> None:
         dag_path = Path("docs/architecture/PERSONAL_RUN_STAGE_DAG.md")
