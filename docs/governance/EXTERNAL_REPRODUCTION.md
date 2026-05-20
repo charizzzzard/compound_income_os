@@ -79,6 +79,26 @@ Then run any additional targeted tests named in
 Do not claim a full test suite unless `python -m unittest discover -s tests -p
 "test_*.py"` or an equivalent full-suite command was actually executed.
 
+## Minimal External Smoke From Extracted ZIP
+
+Assumption: Python 3.11+ or the repo-compatible local Python version is
+available, and the working directory is the extracted handoff root.
+
+Example smoke sequence:
+
+```powershell
+Expand-Archive .\HANDOFF_LATEST.zip -DestinationPath .\review
+Set-Location .\review
+python -m unittest tests.test_dashboard_operator_summary -v
+python -m unittest tests.test_personal_decision_journal_validation -v
+python -m unittest tests.test_personal_decision_quality_state -v
+python -m unittest tests.test_readme_and_reports -v
+```
+
+These smoke tests do not replace local full validation. Private/raw fixtures are
+intentionally absent from review bundles, and tests that require such fixtures
+are not automatic patch failures when run from the ZIP alone.
+
 ## Handoff Interpretation
 
 External reviewers should:

@@ -9,7 +9,9 @@ Operator Surface. It is derived from Decision Journal Validation and Review
 Queue artifacts. It is read-only and does not create decisions, update the
 journal, execute orders or infer investment actions.
 
-This patch defines the target contract only. A producer may be added later.
+This contract defines the target artifact and the minimal producer surface. The
+current producer is `src/dashboard_operator_summary.py`; it remains read-only
+and aggregates existing governance artifacts only.
 
 ## Inputs
 
@@ -35,7 +37,7 @@ Optional later CSV artifact:
 
 - `data/processed/review_queue_summary.csv`
 
-No output is implemented by this contract patch.
+No CSV output is required for the minimal producer.
 
 ## Required Fields
 
@@ -65,8 +67,40 @@ The future JSON summary must include at least:
 - `operator_attention_level`
 - `operator_attention_reasons`
 - `missing_artifacts`
+- `missing_required_artifacts`
 - `partial_artifacts`
+- `source_artifacts`
 - `non_scope_confirmations`
+
+## Source Artifacts
+
+`source_artifacts` is a structured list. Each entry must use this shape:
+
+```json
+{
+  "path": "data/processed/decision_review_queue.csv",
+  "required": true,
+  "status": "COMPLETE",
+  "row_count": 0,
+  "sha256": null,
+  "reason": null
+}
+```
+
+Required fields per source artifact:
+
+- `path`: repo-relative path or stable redacted label.
+- `required`: native JSON boolean.
+- `status`: one of the artifact availability values below.
+- `row_count`: integer count for readable tabular artifacts; `null` when not
+  measurable.
+- `sha256`: optional artifact hash; `null` when unavailable or intentionally
+  not emitted.
+- `reason`: optional machine-readable reason for missing, unreadable, stale or
+  conflicting state.
+
+Raw local absolute paths, Windows drive paths, UNC paths and path traversal
+strings must not be emitted.
 
 ## Status And Enum Values
 

@@ -88,6 +88,7 @@ missing but Decision Journal Validation can still be read.
 
 Future dashboard/operator-summary artifacts must provide at least:
 
+- `schema_version`
 - `surface_generated_at`
 - `as_of_date`
 - `source_commit_sha`
@@ -106,11 +107,51 @@ Future dashboard/operator-summary artifacts must provide at least:
 - `queue_items`
 - `queue_blocker_count`
 - `queue_high_count`
+- `queue_medium_count`
 - `stale_state_count`
 - `top_reason_codes`
 - `operator_attention_required`
+- `operator_attention_level`
 - `operator_attention_reasons`
+- `source_artifacts`
 - `non_scope_confirmations`
+
+### Machine Field Table
+
+| field | type | required | nullable | allowed_values | default_when_missing | source |
+| --- | --- | --- | --- | --- | --- | --- |
+| `schema_version` | integer | yes | no | positive integer | none | Surface producer |
+| `surface_generated_at` | string | yes | no | ISO-8601 UTC | current producer timestamp | Surface producer |
+| `as_of_date` | string | yes | yes | `YYYY-MM-DD` | `null` only when no manifest/state date exists | Run manifest / Decision Quality |
+| `source_commit_sha` | string | yes | yes | git SHA string | `null` | Run manifest / Decision Quality |
+| `run_id` | string | yes | yes | stable run identifier | `null` | Run manifest / Decision Quality |
+| `surface_status` | string | yes | no | `PASS`, `REVIEW`, `NOT_AVAILABLE`, `PARTIAL` | `NOT_AVAILABLE` | Surface producer |
+| `artifact_status` | string | yes | no | `COMPLETE`, `PARTIAL`, `NOT_AVAILABLE`, `UNREADABLE`, `STALE`, `CONFLICTING` | `NOT_AVAILABLE` | Source artifact reader |
+| `missing_artifacts` / `missing_required_artifacts` | array[string] | yes | no | artifact paths or redacted labels | `[]` | Source artifact reader |
+| `partial_artifacts` | array[string] | yes | no | artifact paths or redacted labels | `[]` | Source artifact reader |
+| `decision_quality_status` | string | yes | yes | `PASS`, `REVIEW`, `NOT_AVAILABLE`, `PARTIAL` or producer status | `NOT_AVAILABLE` | Decision Quality State |
+| `decision_quality_review_required` | boolean | yes | yes | `true`, `false`, `null` | `null` | Decision Quality State |
+| `process_confidence_level` | string | yes | yes | `HIGH`, `MEDIUM`, `LOW`, `REVIEW`, `null` | `null` | Decision Quality State |
+| `decision_journal_validation_status` | string | yes | no | `PASS`, `REVIEW`, `NOT_AVAILABLE`, `PARTIAL` | `NOT_AVAILABLE` | Decision Journal Validation |
+| `validation_findings_count` | integer | yes | no | `>=0` | `0` only for readable header-valid artifact | Decision Journal Validation |
+| `validation_blocker_count` | integer | yes | no | `>=0` | `0` only for readable header-valid artifact | Decision Journal Validation |
+| `validation_high_count` | integer | yes | no | `>=0` | `0` only for readable header-valid artifact | Decision Journal Validation |
+| `queue_items` | integer | yes | no | `>=0` | `0` only for readable header-valid artifact | Review Queue |
+| `queue_blocker_count` | integer | yes | no | `>=0` | `0` only for readable header-valid artifact | Review Queue |
+| `queue_high_count` | integer | yes | no | `>=0` | `0` only for readable header-valid artifact | Review Queue |
+| `queue_medium_count` | integer | yes | no | `>=0` | `0` only for readable header-valid artifact | Review Queue |
+| `stale_state_count` | integer | yes | no | `>=0` | `0` only for readable header-valid artifact | Validation / Review Queue |
+| `top_reason_codes` | array[string] | yes | no | reason-code strings | `[]` | Validation / Review Queue |
+| `operator_attention_required` | boolean | yes | no | `true`, `false` | `true` for missing/unreadable required artifacts | Surface producer |
+| `operator_attention_level` | string | yes | no | `NONE`, `LOW`, `MEDIUM`, `HIGH`, `BLOCKER` | `BLOCKER` for missing/unreadable required artifacts | Surface producer |
+| `operator_attention_reasons` | array[string] | yes | no | reason-code strings | required-artifact reason when unavailable | Surface producer |
+| `source_artifacts` | array[object] | yes | no | see source artifact contract | `[]` | Source artifact reader |
+| `non_scope_confirmations` | array[string] | yes | no | explicit non-scope statements | fixed contract list | Surface producer |
+
+`process_confidence_level` remains process/review confidence, not Investment
+Confidence. `operator_attention_required` is an operator follow-up flag, not an
+order signal. `surface_status=PASS` is valid only when required artifacts are
+present, readable and no findings or queue items exist.
 
 ## Artifact Availability Model
 
@@ -136,6 +177,18 @@ Rules:
   context under the applicable freshness rule.
 - `CONFLICTING` means two readable artifacts disagree on lineage, run ID,
   source commit, date or other contract identity fields.
+
+Dominant aggregate artifact status is deterministic. When multiple source
+artifact statuses are present, the aggregate `artifact_status` uses this
+priority ladder:
+
+```text
+UNREADABLE > CONFLICTING > NOT_AVAILABLE > PARTIAL > STALE > COMPLETE
+```
+
+The aggregate field is intentionally lossy. Implementations must also preserve
+`source_artifacts` or equivalent detail rows so that stale and conflicting
+sub-states remain visible even when a higher-priority dominant status applies.
 
 Decision Quality may be `NOT_AVAILABLE` without blocking Decision Journal
 Validation. Stale state is a process freshness signal, not an investment risk.

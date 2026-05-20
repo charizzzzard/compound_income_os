@@ -165,6 +165,22 @@ review dates, incomplete rationale and Decision Quality `review_required=true`;
 `LOW` and `NOTE` are reserved. Any older Decision Quality `as_of_date` is
 treated as stale in this phase.
 
+## Dashboard Operator Summary
+
+`src.dashboard_operator_summary` aggregates the existing Decision Quality,
+Decision Journal Validation and Review Queue artifacts into
+`data/processed/review_queue_summary.json`. It is a read-only machine surface
+for operator status, not a visual dashboard, not a dashboard server and not a
+new investment-logic layer.
+
+The `dashboard_operator_summary` stage in `src.personal_run_engine` runs after
+`decision_journal_validation`, records the summary in the artifact index and
+renders a compact Personal Run Report section with `surface_status`,
+`artifact_status`, `operator_attention_level`, queue counts and top reason
+codes. Missing required artifacts remain `NOT_AVAILABLE` or `PARTIAL`; valid
+header-only validation/queue artifacts render as `PASS` with explicit zero
+counts.
+
 ## Decision Capture
 
 `src.personal_decision_state_capture` is the first minimal producer from the

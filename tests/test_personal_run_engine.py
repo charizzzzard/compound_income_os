@@ -497,6 +497,7 @@ class PersonalRunEngineTests(unittest.TestCase):
             decision_journal_validation_output=str(self._path(f"_tmp_{prefix}_decision_journal_validation.csv")),
             decision_review_queue_output=str(self._path(f"_tmp_{prefix}_decision_review_queue.csv")),
             decision_journal_validation_report_output=str(self._path(f"_tmp_{prefix}_decision_journal_validation_report.md")),
+            review_queue_summary_output=str(self._path(f"_tmp_{prefix}_review_queue_summary.json")),
             portfolio_archive=str(self._path(f"_tmp_{prefix}_portfolio_archive.csv")),
             portfolio_timeseries_output=str(self._path(f"_tmp_{prefix}_portfolio_timeseries.csv")),
             portfolio_history_summary_output=str(self._path(f"_tmp_{prefix}_portfolio_history_summary.csv")),
@@ -682,6 +683,7 @@ class PersonalRunEngineTests(unittest.TestCase):
                 "monthly",
                 "decision_quality",
                 "decision_journal_validation",
+                "dashboard_operator_summary",
                 "history",
                 "benchmark_archive",
                 "performance",
@@ -713,10 +715,12 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("rebalance_review") + 1], "monthly")
         self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("monthly") + 1], "decision_quality")
         self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("decision_quality") + 1], "decision_journal_validation")
+        self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("decision_journal_validation") + 1], "dashboard_operator_summary")
         self.assertIn("cash_refill_review", STAGE_RUNNERS)
         self.assertIn("rebalance_review", STAGE_RUNNERS)
         self.assertIn("decision_quality", STAGE_RUNNERS)
         self.assertIn("decision_journal_validation", STAGE_RUNNERS)
+        self.assertIn("dashboard_operator_summary", STAGE_RUNNERS)
 
     def test_targeted_cash_refill_review_stage_writes_outputs(self) -> None:
         options = self._base_options("cash_refill_stage", ["cash_refill_review"])
@@ -2121,6 +2125,56 @@ class PersonalRunEngineTests(unittest.TestCase):
         run_report = Path(options.report_output or "").read_text(encoding="utf-8")
         self.assertIn("## Decision Journal Validation", run_report)
         self.assertIn("Decision Journal Validation: `NOT_AVAILABLE`", run_report)
+
+    def test_dashboard_operator_summary_stage_generates_output_and_report_surface(self) -> None:
+        options = self._core_options(
+            "dashboard_operator_summary_e2e",
+            [
+                "import",
+                "fundamentals_seed",
+                "scoring",
+                "coverage",
+                "watchlist",
+                "cash_refill_review",
+                "rebalance_review",
+                "monthly",
+                "decision_quality",
+                "decision_journal_validation",
+                "dashboard_operator_summary",
+            ],
+        )
+        options.portfolio_date = "2026-05-19"
+        self._write_decision_journal_validation_inputs(
+            options,
+            review_date="2026-06-19",
+            row_overrides={
+                "proposed_action": "NO_ACTION",
+                "human_decision": "NO_ACTION",
+                "decision_status": "CLOSED",
+                "review_date": "2026-06-19",
+            },
+        )
+
+        manifest = run_personal_run_engine(options)
+
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertLess(
+            manifest["executed_stage_order"].index("decision_journal_validation"),
+            manifest["executed_stage_order"].index("dashboard_operator_summary"),
+        )
+        self.assertTrue(Path(options.review_queue_summary_output).exists())
+        summary = json.loads(Path(options.review_queue_summary_output).read_text(encoding="utf-8"))
+        self.assertEqual(summary["surface_status"], "PASS")
+        artifact_rows = read_csv_rows(options.artifacts_output)
+        produced_roles = {row["artifact_role"] for row in artifact_rows if row["stage_name"] == "dashboard_operator_summary" and row["produced"] == "True"}
+        self.assertEqual(produced_roles, {"review_queue_summary"})
+        used_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "dashboard_operator_summary")
+        self.assertIn("decision_journal_validation", used_inputs)
+        self.assertIn("decision_review_queue", used_inputs)
+        run_report = Path(options.report_output or "").read_text(encoding="utf-8")
+        self.assertIn("## Dashboard Operator Summary", run_report)
+        self.assertIn("surface_status", run_report)
+        self.assertIn("operator_attention_level", run_report)
 
     def test_history_and_performance_run_uses_existing_single_benchmark_method(self) -> None:
         options = self._core_options("history_perf", ["import", "history", "performance"])

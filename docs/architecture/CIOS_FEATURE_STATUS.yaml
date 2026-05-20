@@ -435,6 +435,8 @@ capabilities:
     evidence_files:
       - src/dashboard_engine.py
       - src/dashboard_server.py
+      - docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md
+      - docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md
     input_artifacts:
       - data/processed/dashboard_kpis.csv
       - data/processed/dashboard_sections.csv
@@ -448,8 +450,32 @@ capabilities:
       - tests/test_dashboard_engine.py
       - tests/test_dashboard_server.py
     limitations:
-      - "No full Decision Quality / Review Queue dashboard surface contract yet."
-    next_action: "Dashboard Operator Surface Contract."
+      - "Dashboard Operator Surface Contract exists and Minimal Dashboard Operator Summary Producer exists, but no full visual operator cockpit redesign is implemented."
+    next_action: "Use review_queue_summary.json as input to a future read-only dashboard surface."
+  - capability_id: dashboard_operator_summary
+    display_name: Dashboard Operator Summary
+    status: implemented
+    evidence_files:
+      - src/dashboard_operator_summary.py
+      - tests/test_dashboard_operator_summary.py
+      - docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md
+      - docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md
+    input_artifacts:
+      - data/processed/decision_journal_validation.csv
+      - data/processed/decision_review_queue.csv
+      - data/processed/decision_quality_state.json
+      - data/processed/personal_run_manifest.json
+    output_artifacts:
+      - data/processed/review_queue_summary.json
+    report_surface:
+      - reports/<date>/personal_run_report.md
+    tests:
+      - tests/test_dashboard_operator_summary.py
+      - tests/test_personal_run_engine.py
+    limitations:
+      - "Read-only machine summary only; no visual dashboard server/UI changes and no new investment logic."
+      - "Data Freshness/Staleness Contract and full Stage-DAG remain separate follow-ups."
+    next_action: "External review, then Stage-DAG or Data Freshness/Staleness Contract."
   - capability_id: portfolio_event_ledger
     display_name: Portfolio Event Ledger
     status: planned

@@ -24,6 +24,11 @@ from src.cash_refill_review import DEFAULT_THRESHOLDS_PATH as DEFAULT_PORTFOLIO_
 from src.cash_refill_review import run_cash_refill_review
 from src.common import ensure_parent_dir, read_csv_rows, require_columns, require_non_blank_fields, resolve_repo_path, write_csv_rows
 from src.cost_tax_archive_engine import DEFAULT_CONFIG_PATH as DEFAULT_COST_TAX_CONFIG_PATH, run_cost_tax_archive_engine
+from src.dashboard_operator_summary import (
+    build_dashboard_operator_summary_surface_lines,
+    read_dashboard_operator_summary,
+    run_dashboard_operator_summary,
+)
 from src.data_source_registry import (
     DEFAULT_CONFIG_PATH as DEFAULT_DATA_SOURCES_CONFIG_PATH,
     DEFAULT_RESOLVED_OUTPUT as DEFAULT_DATA_SOURCE_RESOLVED_OUTPUT,
@@ -148,6 +153,7 @@ STAGE_ORDER = [
     "monthly",
     "decision_quality",
     "decision_journal_validation",
+    "dashboard_operator_summary",
     "history",
     "benchmark_archive",
     "performance",
@@ -238,6 +244,7 @@ DEFAULT_PATHS = {
     "decision_quality_json_output": "data/processed/decision_quality_state.json",
     "decision_journal_validation_output": "data/processed/decision_journal_validation.csv",
     "decision_review_queue_output": "data/processed/decision_review_queue.csv",
+    "review_queue_summary_output": "data/processed/review_queue_summary.json",
     "portfolio_archive": "data/processed/portfolio_snapshot_archive.csv",
     "portfolio_timeseries_output": "data/processed/portfolio_timeseries.csv",
     "portfolio_history_summary_output": "data/processed/portfolio_history_summary.csv",
@@ -403,6 +410,7 @@ class PersonalRunOptions:
     decision_journal_validation_output: str = DEFAULT_PATHS["decision_journal_validation_output"]
     decision_review_queue_output: str = DEFAULT_PATHS["decision_review_queue_output"]
     decision_journal_validation_report_output: str | None = None
+    review_queue_summary_output: str = DEFAULT_PATHS["review_queue_summary_output"]
     portfolio_archive: str = DEFAULT_PATHS["portfolio_archive"]
     portfolio_timeseries_output: str = DEFAULT_PATHS["portfolio_timeseries_output"]
     portfolio_history_summary_output: str = DEFAULT_PATHS["portfolio_history_summary_output"]
@@ -651,6 +659,7 @@ def input_snapshot(options: PersonalRunOptions) -> dict[str, Any]:
         "decision_journal_validation_output": options.decision_journal_validation_output,
         "decision_review_queue_output": options.decision_review_queue_output,
         "decision_journal_validation_report_output": options.decision_journal_validation_report_output or "",
+        "review_queue_summary_output": options.review_queue_summary_output,
     }
 
 
@@ -1493,6 +1502,44 @@ def run_decision_journal_validation_stage(options: PersonalRunOptions) -> StageR
     )
 
 
+def run_dashboard_operator_summary_stage(options: PersonalRunOptions) -> StageResult:
+    stage = "dashboard_operator_summary"
+    result = run_dashboard_operator_summary(
+        decision_quality_state=options.decision_quality_json_output,
+        decision_journal_validation=options.decision_journal_validation_output,
+        decision_review_queue=options.decision_review_queue_output,
+        run_manifest=options.manifest_output,
+        run_artifacts=options.artifacts_output,
+        run_used_inputs=options.used_inputs_output,
+        out_json=options.review_queue_summary_output,
+        as_of_date=options.portfolio_date,
+    )
+    warnings = []
+    if result.summary.get("operator_attention_required"):
+        warnings.append("Dashboard Operator Summary requires operator attention.")
+    return stage_result(
+        stage,
+        SUCCESS,
+        [
+            "decision_journal_validation",
+            "decision_review_queue",
+        ],
+        used_inputs={
+            "decision_quality_state_json": options.decision_quality_json_output,
+            "decision_journal_validation": options.decision_journal_validation_output,
+            "decision_review_queue": options.decision_review_queue_output,
+            "personal_run_manifest": options.manifest_output,
+            "personal_run_artifacts": options.artifacts_output,
+            "personal_run_used_inputs": options.used_inputs_output,
+        },
+        produced_outputs={
+            "review_queue_summary": str(result.json_output),
+        },
+        warnings=warnings,
+        notes="Read-only Dashboard Operator Summary generated from Decision Quality, Journal Validation and Review Queue artifacts.",
+    )
+
+
 def run_history_stage(options: PersonalRunOptions) -> StageResult:
     stage = "history"
     positions_path = require_existing_path(options.positions_output, "positions snapshot", stage)
@@ -1747,6 +1794,7 @@ STAGE_RUNNERS: dict[str, Callable[[PersonalRunOptions], StageResult]] = {
     "monthly": run_monthly_stage,
     "decision_quality": run_decision_quality_stage,
     "decision_journal_validation": run_decision_journal_validation_stage,
+    "dashboard_operator_summary": run_dashboard_operator_summary_stage,
     "history": run_history_stage,
     "benchmark_archive": run_benchmark_archive_stage,
     "performance": run_performance_stage,
@@ -1904,6 +1952,7 @@ def build_manifest(
             "decision_journal_validation_output": options.decision_journal_validation_output,
             "decision_review_queue_output": options.decision_review_queue_output,
             "decision_journal_validation_report_output": options.decision_journal_validation_report_output or "",
+            "review_queue_summary_output": options.review_queue_summary_output,
             "data_source_status_output": options.data_source_status_output,
             "data_source_resolved_output": options.data_source_resolved_output,
             "report_output": options.report_output or "",
@@ -1946,6 +1995,16 @@ def decision_journal_surface_from_artifacts(artifact_rows: list[dict[str, str]])
             queue_path = row["artifact_path"]
     validation_rows, queue_rows = read_decision_journal_surface(validation_path or None, queue_path or None)
     return validation_rows, queue_rows, validation_path, queue_path
+
+
+def dashboard_operator_summary_from_artifacts(artifact_rows: list[dict[str, str]]) -> tuple[dict[str, Any] | None, str]:
+    for row in artifact_rows:
+        if row["artifact_role"] == "review_queue_summary" and row["produced"] == "True":
+            artifact_path = row["artifact_path"]
+            summary = read_dashboard_operator_summary(artifact_path)
+            if summary:
+                return summary, artifact_path
+    return None, ""
 
 
 def write_run_report(path_value: str, manifest: dict[str, Any], artifact_rows: list[dict[str, str]]) -> Path:
@@ -1991,6 +2050,15 @@ def write_run_report(path_value: str, manifest: dict[str, Any], artifact_rows: l
             queue_rows,
             validation_path=validation_path or None,
             queue_path=queue_path or None,
+            include_heading=False,
+        )
+    )
+    dashboard_summary, dashboard_summary_path = dashboard_operator_summary_from_artifacts(artifact_rows)
+    lines.extend(["", "## Dashboard Operator Summary", ""])
+    lines.extend(
+        build_dashboard_operator_summary_surface_lines(
+            dashboard_summary,
+            source_path=dashboard_summary_path or None,
             include_heading=False,
         )
     )
@@ -2118,7 +2186,7 @@ def run_personal_run_engine(options: PersonalRunOptions) -> dict[str, Any]:
             stage_results_by_name[stage_name] = skipped_result(stage_name, failed_stage)
             continue
         try:
-            if stage_name in {"decision_quality", "decision_journal_validation"}:
+            if stage_name in {"decision_quality", "decision_journal_validation", "dashboard_operator_summary"}:
                 write_decision_quality_preflight_lineage(options, selected_stages, executed_stage_order, stage_results_by_name, run_started_at, warnings)
             executed_stage_order.append(stage_name)
             result = STAGE_RUNNERS[stage_name](options)
@@ -2238,6 +2306,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--decision-journal-validation-output", default=DEFAULT_PATHS["decision_journal_validation_output"], help="Decision Journal Validation CSV output.")
     parser.add_argument("--decision-review-queue-output", default=DEFAULT_PATHS["decision_review_queue_output"], help="Decision Review Queue CSV output.")
     parser.add_argument("--decision-journal-validation-report-output", help="Decision Journal Validation markdown report output.")
+    parser.add_argument("--review-queue-summary-output", default=DEFAULT_PATHS["review_queue_summary_output"], help="Dashboard Operator Review Queue Summary JSON output.")
     parser.add_argument("--portfolio-archive", default=DEFAULT_PATHS["portfolio_archive"], help="Portfolio snapshot archive path.")
     parser.add_argument("--portfolio-timeseries-output", default=DEFAULT_PATHS["portfolio_timeseries_output"], help="Portfolio timeseries output.")
     parser.add_argument("--portfolio-history-summary-output", default=DEFAULT_PATHS["portfolio_history_summary_output"], help="Portfolio history summary output.")
@@ -2364,6 +2433,7 @@ def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
         decision_journal_validation_output=args.decision_journal_validation_output,
         decision_review_queue_output=args.decision_review_queue_output,
         decision_journal_validation_report_output=args.decision_journal_validation_report_output,
+        review_queue_summary_output=args.review_queue_summary_output,
         portfolio_archive=args.portfolio_archive,
         portfolio_timeseries_output=args.portfolio_timeseries_output,
         portfolio_history_summary_output=args.portfolio_history_summary_output,
