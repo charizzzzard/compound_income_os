@@ -303,6 +303,22 @@ class DashboardOperatorSummaryTests(unittest.TestCase):
         self.assertNotIn(r"\\server\share", text)
         self.assertNotIn("../outside", text)
 
+    def test_repo_internal_absolute_paths_are_stored_relative(self) -> None:
+        paths = self._base_inputs("absolute_inside_repo")
+        summary = build_dashboard_operator_summary(
+            decision_journal_validation=str(Path(paths["decision_journal_validation"]).resolve()),
+            decision_review_queue=str(Path(paths["decision_review_queue"]).resolve()),
+            run_manifest=str(Path(paths["run_manifest"]).resolve()),
+            decision_quality_state=paths["decision_quality_state"],
+            run_artifacts=paths["run_artifacts"],
+            run_used_inputs=paths["run_used_inputs"],
+        )
+
+        artifact_paths = [artifact["path"] for artifact in summary["source_artifacts"]]
+        self.assertIn(Path(paths["decision_journal_validation"]).as_posix(), artifact_paths)
+        self.assertIn(Path(paths["decision_review_queue"]).as_posix(), artifact_paths)
+        self.assertNotIn("EXTERNAL_PATH_REDACTED:decision_journal_validation", artifact_paths)
+
     def test_json_serialization_is_deterministic_and_native(self) -> None:
         paths = self._base_inputs("json")
 

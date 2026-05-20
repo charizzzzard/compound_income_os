@@ -51,9 +51,16 @@ def _safe_path_for_output(path_value: str | Path, label: str) -> tuple[str, bool
     if not raw:
         return "", False
     lowered = raw.replace("\\", "/").lower()
-    if _is_external_syntax(raw) or "data/raw/private" in lowered:
-        return f"EXTERNAL_PATH_REDACTED:{label}", True
     path = Path(raw)
+    if "data/raw/private" in lowered:
+        return f"EXTERNAL_PATH_REDACTED:{label}", True
+    if _is_external_syntax(raw):
+        if path.is_absolute():
+            try:
+                return path.resolve().relative_to(_repo_root()).as_posix(), False
+            except ValueError:
+                return f"EXTERNAL_PATH_REDACTED:{label}", True
+        return f"EXTERNAL_PATH_REDACTED:{label}", True
     if path.is_absolute():
         try:
             return path.resolve().relative_to(_repo_root()).as_posix(), False
