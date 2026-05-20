@@ -1,51 +1,46 @@
-# HANDOFF LATEST CONTEXT - Operator Summary Semantics + Handoff Hygiene
+# HANDOFF LATEST CONTEXT - Personal Run Stage DAG
 
 project_name: compound_income_os
 profile: full_review
 bundle_name: HANDOFF_LATEST
-bundle_purpose: external_llm_validation_after_operator_summary_semantics_and_handoff_hygiene_hardening
-created_at_utc: 2026-05-20T11:46:00Z
+bundle_purpose: external_llm_validation_after_personal_run_stage_dag_documentation
+created_at_utc: 2026-05-20T13:34:39Z
 branch: main
-current_handoff_head: 251635b509c24328c57edc4947becd93fb31d886
-current_handoff_short_head: 251635b
-implementation_commit_message: fix: allow repo-local operator summary smoke paths
-previous_repo_head: eda24383de2c7970041d8b79de1ccab0f9171066
-previous_handoff_head: 72b52c2cdc0bcafba1efb4fc8dedee47ca486a24
+current_handoff_head: 1fe3b85d20afa1a91d65137ccfb98c337ee017db
+current_handoff_short_head: 1fe3b85
+implementation_commit_message: docs: add personal run stage dag
+previous_repo_head: 15b1d73f170d0eaf927d3b9802f09569e79b349b
+previous_handoff_head: 251635b509c24328c57edc4947becd93fb31d886
 final_repo_head_note: final repo HEAD may be a separate handoff metadata commit after this context update
 tracked_worktree_clean_after_implementation_commit_before_handoff_cleanup: True
 zip_internal_dirty_worktree_present: True
 dirty_state_explanation: external_review_packet/HANDOFF_LATEST.sha256 was regenerated after the ZIP was written; this is not patch source dirtiness.
 
-canonical_dashboard_operator_summary_producer: src/dashboard_operator_summary.py
-canonical_dashboard_operator_summary_tests: tests/test_dashboard_operator_summary.py
-canonical_handoff_bundle: src/handoff_bundle.py
-canonical_handoff_bundle_tests: tests/test_handoff_bundle.py
-canonical_handoff_zip_exporter: src/handoff_zip_export.py
-canonical_handoff_zip_export_tests: tests/test_handoff_zip_export.py
-canonical_dashboard_operator_surface_contract: docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md
-canonical_review_queue_summary_contract: docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md
+canonical_personal_run_stage_dag: docs/architecture/PERSONAL_RUN_STAGE_DAG.md
+canonical_personal_run_engine: src/personal_run_engine.py
+canonical_personal_run_engine_tests: tests/test_personal_run_engine.py
+canonical_readme_report_tests: tests/test_readme_and_reports.py
+canonical_system_map: docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md
+canonical_feature_status: docs/architecture/CIOS_FEATURE_STATUS.yaml
+canonical_known_gaps: docs/architecture/CURRENT_KNOWN_GAPS.md
 canonical_external_reproduction_matrix: docs/governance/EXTERNAL_REPRODUCTION.md
 canonical_review_bundle: external_review_packet/HANDOFF_LATEST.zip
 canonical_checksum: external_review_packet/HANDOFF_LATEST.sha256
 
-zip_file_count: 452
-zip_size_bytes: 12956602
-zip_sha256: c7aff6cb1538ed8f9d311c4f13fe4dc8275eb8a81082714bc024f68b0819af80
+zip_file_count: 453
+zip_size_bytes: 12963179
+zip_sha256: fb278ef8445d3129e172722ce368097d276ebc49135fddd45e125444ebf6974e
 forbidden_match_count: 0
 local_path_leak_count: 0
 nested_zip_count: 0
 missing_required: []
 gitattributes_in_zip: True
-zip_safe_csv_templates_in_zip: True
-dashboard_operator_summary_producer_in_zip: True
-dashboard_operator_summary_tests_in_zip: True
-handoff_bundle_in_zip: True
-handoff_zip_exporter_in_zip: True
-dashboard_operator_surface_contract_in_zip: True
-review_queue_summary_contract_in_zip: True
-external_reproduction_matrix_in_zip: True
-decision_quality_contract_in_zip: True
-decision_state_capture_contract_in_zip: True
+personal_run_stage_dag_in_zip: True
+readme_in_zip: True
+system_map_in_zip: True
+feature_status_in_zip: True
+known_gaps_in_zip: True
+external_reproduction_in_zip: True
 
 ## Source-of-Truth / Precedence
 
@@ -76,42 +71,32 @@ autoritativ fuer Head, Scope, SHA und Dirty-State-Interpretation.
 ## Current Packet Scope
 
 Dieses Packet synchronisiert den externen Review-Kontext auf den committed
-Repo-Stand `251635b509c24328c57edc4947becd93fb31d886` nach
-`fix: allow repo-local operator summary smoke paths`.
+Repo-Stand `1fe3b85d20afa1a91d65137ccfb98c337ee017db` nach
+`docs: add personal run stage dag`.
 
 Review-Schwerpunkte:
 
-- `src/dashboard_operator_summary.py`
-- `tests/test_dashboard_operator_summary.py`
-- `src/handoff_bundle.py`
-- `tests/test_handoff_bundle.py`
-- `src/handoff_zip_export.py`
-- `tests/test_handoff_zip_export.py`
-- `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md`
-- `docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md`
+- `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`
+- `src/personal_run_engine.py`
+- `tests/test_personal_run_engine.py`
+- `tests/test_readme_and_reports.py`
+- `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
+- `docs/architecture/CIOS_FEATURE_STATUS.yaml`
+- `docs/architecture/CURRENT_KNOWN_GAPS.md`
 - `docs/governance/EXTERNAL_REPRODUCTION.md`
 
-Semantik-/Handoff-Scope:
+Stage-DAG-Scope:
 
-- Ein lesbares `decision_quality_state.json` mit `review_required=true` erzeugt
-  `decision_quality_status=REVIEW`, verhindert `surface_status=PASS`, setzt
-  `operator_attention_required=true`, mindestens
-  `operator_attention_level=MEDIUM` und den Grund
-  `DECISION_QUALITY_REVIEW_REQUIRED`.
-- Header-only Decision Journal Validation und Review Queue bleiben bei
-  `review_required=false` weiterhin ein sauberer `PASS`.
-- `.gitattributes` ist im Full-Review-Handoff enthalten, damit
-  `tests.test_readme_and_reports` aus einem extrahierten ZIP stabiler
-  reproduzierbar ist.
-- Die drei nicht-privaten CSV-Templates, die `tests.test_readme_and_reports`
-  prueft, sind ebenfalls im Full-Review-Handoff enthalten.
-- Repo-interne absolute Pfade werden in der Operator Summary relativ
-  normalisiert; externe Windows-/UNC-Pfade bleiben redaktiert.
-- Alte Website Static Build Package Artefakte mit lokalen Deploy-Pfaden werden
-  nicht mehr in den Full-Review-Handoff aufgenommen.
-- Der neue ZIP-Content-Scanner prueft produktive ZIP-Inhalte auf lokale
-  absolute User-Pfade und erlaubt synthetische Pfadfixtures in Tests sowie
-  Regex-Literale in Source-Dateien.
+- dokumentiert `STAGE_ORDER`, `STAGE_RUNNERS`, `StageResult` und
+  Personal-Run-Lineage-Artefakte,
+- dokumentiert die aktuelle lineare Stage-Reihenfolge inklusive
+  `decision_quality`, `decision_journal_validation` und
+  `dashboard_operator_summary`,
+- dokumentiert Failure-/Skip-Semantik, provisorische Lineage vor den
+  Governance-Stages und Manifest-/Artifact-/Used-Inputs-Surfaces,
+- reduziert den Stage-DAG-Dokumentationsblocker,
+- implementiert kein Replay, kein Backtesting, keine Outcome Attribution, kein
+  Portfolio Event Ledger und kein visuelles Dashboard.
 
 ## Handoff Reproducibility Note
 
@@ -140,52 +125,39 @@ muessen, wenn private/raw Inputs bewusst ausgeschlossen sind.
 
 Implementation validation:
 
+- `python -m unittest tests.test_readme_and_reports -v`
+  - result: `Ran 9 tests`, `OK`.
+- `python -m unittest tests.test_personal_run_engine -v`
+  - result: `Ran 59 tests`, `OK`.
 - `python -m unittest tests.test_dashboard_operator_summary -v`
   - result: `Ran 14 tests`, `OK`.
-- `python -m unittest tests.test_personal_decision_quality_state -v`
-  - result: `Ran 26 tests`, `OK`.
-- `python -m unittest tests.test_personal_decision_journal_validation -v`
-  - result: `Ran 16 tests`, `OK`.
-- `python -m unittest tests.test_monthly_decision_report -v`
-  - result: `Ran 12 tests`, `OK`.
-- `python -m unittest tests.test_readme_and_reports -v`
-  - result: `Ran 8 tests`, `OK`.
 - `python -m unittest tests.test_handoff_zip_export -v`
   - result: `Ran 9 tests`, `OK`.
-- `python -m unittest tests.test_handoff_bundle -v`
-  - result: `Ran 17 tests`, `OK`.
+- YAML validation for `docs/architecture/CIOS_FEATURE_STATUS.yaml`
+  - result: `CIOS_FEATURE_STATUS.yaml valid: 37 capabilities`.
 - `git diff --check`
   - result: exit code `0`; no whitespace errors reported.
-- semantic smoke:
-  - command: `build_dashboard_operator_summary` with readable Decision Quality `review_required=true`
-  - result: `SEMANTIC_SMOKE_OK`
-  - fields: `surface_status=REVIEW`, `decision_quality_status=REVIEW`, `decision_quality_review_required=True`, `decision_quality_review_required_count=1`, `operator_attention_required=True`, `operator_attention_level=MEDIUM`, `operator_attention_reasons=['DECISION_QUALITY_REVIEW_REQUIRED']`
-- extracted ZIP smoke:
-  - command: `python -m unittest tests.test_dashboard_operator_summary -v`
-  - result: `Ran 14 tests`, `OK`.
-  - command: `python -m unittest tests.test_readme_and_reports -v`
-  - result: `Ran 8 tests`, `OK`.
 
 No full test suite is claimed by this context file.
 
 Handoff artifact generation:
 
 - `python -m src.handoff_zip_export --profile full_review --name HANDOFF_LATEST --output-path .\external_review_packet\HANDOFF_LATEST.zip`
-  - result: generated ZIP for head `251635b509c24328c57edc4947becd93fb31d886`
-  - file_count: `452`
-  - size_bytes: `12956602`
-  - zip_sha256: `C7AFF6CB1538ED8F9D311C4F13FE4DC8275EB8A81082714BC024F68B0819AF80`
+  - result: generated ZIP for head `1fe3b85d20afa1a91d65137ccfb98c337ee017db`
+  - file_count: `453`
+  - size_bytes: `12963179`
+  - zip_sha256: `FB278EF8445D3129E172722CE368097D276EBC49135FDDD45E125444EBF6974E`
   - forbidden_match_count: `0`
   - local_path_leak_count: `0`
 
 Additional validation performed after handoff generation:
 
-- ZIP/SHA/Required-file check:
+- ZIP/SHA/Required-file/local-path check:
   - sha_match: `True`
   - zip_testzip: `None`
-  - entry_count: `452`
+  - entry_count: `453`
   - missing_required: `[]`
   - nested_zip_count: `0`
-- ZIP content scanner:
-  - forbidden_entry_count: `0`
   - local_path_leak_count: `0`
+  - gitattributes_in_zip: `True`
+  - personal_run_stage_dag_in_zip: `True`

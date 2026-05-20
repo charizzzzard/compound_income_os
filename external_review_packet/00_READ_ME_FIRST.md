@@ -1,32 +1,32 @@
-# Compound Income OS External LLM Review Packet - Operator Summary Semantics + Handoff Hygiene
+# Compound Income OS External LLM Review Packet - Personal Run Stage DAG
 
 Dies ist der Einstiegspunkt fuer die externe LLM-Review von
 `compound_income_os` nach
-`fix: allow repo-local operator summary smoke paths`.
+`docs: add personal run stage dag`.
 
 ## Current Review Head
 
 - project: `compound_income_os`
 - branch: `main`
-- current_handoff_head: `251635b509c24328c57edc4947becd93fb31d886`
-- current_handoff_short_head: `251635b`
-- current_patch_context: `fix: allow repo-local operator summary smoke paths`
-- previous_repo_head: `eda24383de2c7970041d8b79de1ccab0f9171066`
-- previous_handoff_head: `72b52c2cdc0bcafba1efb4fc8dedee47ca486a24`
-- canonical_dashboard_operator_summary_producer:
-  `src/dashboard_operator_summary.py`
-- canonical_handoff_exporter:
-  `src/handoff_zip_export.py`
-- canonical_handoff_bundle:
-  `src/handoff_bundle.py`
+- current_handoff_head: `1fe3b85d20afa1a91d65137ccfb98c337ee017db`
+- current_handoff_short_head: `1fe3b85`
+- current_patch_context: `docs: add personal run stage dag`
+- previous_repo_head: `15b1d73f170d0eaf927d3b9802f09569e79b349b`
+- previous_handoff_head: `251635b509c24328c57edc4947becd93fb31d886`
+- canonical_personal_run_stage_dag:
+  `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`
+- canonical_personal_run_engine:
+  `src/personal_run_engine.py`
+- canonical_system_map:
+  `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
+- canonical_feature_status:
+  `docs/architecture/CIOS_FEATURE_STATUS.yaml`
+- canonical_known_gaps:
+  `docs/architecture/CURRENT_KNOWN_GAPS.md`
 - canonical_external_reproduction_matrix:
   `docs/governance/EXTERNAL_REPRODUCTION.md`
-- canonical_dashboard_operator_surface_contract:
-  `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md`
-- canonical_review_queue_summary_contract:
-  `docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md`
 
-Das vorherige externe Packet fuer `72b52c2cdc0bcafba1efb4fc8dedee47ca486a24`
+Das vorherige externe Packet fuer `251635b509c24328c57edc4947becd93fb31d886`
 ist durch dieses Packet superseded.
 
 ## Source-of-Truth / Precedence
@@ -57,15 +57,14 @@ Reviewer sollen in dieser Reihenfolge lesen:
    - `HANDOFF_MANIFEST.csv`
    - `HANDOFF_ARTIFACT_INDEX.csv`
    - `.gitattributes`
-   - `src/dashboard_operator_summary.py`
-   - `tests/test_dashboard_operator_summary.py`
-   - `src/handoff_bundle.py`
-   - `src/handoff_zip_export.py`
-   - `tests/test_handoff_bundle.py`
-   - `tests/test_handoff_zip_export.py`
-   - `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md`
-   - `docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md`
+   - `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`
+   - `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
+   - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
+   - `docs/architecture/CURRENT_KNOWN_GAPS.md`
    - `docs/governance/EXTERNAL_REPRODUCTION.md`
+   - `src/personal_run_engine.py`
+   - `tests/test_personal_run_engine.py`
+   - `tests/test_readme_and_reports.py`
 
 ## Dirty-State Interpretation
 
@@ -76,44 +75,30 @@ Patch-Source-Dirty-State.
 
 Der finale Repo-HEAD kann nach diesem Packet ein separater
 Handoff-Metadatencommit sein. Der aktuelle Handoff-Head ist der letzte
-Implementierungscommit `251635b509c24328c57edc4947becd93fb31d886`; er baut auf
-den Semantik-/Privacy-Hygiene-Commits
-`12f2099e5cfe53c2d0192ee236c584fc3ade5144` und
-`72b52c2cdc0bcafba1efb4fc8dedee47ca486a24` auf.
+Implementierungscommit `1fe3b85d20afa1a91d65137ccfb98c337ee017db`.
 
 ## Patch Scope
 
 Dieses Packet enthaelt:
 
-- den Semantik-Fix: lesbares Decision Quality `review_required=true` verhindert
-  `surface_status=PASS` und setzt `DECISION_QUALITY_REVIEW_REQUIRED`,
-- Regression-Tests fuer Decision-Quality-Review-Semantik in der Operator
-  Summary,
-- `.gitattributes` im Full-Review-Handoff fuer ZIP-safe
-  `tests.test_readme_and_reports`,
-- drei nicht-private CSV-Templates im Full-Review-Handoff, die derselbe
-  ZIP-safe Test erwartet,
-- eine enge Path-Hygiene-Korrektur, damit repo-interne absolute Smoke-Pfade
-  relativ normalisiert werden, externe Windows-/UNC-Pfade aber redaktiert
-  bleiben,
-- Ausschluss alter `website_static_build_package_*` Artefakte aus dem
-  Full-Review-Handoff,
-- einen ZIP-Content-Scanner gegen lokale absolute User-Pfade in produktiven
-  Handoff-Artefakten,
-- minimale Contract-/Reproduction-Doku zur neuen Semantik und ZIP-Repro.
+- `docs/architecture/PERSONAL_RUN_STAGE_DAG.md` als kanonische
+  Stage-DAG-/Orchestrator-Review-Dokumentation,
+- Cross-References in README, System Map, Feature Status, Known Gaps, Module
+  Contracts, Roadmap und External Reproduction,
+- einen Docs-Test, der die neue Datei gegen die echte `STAGE_ORDER` aus
+  `src.personal_run_engine` absichert,
+- ein aktualisiertes Handoff-ZIP mit `PERSONAL_RUN_STAGE_DAG.md`.
 
-Der Patch erzeugt keine Decisions, keine Orders, keine Portfolio-Events und
-keine Outcome Attribution.
+Der Patch dokumentiert Orchestrierung, Failure-/Skip-Semantik und Lineage. Er
+erzeugt keine Decisions, keine Orders, keine Portfolio-Events, keine Simulation,
+kein Replay und keine Outcome Attribution.
 
 ## Reviewer Rules
 
-- Vollstaendige relative Pfade verwenden.
-- Den Operator Summary Producer als read-only Governance-Surface behandeln,
-  nicht als visuelles Dashboard und nicht als Investmentlogik.
-- `review_required=true` in Decision Quality als Operator-Review-Signal
-  pruefen; es darf nicht zu `PASS` werden.
-- `.gitattributes` muss im ZIP vorhanden sein, wenn
-  `tests.test_readme_and_reports` als ZIP-safe Smoke-Test empfohlen wird.
+- `src/personal_run_engine.py` bleibt Source of Truth fuer die tatsaechliche
+  Ausfuehrung.
+- `docs/architecture/PERSONAL_RUN_STAGE_DAG.md` ist Review-/Governance-Doku,
+  keine neue Runtime-Logik.
 - Keine ausgelassenen privaten oder rohen Dateien inferieren.
 - Keine Broker-Writes, HTTP-Calls, Order-Ausfuehrung, Auto-Trading,
   Steuerquantifizierung oder Runtime-LLM-Entscheidungen inferieren.
