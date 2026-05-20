@@ -1,16 +1,16 @@
-# HANDOFF LATEST CONTEXT - Data Freshness / Staleness Contract
+# HANDOFF LATEST CONTEXT - Data Freshness Personal Run Integration
 
 project_name: compound_income_os
 profile: full_review
 bundle_name: HANDOFF_LATEST
-bundle_purpose: external_llm_validation_after_data_freshness_staleness_contract
-created_at_utc: 2026-05-20T14:09:01Z
+bundle_purpose: external_llm_validation_after_data_freshness_personal_run_integration
+created_at_utc: 2026-05-20T15:01:44Z
 branch: main
-current_handoff_head: e17fc944cdc956bce1a41d2f7768af9af25c6a9f
-current_handoff_short_head: e17fc94
-implementation_commit_message: feat: add data freshness staleness contract
-previous_repo_head: 37de4ecc1e617559ecc6a47901e8bc4cccc83549
-previous_handoff_head: 1fe3b85d20afa1a91d65137ccfb98c337ee017db
+current_handoff_head: 17cff48e340a706551994aceda23143b268e8a9a
+current_handoff_short_head: 17cff48
+implementation_commit_message: feat: integrate data freshness into personal run
+previous_repo_head: 3b7fe7d6fece46705a8ab617534def99a015406f
+previous_handoff_head: e17fc944cdc956bce1a41d2f7768af9af25c6a9f
 final_repo_head_note: final repo HEAD may be a separate handoff metadata commit after this context update
 tracked_worktree_clean_after_implementation_commit_before_handoff_cleanup: True
 zip_internal_dirty_worktree_present: True
@@ -20,6 +20,10 @@ canonical_data_freshness_contract: docs/contracts/DATA_FRESHNESS_STALENESS_CONTR
 canonical_data_freshness_config: configs/data_freshness_thresholds.yaml
 canonical_data_freshness_producer: src/data_freshness.py
 canonical_data_freshness_tests: tests/test_data_freshness.py
+canonical_personal_run_engine: src/personal_run_engine.py
+canonical_personal_run_tests: tests/test_personal_run_engine.py
+canonical_dashboard_operator_summary: src/dashboard_operator_summary.py
+canonical_dashboard_operator_tests: tests/test_dashboard_operator_summary.py
 canonical_personal_run_stage_dag: docs/architecture/PERSONAL_RUN_STAGE_DAG.md
 canonical_system_map: docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md
 canonical_feature_status: docs/architecture/CIOS_FEATURE_STATUS.yaml
@@ -29,17 +33,23 @@ canonical_review_bundle: external_review_packet/HANDOFF_LATEST.zip
 canonical_checksum: external_review_packet/HANDOFF_LATEST.sha256
 
 zip_file_count: 457
-zip_size_bytes: 12974558
-zip_sha256: 89560376cc506a95c74bfac08382e3927887174c5f04065bc96edcaa5ec04798
+zip_size_bytes: 12979719
+zip_sha256: 2146330a983a5594ec8b219a7862d57fa9742bda87cfa2278383741a17310315
 forbidden_match_count: 0
 local_path_leak_count: 0
 nested_zip_count: 0
 missing_required: []
+zip_testzip: None
+sha_match: True
 gitattributes_in_zip: True
 data_freshness_contract_in_zip: True
 data_freshness_config_in_zip: True
 data_freshness_producer_in_zip: True
 data_freshness_tests_in_zip: True
+personal_run_engine_in_zip: True
+personal_run_tests_in_zip: True
+dashboard_operator_summary_in_zip: True
+dashboard_operator_tests_in_zip: True
 personal_run_stage_dag_in_zip: True
 readme_in_zip: True
 system_map_in_zip: True
@@ -76,15 +86,21 @@ autoritativ fuer Head, Scope, SHA und Dirty-State-Interpretation.
 ## Current Packet Scope
 
 Dieses Packet synchronisiert den externen Review-Kontext auf den committed
-Repo-Stand `e17fc944cdc956bce1a41d2f7768af9af25c6a9f` nach
-`feat: add data freshness staleness contract`.
+Repo-Stand `17cff48e340a706551994aceda23143b268e8a9a` nach
+`feat: integrate data freshness into personal run`.
 
 Review-Schwerpunkte:
 
-- `docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md`
-- `configs/data_freshness_thresholds.yaml`
 - `src/data_freshness.py`
 - `tests/test_data_freshness.py`
+- `src/personal_run_engine.py`
+- `tests/test_personal_run_engine.py`
+- `src/dashboard_operator_summary.py`
+- `tests/test_dashboard_operator_summary.py`
+- `docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md`
+- `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md`
+- `configs/data_freshness_thresholds.yaml`
+- `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`
 - `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
 - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
 - `docs/architecture/CURRENT_KNOWN_GAPS.md`
@@ -95,9 +111,13 @@ Data-Freshness-Scope:
 - definiert `FRESH`, `STALE`, `MISSING`, `UNKNOWN`, `REVIEW_REQUIRED` und
   `NOT_APPLICABLE`,
 - bewertet nur vorhandene Artefakte und explizite Datumsfelder,
+- nutzt bei Multi-Row-Artefakten konservativ das aelteste valide Datum,
+- macht Zukunftsdatumswerte und invalide Datumswerte review-pflichtig,
 - behandelt fehlende, unbekannte, stale oder externe Pfade nicht als `FRESH`,
-- erzeugt standalone JSON-/Markdown-Summaries,
-- integriert noch keine neue `personal_run_engine`-Stage,
+- erzeugt JSON-/Markdown-Summaries,
+- ist als read-only `data_freshness`-Stage nach `decision_journal_validation`
+  und vor `dashboard_operator_summary` integriert,
+- speist Data-Freshness-Counts in `review_queue_summary.json`,
 - implementiert kein Replay, kein Backtesting, keine Outcome Attribution, kein
   Portfolio Event Ledger und kein visuelles Dashboard.
 
@@ -123,29 +143,32 @@ muessen, wenn private/raw Inputs bewusst ausgeschlossen sind.
 - keine Outcome Attribution
 - kein Portfolio Event Ledger
 - keine Simulation-/Backtesting-/Monte-Carlo-Implementierung
+- keine Investment Recommendation
 
 ## Validation Actually Performed
 
 Implementation validation:
 
 - `python -m unittest tests.test_data_freshness -v`
-  - result: `Ran 10 tests`, `OK`.
+  - result: `Ran 14 tests`, `OK`.
+- `python -m unittest tests.test_personal_run_engine -v`
+  - result: `Ran 60 tests`, `OK`.
+- `python -m unittest tests.test_dashboard_operator_summary -v`
+  - result: `Ran 16 tests`, `OK`.
 - `python -m unittest tests.test_readme_and_reports -v`
   - result: `Ran 9 tests`, `OK`.
-- `python -m unittest tests.test_personal_run_engine -v`
-  - result: `Ran 59 tests`, `OK`.
-- `python -m unittest tests.test_dashboard_operator_summary -v`
-  - result: `Ran 14 tests`, `OK`.
 - `python -m unittest tests.test_handoff_zip_export -v`
   - result: `Ran 9 tests`, `OK`.
-- `python -m unittest tests.test_personal_decision_quality_state -v`
-  - result: `Ran 26 tests`, `OK`.
 - `python -m unittest tests.test_handoff_bundle -v`
   - result: `Ran 17 tests`, `OK`.
+- `python -m unittest tests.test_personal_decision_quality_state -v`
+  - result: `Ran 26 tests`, `OK`.
+- `python -m unittest tests.test_personal_decision_journal_validation -v`
+  - result: `Ran 16 tests`, `OK`.
+- `python -m unittest tests.test_monthly_decision_report -v`
+  - result: `Ran 12 tests`, `OK`.
 - YAML validation for `docs/architecture/CIOS_FEATURE_STATUS.yaml`
   - result: `CIOS_FEATURE_STATUS.yaml valid: 37 capabilities`.
-- Default freshness config smoke:
-  - result: `MISSING 14 {'FRESH': 3, 'MISSING': 3, 'NOT_APPLICABLE': 0, 'REVIEW_REQUIRED': 0, 'STALE': 3, 'UNKNOWN': 5}`.
 - `git diff --check`
   - result: exit code `0`; no whitespace errors reported. Git printed LF/CRLF working-copy warnings for existing platform settings.
 
@@ -154,10 +177,10 @@ No full test suite is claimed by this context file.
 Handoff artifact generation:
 
 - `python -m src.handoff_zip_export --profile full_review --name HANDOFF_LATEST --output-path .\external_review_packet\HANDOFF_LATEST.zip`
-  - result: generated ZIP for head `e17fc944cdc956bce1a41d2f7768af9af25c6a9f`
+  - result: generated ZIP for head `17cff48e340a706551994aceda23143b268e8a9a`
   - file_count: `457`
-  - size_bytes: `12974558`
-  - zip_sha256: `89560376cc506a95c74bfac08382e3927887174c5f04065bc96edcaa5ec04798`
+  - size_bytes: `12979719`
+  - zip_sha256: `2146330a983a5594ec8b219a7862d57fa9742bda87cfa2278383741a17310315`
   - forbidden_match_count: `0`
   - local_path_leak_count: `0`
 
@@ -170,4 +193,4 @@ Additional validation performed after handoff generation:
   - missing_required: `[]`
   - nested_zip_count: `0`
   - local_path_leak_count: `0`
-  - internal_head_is_e17fc94: `True`
+  - internal_head_present: `True`
