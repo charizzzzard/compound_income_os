@@ -405,6 +405,17 @@ capabilities:
       - src/handoff_bundle.py
       - external_review_packet/00_READ_ME_FIRST.md
       - external_review_packet/HANDOFF_LATEST_CONTEXT.md
+    repo_evidence_files:
+      - src/handoff_zip_export.py
+      - src/handoff_bundle.py
+      - docs/HANDOFF_CONTRACT.md
+    packet_evidence_files:
+      - external_review_packet/00_READ_ME_FIRST.md
+      - external_review_packet/HANDOFF_LATEST_CONTEXT.md
+      - external_review_packet/HANDOFF_LATEST.sha256
+    generated_review_artifacts:
+      - external_review_packet/HANDOFF_LATEST.zip
+      - external_review_packet/HANDOFF_LATEST.sha256
     input_artifacts:
       - external_review_packet/
     output_artifacts:
@@ -591,8 +602,8 @@ capabilities:
     limitations:
       - "Cost/tax artifacts exist, but tax quantification for decisions is out of scope."
     next_action: "Tax-aware review data contract later."
-  - capability_id: policy_engine
-    display_name: Policy Engine
+  - capability_id: governance_policy_docs
+    display_name: Governance Policy Docs
     status: partial
     evidence_files:
       - docs/architecture/06_ADOPTED_DECISIONS.yaml
@@ -603,7 +614,7 @@ capabilities:
     report_surface: []
     tests: []
     limitations:
-      - "Policy exists as governance docs; no runtime policy engine exists."
+      - "Policy exists as governance documentation only; no runtime policy engine or executing policy module exists."
     next_action: "Keep policy feedback deferred until outcome foundations exist."
   - capability_id: human_factors_behaviour_layer
     display_name: Human Factors Behaviour Layer

@@ -107,6 +107,8 @@ dashboard-facing operator summary contract, remains a known gap.
 - Contracts:
   - `docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md`
   - `docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md`
+  - `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md`
+  - `docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md`
 - Architecture docs:
   - `docs/architecture/COMPOUND_INCOME_OS_SYSTEM_DEFINITION.md`
   - `docs/architecture/DECISION_QUALITY_LAYER.md`
@@ -117,6 +119,7 @@ dashboard-facing operator summary contract, remains a known gap.
   - `docs/MODULE_CONTRACTS.md`
   - `docs/CONTEXT_AND_ROADMAP.md`
   - `docs/governance/BASELINE_VS_CANDIDATE_VALIDATION.md`
+  - `docs/governance/EXTERNAL_REPRODUCTION.md`
 - Configs:
   - `configs/portfolio_rules.yaml`
   - `configs/scoring_weights.yaml`
@@ -168,7 +171,8 @@ with zero counts.
 - There is no outcome attribution.
 - There is no Portfolio Event Ledger.
 - There is no Ranking Robustness or Sensitivity producer yet.
-- There is no full dashboard operator surface contract yet.
+- The dashboard operator surface contract exists, but no dashboard summary
+  producer has implemented it yet.
 - Decision Quality stale-state handling is conservative: any older
   `as_of_date` is stale in the current MVP.
 - Scenario, Tail Risk, Calibration and Regret remain non-implemented or

@@ -10,7 +10,7 @@
 
 Das getrackte Repo enthaelt `AGENTS.md`, `README.md`, `configs/`, `data/`, `reports/`, `research/`, `src/`, `tests/`, `website/`, `_archive/sec/`, `_archive/personal_meta/` und diese Governance-Dokumentation unter `docs/`.
 
-Die aktuelle externe-Review-taugliche Systemuebersicht liegt in `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`. Der maschinenlesbare Capability-Status liegt in `docs/architecture/CIOS_FEATURE_STATUS.yaml`; bekannte Dashboard-, Replay-, Outcome- und Deferred-Gaps liegen in `docs/architecture/CURRENT_KNOWN_GAPS.md`.
+Die aktuelle externe-Review-taugliche Systemuebersicht liegt in `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`. Der maschinenlesbare Capability-Status liegt in `docs/architecture/CIOS_FEATURE_STATUS.yaml`; bekannte Dashboard-, Replay-, Outcome- und Deferred-Gaps liegen in `docs/architecture/CURRENT_KNOWN_GAPS.md`. Der Dashboard Operator Surface Contract liegt in `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md`, der Review Queue Summary Contract in `docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md` und die externe Reproduktionsmatrix in `docs/governance/EXTERNAL_REPRODUCTION.md`.
 
 Getrackte Kernmodule sind:
 
@@ -69,6 +69,7 @@ Website-Code und Website-Tests liegen seit Patch 1 separat unter `website/src/` 
 - Evidence Capture fuer Fundamentals weiter schaerfen, ohne fehlende KPI-Werte zu erfinden oder Sample-Daten still fuer persoenliche Holdings zu nutzen.
 - Archivierte SEC-Artefakte nur in einem separaten Re-Use-Patch reaktivieren; bis dahin keine aktive SEC-Fetch-/Refresh-Fachlogik im Core-Pfad voraussetzen.
 - Dashboard-Runbooks nur erweitern, wenn sie aus bestehenden verarbeiteten Artefakten gespeist werden und keine neue Fachlogik einfuehren.
+- Dashboard-Operator-Surfaces erst gegen `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md` und `docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md` materialisieren; kein visuelles Dashboard-Neudesign ohne Contract-Abnahme.
 - Performance- und Cost-/Tax-Abdeckung nur dort vertiefen, wo passende Zeitreihen- oder Event-Evidenz vorhanden ist.
 - SEC-Alias-Map oder Period-Selection nur nach separatem Re-Use-Design aus dem Archiv integrieren.
 - Website-Mockups und Claude-Designmaterial unter `website/compound-income-os-landing/mockup/` als Referenzmaterial erhalten; Produktion bleibt unter `website/compound-income-os-landing/src/`.

@@ -45,6 +45,9 @@ Canonical architecture baseline:
 - [docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md](docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md): aktuelle externe-Review-taugliche System Map
 - [docs/architecture/CIOS_FEATURE_STATUS.yaml](docs/architecture/CIOS_FEATURE_STATUS.yaml): maschinenlesbarer Feature-Status
 - [docs/architecture/CURRENT_KNOWN_GAPS.md](docs/architecture/CURRENT_KNOWN_GAPS.md): bekannte Gaps, Dashboard-/Replay-/Outcome-Blocker und Deferred-Themen
+- [docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md](docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md): stabiler Operator-/Dashboard-Surface-Vertrag ohne visuelles Dashboard-Neudesign
+- [docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md](docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md): Zielvertrag fuer eine maschinenlesbare Review-Queue-Summary
+- [docs/governance/EXTERNAL_REPRODUCTION.md](docs/governance/EXTERNAL_REPRODUCTION.md): Reproduzierbarkeitsmatrix fuer externe Handoff-Reviews
 - [docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md](docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md): naechster Producer-Vertrag, noch nicht implementiert
 - [docs/policies/LLM_CODEX_OPERATING_POLICY.md](docs/policies/LLM_CODEX_OPERATING_POLICY.md): LLM-/Codex-Grenzen
 

@@ -27,6 +27,37 @@ class ReadmeAndReportTests(unittest.TestCase):
         self.assertNotIn(b"\r\n", readme_bytes)
         self.assertIn("*.md text eol=lf", Path(".gitattributes").read_text(encoding="utf-8"))
 
+    def test_operator_surface_contract_docs_are_linked(self) -> None:
+        required_paths = [
+            Path("docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md"),
+            Path("docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md"),
+            Path("docs/governance/EXTERNAL_REPRODUCTION.md"),
+            Path("docs/architecture/CIOS_FEATURE_STATUS.yaml"),
+            Path("docs/architecture/CURRENT_KNOWN_GAPS.md"),
+        ]
+        for path in required_paths:
+            with self.subTest(path=str(path)):
+                self.assertTrue(path.exists(), f"missing {path}")
+
+        readme = Path("README.md").read_text(encoding="utf-8")
+        module_contracts = Path("docs/MODULE_CONTRACTS.md").read_text(encoding="utf-8")
+        context = Path("docs/CONTEXT_AND_ROADMAP.md").read_text(encoding="utf-8")
+        for doc in [
+            "docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md",
+            "docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md",
+            "docs/governance/EXTERNAL_REPRODUCTION.md",
+        ]:
+            self.assertIn(doc, readme)
+            self.assertIn(doc, module_contracts)
+            self.assertIn(doc, context)
+
+        feature_status = Path("docs/architecture/CIOS_FEATURE_STATUS.yaml").read_text(encoding="utf-8")
+        self.assertIn("capability_id: governance_policy_docs", feature_status)
+        self.assertNotIn("capability_id: policy_engine", feature_status)
+        self.assertIn("repo_evidence_files:", feature_status)
+        self.assertIn("packet_evidence_files:", feature_status)
+        self.assertIn("generated_review_artifacts:", feature_status)
+
     def test_sec_related_csv_templates_are_lf_normalized_without_trailing_whitespace(self) -> None:
         gitattributes = Path(".gitattributes").read_text(encoding="utf-8")
         template_paths = [
