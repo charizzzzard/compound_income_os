@@ -2,17 +2,17 @@
 
 Dies ist der Einstiegspunkt fuer die externe LLM-Review von
 `compound_income_os` nach
-`fix: harden operator summary and handoff hygiene`.
+`fix: allow repo-local operator summary smoke paths`.
 
 ## Current Review Head
 
 - project: `compound_income_os`
 - branch: `main`
-- current_handoff_head: `72b52c2cdc0bcafba1efb4fc8dedee47ca486a24`
-- current_handoff_short_head: `72b52c2`
-- current_patch_context: `fix: include zip-safe handoff smoke fixtures`
-- previous_repo_head: `f5c5635a92eaa90f50ebd457af0c7a89b19c7a97`
-- previous_handoff_head: `12f2099e5cfe53c2d0192ee236c584fc3ade5144`
+- current_handoff_head: `251635b509c24328c57edc4947becd93fb31d886`
+- current_handoff_short_head: `251635b`
+- current_patch_context: `fix: allow repo-local operator summary smoke paths`
+- previous_repo_head: `eda24383de2c7970041d8b79de1ccab0f9171066`
+- previous_handoff_head: `72b52c2cdc0bcafba1efb4fc8dedee47ca486a24`
 - canonical_dashboard_operator_summary_producer:
   `src/dashboard_operator_summary.py`
 - canonical_handoff_exporter:
@@ -26,7 +26,7 @@ Dies ist der Einstiegspunkt fuer die externe LLM-Review von
 - canonical_review_queue_summary_contract:
   `docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md`
 
-Das vorherige externe Packet fuer `12f2099e5cfe53c2d0192ee236c584fc3ade5144`
+Das vorherige externe Packet fuer `72b52c2cdc0bcafba1efb4fc8dedee47ca486a24`
 ist durch dieses Packet superseded.
 
 ## Source-of-Truth / Precedence
@@ -76,9 +76,10 @@ Patch-Source-Dirty-State.
 
 Der finale Repo-HEAD kann nach diesem Packet ein separater
 Handoff-Metadatencommit sein. Der aktuelle Handoff-Head ist der letzte
-Implementierungscommit `72b52c2cdc0bcafba1efb4fc8dedee47ca486a24`; er baut auf
-dem Semantik-/Privacy-Hygiene-Commit
-`12f2099e5cfe53c2d0192ee236c584fc3ade5144` auf.
+Implementierungscommit `251635b509c24328c57edc4947becd93fb31d886`; er baut auf
+den Semantik-/Privacy-Hygiene-Commits
+`12f2099e5cfe53c2d0192ee236c584fc3ade5144` und
+`72b52c2cdc0bcafba1efb4fc8dedee47ca486a24` auf.
 
 ## Patch Scope
 
@@ -92,6 +93,9 @@ Dieses Packet enthaelt:
   `tests.test_readme_and_reports`,
 - drei nicht-private CSV-Templates im Full-Review-Handoff, die derselbe
   ZIP-safe Test erwartet,
+- eine enge Path-Hygiene-Korrektur, damit repo-interne absolute Smoke-Pfade
+  relativ normalisiert werden, externe Windows-/UNC-Pfade aber redaktiert
+  bleiben,
 - Ausschluss alter `website_static_build_package_*` Artefakte aus dem
   Full-Review-Handoff,
 - einen ZIP-Content-Scanner gegen lokale absolute User-Pfade in produktiven

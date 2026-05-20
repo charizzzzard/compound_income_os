@@ -6,11 +6,11 @@ bundle_name: HANDOFF_LATEST
 bundle_purpose: external_llm_validation_after_operator_summary_semantics_and_handoff_hygiene_hardening
 created_at_utc: 2026-05-20T11:46:00Z
 branch: main
-current_handoff_head: 72b52c2cdc0bcafba1efb4fc8dedee47ca486a24
-current_handoff_short_head: 72b52c2
-implementation_commit_message: fix: include zip-safe handoff smoke fixtures
-previous_repo_head: f5c5635a92eaa90f50ebd457af0c7a89b19c7a97
-previous_handoff_head: 12f2099e5cfe53c2d0192ee236c584fc3ade5144
+current_handoff_head: 251635b509c24328c57edc4947becd93fb31d886
+current_handoff_short_head: 251635b
+implementation_commit_message: fix: allow repo-local operator summary smoke paths
+previous_repo_head: eda24383de2c7970041d8b79de1ccab0f9171066
+previous_handoff_head: 72b52c2cdc0bcafba1efb4fc8dedee47ca486a24
 final_repo_head_note: final repo HEAD may be a separate handoff metadata commit after this context update
 tracked_worktree_clean_after_implementation_commit_before_handoff_cleanup: True
 zip_internal_dirty_worktree_present: True
@@ -29,8 +29,8 @@ canonical_review_bundle: external_review_packet/HANDOFF_LATEST.zip
 canonical_checksum: external_review_packet/HANDOFF_LATEST.sha256
 
 zip_file_count: 452
-zip_size_bytes: 12956260
-zip_sha256: 41b87e24cb6173032510e6ee348afbb24ef847dfbe0f1f5834fa4ebf95bec409
+zip_size_bytes: 12956602
+zip_sha256: c7aff6cb1538ed8f9d311c4f13fe4dc8275eb8a81082714bc024f68b0819af80
 forbidden_match_count: 0
 local_path_leak_count: 0
 nested_zip_count: 0
@@ -76,8 +76,8 @@ autoritativ fuer Head, Scope, SHA und Dirty-State-Interpretation.
 ## Current Packet Scope
 
 Dieses Packet synchronisiert den externen Review-Kontext auf den committed
-Repo-Stand `72b52c2cdc0bcafba1efb4fc8dedee47ca486a24` nach
-`fix: include zip-safe handoff smoke fixtures`.
+Repo-Stand `251635b509c24328c57edc4947becd93fb31d886` nach
+`fix: allow repo-local operator summary smoke paths`.
 
 Review-Schwerpunkte:
 
@@ -105,6 +105,8 @@ Semantik-/Handoff-Scope:
   reproduzierbar ist.
 - Die drei nicht-privaten CSV-Templates, die `tests.test_readme_and_reports`
   prueft, sind ebenfalls im Full-Review-Handoff enthalten.
+- Repo-interne absolute Pfade werden in der Operator Summary relativ
+  normalisiert; externe Windows-/UNC-Pfade bleiben redaktiert.
 - Alte Website Static Build Package Artefakte mit lokalen Deploy-Pfaden werden
   nicht mehr in den Full-Review-Handoff aufgenommen.
 - Der neue ZIP-Content-Scanner prueft produktive ZIP-Inhalte auf lokale
@@ -139,7 +141,7 @@ muessen, wenn private/raw Inputs bewusst ausgeschlossen sind.
 Implementation validation:
 
 - `python -m unittest tests.test_dashboard_operator_summary -v`
-  - result: `Ran 13 tests`, `OK`.
+  - result: `Ran 14 tests`, `OK`.
 - `python -m unittest tests.test_personal_decision_quality_state -v`
   - result: `Ran 26 tests`, `OK`.
 - `python -m unittest tests.test_personal_decision_journal_validation -v`
@@ -153,8 +155,14 @@ Implementation validation:
 - `python -m unittest tests.test_handoff_bundle -v`
   - result: `Ran 17 tests`, `OK`.
 - `git diff --check`
-  - result: exit code `0`; only Git line-ending warnings for touched Python files, no whitespace errors reported.
+  - result: exit code `0`; no whitespace errors reported.
+- semantic smoke:
+  - command: `build_dashboard_operator_summary` with readable Decision Quality `review_required=true`
+  - result: `SEMANTIC_SMOKE_OK`
+  - fields: `surface_status=REVIEW`, `decision_quality_status=REVIEW`, `decision_quality_review_required=True`, `decision_quality_review_required_count=1`, `operator_attention_required=True`, `operator_attention_level=MEDIUM`, `operator_attention_reasons=['DECISION_QUALITY_REVIEW_REQUIRED']`
 - extracted ZIP smoke:
+  - command: `python -m unittest tests.test_dashboard_operator_summary -v`
+  - result: `Ran 14 tests`, `OK`.
   - command: `python -m unittest tests.test_readme_and_reports -v`
   - result: `Ran 8 tests`, `OK`.
 
@@ -163,10 +171,10 @@ No full test suite is claimed by this context file.
 Handoff artifact generation:
 
 - `python -m src.handoff_zip_export --profile full_review --name HANDOFF_LATEST --output-path .\external_review_packet\HANDOFF_LATEST.zip`
-  - result: generated ZIP for head `72b52c2cdc0bcafba1efb4fc8dedee47ca486a24`
+  - result: generated ZIP for head `251635b509c24328c57edc4947becd93fb31d886`
   - file_count: `452`
-  - size_bytes: `12956260`
-  - zip_sha256: `41B87E24CB6173032510E6EE348AFBB24EF847DFBE0F1F5834FA4EBF95BEC409`
+  - size_bytes: `12956602`
+  - zip_sha256: `C7AFF6CB1538ED8F9D311C4F13FE4DC8275EB8A81082714BC024F68B0819AF80`
   - forbidden_match_count: `0`
   - local_path_leak_count: `0`
 
