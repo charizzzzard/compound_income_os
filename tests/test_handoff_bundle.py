@@ -13,6 +13,7 @@ from src.handoff_bundle import (
     is_forbidden_entry,
     parse_git_status_short_line,
     scan_forbidden_entries,
+    scan_local_path_leaks_in_zip,
     sanitize_path_for_external,
     sha256_file,
     upload_bundle_id_from_context,
@@ -73,6 +74,29 @@ class HandoffBundleTests(unittest.TestCase):
         self.assertIn("FORBIDDEN_PATH", omitted_text)
         self.assertIn("<user_agent_file>", omitted_text)
         self.assertNotIn("sec_user_agent.local.txt", classification_text)
+
+    def test_handoff_zip_content_scan_detects_local_user_paths(self) -> None:
+        zip_path = self.fixture / "content_leak.zip"
+        with zipfile.ZipFile(zip_path, "w") as archive:
+            archive.writestr("data/processed/leak.csv", "path\nC:\\Users\\Operator\\Documents\\secret.csv\n")
+            archive.writestr("src/path_rules.py", 'WINDOWS_ABSOLUTE_RE = r"^[A-Za-z]:[\\\\/]"\n')
+            archive.writestr("tests/test_path_sanitizer.py", "SYNTHETIC = r'C:\\Users\\Max\\private.csv'\n")
+
+        findings = scan_local_path_leaks_in_zip(zip_path)
+
+        self.assertIn("data/processed/leak.csv:LOCAL_WINDOWS_USER_PATH", findings)
+        self.assertFalse(any(finding.startswith("src/path_rules.py") for finding in findings))
+        self.assertFalse(any(finding.startswith("tests/test_path_sanitizer.py") for finding in findings))
+
+    def test_content_scan_allows_synthetic_test_fixtures_without_allowing_productive_leaks(self) -> None:
+        zip_path = self.fixture / "synthetic_fixture_scan.zip"
+        with zipfile.ZipFile(zip_path, "w") as archive:
+            archive.writestr("tests/test_synthetic_paths.py", "SYNTHETIC = r'C:\\Users\\Max\\private.csv'\n")
+            archive.writestr("reports/2026-05-20/leak.md", "Local package: \\\\server\\share\\deploy.zip\n")
+
+        findings = scan_local_path_leaks_in_zip(zip_path)
+
+        self.assertEqual(findings, ("reports/2026-05-20/leak.md:LOCAL_UNC_PATH",))
 
     def test_manifest_has_stable_order_and_sha256(self) -> None:
         result = export_handoff_bundle(

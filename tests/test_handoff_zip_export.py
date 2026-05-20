@@ -10,6 +10,7 @@ from src.handoff_zip_export import (
     export_handoff_zip,
     export_profile_handoff_zip,
     scan_forbidden_entries,
+    scan_local_path_leaks_in_zip,
 )
 
 
@@ -49,6 +50,7 @@ class HandoffZipExportTests(unittest.TestCase):
         self.assertEqual(len(names) - len(manifest_rows), 2)
         self.assertEqual(result.forbidden_matches, ())
         self.assertEqual(scan_forbidden_entries(result.zip_path), ())
+        self.assertEqual(scan_local_path_leaks_in_zip(result.zip_path), ())
 
     def test_patch_profile_contains_known_sec_concept_review_artifacts(self) -> None:
         result = export_profile_handoff_zip(
@@ -193,6 +195,7 @@ class HandoffZipExportTests(unittest.TestCase):
 
         joined = "\n".join(sorted(names))
         self.assertIn("tests/handoff_zip_export_fixture/cache_source/safe.txt", names)
+        self.assertIn(".gitattributes", names)
         self.assertNotIn("__pycache__", joined)
         self.assertFalse(any(name.endswith(".pyc") for name in names))
         self.assertNotIn(".pytest_cache", joined)
@@ -201,6 +204,19 @@ class HandoffZipExportTests(unittest.TestCase):
         self.assertNotIn("/.cache/", joined)
         self.assertFalse(any(name.endswith("/.DS_Store") or name.endswith("/Thumbs.db") for name in names))
         self.assertEqual(scan_forbidden_entries(result.zip_path), ())
+        self.assertEqual(scan_local_path_leaks_in_zip(result.zip_path), ())
+
+    def test_full_review_export_contains_no_local_absolute_user_paths(self) -> None:
+        result = export_profile_handoff_zip(profile="full_review", name="unit_privacy_hygiene", output_dir=self.tmp)
+
+        with zipfile.ZipFile(result.zip_path, "r") as archive:
+            names = set(archive.namelist())
+
+        self.assertIn(".gitattributes", names)
+        self.assertNotIn("data/processed/website_static_build_package_qa.csv", names)
+        self.assertNotIn("data/processed/website_static_build_package_summary.csv", names)
+        self.assertFalse(any(name.endswith("/website_static_build_package_report.md") for name in names))
+        self.assertEqual(scan_local_path_leaks_in_zip(result.zip_path), ())
 
     def test_full_review_export_uses_current_canonical_vision_only(self) -> None:
         result = export_profile_handoff_zip(profile="full_review", name="unit_canonical_vision", output_dir=self.tmp)

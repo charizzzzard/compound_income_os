@@ -54,6 +54,9 @@ Use `PASS` when:
 
 Header-only, contract-valid Decision Journal Validation and Review Queue CSVs
 are valid `PASS` inputs when both artifacts are present and readable.
+If a readable Decision Quality State has `review_required=true`, the operator
+surface must not return `PASS`; it must surface `REVIEW` and an operator
+attention reason of `DECISION_QUALITY_REVIEW_REQUIRED`.
 
 ### `REVIEW`
 
@@ -151,7 +154,8 @@ Future dashboard/operator-summary artifacts must provide at least:
 `process_confidence_level` remains process/review confidence, not Investment
 Confidence. `operator_attention_required` is an operator follow-up flag, not an
 order signal. `surface_status=PASS` is valid only when required artifacts are
-present, readable and no findings or queue items exist.
+present, readable, no findings or queue items exist, and readable Decision
+Quality does not require review.
 
 ## Artifact Availability Model
 
@@ -216,6 +220,8 @@ visible.
 
 - `process_confidence_level` is not Investment Confidence.
 - `review_required` is not a buy/sell/hold decision.
+- `review_required=true` in Decision Quality is an operator review signal and
+  blocks `surface_status=PASS`.
 - `operator_attention_required` is not an order signal.
 - `stale_state` is process freshness, not a portfolio warning.
 - `BLOCKER` and `HIGH` are governance/hygiene priorities, not investment risk

@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import io
+import re
 import shutil
 import subprocess
 import zipfile
@@ -73,6 +74,26 @@ FORBIDDEN_FILE_NAMES = {
     "personal_sec_scope_review_filled.csv",
     "thumbs.db",
 }
+TEXT_SCAN_SUFFIXES = {
+    ".csv",
+    ".css",
+    ".html",
+    ".json",
+    ".md",
+    ".py",
+    ".txt",
+    ".toml",
+    ".yaml",
+    ".yml",
+}
+PRODUCTIVE_LOCAL_PATH_PREFIXES = ("data/processed/", "reports/", "docs/", "README.md", "HANDOFF_")
+PRODUCTIVE_WINDOWS_USER_RE = re.compile(r"[A-Za-z]:[\\/]+Users[\\/]+[^\\/:\s\"'`<>|]+", re.IGNORECASE)
+PRODUCTIVE_POSIX_USER_RE = re.compile(r"/(?:Users|home)/[^/\s\"'`<>|]+")
+PRODUCTIVE_UNC_RE = re.compile(r"(?:\\\\|//)[^\\/\s\"'`<>|]+[\\/][^\\/\s\"'`<>|]+[\\/]")
+REAL_OPERATOR_PATH_RE = re.compile(
+    r"(?:[A-Za-z]:[\\/]+Users[\\/]+sc_mprinsen[\\/]+|/(?:Users|home)/sc_mprinsen/)",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -133,6 +154,28 @@ def is_forbidden_entry(entry_name: str) -> bool:
     if name.startswith("tests/_tmp") or "/tests/_tmp" in name:
         return True
     return bool(parts.intersection(FORBIDDEN_DIR_NAMES))
+
+
+def _is_text_scannable(entry_name: str) -> bool:
+    suffix = Path(entry_name).suffix.lower()
+    return suffix in TEXT_SCAN_SUFFIXES or entry_name.startswith("HANDOFF_") or entry_name == "README.md"
+
+
+def _content_local_path_leak_reasons(entry_name: str, text: str) -> tuple[str, ...]:
+    name = normalize_entry_name(entry_name)
+    productive = name.startswith(PRODUCTIVE_LOCAL_PATH_PREFIXES) or name == "README.md"
+    reasons: list[str] = []
+    if productive:
+        if PRODUCTIVE_WINDOWS_USER_RE.search(text):
+            reasons.append("LOCAL_WINDOWS_USER_PATH")
+        if PRODUCTIVE_POSIX_USER_RE.search(text):
+            reasons.append("LOCAL_POSIX_USER_PATH")
+        if PRODUCTIVE_UNC_RE.search(text):
+            reasons.append("LOCAL_UNC_PATH")
+    elif name.startswith(("src/", "tests/")):
+        if REAL_OPERATOR_PATH_RE.search(text):
+            reasons.append("REAL_OPERATOR_LOCAL_PATH")
+    return tuple(dict.fromkeys(reasons))
 
 
 def sanitize_path_for_external(path_value: str) -> str:
@@ -476,6 +519,7 @@ def validation_text(
     forbidden_count: int,
     file_count: int,
     nested_zip_count: int,
+    local_path_leak_count: int,
     manifest_sha256: str,
     manifest_row_count: int,
     terminal_metadata_count: int,
@@ -508,6 +552,7 @@ def validation_text(
             f"file_count={file_count}",
             f"forbidden_count={forbidden_count}",
             f"nested_zip_count={nested_zip_count}",
+            f"local_path_leak_count={local_path_leak_count}",
             f"context_match={context_match}",
             f"latest_archive_hash_match={latest_archive_hash_match}",
             f"validation_status={validation_status}",
@@ -541,6 +586,22 @@ def parse_validation_metadata(validation_text_value: str) -> dict[str, str]:
         key, value = stripped.split("=", 1)
         metadata[key.strip()] = value.strip()
     return metadata
+
+
+def scan_local_path_leaks_in_zip(zip_path: str | Path) -> tuple[str, ...]:
+    findings: list[str] = []
+    with zipfile.ZipFile(zip_path, "r") as archive:
+        for name in archive.namelist():
+            entry_name = normalize_entry_name(name)
+            if not entry_name or entry_name.endswith("/") or not _is_text_scannable(entry_name):
+                continue
+            try:
+                text = archive.read(name).decode("utf-8")
+            except UnicodeDecodeError:
+                continue
+            for reason in _content_local_path_leak_reasons(entry_name, text):
+                findings.append(f"{entry_name}:{reason}")
+    return tuple(sorted(findings))
 
 
 def safe_handoff_component(value: str) -> str:
@@ -596,10 +657,12 @@ def _zip_validation_details(zip_path: Path, *, expected_context_bytes: bytes | N
 
     forbidden = tuple(sorted(name for name in names if is_forbidden_entry(name)))
     nested_zip = tuple(sorted(name for name in names if name.endswith(".zip")))
+    local_path_leaks = scan_local_path_leaks_in_zip(zip_path)
     validation = parse_validation_metadata(validation_text_bytes.decode("utf-8"))
     reported_file_count = int(validation.get("file_count", "-1"))
     reported_forbidden_count = int(validation.get("forbidden_count", "-1"))
     reported_nested_zip_count = int(validation.get("nested_zip_count", "-1"))
+    reported_local_path_leak_count = int(validation.get("local_path_leak_count", "-1"))
     if reported_file_count != len(names):
         raise ValueError(
             f"handoff validation file_count mismatch: reported {reported_file_count}, actual {len(names)}"
@@ -612,16 +675,23 @@ def _zip_validation_details(zip_path: Path, *, expected_context_bytes: bytes | N
         raise ValueError(
             f"handoff validation nested_zip_count mismatch: reported {reported_nested_zip_count}, actual {len(nested_zip)}"
         )
+    if reported_local_path_leak_count != len(local_path_leaks):
+        raise ValueError(
+            f"handoff validation local_path_leak_count mismatch: reported {reported_local_path_leak_count}, actual {len(local_path_leaks)}"
+        )
     if forbidden:
         raise ValueError(f"handoff ZIP contains forbidden entries: {', '.join(forbidden)}")
     if nested_zip:
         raise ValueError(f"handoff ZIP contains nested ZIP entries: {', '.join(nested_zip)}")
+    if local_path_leaks:
+        raise ValueError(f"handoff ZIP contains local path leaks: {', '.join(local_path_leaks)}")
 
     context = parse_context_metadata(internal_context.decode("utf-8"))
     return {
         "file_count": str(len(names)),
         "forbidden_count": str(len(forbidden)),
         "nested_zip_count": str(len(nested_zip)),
+        "local_path_leak_count": str(len(local_path_leaks)),
         "profile": context.get("profile", ""),
         "bundle_name": context.get("bundle_name", ""),
         "created_at_utc": context.get("created_at_utc", ""),
@@ -913,6 +983,7 @@ def export_handoff_bundle(
         forbidden_count=len(pending_forbidden),
         file_count=pending_file_count,
         nested_zip_count=len(pending_nested_zip),
+        local_path_leak_count=0,
         manifest_sha256=manifest_sha256,
         manifest_row_count=len(manifest_row_values),
         terminal_metadata_count=2,

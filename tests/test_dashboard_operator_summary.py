@@ -50,6 +50,17 @@ class DashboardOperatorSummaryTests(unittest.TestCase):
             encoding="utf-8",
         )
 
+    def _write_decision_quality(self, path: Path, *, review_required: bool, confidence_level: str = "MEDIUM") -> None:
+        payload = {
+            "as_of_date": "2026-05-19",
+            "decision_confidence_level": confidence_level,
+            "review_reason_codes": ["EVIDENCE_MISSING"] if review_required else [],
+            "review_required": review_required,
+            "run_id": "unit-run",
+            "source_commit_sha": "abc123",
+        }
+        path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
     def _base_inputs(self, prefix: str) -> dict[str, str]:
         validation = self._path(f"_tmp_{prefix}_validation.csv")
         queue = self._path(f"_tmp_{prefix}_queue.csv")
@@ -90,6 +101,34 @@ class DashboardOperatorSummaryTests(unittest.TestCase):
         self.assertEqual(result.summary["queue_items"], 0)
         self.assertFalse(result.summary["operator_attention_required"])
         self.assertEqual(result.summary["operator_attention_level"], "NONE")
+
+    def test_decision_quality_review_required_prevents_pass(self) -> None:
+        paths = self._base_inputs("dq_review_required")
+        self._write_decision_quality(Path(paths["decision_quality_state"]), review_required=True, confidence_level="REVIEW")
+
+        result = run_dashboard_operator_summary(**paths)
+
+        self.assertEqual(result.summary["surface_status"], "REVIEW")
+        self.assertEqual(result.summary["decision_quality_status"], "REVIEW")
+        self.assertIs(result.summary["decision_quality_review_required"], True)
+        self.assertGreaterEqual(result.summary["decision_quality_review_required_count"], 1)
+        self.assertTrue(result.summary["operator_attention_required"])
+        self.assertIn(result.summary["operator_attention_level"], {"MEDIUM", "HIGH", "BLOCKER"})
+        self.assertIn("DECISION_QUALITY_REVIEW_REQUIRED", result.summary["operator_attention_reasons"])
+        self.assertNotEqual(result.summary["surface_status"], "PASS")
+
+    def test_header_only_clean_with_decision_quality_not_required_remains_pass(self) -> None:
+        paths = self._base_inputs("dq_pass")
+        self._write_decision_quality(Path(paths["decision_quality_state"]), review_required=False)
+
+        result = run_dashboard_operator_summary(**paths)
+
+        self.assertEqual(result.summary["surface_status"], "PASS")
+        self.assertEqual(result.summary["decision_quality_status"], "PASS")
+        self.assertIs(result.summary["decision_quality_review_required"], False)
+        self.assertFalse(result.summary["operator_attention_required"])
+        self.assertEqual(result.summary["operator_attention_level"], "NONE")
+        self.assertNotIn("DECISION_QUALITY_REVIEW_REQUIRED", result.summary["operator_attention_reasons"])
 
     def test_one_required_artifact_missing_is_partial(self) -> None:
         paths = self._base_inputs("partial")

@@ -25,6 +25,9 @@ Recommended examples:
 - `python -m unittest tests.test_personal_decision_quality_state -v`
 - `python -m unittest tests.test_readme_and_reports -v`
 
+`tests.test_readme_and_reports` is ZIP-safe only when the bundle includes
+root-level LF governance files such as `.gitattributes`.
+
 ### `REQUIRES_PRIVATE_FIXTURES`
 
 Tests or workflows in this category require private/raw broker, portfolio,
@@ -94,6 +97,10 @@ python -m unittest tests.test_personal_decision_journal_validation -v
 python -m unittest tests.test_personal_decision_quality_state -v
 python -m unittest tests.test_readme_and_reports -v
 ```
+
+The full-review handoff must include `.gitattributes` when this smoke sequence
+is recommended, because the README/report tests validate LF-normalization
+governance from that file.
 
 These smoke tests do not replace local full validation. Private/raw fixtures are
 intentionally absent from review bundles, and tests that require such fixtures

@@ -12,11 +12,12 @@ from src.handoff_bundle import (
     normalize_entry_name,
     omitted_row,
     scan_forbidden_entries as bundle_scan_forbidden_entries,
+    scan_local_path_leaks_in_zip as bundle_scan_local_path_leaks_in_zip,
     zip_top_level_contents,
 )
 
 INCLUDED_DIRS = ("src", "tests", "docs", "configs", "scripts", "website", "_archive")
-INCLUDED_ROOT_FILES = ("README.md", "AGENTS.md", "pyproject.toml", "requirements.txt")
+INCLUDED_ROOT_FILES = ("README.md", "AGENTS.md", ".gitattributes", "pyproject.toml", "requirements.txt")
 EXCLUDED_REVIEW_FILES = {
     "docs/COMPOUND_INCOME_OS_VISION_v1.md",
     "docs/COMPOUND_INCOME_OS_VISION_v1_1.md",
@@ -75,8 +76,6 @@ HANDOFF_ARTIFACT_FILES = (
     "data/processed/website_private_preview_cta_matrix.csv",
     "data/processed/website_private_preview_copy_guardrails.csv",
     "data/processed/website_private_preview_qa_summary.csv",
-    "data/processed/website_static_build_package_qa.csv",
-    "data/processed/website_static_build_package_summary.csv",
     "data/processed/website_private_preview_copy_freeze_matrix.csv",
     "data/processed/website_private_preview_copy_freeze_summary.csv",
     "data/processed/website_private_preview_handoff_index.csv",
@@ -111,7 +110,6 @@ HANDOFF_ARTIFACT_GLOBS = (
     "reports/*/dashboard_readiness_panel_report.md",
     "reports/*/dashboard_readiness_payload_report.md",
     "reports/*/website_private_preview_route_matrix_report.md",
-    "reports/*/website_static_build_package_report.md",
     "reports/*/website_private_preview_copy_freeze_report.md",
     "reports/*/website_private_preview_release_notes.md",
     "reports/*/website_private_preview_handoff_qa_report.md",
@@ -188,6 +186,10 @@ def scan_forbidden_entries(zip_path: str | Path) -> tuple[str, ...]:
 
     with zipfile.ZipFile(zip_path, "r") as archive:
         return tuple(sorted(name for name in archive.namelist() if is_forbidden_entry(name)))
+
+
+def scan_local_path_leaks_in_zip(zip_path: str | Path) -> tuple[str, ...]:
+    return bundle_scan_local_path_leaks_in_zip(zip_path)
 
 
 def existing_paths(repo_root: Path, rel_paths: list[str] | tuple[str, ...]) -> list[str]:
@@ -351,6 +353,7 @@ def main() -> None:
     print(f"size_bytes: {result.size_bytes}")
     print(f"zip_sha256: {result.sha256}")
     print(f"forbidden_match_count: {len(bundle_scan_forbidden_entries(result.zip_path))}")
+    print(f"local_path_leak_count: {len(bundle_scan_local_path_leaks_in_zip(result.zip_path))}")
 
 
 if __name__ == "__main__":

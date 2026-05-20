@@ -178,7 +178,13 @@ def _priority_count(rows: list[dict[str, str]], priority: str) -> int:
     return sum(1 for row in rows if str(row.get("priority", "")).upper() == priority)
 
 
-def _attention_level(*, artifact_status: str, validation_rows: list[dict[str, str]], queue_rows: list[dict[str, str]]) -> str:
+def _attention_level(
+    *,
+    artifact_status: str,
+    validation_rows: list[dict[str, str]],
+    queue_rows: list[dict[str, str]],
+    decision_quality_review_required: bool = False,
+) -> str:
     if artifact_status in {"UNREADABLE", "NOT_AVAILABLE"}:
         return "BLOCKER"
     if artifact_status == "PARTIAL":
@@ -189,14 +195,24 @@ def _attention_level(*, artifact_status: str, validation_rows: list[dict[str, st
         return "HIGH"
     if _priority_count(validation_rows, "MEDIUM") or _priority_count(queue_rows, "MEDIUM"):
         return "MEDIUM"
+    if decision_quality_review_required:
+        return "MEDIUM"
     return "NONE"
 
 
-def _surface_status(*, artifact_status: str, validation_rows: list[dict[str, str]], queue_rows: list[dict[str, str]]) -> str:
+def _surface_status(
+    *,
+    artifact_status: str,
+    validation_rows: list[dict[str, str]],
+    queue_rows: list[dict[str, str]],
+    decision_quality_review_required: bool = False,
+) -> str:
     if artifact_status in {"UNREADABLE", "NOT_AVAILABLE"}:
         return "NOT_AVAILABLE"
     if artifact_status == "PARTIAL":
         return "PARTIAL"
+    if decision_quality_review_required:
+        return "REVIEW"
     if validation_rows or queue_rows:
         return "REVIEW"
     return "PASS"
@@ -253,9 +269,20 @@ def build_dashboard_operator_summary(
     lineage_count = sum(1 for row in validation_rows if row.get("reason_code") == "DECISION_QUALITY_LINEAGE_MISMATCH") + _count_reason(queue_rows, "DECISION_QUALITY_LINEAGE_MISMATCH")
     missing_required = [artifact["path"] for artifact in source_artifacts if artifact["required"] and artifact["status"] != "COMPLETE"]
     partial_artifacts = [artifact["path"] for artifact in source_artifacts if artifact["status"] not in {"COMPLETE", "NOT_AVAILABLE"}]
-    attention_level = _attention_level(artifact_status=artifact_status, validation_rows=validation_rows, queue_rows=queue_rows)
-    surface_status = _surface_status(artifact_status=artifact_status, validation_rows=validation_rows, queue_rows=queue_rows)
-    validation_status = "PASS" if not validation_rows and artifact_status == "COMPLETE" else ("REVIEW" if validation_rows or queue_rows else surface_status)
+    decision_quality_review_required = decision_quality_artifact["status"] == "COMPLETE" and decision_quality.get("review_required") is True
+    attention_level = _attention_level(
+        artifact_status=artifact_status,
+        validation_rows=validation_rows,
+        queue_rows=queue_rows,
+        decision_quality_review_required=decision_quality_review_required,
+    )
+    surface_status = _surface_status(
+        artifact_status=artifact_status,
+        validation_rows=validation_rows,
+        queue_rows=queue_rows,
+        decision_quality_review_required=decision_quality_review_required,
+    )
+    validation_status = "PASS" if not validation_rows and artifact_status == "COMPLETE" else ("REVIEW" if validation_rows or queue_rows or decision_quality_review_required else surface_status)
     decision_quality_status = "NOT_AVAILABLE"
     if decision_quality_artifact["status"] == "COMPLETE":
         decision_quality_status = "REVIEW" if decision_quality.get("review_required") is True else "PASS"
@@ -265,8 +292,9 @@ def build_dashboard_operator_summary(
     if missing_required:
         attention_reasons.append("REQUIRED_ARTIFACT_NOT_COMPLETE")
     attention_reasons.extend(top_reasons[:5])
-    if decision_quality.get("review_required") is True:
+    if decision_quality_review_required:
         attention_reasons.append("DECISION_QUALITY_REVIEW_REQUIRED")
+    attention_reasons = list(dict.fromkeys(attention_reasons))
     return {
         "schema_version": SCHEMA_VERSION,
         "as_of_date": effective_as_of_date,
@@ -293,7 +321,7 @@ def build_dashboard_operator_summary(
         "duplicate_decision_id_count": duplicate_count,
         "missing_review_date_count": _count_reason(queue_rows, "REVIEW_DATE_MISSING"),
         "due_review_count": _count_reason(queue_rows, "REVIEW_DATE_DUE"),
-        "decision_quality_review_required_count": _count_reason(queue_rows, "DECISION_QUALITY_REVIEW_REQUIRED") + (1 if decision_quality.get("review_required") is True else 0),
+        "decision_quality_review_required_count": _count_reason(queue_rows, "DECISION_QUALITY_REVIEW_REQUIRED") + (1 if decision_quality_review_required else 0),
         "lineage_mismatch_count": lineage_count,
         "top_reason_codes": top_reasons,
         "operator_attention_required": attention_level != "NONE",

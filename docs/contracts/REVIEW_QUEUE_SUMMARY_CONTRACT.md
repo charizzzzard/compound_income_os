@@ -134,6 +134,10 @@ Operator attention levels:
   `PASS`.
 - Header-only, contract-valid validation and queue artifacts produce `PASS`
   with zero counts.
+- A readable Decision Quality State with `review_required=true` produces
+  `surface_status=REVIEW`, `decision_quality_status=REVIEW`,
+  `decision_quality_review_required_count>=1`, and
+  `operator_attention_required=true`.
 - Any `BLOCKER` queue item sets `operator_attention_level=BLOCKER`.
 - Any `HIGH` queue item sets at least `operator_attention_level=HIGH`.
 - Stale-only findings set `operator_attention_level=MEDIUM` unless another
