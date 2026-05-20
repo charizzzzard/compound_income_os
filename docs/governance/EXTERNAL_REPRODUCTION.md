@@ -87,6 +87,8 @@ Architecture review artifacts that are ZIP-review relevant include:
 - `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
 - `docs/architecture/CIOS_META_ARCHITECTURE.md`
 - `docs/architecture/CIOS_MATURITY_MODEL.yaml`
+- `docs/architecture/CIOS_DATA_SOURCE_STRATEGY.md`
+- `docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml`
 - `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`
 - `docs/governance/CIOS_SYSTEM_CONSTITUTION.md`
 - `docs/governance/CIOS_OPERATING_MODEL.md`
@@ -95,6 +97,8 @@ Architecture review artifacts that are ZIP-review relevant include:
 - `docs/governance/CIOS_EVOLUTION_GUARDRAILS.md`
 - `docs/governance/CIOS_FINAL_META_BASELINE_ACCEPTANCE.md`
 - `docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md`
+- `docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md`
+- `docs/governance/DATA_SOURCE_REVIEW_CHECKLIST.md`
 - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
 - `docs/architecture/CURRENT_KNOWN_GAPS.md`
 
@@ -145,3 +149,10 @@ and does not by itself prove uncommitted patch-source dirtiness.
 
 Private/raw artifacts, credentials, local user-agent files, ignored personal
 outputs and broker documents must not be inferred when absent from the bundle.
+External reviewers must also not infer source-license approval from missing
+raw/provider data. Public handoffs may include code, docs, configs, tests and
+sanitized derived metadata; they must not bundle private broker exports, paid
+raw vendor data, credentials, secrets or restricted raw datasets. Where
+source/license metadata is present, review it against
+`docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md`; absence of an active
+source registry does not imply approval for redistribution or commercial use.

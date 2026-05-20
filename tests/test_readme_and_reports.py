@@ -64,6 +64,49 @@ class ReadmeAndReportTests(unittest.TestCase):
         self.assertIn("packet_evidence_files:", feature_status)
         self.assertIn("generated_review_artifacts:", feature_status)
 
+    def test_data_source_strategy_license_boundary_docs_are_linked_and_conservative(self) -> None:
+        required_paths = [
+            Path("docs/architecture/CIOS_DATA_SOURCE_STRATEGY.md"),
+            Path("docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md"),
+            Path("docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml"),
+            Path("docs/governance/DATA_SOURCE_REVIEW_CHECKLIST.md"),
+        ]
+        for path in required_paths:
+            with self.subTest(path=str(path)):
+                self.assertTrue(path.exists(), f"missing {path}")
+
+        readme = Path("README.md").read_text(encoding="utf-8")
+        system_map = Path("docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md").read_text(encoding="utf-8")
+        module_contracts = Path("docs/MODULE_CONTRACTS.md").read_text(encoding="utf-8")
+        external_reproduction = Path("docs/governance/EXTERNAL_REPRODUCTION.md").read_text(encoding="utf-8")
+        for path in required_paths:
+            path_text = path.as_posix()
+            with self.subTest(reference=path_text):
+                self.assertIn(path_text, readme + "\n" + system_map + "\n" + module_contracts + "\n" + external_reproduction)
+
+        strategy = Path("docs/architecture/CIOS_DATA_SOURCE_STRATEGY.md").read_text(encoding="utf-8")
+        contract = Path("docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md").read_text(encoding="utf-8")
+        checklist = Path("docs/governance/DATA_SOURCE_REVIEW_CHECKLIST.md").read_text(encoding="utf-8")
+        combined = strategy + "\n" + contract + "\n" + checklist
+        self.assertIn("Data Source Decision Matrix", strategy)
+        self.assertIn("provider-agnostic", strategy)
+        self.assertIn("UNKNOWN_REVIEW_REQUIRED", contract)
+        self.assertIn("PRIVATE_LOCAL_ONLY", contract)
+        self.assertIn("LEGAL_REVIEW_REQUIRED", contract)
+        self.assertIn("Public availability is not redistribution permission.", contract)
+        self.assertIn("not legal advice", combined.lower())
+        self.assertNotIn("C:\\Users\\", combined)
+
+        template = json.loads(Path("docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml").read_text(encoding="utf-8"))
+        self.assertTrue(template["template_only"])
+        source_ids = {source["source_id"] for source in template["sources"]}
+        self.assertIn("TEST_FIXTURE_SOURCE", source_ids)
+        self.assertIn("PAID_VENDOR_SOURCE_TEMPLATE", source_ids)
+        paid_template = next(source for source in template["sources"] if source["source_id"] == "PAID_VENDOR_SOURCE_TEMPLATE")
+        self.assertFalse(paid_template["redistribution_allowed"])
+        self.assertFalse(paid_template["commercial_use_allowed"])
+        self.assertEqual(paid_template["review_status"], "LEGAL_REVIEW_REQUIRED")
+
     def test_meta_governance_baseline_docs_are_linked_and_conservative(self) -> None:
         required_paths = [
             Path("docs/governance/CIOS_SYSTEM_CONSTITUTION.md"),

@@ -51,11 +51,15 @@ Canonical architecture baseline:
 - [docs/architecture/06_ADOPTED_DECISIONS.yaml](docs/architecture/06_ADOPTED_DECISIONS.yaml): akzeptierte Architekturentscheidungen
 - [docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md](docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md): aktuelle externe-Review-taugliche System Map
 - [docs/architecture/PERSONAL_RUN_STAGE_DAG.md](docs/architecture/PERSONAL_RUN_STAGE_DAG.md): kanonische Stage-DAG-/Orchestrator-Review-Dokumentation fuer `src.personal_run_engine`
+- [docs/architecture/CIOS_DATA_SOURCE_STRATEGY.md](docs/architecture/CIOS_DATA_SOURCE_STRATEGY.md): Data-Source-Strategie fuer provider-agnostische, lizenzbewusste und handoff-sichere Quellenintegration
+- [docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml](docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml): nicht-aktive Template-Struktur fuer kuenftige Source-/License-Metadaten
 - [docs/architecture/CIOS_FEATURE_STATUS.yaml](docs/architecture/CIOS_FEATURE_STATUS.yaml): maschinenlesbarer Feature-Status
 - [docs/architecture/CURRENT_KNOWN_GAPS.md](docs/architecture/CURRENT_KNOWN_GAPS.md): bekannte Gaps, Dashboard-/Replay-/Outcome-Blocker und Deferred-Themen
 - [docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md](docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md): kanonischer Freshness-/Staleness-Vertrag fuer stale, missing und unknown Datenzustaende
+- [docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md](docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md): Contract fuer Source-Klassifikation, Nutzungsgrenzen, Handoff-/Commercial-Boundary und Review-Status
 - [docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md](docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md): stabiler Operator-/Dashboard-Surface-Vertrag ohne visuelles Dashboard-Neudesign
 - [docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md](docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md): Zielvertrag fuer eine maschinenlesbare Review-Queue-Summary
+- [docs/governance/DATA_SOURCE_REVIEW_CHECKLIST.md](docs/governance/DATA_SOURCE_REVIEW_CHECKLIST.md): Review-Checkliste fuer neue Quellen, Adapter, Handoff- und Commercial-Grenzen
 - [docs/governance/EXTERNAL_REPRODUCTION.md](docs/governance/EXTERNAL_REPRODUCTION.md): Reproduzierbarkeitsmatrix fuer externe Handoff-Reviews
 - [docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md](docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md): naechster Producer-Vertrag, noch nicht implementiert
 - [docs/policies/LLM_CODEX_OPERATING_POLICY.md](docs/policies/LLM_CODEX_OPERATING_POLICY.md): LLM-/Codex-Grenzen

@@ -46,6 +46,9 @@ The meta-governance baseline is defined by:
 - Data Freshness / Staleness: contract, read-only summary producer and
   `personal_run_engine` stage for explicit `FRESH`, `STALE`, `MISSING`,
   `UNKNOWN`, `REVIEW_REQUIRED` and `NOT_APPLICABLE` data states.
+- Data Source Strategy / License Boundary: governance kernel for source
+  typology, provider-agnostic adapters, provenance, usage scopes, handoff
+  boundaries and commercial/license review gates before future integrations.
 - Monthly Decision Report: report surface for portfolio health, decision
   quality and decision journal validation when explicit artifacts are present.
 - Personal Run Engine: explicit stage orchestration with manifest, used-inputs,
@@ -59,16 +62,19 @@ The meta-governance baseline is defined by:
 2. Processed artifacts are generated deterministically under `data/processed/`.
 3. Scoring, ranking and portfolio-health modules create decision-support
    artifacts, not decisions.
-4. `decision_quality` evaluates process/readiness state from existing outputs.
-5. `decision_journal_validation` evaluates the append-only journal and produces
+4. Data Source Strategy and License Boundary define whether source classes may
+   be used, displayed, exported or redistributed before any future provider
+   integration.
+5. `decision_quality` evaluates process/readiness state from existing outputs.
+6. `decision_journal_validation` evaluates the append-only journal and produces
    review queue artifacts.
-6. `data_freshness` evaluates configured repo-evidenced artifacts against
+7. `data_freshness` evaluates configured repo-evidenced artifacts against
    explicit freshness signals and thresholds before the operator summary.
-7. `dashboard_operator_summary` aggregates Decision Quality, journal
+8. `dashboard_operator_summary` aggregates Decision Quality, journal
    validation, review queue and Data Freshness state for operator follow-up.
-8. Report surfaces render available states and show `NOT_AVAILABLE` only when
+9. Report surfaces render available states and show `NOT_AVAILABLE` only when
    an artifact is missing, unreadable or the stage did not run.
-9. Handoff export packages code, docs, tests, configs and selected review
+10. Handoff export packages code, docs, tests, configs and selected review
    context for external validation.
 
 ## Current `personal_run_engine` Stage Overview
@@ -170,6 +176,11 @@ dashboard.
   - `configs/fundamentals_metric_definitions.yaml`
   - `configs/personal_run_data_sources.yaml`
   - `configs/data_freshness_thresholds.yaml`
+- Data-source/license governance:
+  - `docs/architecture/CIOS_DATA_SOURCE_STRATEGY.md`
+  - `docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md`
+  - `docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml`
+  - `docs/governance/DATA_SOURCE_REVIEW_CHECKLIST.md`
 - Source modules:
   - `src/personal_run_engine.py`
   - `src/personal_decision_quality_state.py`
@@ -221,6 +232,10 @@ with zero counts.
 - The Data Freshness / Staleness Contract, producer, personal-run stage and
   operator-summary fields exist, but no visual dashboard freshness panel,
   replay freshness gate or outcome attribution integration exists yet.
+- The Data Source Strategy / License Boundary exists as governance and contract
+  documentation plus a template only; there is no active license-enforcement
+  registry, provider-specific approval, production adapter, legal review or
+  commercial redistribution approval.
 - Decision Quality stale-state handling is conservative: any older
   `as_of_date` is stale in the current MVP.
 - Scenario, Tail Risk, Calibration and Regret remain non-implemented or
@@ -243,7 +258,7 @@ with zero counts.
 
 ## Next Recommended Hardening Patches
 
-1. Data Source Strategy & License Boundary.
+1. Data Source Registry Template / Enforcement Preflight.
 2. Instrument Master Contract.
 3. Release Engineering Standard.
 4. Portfolio Event Ledger Contract later.
