@@ -18,6 +18,11 @@ from src.handoff_bundle import (
 
 INCLUDED_DIRS = ("src", "tests", "docs", "configs", "scripts", "website", "_archive")
 INCLUDED_ROOT_FILES = ("README.md", "AGENTS.md", ".gitattributes", "pyproject.toml", "requirements.txt")
+ZIP_SAFE_REPRO_FILES = (
+    "data/raw/personal_fundamentals_evidence_template.csv",
+    "data/raw/personal_fundamentals_snapshot_review_template.csv",
+    "data/raw/personal_sec_identity_map_template.csv",
+)
 EXCLUDED_REVIEW_FILES = {
     "docs/COMPOUND_INCOME_OS_VISION_v1.md",
     "docs/COMPOUND_INCOME_OS_VISION_v1_1.md",
@@ -232,9 +237,25 @@ def profile_include_paths(profile: str, name: str, repo_root: Path, explicit_inc
         personal_reports = [path for path in paths_from_globs(repo_root, HANDOFF_ARTIFACT_GLOBS) if path.startswith("reports/") and "/personal_" in path]
         return sorted(set(module_paths + existing_paths(repo_root, personal_artifacts) + personal_reports))
     if profile == "full_review":
-        return sorted(set(recursive_profile_paths(repo_root, INCLUDED_DIRS) + existing_paths(repo_root, INCLUDED_ROOT_FILES) + existing_paths(repo_root, list(HANDOFF_ARTIFACT_FILES)) + paths_from_globs(repo_root, HANDOFF_ARTIFACT_GLOBS)))
+        return sorted(
+            set(
+                recursive_profile_paths(repo_root, INCLUDED_DIRS)
+                + existing_paths(repo_root, INCLUDED_ROOT_FILES)
+                + existing_paths(repo_root, ZIP_SAFE_REPRO_FILES)
+                + existing_paths(repo_root, list(HANDOFF_ARTIFACT_FILES))
+                + paths_from_globs(repo_root, HANDOFF_ARTIFACT_GLOBS)
+            )
+        )
     # preview preserves the previous broad source/context export with explicit allowlisted artifacts.
-    return sorted(set(recursive_profile_paths(repo_root, INCLUDED_DIRS) + existing_paths(repo_root, INCLUDED_ROOT_FILES) + existing_paths(repo_root, list(HANDOFF_ARTIFACT_FILES)) + paths_from_globs(repo_root, HANDOFF_ARTIFACT_GLOBS)))
+    return sorted(
+        set(
+            recursive_profile_paths(repo_root, INCLUDED_DIRS)
+            + existing_paths(repo_root, INCLUDED_ROOT_FILES)
+            + existing_paths(repo_root, ZIP_SAFE_REPRO_FILES)
+            + existing_paths(repo_root, list(HANDOFF_ARTIFACT_FILES))
+            + paths_from_globs(repo_root, HANDOFF_ARTIFACT_GLOBS)
+        )
+    )
 
 
 def default_omitted_artifacts(profile: str) -> list[dict[str, str]]:
