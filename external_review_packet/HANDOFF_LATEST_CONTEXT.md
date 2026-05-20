@@ -1,61 +1,42 @@
-# HANDOFF LATEST CONTEXT - Data Freshness Personal Run Integration
+# HANDOFF LATEST CONTEXT - Meta + Data Source Governance Review
 
 project_name: compound_income_os
+canonical_name: Compound Income OS
+short_name: CIOS
 profile: full_review
 bundle_name: HANDOFF_LATEST
-bundle_purpose: external_llm_validation_after_data_freshness_personal_run_integration
-created_at_utc: 2026-05-20T15:01:44Z
+bundle_purpose: external_llm_validation_after_meta_governance_and_data_source_license_boundary
+created_at_utc: 2026-05-20T23:16:24Z
 branch: main
-current_handoff_head: 17cff48e340a706551994aceda23143b268e8a9a
-current_handoff_short_head: 17cff48
-implementation_commit_message: feat: integrate data freshness into personal run
-previous_repo_head: 3b7fe7d6fece46705a8ab617534def99a015406f
-previous_handoff_head: e17fc944cdc956bce1a41d2f7768af9af25c6a9f
-final_repo_head_note: final repo HEAD may be a separate handoff metadata commit after this context update
-tracked_worktree_clean_after_implementation_commit_before_handoff_cleanup: True
+current_handoff_head: 8d6a1fc54480ed1ed2cb22d6508ce0228c3c51af
+current_handoff_short_head: 8d6a1fc
+implementation_commit_message: docs: define data source strategy and license boundary
+meta_baseline_commit: 10082d6d6ad16febe7bb2e500776b08f7bb38103
+meta_baseline_message: docs: establish CIOS meta governance baseline
+meta_baseline_status: CIOS_META_BASELINE_ACCEPTED_WITH_FINDINGS
+data_source_license_boundary_commit: 8d6a1fc54480ed1ed2cb22d6508ce0228c3c51af
+data_source_license_boundary_message: docs: define data source strategy and license boundary
+data_source_license_boundary_status: DATA_SOURCE_STRATEGY_AND_LICENSE_BOUNDARY_ACCEPTED_WITH_FINDINGS
+tracked_source_worktree_clean_before_handoff_generation: True
 zip_internal_dirty_worktree_present: True
-dirty_state_explanation: external_review_packet/HANDOFF_LATEST.sha256 and external metadata were regenerated after the ZIP was written; this is not patch source dirtiness.
+external_metadata_dirty_after_zip_generation_before_commit: True
+dirty_state_explanation: external_review_packet/HANDOFF_LATEST.sha256 and external metadata are regenerated after the ZIP is written; this is handoff metadata dirtiness, not patch source dirtiness.
 
-canonical_data_freshness_contract: docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md
-canonical_data_freshness_config: configs/data_freshness_thresholds.yaml
-canonical_data_freshness_producer: src/data_freshness.py
-canonical_data_freshness_tests: tests/test_data_freshness.py
-canonical_personal_run_engine: src/personal_run_engine.py
-canonical_personal_run_tests: tests/test_personal_run_engine.py
-canonical_dashboard_operator_summary: src/dashboard_operator_summary.py
-canonical_dashboard_operator_tests: tests/test_dashboard_operator_summary.py
-canonical_personal_run_stage_dag: docs/architecture/PERSONAL_RUN_STAGE_DAG.md
-canonical_system_map: docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md
-canonical_feature_status: docs/architecture/CIOS_FEATURE_STATUS.yaml
-canonical_known_gaps: docs/architecture/CURRENT_KNOWN_GAPS.md
-canonical_external_reproduction_matrix: docs/governance/EXTERNAL_REPRODUCTION.md
 canonical_review_bundle: external_review_packet/HANDOFF_LATEST.zip
 canonical_checksum: external_review_packet/HANDOFF_LATEST.sha256
+canonical_readme: external_review_packet/00_READ_ME_FIRST.md
 
-zip_file_count: 457
-zip_size_bytes: 12979719
-zip_sha256: 2146330a983a5594ec8b219a7862d57fa9742bda87cfa2278383741a17310315
+zip_file_count: 469
+zip_size_bytes: 13009487
+zip_sha256: a6d0cce25ede191527171d4c874310b1cf3ac7be02a517bbffe75bde3d40659e
+sha_match: True
+zip_testzip: None
+missing_required: []
+nested_zip_count: 0
 forbidden_match_count: 0
 local_path_leak_count: 0
-nested_zip_count: 0
-missing_required: []
-zip_testzip: None
-sha_match: True
 gitattributes_in_zip: True
-data_freshness_contract_in_zip: True
-data_freshness_config_in_zip: True
-data_freshness_producer_in_zip: True
-data_freshness_tests_in_zip: True
-personal_run_engine_in_zip: True
-personal_run_tests_in_zip: True
-dashboard_operator_summary_in_zip: True
-dashboard_operator_tests_in_zip: True
-personal_run_stage_dag_in_zip: True
-readme_in_zip: True
-system_map_in_zip: True
-feature_status_in_zip: True
-known_gaps_in_zip: True
-external_reproduction_in_zip: True
+internal_head_present: True
 
 ## Source-of-Truth / Precedence
 
@@ -65,132 +46,130 @@ Bei Konflikten gilt diese Reihenfolge:
 2. `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
 3. `external_review_packet/HANDOFF_LATEST.zip`
 4. `external_review_packet/HANDOFF_LATEST.sha256`
-5. historische Phase-Reports nur als historische Kontext-/Validierungsartefakte
+5. historische Reports nur als Kontext
 
 ZIP-internes `HANDOFF_CONTEXT.md` ist generischer Exporter-Kontext. Wenn es mit
 dieser Datei kollidiert, gewinnt diese externe Datei fuer Packet-Metadaten,
 Head/SHA/Scope, Precedence und Reviewer-Instruktionen.
 
-## Dirty-State Clarification
-
-ZIP-internes `HANDOFF_CONTEXT.md` kann fuer dieses Packet
-`dirty_worktree_present: True` melden, weil
-`external_review_packet/HANDOFF_LATEST.sha256` und die externen Kontextdateien
-passend zum neuen ZIP neu geschrieben wurden. Der tracked Worktree war nach dem
-Implementierungscommit und vor der Handoff-Metadatenaktualisierung sauber.
-
-Fuer externe Reviews gilt: Die Dirty-Angabe ist kein Hinweis auf nicht
-committete Patch-Source-Aenderungen. Die externe Kontextdatei bleibt
-autoritativ fuer Head, Scope, SHA und Dirty-State-Interpretation.
-
 ## Current Packet Scope
 
 Dieses Packet synchronisiert den externen Review-Kontext auf den committed
-Repo-Stand `17cff48e340a706551994aceda23143b268e8a9a` nach
-`feat: integrate data freshness into personal run`.
+Repo-Stand `8d6a1fc54480ed1ed2cb22d6508ce0228c3c51af` nach
+`docs: define data source strategy and license boundary`.
 
 Review-Schwerpunkte:
 
-- `src/data_freshness.py`
-- `tests/test_data_freshness.py`
-- `src/personal_run_engine.py`
-- `tests/test_personal_run_engine.py`
-- `src/dashboard_operator_summary.py`
-- `tests/test_dashboard_operator_summary.py`
-- `docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md`
-- `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md`
-- `configs/data_freshness_thresholds.yaml`
-- `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`
-- `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
-- `docs/architecture/CIOS_FEATURE_STATUS.yaml`
-- `docs/architecture/CURRENT_KNOWN_GAPS.md`
-- `docs/governance/EXTERNAL_REPRODUCTION.md`
-
-Data-Freshness-Scope:
-
-- definiert `FRESH`, `STALE`, `MISSING`, `UNKNOWN`, `REVIEW_REQUIRED` und
-  `NOT_APPLICABLE`,
-- bewertet nur vorhandene Artefakte und explizite Datumsfelder,
-- nutzt bei Multi-Row-Artefakten konservativ das aelteste valide Datum,
-- macht Zukunftsdatumswerte und invalide Datumswerte review-pflichtig,
-- behandelt fehlende, unbekannte, stale oder externe Pfade nicht als `FRESH`,
-- erzeugt JSON-/Markdown-Summaries,
-- ist als read-only `data_freshness`-Stage nach `decision_journal_validation`
-  und vor `dashboard_operator_summary` integriert,
-- speist Data-Freshness-Counts in `review_queue_summary.json`,
-- implementiert kein Replay, kein Backtesting, keine Outcome Attribution, kein
-  Portfolio Event Ledger und kein visuelles Dashboard.
+- Meta-Governance Baseline:
+  - `docs/governance/CIOS_SYSTEM_CONSTITUTION.md`
+  - `docs/governance/CIOS_OPERATING_MODEL.md`
+  - `docs/governance/CIOS_RISK_AND_CONTROL_FRAMEWORK.md`
+  - `docs/governance/CIOS_TRACEABILITY_STANDARD.md`
+  - `docs/governance/CIOS_EVOLUTION_GUARDRAILS.md`
+  - `docs/governance/CIOS_FINAL_META_BASELINE_ACCEPTANCE.md`
+  - `docs/architecture/CIOS_META_ARCHITECTURE.md`
+  - `docs/architecture/CIOS_MATURITY_MODEL.yaml`
+- Data Source Strategy / License Boundary:
+  - `docs/architecture/CIOS_DATA_SOURCE_STRATEGY.md`
+  - `docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md`
+  - `docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml`
+  - `docs/governance/DATA_SOURCE_REVIEW_CHECKLIST.md`
+- Cross-reference and status consistency:
+  - `README.md`
+  - `docs/CONTEXT_AND_ROADMAP.md`
+  - `docs/MODULE_CONTRACTS.md`
+  - `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
+  - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
+  - `docs/architecture/CURRENT_KNOWN_GAPS.md`
+  - `docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md`
+  - `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md`
+  - `docs/governance/EXTERNAL_REPRODUCTION.md`
 
 ## Handoff Reproducibility Note
 
-Dieses Handoff ist ein Review-Bundle ohne private/raw Artefakte. Die lokal
-ausgefuehrten Tests sind unten dokumentiert. Externe Reviewer sollen nicht
-annehmen, dass alle lokalen Tests aus dem ZIP allein reproduzierbar sein
-muessen, wenn private/raw Inputs bewusst ausgeschlossen sind.
+Dieses Handoff ist ein Review-Bundle ohne private/raw Artefakte. Externe
+Reviewer sollen nicht annehmen, dass private Broker-Exports, paid raw vendor
+data, Credentials, lokale User-Agent-Dateien oder nicht exportierte Operator-
+Inputs fehlen, weil sie implizit freigegeben waeren. Sie fehlen absichtlich.
 
 ## Explicit Non-Scope
 
-- keine Broker/API/HTTP-Write-Logik
-- keine Orderausfuehrung
-- keine Auto-Trading-Logik
-- keine Scoring-Formel- oder Weight-Aenderung
-- keine Portfolio-Regel-Aenderung
-- keine stillen Datenanreicherungen
-- keine privaten Rohdaten, Credentials, lokalen User-Agent-Werte oder Secrets
-- keine erfundenen Fundamentals, KPIs oder Readiness-Ergebnisse
-- keine Runtime-LLM-Implementierung
-- keine Steuerquantifizierung
+- keine Investmentlogik
+- keine API-Anbindung
+- kein Scraping oder Web-Crawling
+- keine Provider-Integration
+- keine Preisdatenpipeline
+- kein Broker-Parsing
+- keine Runtime Source Registry Enforcement Logic
+- kein Dashboard
+- kein Replay, Backtesting oder Simulation
 - keine Outcome Attribution
 - kein Portfolio Event Ledger
-- keine Simulation-/Backtesting-/Monte-Carlo-Implementierung
-- keine Investment Recommendation
+- keine Steuerberechnung
+- keine rechtliche Bewertung
+- keine Commercial-Readiness-Behauptung
+- keine Kauf-/Verkaufsempfehlungen
+- keine Runtime-LLM-Agentenlogik
+- keine Scoring-/Ranking-Aenderung
+- keine Portfolio-Regel-Aenderung
 
 ## Validation Actually Performed
 
-Implementation validation:
+Preflight:
 
-- `python -m unittest tests.test_data_freshness -v`
-  - result: `Ran 14 tests`, `OK`.
-- `python -m unittest tests.test_personal_run_engine -v`
-  - result: `Ran 60 tests`, `OK`.
-- `python -m unittest tests.test_dashboard_operator_summary -v`
-  - result: `Ran 16 tests`, `OK`.
+- `git branch --show-current`
+  - result: `main`
+- `git rev-parse HEAD`
+  - result: `8d6a1fc54480ed1ed2cb22d6508ce0228c3c51af`
+- `git status --short`
+  - result before handoff generation: clean
+- `git log --oneline -n 8`
+  - result includes `8d6a1fc docs: define data source strategy and license boundary`
+  - result includes `10082d6 docs: establish CIOS meta governance baseline`
+- `git merge-base --is-ancestor 10082d6d6ad16febe7bb2e500776b08f7bb38103 HEAD`
+  - result: ancestor true
+- `git merge-base --is-ancestor 8d6a1fc54480ed1ed2cb22d6508ce0228c3c51af HEAD`
+  - result: ancestor true
+
+Targeted validation:
+
 - `python -m unittest tests.test_readme_and_reports -v`
-  - result: `Ran 9 tests`, `OK`.
+  - result: `Ran 11 tests`, `OK`
 - `python -m unittest tests.test_handoff_zip_export -v`
-  - result: `Ran 9 tests`, `OK`.
+  - result: `Ran 9 tests`, `OK`
 - `python -m unittest tests.test_handoff_bundle -v`
-  - result: `Ran 17 tests`, `OK`.
-- `python -m unittest tests.test_personal_decision_quality_state -v`
-  - result: `Ran 26 tests`, `OK`.
-- `python -m unittest tests.test_personal_decision_journal_validation -v`
-  - result: `Ran 16 tests`, `OK`.
-- `python -m unittest tests.test_monthly_decision_report -v`
-  - result: `Ran 12 tests`, `OK`.
-- YAML validation for `docs/architecture/CIOS_FEATURE_STATUS.yaml`
-  - result: `CIOS_FEATURE_STATUS.yaml valid: 37 capabilities`.
+  - result: `Ran 17 tests`, `OK`
+- `python -m unittest tests.test_data_freshness -v`
+  - result: `Ran 14 tests`, `OK`
+- `python -m unittest tests.test_personal_run_engine -v`
+  - result: `Ran 60 tests`, `OK`
+- `python -m unittest tests.test_dashboard_operator_summary -v`
+  - result: `Ran 16 tests`, `OK`
+- YAML/JSON validation for:
+  - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
+  - `docs/architecture/CIOS_MATURITY_MODEL.yaml`
+  - `docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml`
+  - result: `{'feature_capabilities': 39, 'maturity_kernels': 26, 'source_templates': 4}`
 - `git diff --check`
-  - result: exit code `0`; no whitespace errors reported. Git printed LF/CRLF working-copy warnings for existing platform settings.
+  - result: exit code `0`; no whitespace errors
 
 No full test suite is claimed by this context file.
 
-Handoff artifact generation:
+Handoff generation:
 
-- `python -m src.handoff_zip_export --profile full_review --name HANDOFF_LATEST --output-path .\external_review_packet\HANDOFF_LATEST.zip`
-  - result: generated ZIP for head `17cff48e340a706551994aceda23143b268e8a9a`
-  - file_count: `457`
-  - size_bytes: `12979719`
-  - zip_sha256: `2146330a983a5594ec8b219a7862d57fa9742bda87cfa2278383741a17310315`
+- `python -m src.handoff_zip_export --profile full_review --name HANDOFF_LATEST --output-path ".\external_review_packet\HANDOFF_LATEST.zip"`
+  - result: generated ZIP for head `8d6a1fc54480ed1ed2cb22d6508ce0228c3c51af`
+  - file_count: `469`
+  - size_bytes: `13009487`
+  - zip_sha256: `a6d0cce25ede191527171d4c874310b1cf3ac7be02a517bbffe75bde3d40659e`
   - forbidden_match_count: `0`
   - local_path_leak_count: `0`
 
-Additional validation performed after handoff generation:
+Post-generation ZIP validation:
 
-- ZIP/SHA/Required-file/local-path check:
-  - sha_match: `True`
-  - zip_testzip: `None`
-  - entry_count: `457`
-  - missing_required: `[]`
-  - nested_zip_count: `0`
-  - local_path_leak_count: `0`
-  - internal_head_present: `True`
+- SHA match: `True`
+- `zipfile.testzip()`: `None`
+- `missing_required`: `[]`
+- `nested_zip_count`: `0`
+- `local_path_leak_count`: `0`
+- internal `HANDOFF_CONTEXT.md` contains current HEAD: `True`

@@ -1,43 +1,26 @@
-# Compound Income OS External LLM Review Packet - Data Freshness Integration
+# Compound Income OS External LLM Review Packet - Meta + Data Source Governance
 
-Dies ist der Einstiegspunkt fuer die externe LLM-Review von
-`compound_income_os` nach
-`feat: integrate data freshness into personal run`.
+Dies ist der Einstiegspunkt fuer die externe LLM-Review von Compound Income OS
+(CIOS) nach den beiden Governance-Kernel-Patches:
+
+1. Final Meta-System Baseline / Governance Constitution / Architecture Closure
+2. Data Source Strategy & License Boundary
 
 ## Current Review Head
 
 - project: `compound_income_os`
+- canonical_name: `Compound Income OS`
+- short_name: `CIOS`
 - branch: `main`
-- current_handoff_head: `17cff48e340a706551994aceda23143b268e8a9a`
-- current_handoff_short_head: `17cff48`
-- current_patch_context: `Data Freshness / Staleness Personal Run Integration`
-- previous_repo_head: `3b7fe7d6fece46705a8ab617534def99a015406f`
-- previous_handoff_head: `e17fc944cdc956bce1a41d2f7768af9af25c6a9f`
-- canonical_data_freshness_contract:
-  `docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md`
-- canonical_data_freshness_config:
-  `configs/data_freshness_thresholds.yaml`
-- canonical_data_freshness_producer:
-  `src/data_freshness.py`
-- canonical_data_freshness_tests:
-  `tests/test_data_freshness.py`
-- canonical_personal_run_stage_dag:
-  `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`
-- canonical_dashboard_operator_summary:
-  `src/dashboard_operator_summary.py`
-- canonical_dashboard_operator_tests:
-  `tests/test_dashboard_operator_summary.py`
-- canonical_system_map:
-  `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
-- canonical_feature_status:
-  `docs/architecture/CIOS_FEATURE_STATUS.yaml`
-- canonical_known_gaps:
-  `docs/architecture/CURRENT_KNOWN_GAPS.md`
-- canonical_external_reproduction_matrix:
-  `docs/governance/EXTERNAL_REPRODUCTION.md`
-
-Das vorherige externe Packet fuer `3b7fe7d6fece46705a8ab617534def99a015406f`
-ist durch dieses Packet superseded.
+- current_handoff_head: `8d6a1fc54480ed1ed2cb22d6508ce0228c3c51af`
+- current_handoff_short_head: `8d6a1fc`
+- current_patch_context: `Meta Governance Baseline + Data Source Strategy / License Boundary`
+- handoff_purpose: `external_llm_validation_after_meta_governance_and_data_source_license_boundary`
+- meta_baseline_commit: `10082d6d6ad16febe7bb2e500776b08f7bb38103`
+- data_source_license_boundary_commit: `8d6a1fc54480ed1ed2cb22d6508ce0228c3c51af`
+- canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
+- canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
+- canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
 
 ## Source-of-Truth / Precedence
 
@@ -47,81 +30,74 @@ Bei Konflikten gilt diese Reihenfolge:
 2. `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
 3. `external_review_packet/HANDOFF_LATEST.zip`
 4. `external_review_packet/HANDOFF_LATEST.sha256`
-5. historische Phase-Reports nur als historische Kontext-/Validierungsartefakte
+5. historische Reports nur als Kontext
 
 ZIP-internes `HANDOFF_CONTEXT.md` ist generischer Exporter-Kontext. Wenn es mit
-`external_review_packet/HANDOFF_LATEST_CONTEXT.md` kollidiert, gewinnt die
-externe Kontextdatei fuer Head, Scope, SHA und Dirty-State-Interpretation.
+dieser externen Kontextdatei kollidiert, gewinnen die externen Dateien fuer
+Head, Scope, SHA, Precedence und Dirty-State-Interpretation.
 
-## Canonical Review Inputs
+## Review Scope
 
-Reviewer sollen in dieser Reihenfolge lesen:
+Reviewer sollen insbesondere pruefen:
 
-1. `external_review_packet/00_READ_ME_FIRST.md`
-2. `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
-3. `external_review_packet/HANDOFF_LATEST.sha256`
-4. `external_review_packet/HANDOFF_LATEST.zip`
-5. ZIP-intern:
-   - `HANDOFF_CONTEXT.md`
-   - `HANDOFF_VALIDATION.txt`
-   - `HANDOFF_MANIFEST.csv`
-   - `HANDOFF_ARTIFACT_INDEX.csv`
-   - `.gitattributes`
-   - `docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md`
-   - `configs/data_freshness_thresholds.yaml`
-   - `src/data_freshness.py`
-   - `tests/test_data_freshness.py`
-   - `src/personal_run_engine.py`
-   - `tests/test_personal_run_engine.py`
-   - `src/dashboard_operator_summary.py`
-   - `tests/test_dashboard_operator_summary.py`
-   - `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`
-   - `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
-   - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
-   - `docs/architecture/CURRENT_KNOWN_GAPS.md`
-   - `docs/governance/EXTERNAL_REPRODUCTION.md`
+- Meta-Governance Baseline:
+  - `docs/governance/CIOS_SYSTEM_CONSTITUTION.md`
+  - `docs/governance/CIOS_OPERATING_MODEL.md`
+  - `docs/governance/CIOS_RISK_AND_CONTROL_FRAMEWORK.md`
+  - `docs/governance/CIOS_TRACEABILITY_STANDARD.md`
+  - `docs/governance/CIOS_EVOLUTION_GUARDRAILS.md`
+  - `docs/governance/CIOS_FINAL_META_BASELINE_ACCEPTANCE.md`
+  - `docs/architecture/CIOS_META_ARCHITECTURE.md`
+  - `docs/architecture/CIOS_MATURITY_MODEL.yaml`
+- Data Source Strategy / License Boundary:
+  - `docs/architecture/CIOS_DATA_SOURCE_STRATEGY.md`
+  - `docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md`
+  - `docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml`
+  - `docs/governance/DATA_SOURCE_REVIEW_CHECKLIST.md`
+- Cross-reference and governance consistency:
+  - `README.md`
+  - `docs/CONTEXT_AND_ROADMAP.md`
+  - `docs/MODULE_CONTRACTS.md`
+  - `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
+  - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
+  - `docs/architecture/CURRENT_KNOWN_GAPS.md`
+  - `docs/governance/EXTERNAL_REPRODUCTION.md`
 
 ## Dirty-State Interpretation
 
 ZIP-internes `HANDOFF_CONTEXT.md` kann `dirty_worktree_present: True` zeigen,
 weil `external_review_packet/HANDOFF_LATEST.sha256` und diese externen
 Metadaten nach der ZIP-Erzeugung neu geschrieben wurden. Das ist eine
-Handoff-Artefakt-Regeneration, kein Patch-Source-Dirty-State.
+Handoff-Artefakt-Regeneration, kein Hinweis auf nicht committete Patch-Source-
+Aenderungen.
 
-Der finale Repo-HEAD kann nach diesem Packet ein separater
-Handoff-Metadatencommit sein. Der aktuelle Handoff-Head ist der letzte
-Implementierungscommit `17cff48e340a706551994aceda23143b268e8a9a`.
+## Explicit Non-Scope
 
-## Patch Scope
+Dieses Packet fuehrt nicht ein:
 
-Dieses Packet enthaelt:
+- Investmentlogik
+- API-Anbindung
+- Scraping oder Web-Crawling
+- Provider-Integration
+- Broker-Parser
+- Runtime Source Registry Enforcement Logic
+- Dashboard
+- Replay, Backtesting oder Simulation
+- Outcome Attribution
+- Portfolio Event Ledger
+- Steuerberechnung
+- rechtliche Bewertung oder Commercial-Readiness-Behauptung
+- Kauf-/Verkaufsempfehlungen
+- Runtime-LLM-Agentenlogik
+- Scoring-/Ranking-Aenderung
+- Portfolio-Regel-Aenderung
 
-- konservative Multi-Row-Freshness-Semantik in `src.data_freshness`,
-- neue stabile Item-Felder fuer min/max/valid/invalid/missing/record counts,
-- `data_freshness` als read-only Stage in `src.personal_run_engine`,
-- `data/processed/data_freshness_summary.json` und
-  `reports/<as_of_date>/data_freshness_summary.md` als Stage-Outputs,
-- Data-Freshness-Felder in `src.dashboard_operator_summary`,
-- Tests fuer Producer, Stage-Integration und Operator-Summary-Semantik,
-- Cross-References in README, System Map, Feature Status, Known Gaps, Module
-  Contracts, Stage-DAG, Roadmap und External Reproduction.
+## Reviewer Notes
 
-Der Patch erzeugt keine Decisions, keine Orders, keine Portfolio-Events, keine
-Simulation, kein Replay und keine Outcome Attribution.
-
-## Reviewer Rules
-
-- Freshness darf nur aus expliziten Datumsfeldern oder dokumentierten
-  Freshness-Signalen stammen.
-- Bei Multi-Row-Artefakten steuert das aelteste valide Datum die
-  Staleness-Bewertung.
-- Zukunftsdatumswerte und invalide Datumswerte duerfen nicht als `FRESH`
-  gerendert werden.
-- `MISSING`, `UNKNOWN`, `STALE` und `REVIEW_REQUIRED` duerfen nicht als
-  `FRESH` interpretiert werden.
-- File-Existenz allein und Dateinamen sind keine Freshness-Belege.
-- Keine ausgelassenen privaten oder rohen Dateien inferieren.
-- Keine Broker-Writes, HTTP-Calls, Order-Ausfuehrung, Auto-Trading,
-  Steuerquantifizierung oder Runtime-LLM-Entscheidungen inferieren.
-- Keine Simulation, kein Backtesting, keine Outcome Attribution und kein
-  Portfolio Event Ledger inferieren.
+- CIOS ist nicht feature-complete, product-complete oder commercial-ready.
+- Die Meta-Baseline akzeptiert nur die Governance-Definition, nicht das
+  Produktsystem.
+- Data Source Strategy und License Boundary sind Contracts/Governance. Sie sind
+  keine Provider-Freigabe, keine Rechtsberatung und keine Commercial-Freigabe.
+- Fehlende private/raw/provider Daten duerfen nicht aus dem Handoff inferiert
+  werden.
