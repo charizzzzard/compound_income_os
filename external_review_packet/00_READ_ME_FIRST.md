@@ -1,30 +1,30 @@
-# Compound Income OS External LLM Review Packet - System Map + Feature Status + Surface PASS Fix
+# Compound Income OS External LLM Review Packet - Dashboard Operator Surface Contracts
 
 Dies ist der Einstiegspunkt fuer die externe LLM-Review von
 `compound_income_os` nach
-`docs: add system map and harden decision journal surface`.
+`docs: add dashboard operator surface contracts`.
 
 ## Current Review Head
 
 - project: `compound_income_os`
 - branch: `main`
-- current_handoff_head: `e1ec6682942139ad14a7ffc7f59ef88bd6bc4c4e`
-- current_handoff_short_head: `e1ec668`
-- current_patch_context: `docs: add system map and harden decision journal surface`
-- previous_repo_head: `05d1426a3a5ebbb3a93c4541da1e767a1d7b16c4`
-- previous_handoff_head: `95713e85f85f756f3bb3b9bdd6beec992416a56f`
-- canonical_system_map:
-  `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
+- current_handoff_head: `0f267db5a43ac615131977ac2d227b14bc2d90fe`
+- current_handoff_short_head: `0f267db`
+- current_patch_context: `docs: add dashboard operator surface contracts`
+- previous_repo_head: `7fd952731bc584df7f05492dacb02a78472b339a`
+- previous_handoff_head: `e1ec6682942139ad14a7ffc7f59ef88bd6bc4c4e`
+- canonical_dashboard_operator_surface_contract:
+  `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md`
+- canonical_review_queue_summary_contract:
+  `docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md`
+- canonical_external_reproduction_matrix:
+  `docs/governance/EXTERNAL_REPRODUCTION.md`
 - canonical_feature_status:
   `docs/architecture/CIOS_FEATURE_STATUS.yaml`
 - canonical_known_gaps:
   `docs/architecture/CURRENT_KNOWN_GAPS.md`
-- canonical_decision_state_contract:
-  `docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md`
-- canonical_decision_quality_contract:
-  `docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md`
 
-Das vorherige externe Packet fuer `95713e85f85f756f3bb3b9bdd6beec992416a56f`
+Das vorherige externe Packet fuer `e1ec6682942139ad14a7ffc7f59ef88bd6bc4c4e`
 ist durch dieses Packet superseded.
 
 ## Source-of-Truth / Precedence
@@ -54,18 +54,14 @@ Reviewer sollen in dieser Reihenfolge lesen:
    - `HANDOFF_VALIDATION.txt`
    - `HANDOFF_MANIFEST.csv`
    - `HANDOFF_ARTIFACT_INDEX.csv`
+   - `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md`
+   - `docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md`
+   - `docs/governance/EXTERNAL_REPRODUCTION.md`
    - `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
    - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
    - `docs/architecture/CURRENT_KNOWN_GAPS.md`
-   - `src/personal_decision_journal_validation.py`
-   - `tests/test_personal_decision_journal_validation.py`
-   - `src/personal_run_engine.py`
-   - `tests/test_personal_run_engine.py`
-   - `src/build_monthly_decision_report.py`
-   - `tests/test_monthly_decision_report.py`
-   - `docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md`
    - `docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md`
-   - `docs/architecture/DECISION_QUALITY_LAYER.md`
+   - `docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md`
 
 ## Dirty-State Interpretation
 
@@ -76,39 +72,33 @@ Regeneration, kein Patch-Source-Dirty-State.
 
 Der finale Repo-HEAD kann nach diesem Packet ein separater
 Handoff-Metadatencommit sein. Der aktuelle Handoff-Head bleibt der
-Implementierungscommit `e1ec6682942139ad14a7ffc7f59ef88bd6bc4c4e`.
+Implementierungscommit `0f267db5a43ac615131977ac2d227b14bc2d90fe`.
 
 ## Patch Scope
 
 Dieses Packet enthaelt:
 
-- eine aktuelle externe-Review-taugliche System Map,
-- einen maschinenlesbaren Feature-Status mit 36 Capabilities,
-- eine Known-Gaps-Liste fuer Dashboard-, Replay-, Outcome- und Deferred-Themen,
-- den Surface-Fix fuer Decision Journal Validation:
-  - fehlende/nicht lesbare Artefakte bleiben `NOT_AVAILABLE`,
-  - vorhandene Header-only Validation-/Queue-Artefakte rendern `PASS` mit
-    Null-Counts,
-  - Findings und Queue Items bleiben als `REVIEW` sichtbar.
+- den Dashboard Operator Surface Contract fuer read-only Operator-/Dashboard-
+  Status ohne visuelles Dashboard-Neudesign,
+- den Review Queue Summary Contract als Zielvertrag fuer
+  `review_queue_summary.json`,
+- die externe Reproduktionsmatrix fuer ZIP-safe, private-fixture und local-only
+  Tests,
+- Feature-Status-Haertung mit getrennten Repo-/Packet-/Generated-Handoff-
+  Evidence-Feldern,
+- Known-Gaps-Update fuer Dashboard Surface Contract, Review Queue Summary
+  Contract, External Reproduction Matrix und Partial Artifact Availability.
 
 Der Patch erzeugt keine Decisions, keine Orders, keine Portfolio-Events und
 keine Outcome Attribution.
 
-## Handoff Reproducibility Note
-
-Dieses Handoff ist ein Review-Bundle ohne private/raw Artefakte. Die unten
-dokumentierten Tests wurden lokal im Repo ausgefuehrt. Externe Reviewer sollen
-keine ausgelassenen privaten Fixtures, raw Daten oder lokalen Broker-Dokumente
-inferieren; nicht jeder lokale Test muss aus dem ZIP allein reproduzierbar sein,
-wenn private/raw Inputs bewusst ausgeschlossen sind.
-
 ## Reviewer Rules
 
 - Vollstaendige relative Pfade verwenden.
-- System Map, Feature Status und Known Gaps als aktuelle Review-Einstiege
-  behandeln.
-- Den Decision-Journal-Surface-Fix explizit gegen `PASS` vs `NOT_AVAILABLE`
-  pruefen.
+- Die neuen Contract-Dateien als Design-/Governance-Contract behandeln, nicht
+  als bereits implementierten Dashboard Producer.
+- `PARTIAL`, `NOT_AVAILABLE`, `PASS` und `REVIEW` Semantik gegen die bestehenden
+  Decision Quality / Decision Journal Validation Surfaces pruefen.
 - Keine ausgelassenen privaten oder rohen Dateien inferieren.
 - Keine Broker-Writes, HTTP-Calls, Order-Ausfuehrung, Auto-Trading,
   Steuerquantifizierung oder Runtime-LLM-Entscheidungen inferieren.
