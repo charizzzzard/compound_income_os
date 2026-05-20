@@ -46,6 +46,7 @@ Canonical architecture baseline:
 - [docs/architecture/PERSONAL_RUN_STAGE_DAG.md](docs/architecture/PERSONAL_RUN_STAGE_DAG.md): kanonische Stage-DAG-/Orchestrator-Review-Dokumentation fuer `src.personal_run_engine`
 - [docs/architecture/CIOS_FEATURE_STATUS.yaml](docs/architecture/CIOS_FEATURE_STATUS.yaml): maschinenlesbarer Feature-Status
 - [docs/architecture/CURRENT_KNOWN_GAPS.md](docs/architecture/CURRENT_KNOWN_GAPS.md): bekannte Gaps, Dashboard-/Replay-/Outcome-Blocker und Deferred-Themen
+- [docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md](docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md): kanonischer Freshness-/Staleness-Vertrag fuer stale, missing und unknown Datenzustaende
 - [docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md](docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md): stabiler Operator-/Dashboard-Surface-Vertrag ohne visuelles Dashboard-Neudesign
 - [docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md](docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md): Zielvertrag fuer eine maschinenlesbare Review-Queue-Summary
 - [docs/governance/EXTERNAL_REPRODUCTION.md](docs/governance/EXTERNAL_REPRODUCTION.md): Reproduzierbarkeitsmatrix fuer externe Handoff-Reviews

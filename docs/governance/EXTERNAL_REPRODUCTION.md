@@ -23,6 +23,7 @@ Recommended examples:
 - `python -m unittest tests.test_personal_decision_journal_validation -v`
 - `python -m unittest tests.test_monthly_decision_report -v`
 - `python -m unittest tests.test_personal_decision_quality_state -v`
+- `python -m unittest tests.test_data_freshness -v`
 - `python -m unittest tests.test_readme_and_reports -v`
 
 `tests.test_readme_and_reports` is ZIP-safe only when the bundle includes
@@ -73,6 +74,7 @@ operator surfaces, start with:
 python -m unittest tests.test_personal_decision_journal_validation -v
 python -m unittest tests.test_monthly_decision_report -v
 python -m unittest tests.test_personal_decision_quality_state -v
+python -m unittest tests.test_data_freshness -v
 python -m unittest tests.test_readme_and_reports -v
 ```
 
@@ -83,6 +85,7 @@ Architecture review artifacts that are ZIP-review relevant include:
 
 - `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
 - `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`
+- `docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md`
 - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
 - `docs/architecture/CURRENT_KNOWN_GAPS.md`
 
@@ -100,6 +103,7 @@ Example smoke sequence:
 Expand-Archive .\HANDOFF_LATEST.zip -DestinationPath .\review
 Set-Location .\review
 python -m unittest tests.test_dashboard_operator_summary -v
+python -m unittest tests.test_data_freshness -v
 python -m unittest tests.test_personal_decision_journal_validation -v
 python -m unittest tests.test_personal_decision_quality_state -v
 python -m unittest tests.test_readme_and_reports -v

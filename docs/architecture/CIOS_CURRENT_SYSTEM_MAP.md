@@ -32,6 +32,9 @@ maker.
   run, journal, cash/rebalance, ranking and score-audit artifacts.
 - Decision Journal Validation / Review Queue: read-only validation of the
   append-only journal and deterministic operator review queue.
+- Data Freshness / Staleness: contract and standalone read-only summary
+  producer for explicit `FRESH`, `STALE`, `MISSING`, `UNKNOWN`,
+  `REVIEW_REQUIRED` and `NOT_APPLICABLE` data states.
 - Monthly Decision Report: report surface for portfolio health, decision
   quality and decision journal validation when explicit artifacts are present.
 - Personal Run Engine: explicit stage orchestration with manifest, used-inputs,
@@ -48,9 +51,12 @@ maker.
 4. `decision_quality` evaluates process/readiness state from existing outputs.
 5. `decision_journal_validation` evaluates the append-only journal and produces
    review queue artifacts.
-6. Report surfaces render available states and show `NOT_AVAILABLE` only when
+6. `data_freshness` can independently evaluate repo-evidenced artifacts against
+   explicit freshness signals and thresholds; it is not yet a personal-run
+   stage.
+7. Report surfaces render available states and show `NOT_AVAILABLE` only when
    an artifact is missing, unreadable or the stage did not run.
-7. Handoff export packages code, docs, tests, configs and selected review
+8. Handoff export packages code, docs, tests, configs and selected review
    context for external validation.
 
 ## Current `personal_run_engine` Stage Overview
@@ -117,6 +123,7 @@ dashboard.
 - Contracts:
   - `docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md`
   - `docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md`
+  - `docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md`
   - `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md`
   - `docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md`
 - Architecture docs:
@@ -138,17 +145,20 @@ dashboard.
   - `configs/fundamentals_score_rules.yaml`
   - `configs/fundamentals_metric_definitions.yaml`
   - `configs/personal_run_data_sources.yaml`
+  - `configs/data_freshness_thresholds.yaml`
 - Source modules:
   - `src/personal_run_engine.py`
   - `src/personal_decision_quality_state.py`
   - `src/personal_decision_journal_validation.py`
   - `src/personal_decision_state_capture.py`
   - `src/build_monthly_decision_report.py`
+  - `src/data_freshness.py`
 - Tests:
   - `tests/test_personal_run_engine.py`
   - `tests/test_personal_decision_quality_state.py`
   - `tests/test_personal_decision_journal_validation.py`
   - `tests/test_monthly_decision_report.py`
+  - `tests/test_data_freshness.py`
 - Generated outputs:
   - processed CSV/JSON artifacts under `data/processed/`
   - Markdown reports under `reports/<date>/`
@@ -184,6 +194,8 @@ with zero counts.
 - There is no Ranking Robustness or Sensitivity producer yet.
 - The dashboard operator surface contract and minimal operator summary producer
   exist, but no full visual dashboard surface has been hardened yet.
+- The Data Freshness / Staleness Contract and standalone producer exist, but
+  there is no `personal_run_engine` stage or dashboard surface integration yet.
 - Decision Quality stale-state handling is conservative: any older
   `as_of_date` is stale in the current MVP.
 - Scenario, Tail Risk, Calibration and Regret remain non-implemented or
@@ -191,9 +203,10 @@ with zero counts.
 
 ## Dashboard Readiness Verdict
 
-- `NOT_READY_FOR_FULL_DASHBOARD`: full dashboard still needs a
-  freshness/staleness contract and UI-level surface hardening; the Stage-DAG
-  and minimal operator summary are documented/implemented as review foundations.
+- `NOT_READY_FOR_FULL_DASHBOARD`: full dashboard still needs UI-level surface
+  hardening and integration of freshness state; the Stage-DAG, freshness
+  contract and minimal operator summary are documented/implemented as review
+  foundations.
 - `READY_FOR_OPERATOR_SURFACE_CONTRACT`: Decision Quality and Review Queue
   fields are now stable enough to define a dashboard-facing contract.
 - `READY_FOR_DASHBOARD_SUMMARY_DESIGN`: summary cards can be designed from
@@ -205,7 +218,7 @@ with zero counts.
 
 ## Next Recommended Hardening Patches
 
-1. Data Freshness / Staleness Contract.
+1. Integrate Data Freshness into Personal Run / Operator Summary after external review.
 2. Dashboard Surface refinement for Decision Quality and Review Queue Summary.
 3. Replay / Event Ledger contracts later.
 4. Ranking Robustness / Sensitivity producer later.

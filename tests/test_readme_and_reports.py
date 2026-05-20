@@ -32,6 +32,7 @@ class ReadmeAndReportTests(unittest.TestCase):
         required_paths = [
             Path("docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md"),
             Path("docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md"),
+            Path("docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md"),
             Path("docs/governance/EXTERNAL_REPRODUCTION.md"),
             Path("docs/architecture/CIOS_FEATURE_STATUS.yaml"),
             Path("docs/architecture/CURRENT_KNOWN_GAPS.md"),
@@ -47,6 +48,7 @@ class ReadmeAndReportTests(unittest.TestCase):
         for doc in [
             "docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md",
             "docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md",
+            "docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md",
             "docs/governance/EXTERNAL_REPRODUCTION.md",
             "docs/architecture/PERSONAL_RUN_STAGE_DAG.md",
         ]:
