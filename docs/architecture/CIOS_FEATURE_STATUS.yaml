@@ -1,0 +1,625 @@
+schema_version: 1
+generated_context: "manual architecture documentation patch"
+status_values:
+  - implemented
+  - partial
+  - planned
+  - deferred
+  - excluded
+  - unknown
+capabilities:
+  - capability_id: broker_portfolio_input
+    display_name: Broker Portfolio Input
+    status: implemented
+    evidence_files:
+      - src/import_broker.py
+      - src/normalize_positions.py
+    input_artifacts:
+      - data/raw/
+    output_artifacts:
+      - data/processed/personal_positions_snapshot.csv
+    report_surface:
+      - reports/<date>/portfolio_snapshot.md
+    tests:
+      - tests/test_import_normalization.py
+    limitations:
+      - "Read-only import; no broker writes or orders."
+    next_action: "Keep broker/API write paths excluded."
+  - capability_id: traderepublic_documents
+    display_name: Trade Republic Documents
+    status: partial
+    evidence_files:
+      - src/traderepublic_documents.py
+    input_artifacts:
+      - data/raw/
+    output_artifacts:
+      - data/processed/personal_positions_snapshot.csv
+    report_surface: []
+    tests:
+      - tests/test_traderepublic_documents.py
+    limitations:
+      - "Local document parsing exists, but private documents are not part of handoff bundles."
+    next_action: "Keep parser read-only and privacy-gated."
+  - capability_id: data_source_registry
+    display_name: Data Source Registry
+    status: implemented
+    evidence_files:
+      - src/data_source_registry.py
+      - configs/personal_run_data_sources.yaml
+    input_artifacts:
+      - configs/personal_run_data_sources.yaml
+    output_artifacts:
+      - data/processed/personal_data_source_status.csv
+      - data/processed/personal_data_source_registry_resolved.csv
+    report_surface:
+      - reports/<date>/personal_run_report.md
+    tests:
+      - tests/test_data_source_registry.py
+    limitations:
+      - "Local file sources only; no secrets or API credentials."
+    next_action: "Link to future Stage-DAG and freshness contract."
+  - capability_id: portfolio_rules
+    display_name: Portfolio Rules
+    status: implemented
+    evidence_files:
+      - src/portfolio_rules.py
+      - configs/portfolio_rules.yaml
+    input_artifacts:
+      - configs/portfolio_rules.yaml
+      - data/processed/personal_positions_snapshot.csv
+    output_artifacts:
+      - data/processed/
+    report_surface:
+      - reports/<date>/portfolio_snapshot.md
+    tests:
+      - tests/test_portfolio_rules.py
+    limitations:
+      - "Rules support review and reporting, not order execution."
+    next_action: "No portfolio-rule change in current roadmap patch."
+  - capability_id: portfolio_review
+    display_name: Portfolio Review
+    status: implemented
+    evidence_files:
+      - src/portfolio_review.py
+    input_artifacts:
+      - data/processed/personal_positions_snapshot.csv
+      - data/processed/personal_company_scores.csv
+    output_artifacts:
+      - data/processed/
+    report_surface:
+      - reports/<date>/portfolio_snapshot.md
+    tests:
+      - tests/test_real_portfolio_onboarding.py
+    limitations:
+      - "Action rows are review support, not executable orders."
+    next_action: "Keep Portfolio Event Ledger separate."
+  - capability_id: savings_plan_registry
+    display_name: Savings Plan Registry
+    status: implemented
+    evidence_files:
+      - src/savings_plan_registry.py
+      - configs/savings_plan_schema.yaml
+    input_artifacts:
+      - data/raw/savings_plan_registry.csv
+    output_artifacts:
+      - data/processed/savings_plan_registry_summary.csv
+    report_surface:
+      - reports/<date>/savings_plan_registry_report.md
+    tests:
+      - tests/test_savings_plan_registry.py
+    limitations:
+      - "Manual registry mirror; no broker write path."
+    next_action: "Keep registry separate from execution."
+  - capability_id: savings_plan_routing
+    display_name: Savings Plan Routing
+    status: implemented
+    evidence_files:
+      - src/savings_plan_routing.py
+      - configs/savings_plan_routing_thresholds.yaml
+    input_artifacts:
+      - data/processed/personal_monthly_buy_ranking.csv
+      - data/raw/savings_plan_registry.csv
+    output_artifacts:
+      - data/processed/savings_plan_routing.csv
+    report_surface:
+      - reports/<date>/personal_monthly_decision_report.md
+    tests:
+      - tests/test_savings_plan_routing.py
+    limitations:
+      - "Routing is a read-only marker and not an order instruction."
+    next_action: "No broker integration."
+  - capability_id: fundamentals_evidence_registry
+    display_name: Fundamentals Evidence Registry
+    status: implemented
+    evidence_files:
+      - src/fundamentals_evidence_engine.py
+      - src/fundamentals_evidence_compose.py
+      - src/fundamentals_evidence_apply.py
+    input_artifacts:
+      - data/raw/personal_fundamentals_evidence.csv
+    output_artifacts:
+      - data/processed/personal_fundamentals_evidence_registry.csv
+      - data/processed/personal_fundamentals_research_backlog.csv
+    report_surface:
+      - reports/<date>/personal_fundamentals_evidence_report.md
+    tests:
+      - tests/test_fundamentals_evidence_engine.py
+      - tests/test_fundamentals_evidence_compose.py
+      - tests/test_fundamentals_evidence_apply.py
+    limitations:
+      - "No automatic web/API extraction or master mutation."
+    next_action: "Continue explicit evidence review paths."
+  - capability_id: kpi_coverage_provenance
+    display_name: KPI Coverage And Provenance
+    status: implemented
+    evidence_files:
+      - src/fundamentals_master.py
+      - src/personal_kpi_tier_coverage.py
+    input_artifacts:
+      - data/raw/personal_fundamentals_master.csv
+      - data/processed/personal_company_scores.csv
+    output_artifacts:
+      - data/processed/personal_fundamentals_coverage.csv
+      - data/processed/personal_kpi_tier_coverage.csv
+    report_surface:
+      - reports/<date>/personal_kpi_tier_coverage_report.md
+    tests:
+      - tests/test_fundamentals_master.py
+      - tests/test_personal_kpi_tier_coverage.py
+    limitations:
+      - "Missing KPIs remain visible; no imputation."
+    next_action: "Feed future freshness/staleness contract."
+  - capability_id: watchlist_engine
+    display_name: Watchlist Engine
+    status: implemented
+    evidence_files:
+      - src/watchlist_engine.py
+      - configs/watchlist.yaml
+    input_artifacts:
+      - data/raw/watchlist.csv
+      - data/processed/personal_company_scores.csv
+    output_artifacts:
+      - data/processed/watchlist_ranked.csv
+    report_surface:
+      - reports/<date>/watchlist_report.md
+    tests:
+      - tests/test_watchlist_engine.py
+    limitations:
+      - "Watchlist lifecycle governance is not complete."
+    next_action: "Add Watchlist Lifecycle Contract later."
+  - capability_id: scoring_engine
+    display_name: Scoring Engine
+    status: implemented
+    evidence_files:
+      - src/scoring_engine.py
+      - configs/scoring_weights.yaml
+      - configs/fundamentals_score_rules.yaml
+    input_artifacts:
+      - data/processed/personal_positions_snapshot.csv
+      - data/raw/personal_fundamentals_master.csv
+    output_artifacts:
+      - data/processed/personal_company_scores.csv
+      - data/processed/personal_score_audit.csv
+    report_surface:
+      - reports/<date>/personal_monthly_decision_report.md
+    tests:
+      - tests/test_scoring_engine.py
+    limitations:
+      - "No score formula change in this status map; missing data remains conservative."
+    next_action: "Keep score changes behind separate review."
+  - capability_id: monthly_ranking_engine
+    display_name: Monthly Ranking Engine
+    status: implemented
+    evidence_files:
+      - src/monthly_ranking_engine.py
+    input_artifacts:
+      - data/processed/personal_positions_snapshot.csv
+      - data/processed/personal_company_scores.csv
+      - data/processed/watchlist_ranked.csv
+    output_artifacts:
+      - data/processed/personal_monthly_buy_ranking.csv
+      - data/processed/rebalance_proposals.csv
+    report_surface:
+      - reports/<date>/personal_monthly_decision_report.md
+    tests:
+      - tests/test_monthly_ranking_engine.py
+    limitations:
+      - "Ranking is decision support, not a buy decision."
+    next_action: "Add Ranking Robustness / Sensitivity later."
+  - capability_id: cash_refill_review
+    display_name: Cash Refill Review
+    status: implemented
+    evidence_files:
+      - src/cash_refill_review.py
+    input_artifacts:
+      - data/processed/personal_positions_snapshot.csv
+      - configs/portfolio_rules.yaml
+    output_artifacts:
+      - data/processed/personal_cash_refill_review.csv
+    report_surface:
+      - reports/<date>/personal_cash_refill_review_report.md
+    tests:
+      - tests/test_cash_refill_review.py
+    limitations:
+      - "Read-only review; no cash movement or order."
+    next_action: "Use only as Decision Quality input."
+  - capability_id: rebalance_review
+    display_name: Rebalance Review
+    status: implemented
+    evidence_files:
+      - src/rebalance_review.py
+    input_artifacts:
+      - data/processed/personal_positions_snapshot.csv
+      - configs/portfolio_rules.yaml
+    output_artifacts:
+      - data/processed/personal_rebalance_review.csv
+    report_surface:
+      - reports/<date>/personal_rebalance_review_report.md
+    tests:
+      - tests/test_rebalance_review.py
+    limitations:
+      - "Qualitative review only; no sells, tax amounts or orders."
+    next_action: "Keep Portfolio Event Ledger separate."
+  - capability_id: monthly_decision_report
+    display_name: Monthly Decision Report
+    status: implemented
+    evidence_files:
+      - src/build_monthly_decision_report.py
+    input_artifacts:
+      - data/processed/personal_monthly_buy_ranking.csv
+      - data/processed/decision_quality_state.csv
+      - data/processed/decision_journal_validation.csv
+      - data/processed/decision_review_queue.csv
+    output_artifacts:
+      - reports/<date>/personal_monthly_decision_report.md
+    report_surface:
+      - reports/<date>/personal_monthly_decision_report.md
+    tests:
+      - tests/test_monthly_decision_report.py
+    limitations:
+      - "Report surface only; missing artifacts render NOT_AVAILABLE."
+    next_action: "Feed future dashboard surface contract."
+  - capability_id: personal_run_engine
+    display_name: Personal Run Engine
+    status: implemented
+    evidence_files:
+      - src/personal_run_engine.py
+    input_artifacts:
+      - configs/personal_run_data_sources.yaml
+    output_artifacts:
+      - data/processed/personal_run_manifest.json
+      - data/processed/personal_run_artifacts.csv
+      - data/processed/personal_run_used_inputs.csv
+      - reports/<date>/personal_run_report.md
+    report_surface:
+      - reports/<date>/personal_run_report.md
+    tests:
+      - tests/test_personal_run_engine.py
+    limitations:
+      - "Linear stage order exists; full Stage-DAG contract is missing."
+    next_action: "Define Stage-DAG / Operator Summary."
+  - capability_id: personal_input_closure
+    display_name: Personal Input Closure
+    status: implemented
+    evidence_files:
+      - src/personal_input_closure.py
+    input_artifacts:
+      - data/processed/personal_watchlist_input_gate_summary.csv
+      - data/processed/personal_valuation_input_contract_summary.csv
+      - data/processed/personal_dividend_fcf_input_contract_summary.csv
+      - data/processed/personal_kpi_provenance_summary.csv
+    output_artifacts:
+      - data/processed/personal_input_closure_report.csv
+      - reports/<date>/personal_input_closure_report.md
+    report_surface:
+      - reports/<date>/personal_input_closure_report.md
+    tests:
+      - tests/test_personal_input_closure.py
+    limitations:
+      - "Aggregates readiness only; no data filling or imputation."
+    next_action: "Use as mandatory Decision Quality input."
+  - capability_id: decision_capture
+    display_name: Decision Capture
+    status: implemented
+    evidence_files:
+      - src/personal_decision_state_capture.py
+      - docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md
+    input_artifacts:
+      - data/processed/personal_decision_state_capture.csv
+    output_artifacts:
+      - data/processed/personal_decision_state_capture.csv
+      - reports/<date>/personal_decision_state_capture_report.md
+    report_surface:
+      - reports/<date>/personal_decision_state_capture_report.md
+    tests:
+      - tests/test_personal_decision_state_capture.py
+    limitations:
+      - "Append-only human-operated journal; no order or outcome attribution."
+    next_action: "Continue validation via review queue."
+  - capability_id: decision_quality_state
+    display_name: Decision Quality State
+    status: implemented
+    evidence_files:
+      - src/personal_decision_quality_state.py
+      - docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md
+      - docs/architecture/DECISION_QUALITY_LAYER.md
+    input_artifacts:
+      - data/processed/personal_input_closure_report.csv
+      - data/processed/personal_decision_state_capture.csv
+      - data/processed/personal_run_manifest.json
+      - data/processed/personal_run_used_inputs.csv
+    output_artifacts:
+      - data/processed/decision_quality_state.csv
+      - data/processed/decision_quality_state.json
+      - reports/<date>/decision_quality_report.md
+    report_surface:
+      - reports/<date>/personal_run_report.md
+      - reports/<date>/personal_monthly_decision_report.md
+    tests:
+      - tests/test_personal_decision_quality_state.py
+    limitations:
+      - "Ranking robustness, sensitivity, scenario and tail risk remain NOT_EVALUATED."
+    next_action: "Define dashboard surface contract before broad UI."
+  - capability_id: decision_journal_validation
+    display_name: Decision Journal Validation
+    status: implemented
+    evidence_files:
+      - src/personal_decision_journal_validation.py
+    input_artifacts:
+      - data/processed/personal_decision_state_capture.csv
+      - data/processed/decision_quality_state.json
+    output_artifacts:
+      - data/processed/decision_journal_validation.csv
+      - reports/<date>/decision_journal_validation_report.md
+    report_surface:
+      - reports/<date>/personal_run_report.md
+      - reports/<date>/personal_monthly_decision_report.md
+    tests:
+      - tests/test_personal_decision_journal_validation.py
+    limitations:
+      - "MVP stale-state threshold is strict at zero days."
+    next_action: "Consider stale-state contract after review."
+  - capability_id: decision_review_queue
+    display_name: Decision Review Queue
+    status: implemented
+    evidence_files:
+      - src/personal_decision_journal_validation.py
+    input_artifacts:
+      - data/processed/decision_journal_validation.csv
+      - data/processed/decision_quality_state.json
+    output_artifacts:
+      - data/processed/decision_review_queue.csv
+    report_surface:
+      - reports/<date>/decision_journal_validation_report.md
+      - reports/<date>/personal_run_report.md
+    tests:
+      - tests/test_personal_decision_journal_validation.py
+    limitations:
+      - "Queue is operator follow-up only; no automatic correction or decision creation."
+    next_action: "Surface queue summary in dashboard contract."
+  - capability_id: handoff_export_governance
+    display_name: Handoff Export Governance
+    status: implemented
+    evidence_files:
+      - src/handoff_zip_export.py
+      - src/handoff_bundle.py
+      - external_review_packet/00_READ_ME_FIRST.md
+      - external_review_packet/HANDOFF_LATEST_CONTEXT.md
+    input_artifacts:
+      - external_review_packet/
+    output_artifacts:
+      - external_review_packet/HANDOFF_LATEST.zip
+      - external_review_packet/HANDOFF_LATEST.sha256
+    report_surface:
+      - external_review_packet/HANDOFF_LATEST_CONTEXT.md
+    tests:
+      - tests/test_handoff_bundle.py
+      - tests/test_handoff_zip_export.py
+    limitations:
+      - "Private/raw inputs are excluded, so ZIP-only test reproducibility can be limited."
+    next_action: "Keep external context authoritative over ZIP-internal exporter context."
+  - capability_id: dashboard_operator_cockpit
+    display_name: Dashboard Operator Cockpit
+    status: partial
+    evidence_files:
+      - src/dashboard_engine.py
+      - src/dashboard_server.py
+    input_artifacts:
+      - data/processed/dashboard_kpis.csv
+      - data/processed/dashboard_sections.csv
+    output_artifacts:
+      - data/processed/dashboard_summary.csv
+      - reports/<date>/dashboard_report.md
+    report_surface:
+      - reports/<date>/dashboard_report.md
+      - http://127.0.0.1/
+    tests:
+      - tests/test_dashboard_engine.py
+      - tests/test_dashboard_server.py
+    limitations:
+      - "No full Decision Quality / Review Queue dashboard surface contract yet."
+    next_action: "Dashboard Operator Surface Contract."
+  - capability_id: portfolio_event_ledger
+    display_name: Portfolio Event Ledger
+    status: planned
+    evidence_files: []
+    input_artifacts: []
+    output_artifacts: []
+    report_surface: []
+    tests: []
+    limitations:
+      - "No canonical portfolio event stream exists yet."
+    next_action: "Portfolio Event Ledger MVP after dashboard/staleness foundations."
+  - capability_id: time_aware_replay
+    display_name: Time-Aware Replay
+    status: planned
+    evidence_files: []
+    input_artifacts: []
+    output_artifacts: []
+    report_surface: []
+    tests: []
+    limitations:
+      - "Replay requires event ledger, point-in-time inputs and freshness contracts."
+    next_action: "Time-Aware Replay Contract after Event Ledger."
+  - capability_id: outcome_attribution
+    display_name: Outcome Attribution
+    status: planned
+    evidence_files: []
+    input_artifacts: []
+    output_artifacts: []
+    report_surface: []
+    tests: []
+    limitations:
+      - "No outcome ledger, calibration or regret scoreboard exists yet."
+    next_action: "Defer until Event Ledger and replay exist."
+  - capability_id: ranking_robustness_sensitivity
+    display_name: Ranking Robustness And Sensitivity
+    status: planned
+    evidence_files:
+      - docs/architecture/DECISION_QUALITY_LAYER.md
+    input_artifacts:
+      - data/processed/personal_monthly_buy_ranking.csv
+      - data/processed/personal_score_audit.csv
+    output_artifacts: []
+    report_surface: []
+    tests: []
+    limitations:
+      - "Reserved as NOT_EVALUATED in Decision Quality; no producer yet."
+    next_action: "Ranking Robustness / Sensitivity producer after dashboard contract."
+  - capability_id: research_case_workbench
+    display_name: Research Case Workbench
+    status: planned
+    evidence_files:
+      - docs/CONTEXT_AND_ROADMAP.md
+    input_artifacts: []
+    output_artifacts: []
+    report_surface: []
+    tests: []
+    limitations:
+      - "Structured research cases are not implemented."
+    next_action: "Research Case Workbench MVP."
+  - capability_id: valuation_layer
+    display_name: Valuation Layer
+    status: partial
+    evidence_files:
+      - src/valuation_engine.py
+      - src/personal_valuation_input_contract.py
+    input_artifacts:
+      - data/processed/personal_valuation_input_review_queue.csv
+    output_artifacts:
+      - data/processed/personal_valuation_input_contract_summary.csv
+    report_surface:
+      - reports/<date>/personal_valuation_input_contract_report.md
+    tests:
+      - tests/test_personal_valuation_input_contract.py
+    limitations:
+      - "Valuation inputs are reviewed, but no full valuation workbench exists."
+    next_action: "Personal input data templates or Research Case Workbench."
+  - capability_id: simulation_backtesting_monte_carlo
+    display_name: Simulation Backtesting Monte Carlo
+    status: deferred
+    evidence_files:
+      - docs/architecture/DECISION_QUALITY_LAYER.md
+    input_artifacts: []
+    output_artifacts: []
+    report_surface: []
+    tests: []
+    limitations:
+      - "Deferred to avoid false precision before replay and outcome foundations."
+    next_action: "Do not implement before Event Ledger and replay."
+  - capability_id: data_freshness_staleness
+    display_name: Data Freshness And Staleness
+    status: partial
+    evidence_files:
+      - src/personal_artifact_freshness.py
+      - src/personal_decision_journal_validation.py
+    input_artifacts:
+      - data/processed/
+    output_artifacts:
+      - data/processed/
+    report_surface:
+      - reports/<date>/
+    tests:
+      - tests/test_personal_artifact_freshness.py
+      - tests/test_personal_decision_journal_validation.py
+    limitations:
+      - "Freshness exists in modules, but no cross-system staleness contract exists."
+    next_action: "Data Freshness / Staleness Contract."
+  - capability_id: corporate_actions
+    display_name: Corporate Actions
+    status: unknown
+    evidence_files: []
+    input_artifacts: []
+    output_artifacts: []
+    report_surface: []
+    tests: []
+    limitations:
+      - "No sufficiently clear active corporate-actions module was verified for this map."
+    next_action: "Inventory and define Corporate Actions input contract if needed."
+  - capability_id: dividend_cashflow_forecasting
+    display_name: Dividend Cashflow Forecasting
+    status: partial
+    evidence_files:
+      - src/personal_dividend_fcf_input_contract.py
+    input_artifacts:
+      - data/processed/personal_dividend_fcf_input_review_queue.csv
+    output_artifacts:
+      - data/processed/personal_dividend_fcf_input_contract_summary.csv
+    report_surface:
+      - reports/<date>/personal_dividend_fcf_input_contract_report.md
+    tests:
+      - tests/test_personal_dividend_fcf_input_contract.py
+    limitations:
+      - "Dividend/FCF input review exists; full dividend cashflow forecast is not implemented."
+    next_action: "Dividend Cashflow Forecasting design."
+  - capability_id: tax_aware_review_data
+    display_name: Tax-Aware Review Data
+    status: partial
+    evidence_files:
+      - src/cost_tax_engine.py
+      - src/cost_tax_archive_engine.py
+    input_artifacts:
+      - data/raw/
+    output_artifacts:
+      - data/processed/cost_tax_ledger_archive.csv
+      - data/processed/cost_tax_summary.csv
+    report_surface:
+      - reports/<date>/cost_tax_report.md
+    tests:
+      - tests/test_cost_tax_engine.py
+      - tests/test_cost_tax_archive_engine.py
+    limitations:
+      - "Cost/tax artifacts exist, but tax quantification for decisions is out of scope."
+    next_action: "Tax-aware review data contract later."
+  - capability_id: policy_engine
+    display_name: Policy Engine
+    status: partial
+    evidence_files:
+      - docs/architecture/06_ADOPTED_DECISIONS.yaml
+      - docs/policies/LLM_CODEX_OPERATING_POLICY.md
+    input_artifacts:
+      - docs/architecture/06_ADOPTED_DECISIONS.yaml
+    output_artifacts: []
+    report_surface: []
+    tests: []
+    limitations:
+      - "Policy exists as governance docs; no runtime policy engine exists."
+    next_action: "Keep policy feedback deferred until outcome foundations exist."
+  - capability_id: human_factors_behaviour_layer
+    display_name: Human Factors Behaviour Layer
+    status: partial
+    evidence_files:
+      - src/personal_decision_state_capture.py
+      - src/personal_decision_journal_validation.py
+    input_artifacts:
+      - data/processed/personal_decision_state_capture.csv
+    output_artifacts:
+      - data/processed/decision_review_queue.csv
+    report_surface:
+      - reports/<date>/decision_journal_validation_report.md
+    tests:
+      - tests/test_personal_decision_state_capture.py
+      - tests/test_personal_decision_journal_validation.py
+    limitations:
+      - "Journal and review queue exist; behavioral analytics are not implemented."
+    next_action: "Review Queue fatigue and operator-summary design after dashboard contract."

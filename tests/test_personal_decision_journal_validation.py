@@ -8,7 +8,7 @@ import sys
 import unittest
 from pathlib import Path
 
-from src.personal_decision_journal_validation import QUEUE_FIELDS, VALIDATION_FIELDS, build_decision_journal_surface_lines, run_decision_journal_validation
+from src.personal_decision_journal_validation import QUEUE_FIELDS, VALIDATION_FIELDS, build_decision_journal_surface_lines, read_decision_journal_surface, run_decision_journal_validation
 from src.personal_decision_state_capture import FIELDS
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -241,6 +241,37 @@ class DecisionJournalValidationTests(unittest.TestCase):
         self.assertIn("validation_high_count: `1`", lines)
         self.assertIn("queue_items: `0`", lines)
         self.assertIn("queue_high_count: `0`", lines)
+
+    def test_surface_renders_clean_pass_when_validation_and_queue_artifacts_exist_but_have_no_rows(self) -> None:
+        write_csv(self.validation_output, VALIDATION_FIELDS, [])
+        write_csv(self.queue_output, QUEUE_FIELDS, [])
+        validation_rows, queue_rows = read_decision_journal_surface(str(self.validation_output), str(self.queue_output))
+
+        lines = "\n".join(
+            build_decision_journal_surface_lines(
+                validation_rows,
+                queue_rows,
+                validation_path=str(self.validation_output),
+                queue_path=str(self.queue_output),
+            )
+        )
+
+        self.assertNotIn("NOT_AVAILABLE", lines)
+        self.assertIn("validation_status: `PASS`", lines)
+        self.assertIn("validation_findings_count: `0`", lines)
+        self.assertIn("queue_items: `0`", lines)
+
+    def test_missing_decision_journal_validation_artifacts_still_render_not_available(self) -> None:
+        lines = "\n".join(
+            build_decision_journal_surface_lines(
+                [],
+                [],
+                validation_path=str(self.tmp / "missing_validation.csv"),
+                queue_path=str(self.tmp / "missing_queue.csv"),
+            )
+        )
+
+        self.assertIn("Decision Journal Validation: `NOT_AVAILABLE`", lines)
 
     def test_csv_serialization_and_no_private_raw_paths(self) -> None:
         private_journal = "data/raw/private/decision.csv"

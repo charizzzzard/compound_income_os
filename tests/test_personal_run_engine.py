@@ -615,7 +615,7 @@ class PersonalRunEngineTests(unittest.TestCase):
             ],
         )
 
-    def _write_decision_journal_validation_inputs(self, options: PersonalRunOptions, *, review_date: str = "2026-05-19") -> None:
+    def _write_decision_journal_validation_inputs(self, options: PersonalRunOptions, *, review_date: str = "2026-05-19", row_overrides: dict[str, str] | None = None) -> None:
         self._write_minimal_decision_quality_review_inputs(options)
         primary_report = self._path("_tmp_decision_journal_validation_primary_report.md")
         primary_report.write_text("# monthly report\n", encoding="utf-8")
@@ -649,6 +649,8 @@ class PersonalRunEngineTests(unittest.TestCase):
                 "cash_context": "AVAILABLE_CASH",
             }
         )
+        if row_overrides:
+            row.update(row_overrides)
         self._write_csv(Path(options.personal_decision_state_capture), DECISION_CAPTURE_FIELDS, [row])
 
     def _used_inputs_for_stage(self, rows: list[dict[str, str]], stage_name: str) -> dict[str, dict[str, str]]:
@@ -2081,6 +2083,34 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertIn("validation_findings_count", run_report)
         self.assertIn("queue_high_count", run_report)
         self.assertIn("queue_items", run_report)
+
+    def test_run_report_renders_clean_decision_journal_validation_pass(self) -> None:
+        options = self._core_options(
+            "decision_journal_validation_clean_pass",
+            ["import", "fundamentals_seed", "scoring", "coverage", "watchlist", "cash_refill_review", "rebalance_review", "monthly", "decision_quality", "decision_journal_validation"],
+        )
+        options.portfolio_date = "2026-05-19"
+        self._write_decision_journal_validation_inputs(
+            options,
+            review_date="2026-06-19",
+            row_overrides={
+                "proposed_action": "NO_ACTION",
+                "human_decision": "NO_ACTION",
+                "decision_status": "CLOSED",
+                "dominant_uncertainty": "UNKNOWN",
+            },
+        )
+
+        manifest = run_personal_run_engine(options)
+
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertEqual(read_csv_rows(options.decision_journal_validation_output), [])
+        self.assertEqual(read_csv_rows(options.decision_review_queue_output), [])
+        run_report = Path(options.report_output or "").read_text(encoding="utf-8")
+        self.assertIn("validation_status: `PASS`", run_report)
+        self.assertIn("validation_findings_count: `0`", run_report)
+        self.assertIn("queue_items: `0`", run_report)
+        self.assertNotIn("Decision Journal Validation: `NOT_AVAILABLE`", run_report)
 
     def test_run_report_renders_decision_journal_validation_not_available_when_stage_missing(self) -> None:
         options = self._core_options("decision_journal_validation_missing_surface", ["import"])

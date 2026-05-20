@@ -1888,6 +1888,7 @@ def build_manifest(
         "run_started_at": run_started_at,
         "run_finished_at": run_finished_at,
         "run_status": run_status,
+        "as_of_date": options.portfolio_date or "",
         "selected_stages": selected_stages,
         "executed_stage_order": executed_stage_order,
         "source_name": options.source_name,

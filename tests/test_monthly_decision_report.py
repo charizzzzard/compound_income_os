@@ -7,10 +7,18 @@ import unittest
 from pathlib import Path
 
 from src.build_monthly_decision_report import build_monthly_decision_report
+from src.personal_decision_journal_validation import QUEUE_FIELDS, VALIDATION_FIELDS, read_decision_journal_surface
 from src.portfolio_rules import load_portfolio_rules
 
 
 class MonthlyDecisionReportTests(unittest.TestCase):
+    def _write_csv(self, path: Path, fieldnames: list[str], rows: list[dict[str, str]]) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fieldnames, lineterminator="\n")
+            writer.writeheader()
+            writer.writerows(rows)
+
     def test_report_uses_dynamic_monthly_cash_and_filters_review_noise(self) -> None:
         rules = load_portfolio_rules()
         rules["monthly_new_cash_eur"] = 321.0
@@ -392,3 +400,31 @@ class MonthlyDecisionReportTests(unittest.TestCase):
         finally:
             if output_path.exists():
                 output_path.unlink()
+
+    def test_monthly_report_renders_clean_decision_journal_validation_pass(self) -> None:
+        output_path = Path("tests") / "_tmp_monthly_report_decision_journal_validation_pass.md"
+        validation_path = Path("tests") / "_tmp_monthly_decision_journal_validation_pass.csv"
+        queue_path = Path("tests") / "_tmp_monthly_decision_review_queue_pass.csv"
+        try:
+            self._write_csv(validation_path, VALIDATION_FIELDS, [])
+            self._write_csv(queue_path, QUEUE_FIELDS, [])
+            validation_rows, queue_rows = read_decision_journal_surface(str(validation_path), str(queue_path))
+            build_monthly_decision_report(
+                [],
+                [],
+                [],
+                str(output_path),
+                decision_journal_validation_rows=validation_rows,
+                decision_review_queue_rows=queue_rows,
+                decision_journal_validation_source_path=str(validation_path),
+                decision_review_queue_source_path=str(queue_path),
+            )
+            report = output_path.read_text(encoding="utf-8")
+            self.assertIn("validation_status: `PASS`", report)
+            self.assertIn("validation_findings_count: `0`", report)
+            self.assertIn("queue_items: `0`", report)
+            self.assertNotIn("Decision Journal Validation: `NOT_AVAILABLE`", report)
+        finally:
+            for path in (output_path, validation_path, queue_path):
+                if path.exists():
+                    path.unlink()

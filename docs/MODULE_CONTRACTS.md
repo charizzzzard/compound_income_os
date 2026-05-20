@@ -6,6 +6,12 @@
 - `LOCAL_WORKTREE_ONLY`: beobachtete lokale dirty/untracked Dateien; nicht als kanonische HEAD-Architektur behandeln.
 - `LOCAL_PATCH`: beobachteter dirty/untracked Patch-Stand, der im aktuellen Handoff-ZIP enthalten sein kann; erst nach Commit als kanonische HEAD-Architektur behandeln.
 
+## Systemuebersicht und Feature-Status
+
+- [docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md](architecture/CIOS_CURRENT_SYSTEM_MAP.md): aktuelle System Map fuer externe Review, Stage-/Surface-Kontext und Dashboard-Readiness.
+- [docs/architecture/CIOS_FEATURE_STATUS.yaml](architecture/CIOS_FEATURE_STATUS.yaml): maschinenlesbarer Capability-Status mit Evidence-Dateien, Outputs, Tests, Limitations und Next Actions.
+- [docs/architecture/CURRENT_KNOWN_GAPS.md](architecture/CURRENT_KNOWN_GAPS.md): bekannte P0/P1/P2/Deferred-Gaps inklusive Dashboard-, Replay- und Outcome-Blockern.
+
 ## Kernmodule
 
 | Modul | Status | Verantwortung | Typische Inputs | Typische Outputs | Invarianten / Tests |

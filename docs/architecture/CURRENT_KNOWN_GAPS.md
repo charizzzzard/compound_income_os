@@ -1,0 +1,28 @@
+# Current Known Gaps
+
+This document records current architecture and operability gaps. It is a
+governance map, not a product backlog that authorizes trading, simulation or
+automatic decisions.
+
+| gap_id | title | severity | current_status | impact | why_accepted_now | blocks_dashboard | blocks_replay | blocks_outcome_attribution | recommended_next_patch |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| GAP-P0-001 | Canonical system map missing | P0 | addressed_by_this_patch | External review previously needed multiple docs to reconstruct current state. | This patch creates `CIOS_CURRENT_SYSTEM_MAP.md`. | no | no | no | Keep map updated after stage/surface changes. |
+| GAP-P0-002 | Machine-readable feature status missing | P0 | addressed_by_this_patch | Dashboard and external review could not inspect capability status deterministically. | This patch creates `CIOS_FEATURE_STATUS.yaml`. | no | no | no | Add CI/docs drift check for feature status later. |
+| GAP-P0-003 | Dashboard surface contract missing | P0 | open | Full dashboard can overstate readiness without a stable field contract. | Existing report surfaces are intentionally minimal. | yes | no | no | Dashboard Operator Surface Contract. |
+| GAP-P0-004 | Review Queue semantics contract missing | P0 | reduced_by_this_patch | Queue priorities exist in code/docs but not a standalone contract. | MVP semantics are implemented and documented before a broader dashboard contract. | yes | no | no | Formalize Review Queue Surface Contract if dashboard findings require it. |
+| GAP-P0-005 | Stage-DAG missing | P0 | open | Current run engine has canonical order, but no explicit dependency DAG. | Linear order is enough for current local runs. | yes | yes | yes | Stage-DAG / Operator Summary. |
+| GAP-P0-006 | Final Operator Summary missing | P0 | open | Operator still needs a compact cross-stage summary. | Current reports surface details but not a single final control panel. | yes | no | no | Stage-DAG / Operator Summary. |
+| GAP-P0-007 | Data Freshness / Staleness Contract missing | P0 | open | Stale-state rules are conservative and module-specific. | Current MVP prefers visible review flags over inferred freshness. | yes | yes | yes | Data Freshness / Staleness Contract. |
+| GAP-P1-001 | Ranking Robustness / Sensitivity producer missing | P1 | planned | Ranking stability and sensitivity remain `NOT_EVALUATED`. | Decision Quality contract already reserves fields without computing them. | no | no | no | Ranking Robustness / Sensitivity design and producer. |
+| GAP-P1-002 | Research Case Workbench missing | P1 | planned | Deep research cases are not yet tracked as structured review packets. | Input Closure and Decision Journal foundations came first. | no | no | no | Research Case Workbench MVP. |
+| GAP-P1-003 | Watchlist Lifecycle Management missing | P1 | open | Watchlist state changes are not yet lifecycle-governed. | Existing watchlist/ranking modules remain deterministic support tools. | no | no | no | Watchlist Lifecycle Contract. |
+| GAP-P1-004 | Baseline-vs-Candidate Governance only partially operationalized | P1 | partial | Governance document exists, but no producer enforces champion/challenger review. | No candidate producer yet requires automated comparison. | no | no | no | Baseline-vs-Candidate validation producer. |
+| GAP-P1-005 | Dividend Cashflow Forecasting incomplete | P1 | partial | Dividend/FCF inputs are reviewed, but no full cashflow forecast exists. | Forecasting is not needed for current read-only decision support. | no | no | no | Dividend Cashflow Forecasting design. |
+| GAP-P2-001 | Portfolio Event Ledger missing | P2 | planned | There is no canonical event stream for buys, sells, dividends or fees. | Order/execution and event replay remain outside current scope. | no | yes | yes | Portfolio Event Ledger MVP. |
+| GAP-P2-002 | Time-Aware Replay Contract missing | P2 | planned | No replay contract exists for reconstructing historical decision context. | Replay depends on journal, event ledger and freshness foundations. | no | yes | yes | Time-Aware Replay Contract. |
+| GAP-P2-003 | Outcome Attribution missing | P2 | planned | Decisions are not linked to future outcomes or regret/calibration metrics. | Requires Event Ledger and replay before it is meaningful. | no | yes | yes | Outcome Attribution design after Event Ledger. |
+| GAP-P2-004 | Corporate Actions not sufficiently modeled | P2 | unknown | Splits, mergers and similar events are not a governed input layer. | Current portfolio support is local and conservative. | no | yes | yes | Corporate Actions input contract. |
+| GAP-P2-005 | Tax-aware Review Data incomplete | P2 | partial | Cost/tax artifacts exist, but tax-aware decision review is not a full module. | Tax quantification remains non-scope. | no | no | yes | Tax-aware review data contract. |
+| GAP-D-001 | Simulation deferred | DEFERRED | accepted_deferred | Simulation could create false precision without replay/outcome foundations. | Current system is decision support, not a prediction engine. | no | no | no | Reconsider only after Event Ledger and replay. |
+| GAP-D-002 | Backtesting deferred | DEFERRED | accepted_deferred | Backtesting without point-in-time data and replay would be misleading. | Bias controls and outcome foundations are not ready. | no | no | no | Reconsider only after replay and outcome ledger. |
+| GAP-D-003 | Monte Carlo deferred | DEFERRED | accepted_deferred | Monte Carlo would overstate precision before uncertainty contracts mature. | Scenario/Tail Risk remain design-only. | no | no | no | Reconsider after Scenario/Tail Risk contract. |

@@ -42,6 +42,9 @@ Canonical architecture baseline:
 - [docs/architecture/04_META_REVIEW_LOOP_PROTOCOL.md](docs/architecture/04_META_REVIEW_LOOP_PROTOCOL.md): Architektur-Review- und Codex-Ausfuehrungsgate
 - [docs/architecture/05_ARCHITECTURE_BACKLOG.csv](docs/architecture/05_ARCHITECTURE_BACKLOG.csv): priorisierte Architektur-Backlogfolge
 - [docs/architecture/06_ADOPTED_DECISIONS.yaml](docs/architecture/06_ADOPTED_DECISIONS.yaml): akzeptierte Architekturentscheidungen
+- [docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md](docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md): aktuelle externe-Review-taugliche System Map
+- [docs/architecture/CIOS_FEATURE_STATUS.yaml](docs/architecture/CIOS_FEATURE_STATUS.yaml): maschinenlesbarer Feature-Status
+- [docs/architecture/CURRENT_KNOWN_GAPS.md](docs/architecture/CURRENT_KNOWN_GAPS.md): bekannte Gaps, Dashboard-/Replay-/Outcome-Blocker und Deferred-Themen
 - [docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md](docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md): naechster Producer-Vertrag, noch nicht implementiert
 - [docs/policies/LLM_CODEX_OPERATING_POLICY.md](docs/policies/LLM_CODEX_OPERATING_POLICY.md): LLM-/Codex-Grenzen
 

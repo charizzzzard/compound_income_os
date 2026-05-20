@@ -10,6 +10,8 @@
 
 Das getrackte Repo enthaelt `AGENTS.md`, `README.md`, `configs/`, `data/`, `reports/`, `research/`, `src/`, `tests/`, `website/`, `_archive/sec/`, `_archive/personal_meta/` und diese Governance-Dokumentation unter `docs/`.
 
+Die aktuelle externe-Review-taugliche Systemuebersicht liegt in `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`. Der maschinenlesbare Capability-Status liegt in `docs/architecture/CIOS_FEATURE_STATUS.yaml`; bekannte Dashboard-, Replay-, Outcome- und Deferred-Gaps liegen in `docs/architecture/CURRENT_KNOWN_GAPS.md`.
+
 Getrackte Kernmodule sind:
 
 - `src.import_broker`, `src.normalize_positions` und `src.traderepublic_documents` fuer read-only Import und Normalisierung lokaler Depot-/Dokumentdaten

@@ -711,6 +711,25 @@ def read_decision_journal_surface(validation_path: str | None, queue_path: str |
     return validation_rows, queue_rows
 
 
+def _csv_artifact_readable(path_value: str | None, expected_fields: list[str]) -> bool:
+    if not path_value:
+        return False
+    path = resolve_repo_path(path_value)
+    if not path.exists():
+        return False
+    try:
+        with path.open("r", encoding="utf-8-sig", newline="") as handle:
+            reader = csv.DictReader(handle)
+            fields = reader.fieldnames or []
+    except Exception:
+        return False
+    return all(field in fields for field in expected_fields)
+
+
+def _surface_artifacts_available(validation_path: str | None, queue_path: str | None) -> bool:
+    return _csv_artifact_readable(validation_path, VALIDATION_FIELDS) and _csv_artifact_readable(queue_path, QUEUE_FIELDS)
+
+
 def summarize_surface(validation_rows: list[dict[str, str]], queue_rows: list[dict[str, str]]) -> dict[str, Any]:
     validation_status = "REVIEW" if validation_rows or queue_rows else "PASS"
     if validation_rows:
@@ -737,11 +756,12 @@ def build_decision_journal_surface_lines(
     lines: list[str] = []
     if include_heading:
         lines.extend(["## Decision Journal Validation", ""])
-    if not validation_rows and not queue_rows:
+    artifacts_available = _surface_artifacts_available(validation_path, queue_path)
+    if not validation_rows and not queue_rows and not artifacts_available:
         lines.extend(
             [
                 "- Decision Journal Validation: `NOT_AVAILABLE`",
-                "- Grund: Validation-/Queue-Artefakt fehlt oder die Stage ist nicht gelaufen.",
+                "- Grund: Validation-/Queue-Artefakt fehlt, ist nicht lesbar oder die Stage ist nicht gelaufen.",
             ]
         )
         return lines
