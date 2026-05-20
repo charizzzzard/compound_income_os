@@ -1,23 +1,30 @@
-# Compound Income OS External LLM Review Packet - Review Queue Semantics + Surface Hardening
+# Compound Income OS External LLM Review Packet - System Map + Feature Status + Surface PASS Fix
 
-Dies ist der Einstiegspunkt fuer die externe LLM-Review von `compound_income_os`
-nach `fix: harden decision review queue semantics`.
+Dies ist der Einstiegspunkt fuer die externe LLM-Review von
+`compound_income_os` nach
+`docs: add system map and harden decision journal surface`.
 
 ## Current Review Head
 
 - project: `compound_income_os`
 - branch: `main`
-- current_handoff_head: `95713e85f85f756f3bb3b9bdd6beec992416a56f`
-- current_handoff_short_head: `95713e8`
-- current_patch_context: `fix: harden decision review queue semantics`
-- previous_repo_head: `1f55b0a281ebeb1769e0ebf39d1feb176b29b8bd`
-- previous_handoff_head: `8ea648d75260cd062de385c6b1fe59f101b225ac`
+- current_handoff_head: `e1ec6682942139ad14a7ffc7f59ef88bd6bc4c4e`
+- current_handoff_short_head: `e1ec668`
+- current_patch_context: `docs: add system map and harden decision journal surface`
+- previous_repo_head: `05d1426a3a5ebbb3a93c4541da1e767a1d7b16c4`
+- previous_handoff_head: `95713e85f85f756f3bb3b9bdd6beec992416a56f`
+- canonical_system_map:
+  `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
+- canonical_feature_status:
+  `docs/architecture/CIOS_FEATURE_STATUS.yaml`
+- canonical_known_gaps:
+  `docs/architecture/CURRENT_KNOWN_GAPS.md`
 - canonical_decision_state_contract:
   `docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md`
 - canonical_decision_quality_contract:
   `docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md`
 
-Das vorherige externe Packet fuer `8ea648d75260cd062de385c6b1fe59f101b225ac`
+Das vorherige externe Packet fuer `95713e85f85f756f3bb3b9bdd6beec992416a56f`
 ist durch dieses Packet superseded.
 
 ## Source-of-Truth / Precedence
@@ -47,6 +54,9 @@ Reviewer sollen in dieser Reihenfolge lesen:
    - `HANDOFF_VALIDATION.txt`
    - `HANDOFF_MANIFEST.csv`
    - `HANDOFF_ARTIFACT_INDEX.csv`
+   - `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
+   - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
+   - `docs/architecture/CURRENT_KNOWN_GAPS.md`
    - `src/personal_decision_journal_validation.py`
    - `tests/test_personal_decision_journal_validation.py`
    - `src/personal_run_engine.py`
@@ -66,19 +76,20 @@ Regeneration, kein Patch-Source-Dirty-State.
 
 Der finale Repo-HEAD kann nach diesem Packet ein separater
 Handoff-Metadatencommit sein. Der aktuelle Handoff-Head bleibt der
-Implementierungscommit `95713e85f85f756f3bb3b9bdd6beec992416a56f`.
+Implementierungscommit `e1ec6682942139ad14a7ffc7f59ef88bd6bc4c4e`.
 
 ## Patch Scope
 
-Dieses Packet enthaelt Phase 1.6B Review Queue Semantics + Surface Hardening:
+Dieses Packet enthaelt:
 
-- Duplicate `decision_id` wird als `DECISION_ID_DUPLICATE` mit Priority
-  `BLOCKER` sichtbar.
-- Validation-Finding-Counts und Queue-Counts werden getrennt in Report-Surfaces
-  gerendert.
-- Die MVP-Prioritaetentaxonomie ist stabil dokumentiert.
-- Stale-State-Semantik bleibt konservativ: jedes aeltere Decision-Quality-
-  `as_of_date` ist stale.
+- eine aktuelle externe-Review-taugliche System Map,
+- einen maschinenlesbaren Feature-Status mit 36 Capabilities,
+- eine Known-Gaps-Liste fuer Dashboard-, Replay-, Outcome- und Deferred-Themen,
+- den Surface-Fix fuer Decision Journal Validation:
+  - fehlende/nicht lesbare Artefakte bleiben `NOT_AVAILABLE`,
+  - vorhandene Header-only Validation-/Queue-Artefakte rendern `PASS` mit
+    Null-Counts,
+  - Findings und Queue Items bleiben als `REVIEW` sichtbar.
 
 Der Patch erzeugt keine Decisions, keine Orders, keine Portfolio-Events und
 keine Outcome Attribution.
@@ -94,9 +105,10 @@ wenn private/raw Inputs bewusst ausgeschlossen sind.
 ## Reviewer Rules
 
 - Vollstaendige relative Pfade verwenden.
-- `src/personal_decision_journal_validation.py`, `src/personal_run_engine.py`,
-  `src/build_monthly_decision_report.py` und die zugehoerigen Tests als
-  aktuelle Review-Einstiege behandeln.
+- System Map, Feature Status und Known Gaps als aktuelle Review-Einstiege
+  behandeln.
+- Den Decision-Journal-Surface-Fix explizit gegen `PASS` vs `NOT_AVAILABLE`
+  pruefen.
 - Keine ausgelassenen privaten oder rohen Dateien inferieren.
 - Keine Broker-Writes, HTTP-Calls, Order-Ausfuehrung, Auto-Trading,
   Steuerquantifizierung oder Runtime-LLM-Entscheidungen inferieren.
