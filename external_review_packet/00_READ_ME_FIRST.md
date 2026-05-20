@@ -8,11 +8,11 @@ Dies ist der Einstiegspunkt fuer die externe LLM-Review von
 
 - project: `compound_income_os`
 - branch: `main`
-- current_handoff_head: `12f2099e5cfe53c2d0192ee236c584fc3ade5144`
-- current_handoff_short_head: `12f2099`
-- current_patch_context: `fix: harden operator summary and handoff hygiene`
-- previous_repo_head: `1caa36994fc273aa0b3073a5feb5bf883ad3659b`
-- previous_handoff_head: `d827bfc070706edec34cd2f62fa48caacc3888c7`
+- current_handoff_head: `72b52c2cdc0bcafba1efb4fc8dedee47ca486a24`
+- current_handoff_short_head: `72b52c2`
+- current_patch_context: `fix: include zip-safe handoff smoke fixtures`
+- previous_repo_head: `f5c5635a92eaa90f50ebd457af0c7a89b19c7a97`
+- previous_handoff_head: `12f2099e5cfe53c2d0192ee236c584fc3ade5144`
 - canonical_dashboard_operator_summary_producer:
   `src/dashboard_operator_summary.py`
 - canonical_handoff_exporter:
@@ -26,7 +26,7 @@ Dies ist der Einstiegspunkt fuer die externe LLM-Review von
 - canonical_review_queue_summary_contract:
   `docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md`
 
-Das vorherige externe Packet fuer `d827bfc070706edec34cd2f62fa48caacc3888c7`
+Das vorherige externe Packet fuer `12f2099e5cfe53c2d0192ee236c584fc3ade5144`
 ist durch dieses Packet superseded.
 
 ## Source-of-Truth / Precedence
@@ -75,8 +75,10 @@ neu geschrieben wurde. Das ist eine Handoff-Artefakt-Regeneration, kein
 Patch-Source-Dirty-State.
 
 Der finale Repo-HEAD kann nach diesem Packet ein separater
-Handoff-Metadatencommit sein. Der aktuelle Handoff-Head bleibt der
-Implementierungscommit `12f2099e5cfe53c2d0192ee236c584fc3ade5144`.
+Handoff-Metadatencommit sein. Der aktuelle Handoff-Head ist der letzte
+Implementierungscommit `72b52c2cdc0bcafba1efb4fc8dedee47ca486a24`; er baut auf
+dem Semantik-/Privacy-Hygiene-Commit
+`12f2099e5cfe53c2d0192ee236c584fc3ade5144` auf.
 
 ## Patch Scope
 
@@ -88,6 +90,8 @@ Dieses Packet enthaelt:
   Summary,
 - `.gitattributes` im Full-Review-Handoff fuer ZIP-safe
   `tests.test_readme_and_reports`,
+- drei nicht-private CSV-Templates im Full-Review-Handoff, die derselbe
+  ZIP-safe Test erwartet,
 - Ausschluss alter `website_static_build_package_*` Artefakte aus dem
   Full-Review-Handoff,
 - einen ZIP-Content-Scanner gegen lokale absolute User-Pfade in produktiven

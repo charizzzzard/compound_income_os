@@ -6,11 +6,11 @@ bundle_name: HANDOFF_LATEST
 bundle_purpose: external_llm_validation_after_operator_summary_semantics_and_handoff_hygiene_hardening
 created_at_utc: 2026-05-20T11:46:00Z
 branch: main
-current_handoff_head: 12f2099e5cfe53c2d0192ee236c584fc3ade5144
-current_handoff_short_head: 12f2099
-implementation_commit_message: fix: harden operator summary and handoff hygiene
-previous_repo_head: 1caa36994fc273aa0b3073a5feb5bf883ad3659b
-previous_handoff_head: d827bfc070706edec34cd2f62fa48caacc3888c7
+current_handoff_head: 72b52c2cdc0bcafba1efb4fc8dedee47ca486a24
+current_handoff_short_head: 72b52c2
+implementation_commit_message: fix: include zip-safe handoff smoke fixtures
+previous_repo_head: f5c5635a92eaa90f50ebd457af0c7a89b19c7a97
+previous_handoff_head: 12f2099e5cfe53c2d0192ee236c584fc3ade5144
 final_repo_head_note: final repo HEAD may be a separate handoff metadata commit after this context update
 tracked_worktree_clean_after_implementation_commit_before_handoff_cleanup: True
 zip_internal_dirty_worktree_present: True
@@ -28,14 +28,15 @@ canonical_external_reproduction_matrix: docs/governance/EXTERNAL_REPRODUCTION.md
 canonical_review_bundle: external_review_packet/HANDOFF_LATEST.zip
 canonical_checksum: external_review_packet/HANDOFF_LATEST.sha256
 
-zip_file_count: 449
-zip_size_bytes: 12955095
-zip_sha256: 0f44156cd5e8ec1f7b9dab1460e3c4a8ff6c5e2e3120eb36fae564f3c1b19387
+zip_file_count: 452
+zip_size_bytes: 12956260
+zip_sha256: 41b87e24cb6173032510e6ee348afbb24ef847dfbe0f1f5834fa4ebf95bec409
 forbidden_match_count: 0
 local_path_leak_count: 0
 nested_zip_count: 0
 missing_required: []
 gitattributes_in_zip: True
+zip_safe_csv_templates_in_zip: True
 dashboard_operator_summary_producer_in_zip: True
 dashboard_operator_summary_tests_in_zip: True
 handoff_bundle_in_zip: True
@@ -75,8 +76,8 @@ autoritativ fuer Head, Scope, SHA und Dirty-State-Interpretation.
 ## Current Packet Scope
 
 Dieses Packet synchronisiert den externen Review-Kontext auf den committed
-Repo-Stand `12f2099e5cfe53c2d0192ee236c584fc3ade5144` nach
-`fix: harden operator summary and handoff hygiene`.
+Repo-Stand `72b52c2cdc0bcafba1efb4fc8dedee47ca486a24` nach
+`fix: include zip-safe handoff smoke fixtures`.
 
 Review-Schwerpunkte:
 
@@ -102,6 +103,8 @@ Semantik-/Handoff-Scope:
 - `.gitattributes` ist im Full-Review-Handoff enthalten, damit
   `tests.test_readme_and_reports` aus einem extrahierten ZIP stabiler
   reproduzierbar ist.
+- Die drei nicht-privaten CSV-Templates, die `tests.test_readme_and_reports`
+  prueft, sind ebenfalls im Full-Review-Handoff enthalten.
 - Alte Website Static Build Package Artefakte mit lokalen Deploy-Pfaden werden
   nicht mehr in den Full-Review-Handoff aufgenommen.
 - Der neue ZIP-Content-Scanner prueft produktive ZIP-Inhalte auf lokale
@@ -151,16 +154,19 @@ Implementation validation:
   - result: `Ran 17 tests`, `OK`.
 - `git diff --check`
   - result: exit code `0`; only Git line-ending warnings for touched Python files, no whitespace errors reported.
+- extracted ZIP smoke:
+  - command: `python -m unittest tests.test_readme_and_reports -v`
+  - result: `Ran 8 tests`, `OK`.
 
 No full test suite is claimed by this context file.
 
 Handoff artifact generation:
 
 - `python -m src.handoff_zip_export --profile full_review --name HANDOFF_LATEST --output-path .\external_review_packet\HANDOFF_LATEST.zip`
-  - result: generated ZIP for head `12f2099e5cfe53c2d0192ee236c584fc3ade5144`
-  - file_count: `449`
-  - size_bytes: `12955095`
-  - zip_sha256: `0F44156CD5E8EC1F7B9DAB1460E3C4A8FF6C5E2E3120EB36FAE564F3C1B19387`
+  - result: generated ZIP for head `72b52c2cdc0bcafba1efb4fc8dedee47ca486a24`
+  - file_count: `452`
+  - size_bytes: `12956260`
+  - zip_sha256: `41B87E24CB6173032510E6EE348AFBB24EF847DFBE0F1F5834FA4EBF95BEC409`
   - forbidden_match_count: `0`
   - local_path_leak_count: `0`
 
@@ -169,7 +175,7 @@ Additional validation performed after handoff generation:
 - ZIP/SHA/Required-file check:
   - sha_match: `True`
   - zip_testzip: `None`
-  - entry_count: `449`
+  - entry_count: `452`
   - missing_required: `[]`
   - nested_zip_count: `0`
 - ZIP content scanner:
