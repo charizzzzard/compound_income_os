@@ -35,7 +35,8 @@ maker.
 - Monthly Decision Report: report surface for portfolio health, decision
   quality and decision journal validation when explicit artifacts are present.
 - Personal Run Engine: explicit stage orchestration with manifest, used-inputs,
-  artifact index and run report.
+  artifact index, run report and canonical Stage-DAG review map in
+  `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`.
 - Handoff Governance: external review bundles with private/raw data excluded.
 
 ## Current Governance Flow
@@ -54,8 +55,10 @@ maker.
 
 ## Current `personal_run_engine` Stage Overview
 
-The current engine uses a linear canonical stage order. This is an execution
-order, not yet a full formal data-dependency DAG.
+The current engine uses a linear canonical stage order. The review-time Stage
+DAG and per-stage dependency table are documented in
+`docs/architecture/PERSONAL_RUN_STAGE_DAG.md`; the execution source of truth
+remains `src/personal_run_engine.py`.
 
 Observed stage order:
 
@@ -79,12 +82,13 @@ Observed stage order:
 18. `monthly`
 19. `decision_quality`
 20. `decision_journal_validation`
-21. `history`
-22. `benchmark_archive`
-23. `performance`
-24. `multi_benchmark`
-25. `cost_tax`
-26. `dashboard`
+21. `dashboard_operator_summary`
+22. `history`
+23. `benchmark_archive`
+24. `performance`
+25. `multi_benchmark`
+26. `cost_tax`
+27. `dashboard`
 
 `decision_quality` runs after the monthly and portfolio-health review stages.
 It writes:
@@ -99,8 +103,14 @@ It writes:
 - `data/processed/decision_review_queue.csv`
 - `reports/<as_of_date>/decision_journal_validation_report.md`
 
-The complete Stage-DAG, including required/optional input edges and
-dashboard-facing operator summary contract, remains a known gap.
+`dashboard_operator_summary` runs after `decision_journal_validation`. It
+writes:
+
+- `data/processed/review_queue_summary.json`
+
+The Stage-DAG document reduces the orchestration-documentation gap. It does not
+implement replay, outcome attribution, a Portfolio Event Ledger or a visual
+dashboard.
 
 ## Authoritative Artifacts
 
@@ -113,6 +123,7 @@ dashboard-facing operator summary contract, remains a known gap.
   - `docs/architecture/COMPOUND_INCOME_OS_SYSTEM_DEFINITION.md`
   - `docs/architecture/DECISION_QUALITY_LAYER.md`
   - `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
+  - `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`
   - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
   - `docs/architecture/CURRENT_KNOWN_GAPS.md`
 - Governance docs:
@@ -171,8 +182,8 @@ with zero counts.
 - There is no outcome attribution.
 - There is no Portfolio Event Ledger.
 - There is no Ranking Robustness or Sensitivity producer yet.
-- The dashboard operator surface contract exists, but no dashboard summary
-  producer has implemented it yet.
+- The dashboard operator surface contract and minimal operator summary producer
+  exist, but no full visual dashboard surface has been hardened yet.
 - Decision Quality stale-state handling is conservative: any older
   `as_of_date` is stale in the current MVP.
 - Scenario, Tail Risk, Calibration and Regret remain non-implemented or
@@ -180,8 +191,9 @@ with zero counts.
 
 ## Dashboard Readiness Verdict
 
-- `NOT_READY_FOR_FULL_DASHBOARD`: full dashboard needs a surface contract,
-  Stage-DAG, final operator summary and freshness/staleness contract.
+- `NOT_READY_FOR_FULL_DASHBOARD`: full dashboard still needs a
+  freshness/staleness contract and UI-level surface hardening; the Stage-DAG
+  and minimal operator summary are documented/implemented as review foundations.
 - `READY_FOR_OPERATOR_SURFACE_CONTRACT`: Decision Quality and Review Queue
   fields are now stable enough to define a dashboard-facing contract.
 - `READY_FOR_DASHBOARD_SUMMARY_DESIGN`: summary cards can be designed from
@@ -193,10 +205,9 @@ with zero counts.
 
 ## Next Recommended Hardening Patches
 
-1. Dashboard Operator Surface Contract.
-2. Stage-DAG / Operator Summary.
-3. Data Freshness / Staleness Contract.
-4. Dashboard Surface for Decision Quality and Review Queue Summary.
-5. Ranking Robustness / Sensitivity producer later.
-6. Portfolio Event Ledger later.
-7. Replay / Outcome later.
+1. Data Freshness / Staleness Contract.
+2. Dashboard Surface refinement for Decision Quality and Review Queue Summary.
+3. Replay / Event Ledger contracts later.
+4. Ranking Robustness / Sensitivity producer later.
+5. Portfolio Event Ledger later.
+6. Replay / Outcome later.

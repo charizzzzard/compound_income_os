@@ -284,6 +284,7 @@ capabilities:
     status: implemented
     evidence_files:
       - src/personal_run_engine.py
+      - docs/architecture/PERSONAL_RUN_STAGE_DAG.md
     input_artifacts:
       - configs/personal_run_data_sources.yaml
     output_artifacts:
@@ -296,8 +297,8 @@ capabilities:
     tests:
       - tests/test_personal_run_engine.py
     limitations:
-      - "Linear stage order exists; full Stage-DAG contract is missing."
-    next_action: "Define Stage-DAG / Operator Summary."
+      - "Stage-DAG documentation now maps the current linear orchestrator and review-time dependencies; this is not a replay engine, event ledger or outcome attribution layer."
+    next_action: "Define Data Freshness / Staleness Contract."
   - capability_id: personal_input_closure
     display_name: Personal Input Closure
     status: implemented
@@ -474,8 +475,8 @@ capabilities:
       - tests/test_personal_run_engine.py
     limitations:
       - "Read-only machine summary only; no visual dashboard server/UI changes and no new investment logic."
-      - "Data Freshness/Staleness Contract and full Stage-DAG remain separate follow-ups."
-    next_action: "External review, then Stage-DAG or Data Freshness/Staleness Contract."
+      - "Data Freshness/Staleness Contract remains a separate follow-up; Stage-DAG is documented in docs/architecture/PERSONAL_RUN_STAGE_DAG.md."
+    next_action: "External review, then Data Freshness/Staleness Contract."
   - capability_id: portfolio_event_ledger
     display_name: Portfolio Event Ledger
     status: planned

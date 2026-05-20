@@ -43,6 +43,7 @@ Canonical architecture baseline:
 - [docs/architecture/05_ARCHITECTURE_BACKLOG.csv](docs/architecture/05_ARCHITECTURE_BACKLOG.csv): priorisierte Architektur-Backlogfolge
 - [docs/architecture/06_ADOPTED_DECISIONS.yaml](docs/architecture/06_ADOPTED_DECISIONS.yaml): akzeptierte Architekturentscheidungen
 - [docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md](docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md): aktuelle externe-Review-taugliche System Map
+- [docs/architecture/PERSONAL_RUN_STAGE_DAG.md](docs/architecture/PERSONAL_RUN_STAGE_DAG.md): kanonische Stage-DAG-/Orchestrator-Review-Dokumentation fuer `src.personal_run_engine`
 - [docs/architecture/CIOS_FEATURE_STATUS.yaml](docs/architecture/CIOS_FEATURE_STATUS.yaml): maschinenlesbarer Feature-Status
 - [docs/architecture/CURRENT_KNOWN_GAPS.md](docs/architecture/CURRENT_KNOWN_GAPS.md): bekannte Gaps, Dashboard-/Replay-/Outcome-Blocker und Deferred-Themen
 - [docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md](docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md): stabiler Operator-/Dashboard-Surface-Vertrag ohne visuelles Dashboard-Neudesign

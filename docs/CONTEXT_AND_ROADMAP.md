@@ -10,7 +10,7 @@
 
 Das getrackte Repo enthaelt `AGENTS.md`, `README.md`, `configs/`, `data/`, `reports/`, `research/`, `src/`, `tests/`, `website/`, `_archive/sec/`, `_archive/personal_meta/` und diese Governance-Dokumentation unter `docs/`.
 
-Die aktuelle externe-Review-taugliche Systemuebersicht liegt in `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`. Der maschinenlesbare Capability-Status liegt in `docs/architecture/CIOS_FEATURE_STATUS.yaml`; bekannte Dashboard-, Replay-, Outcome- und Deferred-Gaps liegen in `docs/architecture/CURRENT_KNOWN_GAPS.md`. Der Dashboard Operator Surface Contract liegt in `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md`, der Review Queue Summary Contract in `docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md` und die externe Reproduktionsmatrix in `docs/governance/EXTERNAL_REPRODUCTION.md`.
+Die aktuelle externe-Review-taugliche Systemuebersicht liegt in `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`. Der kanonische Personal-Run-Stage-DAG liegt in `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`. Der maschinenlesbare Capability-Status liegt in `docs/architecture/CIOS_FEATURE_STATUS.yaml`; bekannte Dashboard-, Replay-, Outcome- und Deferred-Gaps liegen in `docs/architecture/CURRENT_KNOWN_GAPS.md`. Der Dashboard Operator Surface Contract liegt in `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md`, der Review Queue Summary Contract in `docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md` und die externe Reproduktionsmatrix in `docs/governance/EXTERNAL_REPRODUCTION.md`.
 
 Getrackte Kernmodule sind:
 

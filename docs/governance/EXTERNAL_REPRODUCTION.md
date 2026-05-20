@@ -79,6 +79,13 @@ python -m unittest tests.test_readme_and_reports -v
 Then run any additional targeted tests named in
 `external_review_packet/HANDOFF_LATEST_CONTEXT.md`.
 
+Architecture review artifacts that are ZIP-review relevant include:
+
+- `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
+- `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`
+- `docs/architecture/CIOS_FEATURE_STATUS.yaml`
+- `docs/architecture/CURRENT_KNOWN_GAPS.md`
+
 Do not claim a full test suite unless `python -m unittest discover -s tests -p
 "test_*.py"` or an equivalent full-suite command was actually executed.
 

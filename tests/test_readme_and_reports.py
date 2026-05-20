@@ -8,6 +8,7 @@ from pathlib import Path
 from src.build_monthly_decision_report import build_monthly_decision_report
 from src.build_portfolio_snapshot import build_portfolio_snapshot_report
 from src.fundamentals_master import COVERAGE_OUTPUT_FIELDS
+from src.personal_run_engine import STAGE_ORDER
 
 
 class ReadmeAndReportTests(unittest.TestCase):
@@ -34,6 +35,7 @@ class ReadmeAndReportTests(unittest.TestCase):
             Path("docs/governance/EXTERNAL_REPRODUCTION.md"),
             Path("docs/architecture/CIOS_FEATURE_STATUS.yaml"),
             Path("docs/architecture/CURRENT_KNOWN_GAPS.md"),
+            Path("docs/architecture/PERSONAL_RUN_STAGE_DAG.md"),
         ]
         for path in required_paths:
             with self.subTest(path=str(path)):
@@ -46,6 +48,7 @@ class ReadmeAndReportTests(unittest.TestCase):
             "docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md",
             "docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md",
             "docs/governance/EXTERNAL_REPRODUCTION.md",
+            "docs/architecture/PERSONAL_RUN_STAGE_DAG.md",
         ]:
             self.assertIn(doc, readme)
             self.assertIn(doc, module_contracts)
@@ -57,6 +60,22 @@ class ReadmeAndReportTests(unittest.TestCase):
         self.assertIn("repo_evidence_files:", feature_status)
         self.assertIn("packet_evidence_files:", feature_status)
         self.assertIn("generated_review_artifacts:", feature_status)
+
+    def test_personal_run_stage_dag_documents_current_stage_order(self) -> None:
+        dag_path = Path("docs/architecture/PERSONAL_RUN_STAGE_DAG.md")
+        self.assertTrue(dag_path.exists())
+        dag = dag_path.read_text(encoding="utf-8")
+        readme = Path("README.md").read_text(encoding="utf-8")
+        system_map = Path("docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md").read_text(encoding="utf-8")
+        external_reproduction = Path("docs/governance/EXTERNAL_REPRODUCTION.md").read_text(encoding="utf-8")
+
+        for doc in [readme, system_map, external_reproduction]:
+            self.assertIn("docs/architecture/PERSONAL_RUN_STAGE_DAG.md", doc)
+        for stage in STAGE_ORDER:
+            with self.subTest(stage=stage):
+                self.assertIn(stage, dag)
+        for forbidden in ["C:\\Users\\", "C:/Users/", "/Users/", "/home/"]:
+            self.assertNotIn(forbidden, dag)
 
     def test_sec_related_csv_templates_are_lf_normalized_without_trailing_whitespace(self) -> None:
         gitattributes = Path(".gitattributes").read_text(encoding="utf-8")

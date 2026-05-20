@@ -11,6 +11,7 @@
 - [docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md](architecture/CIOS_CURRENT_SYSTEM_MAP.md): aktuelle System Map fuer externe Review, Stage-/Surface-Kontext und Dashboard-Readiness.
 - [docs/architecture/CIOS_FEATURE_STATUS.yaml](architecture/CIOS_FEATURE_STATUS.yaml): maschinenlesbarer Capability-Status mit Evidence-Dateien, Outputs, Tests, Limitations und Next Actions.
 - [docs/architecture/CURRENT_KNOWN_GAPS.md](architecture/CURRENT_KNOWN_GAPS.md): bekannte P0/P1/P2/Deferred-Gaps inklusive Dashboard-, Replay- und Outcome-Blockern.
+- [docs/architecture/PERSONAL_RUN_STAGE_DAG.md](architecture/PERSONAL_RUN_STAGE_DAG.md): kanonische Review-Dokumentation fuer `src.personal_run_engine`, Stage-Reihenfolge, Abhaengigkeiten und Failure-/Skip-Semantik.
 - [docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md](contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md): read-only Operator-Surface-Vertrag fuer Decision Quality, Decision Journal Validation und Review Queue Summary.
 - [docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md](contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md): Zielvertrag fuer `review_queue_summary.json`, Statusregeln und Attention-Level.
 - [docs/governance/EXTERNAL_REPRODUCTION.md](governance/EXTERNAL_REPRODUCTION.md): ZIP-safe/private-fixture/local-only Testreproduktionsmatrix fuer externe Reviews.
