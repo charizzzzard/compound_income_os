@@ -32,9 +32,9 @@ maker.
   run, journal, cash/rebalance, ranking and score-audit artifacts.
 - Decision Journal Validation / Review Queue: read-only validation of the
   append-only journal and deterministic operator review queue.
-- Data Freshness / Staleness: contract and standalone read-only summary
-  producer for explicit `FRESH`, `STALE`, `MISSING`, `UNKNOWN`,
-  `REVIEW_REQUIRED` and `NOT_APPLICABLE` data states.
+- Data Freshness / Staleness: contract, read-only summary producer and
+  `personal_run_engine` stage for explicit `FRESH`, `STALE`, `MISSING`,
+  `UNKNOWN`, `REVIEW_REQUIRED` and `NOT_APPLICABLE` data states.
 - Monthly Decision Report: report surface for portfolio health, decision
   quality and decision journal validation when explicit artifacts are present.
 - Personal Run Engine: explicit stage orchestration with manifest, used-inputs,
@@ -51,12 +51,13 @@ maker.
 4. `decision_quality` evaluates process/readiness state from existing outputs.
 5. `decision_journal_validation` evaluates the append-only journal and produces
    review queue artifacts.
-6. `data_freshness` can independently evaluate repo-evidenced artifacts against
-   explicit freshness signals and thresholds; it is not yet a personal-run
-   stage.
-7. Report surfaces render available states and show `NOT_AVAILABLE` only when
+6. `data_freshness` evaluates configured repo-evidenced artifacts against
+   explicit freshness signals and thresholds before the operator summary.
+7. `dashboard_operator_summary` aggregates Decision Quality, journal
+   validation, review queue and Data Freshness state for operator follow-up.
+8. Report surfaces render available states and show `NOT_AVAILABLE` only when
    an artifact is missing, unreadable or the stage did not run.
-8. Handoff export packages code, docs, tests, configs and selected review
+9. Handoff export packages code, docs, tests, configs and selected review
    context for external validation.
 
 ## Current `personal_run_engine` Stage Overview
@@ -88,13 +89,14 @@ Observed stage order:
 18. `monthly`
 19. `decision_quality`
 20. `decision_journal_validation`
-21. `dashboard_operator_summary`
-22. `history`
-23. `benchmark_archive`
-24. `performance`
-25. `multi_benchmark`
-26. `cost_tax`
-27. `dashboard`
+21. `data_freshness`
+22. `dashboard_operator_summary`
+23. `history`
+24. `benchmark_archive`
+25. `performance`
+26. `multi_benchmark`
+27. `cost_tax`
+28. `dashboard`
 
 `decision_quality` runs after the monthly and portfolio-health review stages.
 It writes:
@@ -109,8 +111,13 @@ It writes:
 - `data/processed/decision_review_queue.csv`
 - `reports/<as_of_date>/decision_journal_validation_report.md`
 
-`dashboard_operator_summary` runs after `decision_journal_validation`. It
-writes:
+`data_freshness` runs after `decision_journal_validation` and before
+`dashboard_operator_summary`. It writes:
+
+- `data/processed/data_freshness_summary.json`
+- `reports/<as_of_date>/data_freshness_summary.md`
+
+`dashboard_operator_summary` runs after `data_freshness`. It writes:
 
 - `data/processed/review_queue_summary.json`
 
@@ -194,8 +201,9 @@ with zero counts.
 - There is no Ranking Robustness or Sensitivity producer yet.
 - The dashboard operator surface contract and minimal operator summary producer
   exist, but no full visual dashboard surface has been hardened yet.
-- The Data Freshness / Staleness Contract and standalone producer exist, but
-  there is no `personal_run_engine` stage or dashboard surface integration yet.
+- The Data Freshness / Staleness Contract, producer, personal-run stage and
+  operator-summary fields exist, but no visual dashboard freshness panel,
+  replay freshness gate or outcome attribution integration exists yet.
 - Decision Quality stale-state handling is conservative: any older
   `as_of_date` is stale in the current MVP.
 - Scenario, Tail Risk, Calibration and Regret remain non-implemented or
@@ -218,9 +226,9 @@ with zero counts.
 
 ## Next Recommended Hardening Patches
 
-1. Integrate Data Freshness into Personal Run / Operator Summary after external review.
-2. Dashboard Surface refinement for Decision Quality and Review Queue Summary.
-3. Replay / Event Ledger contracts later.
+1. Dashboard Surface refinement for Decision Quality, Data Freshness and Review Queue Summary.
+2. Replay / Event Ledger contracts later.
+3. Ranking Robustness / Sensitivity producer later.
 4. Ranking Robustness / Sensitivity producer later.
 5. Portfolio Event Ledger later.
 6. Replay / Outcome later.

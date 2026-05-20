@@ -63,13 +63,14 @@ The current canonical stage order is:
 18. `monthly`
 19. `decision_quality`
 20. `decision_journal_validation`
-21. `dashboard_operator_summary`
-22. `history`
-23. `benchmark_archive`
-24. `performance`
-25. `multi_benchmark`
-26. `cost_tax`
-27. `dashboard`
+21. `data_freshness`
+22. `dashboard_operator_summary`
+23. `history`
+24. `benchmark_archive`
+25. `performance`
+26. `multi_benchmark`
+27. `cost_tax`
+28. `dashboard`
 
 The list is a linear execution order. The dependency table below makes the
 review-time data dependencies explicit without changing how the engine runs.
@@ -97,8 +98,9 @@ review-time data dependencies explicit without changing how the engine runs.
 | `rebalance_review` | Review rebalancing readiness from processed portfolio context. | `run_rebalance_review_stage` | optionally `portfolio_review` | positions; scores; portfolio rules/thresholds | `personal_rebalance_review.csv`; report | `decision_quality`; monthly report | Failure marks run `FAILED`; later requested stages are `SKIPPED`. | Personal Run Report; Decision Quality | No sell/order execution. |
 | `monthly` | Build monthly ranking and decision-support artifacts. | `run_monthly_stage` | `import`; `scoring`; `watchlist`; `portfolio_review`; `cash_refill_review`; `rebalance_review` when selected together | positions; scores; watchlist; rules; savings-plan/routing context | monthly buy ranking; rebalance proposals; monthly report | `decision_quality`; operator reports | Failure marks run `FAILED`; later requested stages are `SKIPPED`. | Monthly Decision Report; Personal Run Report | Monthly ranking remains decision support. |
 | `decision_quality` | Aggregate existing readiness/evidence/run/review artifacts into Decision Quality State. | `run_decision_quality_stage` | `monthly`; `scoring`; `cash_refill_review`; `rebalance_review`; input closure and decision capture artifacts as available | input closure; decision capture; cash/refill; rebalance; manifest; used inputs; ranking; score audit | `decision_quality_state.csv`; `decision_quality_state.json`; `decision_quality_report.md` | `decision_journal_validation`; `dashboard_operator_summary`; reports | Failure marks run `FAILED`; later requested stages are `SKIPPED`; preflight lineage is written before running. | Decision Quality Surface; Personal Run Report | Read-only process confidence; no investment confidence. |
-| `decision_journal_validation` | Validate append-only decision journal and produce review queue. | `run_decision_journal_validation_stage` | `decision_quality` when selected together | decision capture journal; Decision Quality State; manifest; used inputs | `decision_journal_validation.csv`; `decision_review_queue.csv`; `decision_journal_validation_report.md` | `dashboard_operator_summary`; reports | Failure marks run `FAILED`; later requested stages are `SKIPPED`; preflight lineage is written before running. | Decision Journal Validation Surface; Review Queue | No decision creation or mutation. |
-| `dashboard_operator_summary` | Aggregate Decision Quality, journal validation and review queue into machine-readable operator summary. | `run_dashboard_operator_summary_stage` | `decision_journal_validation`; `decision_quality` when selected together | decision quality JSON; validation CSV; review queue CSV; manifest; artifact index; used inputs | `review_queue_summary.json` | Personal Run Report; future dashboard surface | Failure marks run `FAILED`; later requested stages are `SKIPPED`; preflight lineage is written before running. | Dashboard Operator Summary section | Machine summary only; no visual dashboard/server. |
+| `decision_journal_validation` | Validate append-only decision journal and produce review queue. | `run_decision_journal_validation_stage` | `decision_quality` when selected together | decision capture journal; Decision Quality State; manifest; used inputs | `decision_journal_validation.csv`; `decision_review_queue.csv`; `decision_journal_validation_report.md` | `data_freshness`; `dashboard_operator_summary`; reports | Failure marks run `FAILED`; later requested stages are `SKIPPED`; preflight lineage is written before running. | Decision Journal Validation Surface; Review Queue | No decision creation or mutation. |
+| `data_freshness` | Evaluate configured artifacts against explicit freshness/staleness thresholds. | `run_data_freshness_stage` | `decision_journal_validation` when selected together | `configs/data_freshness_thresholds.yaml`; configured repo-local artifacts; current manifest as available | `data_freshness_summary.json`; `data_freshness_summary.md` | `dashboard_operator_summary`; future dashboard surface | Failure marks run `FAILED`; later requested stages are `SKIPPED`; preflight lineage is written before running. | Data Freshness Summary; Personal Run Report via Dashboard Operator Summary | Read-only; no mtime, filename or file-existence freshness; no data enrichment. |
+| `dashboard_operator_summary` | Aggregate Decision Quality, journal validation, review queue and Data Freshness into machine-readable operator summary. | `run_dashboard_operator_summary_stage` | `decision_journal_validation`; `data_freshness`; `decision_quality` when selected together | decision quality JSON; validation CSV; review queue CSV; data freshness summary; manifest; artifact index; used inputs | `review_queue_summary.json` | Personal Run Report; future dashboard surface | Failure marks run `FAILED`; later requested stages are `SKIPPED`; preflight lineage is written before running. | Dashboard Operator Summary section | Machine summary only; no visual dashboard/server. |
 | `history` | Archive portfolio snapshots and build portfolio timeseries artifacts. | `run_history_stage` | `import` when same run builds positions | positions snapshot; existing archive | portfolio snapshot archive; portfolio timeseries; summary/report | `performance`; reports | Failure marks run `FAILED`; later requested stages are `SKIPPED`. | Personal Run Report | Not a full event ledger. |
 | `benchmark_archive` | Archive selected benchmark timeseries and registry context. | `run_benchmark_archive_stage` | none | benchmark CSV/config | benchmark archive; registry; normalized benchmark series | `performance`; `multi_benchmark` | Failure marks run `FAILED`; later requested stages are `SKIPPED`. | Personal Run Report | No API/FX/interpolation layer. |
 | `performance` | Compare portfolio timeseries and benchmark under explicit snapshot/history mode. | `run_performance_stage` | `history`; `benchmark_archive` when selected together | positions/portfolio timeseries; benchmark series; config | performance comparison; KPIs; report | dashboard/report surfaces | Failure marks run `FAILED`; later requested stages are `SKIPPED`. | Personal Run Report; performance report | Not outcome attribution. |
@@ -168,17 +170,20 @@ inputs.
 
 - `decision_quality`
 - `decision_journal_validation`
+- `data_freshness`
 
 This layer turns existing artifacts into process-confidence, validation and
-review-queue state. It does not create new decisions, mutate the journal or
-attribute outcomes.
+review-queue and freshness state. It does not create new decisions, mutate the
+journal, infer freshness from file existence or attribute outcomes.
 
 ### Operator Summary Layer
 
 - `dashboard_operator_summary`
 
 This layer produces `review_queue_summary.json` for future dashboard/operator
-surfaces. It is machine-readable governance state, not a visual dashboard.
+surfaces from Decision Quality, journal validation, review queue and Data
+Freshness state. It is machine-readable governance state, not a visual
+dashboard.
 
 ### History/Performance/Benchmark Layer
 
@@ -216,7 +221,7 @@ Current orchestrator semantics:
 - `RuntimeError` is raised again after final run outputs are finalized.
 - Manifest, artifact index, used-inputs index and run report are written as far
   as possible in failure cases.
-- `decision_quality`, `decision_journal_validation` and
+- `decision_quality`, `decision_journal_validation`, `data_freshness` and
   `dashboard_operator_summary` write provisional lineage before execution so
   the producers can inspect a current manifest/used-input context.
 
@@ -262,9 +267,10 @@ attribution, backtesting, Monte Carlo, a Portfolio Event Ledger or broker/order
 execution.
 
 The DAG prepares these areas by documenting stage boundaries and lineage
-surfaces. It does not replace the separate Data Freshness/Staleness Contract,
-Dashboard Operator Surface Contract, Review Queue Summary Contract, Replay
-Contract or Event Ledger design.
+surfaces. The Data Freshness/Staleness Contract and `data_freshness` stage now
+make stale, missing and unknown data states visible to the operator summary, but
+they do not replace the Dashboard Operator Surface Contract, Review Queue
+Summary Contract, Replay Contract or Event Ledger design.
 
 ## Invariants And Non-Scope
 
@@ -295,6 +301,7 @@ Update this document whenever any of these change:
 - Operator Summary or Dashboard Surface inputs change
 - Decision Quality integration changes
 - Decision Journal Validation integration changes
+- Data Freshness integration changes
 
 If a future patch introduces a true data-dependency executor rather than the
 current linear order, that patch must update this document and the related

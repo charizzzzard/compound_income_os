@@ -125,6 +125,12 @@ Per item:
 - `freshness_status`
 - `age_days`
 - `as_of_date`
+- `min_as_of_date`
+- `max_as_of_date`
+- `valid_date_count`
+- `invalid_date_count`
+- `missing_date_count`
+- `record_count`
 - `threshold_days`
 - `evidence_source`
 - `reason`
@@ -141,6 +147,41 @@ Rules:
   `NOT_APPLICABLE`.
 - `REVIEW_REQUIRED`, `STALE`, `UNKNOWN`, and `MISSING` must stay visible in
   dashboard/operator surfaces.
+
+## Conservative Multi-Row Date Semantics
+
+For multi-row CSV or JSON-list artifacts, freshness is evaluated
+conservatively:
+
+- all configured freshness date fields are inspected across all records,
+- `min_as_of_date` is the oldest valid date signal,
+- `max_as_of_date` is the newest valid date signal,
+- `as_of_date` and `age_days` use `min_as_of_date`, not the newest row,
+- a single fresh row must not make a mixed artifact `FRESH` when another row is
+  stale,
+- any date after the effective run `as_of_date` produces `REVIEW_REQUIRED` with
+  reason `SOURCE_DATE_AFTER_AS_OF`,
+- any invalid date value produces a non-`FRESH` state with review required,
+- records without any configured date value increase `missing_date_count`,
+- header-only or date-less artifacts remain `UNKNOWN` unless the data class is
+  explicitly `NOT_APPLICABLE`.
+
+This prevents a multi-row artifact from appearing fresh only because one row has
+a recent date while older, missing or invalid row-level signals remain present.
+
+## Personal Run Integration
+
+The `data_freshness` stage in `src.personal_run_engine` runs after
+`decision_journal_validation` and before `dashboard_operator_summary`. It writes:
+
+- `data/processed/data_freshness_summary.json`
+- `reports/<as_of_date>/data_freshness_summary.md`
+
+The default config intentionally treats
+`data/processed/review_queue_summary.json` as optional / `NOT_APPLICABLE` when
+missing, because that artifact is produced later by `dashboard_operator_summary`.
+This avoids a circular dependency while keeping later dashboard freshness
+readable when the artifact exists.
 
 ## Markdown Summary
 
@@ -189,4 +230,3 @@ This contract is a prerequisite for replay and outcome attribution. It does not:
 - no tax quantification
 - no portfolio event ledger
 - no private raw data
-

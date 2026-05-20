@@ -291,6 +291,7 @@ capabilities:
       - data/processed/personal_run_manifest.json
       - data/processed/personal_run_artifacts.csv
       - data/processed/personal_run_used_inputs.csv
+      - data/processed/data_freshness_summary.json
       - reports/<date>/personal_run_report.md
     report_surface:
       - reports/<date>/personal_run_report.md
@@ -298,7 +299,7 @@ capabilities:
       - tests/test_personal_run_engine.py
     limitations:
       - "Stage-DAG documentation now maps the current linear orchestrator and review-time dependencies; this is not a replay engine, event ledger or outcome attribution layer."
-    next_action: "Integrate Data Freshness into Personal Run only after contract review."
+    next_action: "Keep Data Freshness lineage aligned with future dashboard/replay contracts."
   - capability_id: personal_input_closure
     display_name: Personal Input Closure
     status: implemented
@@ -465,6 +466,7 @@ capabilities:
       - data/processed/decision_journal_validation.csv
       - data/processed/decision_review_queue.csv
       - data/processed/decision_quality_state.json
+      - data/processed/data_freshness_summary.json
       - data/processed/personal_run_manifest.json
     output_artifacts:
       - data/processed/review_queue_summary.json
@@ -475,8 +477,8 @@ capabilities:
       - tests/test_personal_run_engine.py
     limitations:
       - "Read-only machine summary only; no visual dashboard server/UI changes and no new investment logic."
-      - "Data Freshness/Staleness Contract and standalone producer exist, but are not yet integrated into this summary."
-    next_action: "External review, then optional Data Freshness integration."
+      - "Data Freshness counts are surfaced as governance state, but no visual dashboard freshness panel, replay gate or outcome attribution exists."
+    next_action: "External review, then dashboard surface refinement."
   - capability_id: portfolio_event_ledger
     display_name: Portfolio Event Ledger
     status: planned
@@ -579,18 +581,18 @@ capabilities:
       - configs/data_freshness_thresholds.yaml
       - data/processed/
     output_artifacts:
-      - reports/latest/data_freshness_summary.json
-      - reports/latest/data_freshness_summary.md
+      - data/processed/data_freshness_summary.json
+      - reports/<date>/data_freshness_summary.md
     report_surface:
-      - reports/latest/data_freshness_summary.md
+      - reports/<date>/data_freshness_summary.md
     tests:
       - tests/test_data_freshness.py
       - tests/test_personal_artifact_freshness.py
       - tests/test_personal_decision_journal_validation.py
     limitations:
-      - "Cross-system freshness contract, thresholds and standalone producer exist, but no personal_run_engine stage or dashboard/operator-summary integration exists yet."
+      - "Cross-system freshness contract, thresholds, producer, personal_run_engine stage and operator-summary fields exist, but visual dashboard, replay and outcome-attribution gates are not implemented."
       - "The MVP producer uses explicit date fields only; file modified time is not treated as sufficient FRESH evidence."
-    next_action: "Integrate Data Freshness into Personal Run / Operator Summary after external review."
+    next_action: "Add dashboard freshness surface only after external review."
   - capability_id: corporate_actions
     display_name: Corporate Actions
     status: unknown

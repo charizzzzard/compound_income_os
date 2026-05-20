@@ -423,6 +423,51 @@ class PersonalRunEngineTests(unittest.TestCase):
             ],
         )
 
+    def _write_data_freshness_config(self, options: PersonalRunOptions) -> None:
+        Path(options.data_freshness_config).write_text(
+            json.dumps(
+                {
+                    "contract_version": "v1-test",
+                    "items": [
+                        {
+                            "blocks_dashboard": True,
+                            "blocks_outcome_attribution": True,
+                            "blocks_replay": True,
+                            "data_class": "decision_quality_state",
+                            "freshness_date_fields": ["as_of_date"],
+                            "missing_behavior": "MISSING",
+                            "required": True,
+                            "review_on_missing": True,
+                            "review_on_stale": True,
+                            "review_on_unknown": True,
+                            "source_path": options.decision_quality_json_output,
+                            "threshold_days": 7,
+                            "unknown_behavior": "UNKNOWN",
+                        },
+                        {
+                            "blocks_dashboard": True,
+                            "blocks_outcome_attribution": True,
+                            "blocks_replay": True,
+                            "data_class": "personal_run_manifest",
+                            "freshness_date_fields": ["as_of_date"],
+                            "missing_behavior": "MISSING",
+                            "required": True,
+                            "review_on_missing": True,
+                            "review_on_stale": True,
+                            "review_on_unknown": True,
+                            "source_path": options.manifest_output,
+                            "threshold_days": 7,
+                            "unknown_behavior": "UNKNOWN",
+                        },
+                    ],
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
     def _base_options(self, prefix: str, stages: list[str]) -> PersonalRunOptions:
         data_sources_config = self._path(f"_tmp_{prefix}_data_sources.yaml")
         self._write_data_sources_config(data_sources_config, {})
@@ -497,6 +542,9 @@ class PersonalRunEngineTests(unittest.TestCase):
             decision_journal_validation_output=str(self._path(f"_tmp_{prefix}_decision_journal_validation.csv")),
             decision_review_queue_output=str(self._path(f"_tmp_{prefix}_decision_review_queue.csv")),
             decision_journal_validation_report_output=str(self._path(f"_tmp_{prefix}_decision_journal_validation_report.md")),
+            data_freshness_config=str(self._path(f"_tmp_{prefix}_data_freshness_config.json")),
+            data_freshness_summary_output=str(self._path(f"_tmp_{prefix}_data_freshness_summary.json")),
+            data_freshness_report_output=str(self._path(f"_tmp_{prefix}_data_freshness_summary.md")),
             review_queue_summary_output=str(self._path(f"_tmp_{prefix}_review_queue_summary.json")),
             portfolio_archive=str(self._path(f"_tmp_{prefix}_portfolio_archive.csv")),
             portfolio_timeseries_output=str(self._path(f"_tmp_{prefix}_portfolio_timeseries.csv")),
@@ -683,6 +731,7 @@ class PersonalRunEngineTests(unittest.TestCase):
                 "monthly",
                 "decision_quality",
                 "decision_journal_validation",
+                "data_freshness",
                 "dashboard_operator_summary",
                 "history",
                 "benchmark_archive",
@@ -715,11 +764,13 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("rebalance_review") + 1], "monthly")
         self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("monthly") + 1], "decision_quality")
         self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("decision_quality") + 1], "decision_journal_validation")
-        self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("decision_journal_validation") + 1], "dashboard_operator_summary")
+        self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("decision_journal_validation") + 1], "data_freshness")
+        self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("data_freshness") + 1], "dashboard_operator_summary")
         self.assertIn("cash_refill_review", STAGE_RUNNERS)
         self.assertIn("rebalance_review", STAGE_RUNNERS)
         self.assertIn("decision_quality", STAGE_RUNNERS)
         self.assertIn("decision_journal_validation", STAGE_RUNNERS)
+        self.assertIn("data_freshness", STAGE_RUNNERS)
         self.assertIn("dashboard_operator_summary", STAGE_RUNNERS)
 
     def test_targeted_cash_refill_review_stage_writes_outputs(self) -> None:
@@ -2126,6 +2177,54 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertIn("## Decision Journal Validation", run_report)
         self.assertIn("Decision Journal Validation: `NOT_AVAILABLE`", run_report)
 
+    def test_data_freshness_stage_generates_outputs_and_lineage(self) -> None:
+        options = self._core_options(
+            "data_freshness_e2e",
+            [
+                "import",
+                "fundamentals_seed",
+                "scoring",
+                "coverage",
+                "watchlist",
+                "cash_refill_review",
+                "rebalance_review",
+                "monthly",
+                "decision_quality",
+                "decision_journal_validation",
+                "data_freshness",
+            ],
+        )
+        options.portfolio_date = "2026-05-19"
+        self._write_decision_journal_validation_inputs(
+            options,
+            review_date="2026-06-19",
+            row_overrides={
+                "proposed_action": "NO_ACTION",
+                "human_decision": "NO_ACTION",
+                "decision_status": "CLOSED",
+                "review_date": "2026-06-19",
+            },
+        )
+        self._write_data_freshness_config(options)
+
+        manifest = run_personal_run_engine(options)
+
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertLess(
+            manifest["executed_stage_order"].index("decision_journal_validation"),
+            manifest["executed_stage_order"].index("data_freshness"),
+        )
+        self.assertTrue(Path(options.data_freshness_summary_output).exists())
+        self.assertTrue(Path(options.data_freshness_report_output or "").exists())
+        summary = json.loads(Path(options.data_freshness_summary_output).read_text(encoding="utf-8"))
+        self.assertEqual(summary["overall_status"], "FRESH")
+        artifact_rows = read_csv_rows(options.artifacts_output)
+        produced_roles = {row["artifact_role"] for row in artifact_rows if row["stage_name"] == "data_freshness" and row["produced"] == "True"}
+        self.assertEqual(produced_roles, {"data_freshness_report", "data_freshness_summary"})
+        used_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "data_freshness")
+        self.assertIn("data_freshness_config", used_inputs)
+        self.assertIn("freshness_item_decision_quality_state", used_inputs)
+
     def test_dashboard_operator_summary_stage_generates_output_and_report_surface(self) -> None:
         options = self._core_options(
             "dashboard_operator_summary_e2e",
@@ -2140,6 +2239,7 @@ class PersonalRunEngineTests(unittest.TestCase):
                 "monthly",
                 "decision_quality",
                 "decision_journal_validation",
+                "data_freshness",
                 "dashboard_operator_summary",
             ],
         )
@@ -2154,10 +2254,15 @@ class PersonalRunEngineTests(unittest.TestCase):
                 "review_date": "2026-06-19",
             },
         )
+        self._write_data_freshness_config(options)
 
         manifest = run_personal_run_engine(options)
 
         self.assertEqual(manifest["run_status"], "SUCCESS")
+        self.assertLess(
+            manifest["executed_stage_order"].index("data_freshness"),
+            manifest["executed_stage_order"].index("dashboard_operator_summary"),
+        )
         self.assertLess(
             manifest["executed_stage_order"].index("decision_journal_validation"),
             manifest["executed_stage_order"].index("dashboard_operator_summary"),
@@ -2165,15 +2270,19 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertTrue(Path(options.review_queue_summary_output).exists())
         summary = json.loads(Path(options.review_queue_summary_output).read_text(encoding="utf-8"))
         self.assertEqual(summary["surface_status"], "PASS")
+        self.assertEqual(summary["data_freshness_status"], "FRESH")
+        self.assertEqual(summary["data_freshness_fresh_count"], 2)
         artifact_rows = read_csv_rows(options.artifacts_output)
         produced_roles = {row["artifact_role"] for row in artifact_rows if row["stage_name"] == "dashboard_operator_summary" and row["produced"] == "True"}
         self.assertEqual(produced_roles, {"review_queue_summary"})
         used_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "dashboard_operator_summary")
         self.assertIn("decision_journal_validation", used_inputs)
         self.assertIn("decision_review_queue", used_inputs)
+        self.assertIn("data_freshness_summary", used_inputs)
         run_report = Path(options.report_output or "").read_text(encoding="utf-8")
         self.assertIn("## Dashboard Operator Summary", run_report)
         self.assertIn("surface_status", run_report)
+        self.assertIn("data_freshness_status", run_report)
         self.assertIn("operator_attention_level", run_report)
 
     def test_history_and_performance_run_uses_existing_single_benchmark_method(self) -> None:

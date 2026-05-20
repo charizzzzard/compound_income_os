@@ -73,9 +73,74 @@ class DataFreshnessTests(unittest.TestCase):
         self.assertEqual(by_class["fresh_class"]["freshness_status"], "FRESH")
         self.assertEqual(by_class["fresh_class"]["age_days"], 1)
         self.assertEqual(by_class["fresh_class"]["evidence_source"], "field:as_of_date")
+        self.assertEqual(by_class["fresh_class"]["min_as_of_date"], "2026-05-19")
+        self.assertEqual(by_class["fresh_class"]["max_as_of_date"], "2026-05-19")
+        self.assertEqual(by_class["fresh_class"]["valid_date_count"], 1)
+        self.assertEqual(by_class["fresh_class"]["record_count"], 1)
         self.assertEqual(by_class["stale_class"]["freshness_status"], "STALE")
         self.assertTrue(by_class["stale_class"]["review_required"])
         self.assertNotEqual(summary["overall_status"], "FRESH")
+
+    def test_mixed_row_dates_use_oldest_date_and_become_stale(self) -> None:
+        csv_path = TMP / "mixed.csv"
+        csv_path.write_text("as_of_date,ticker\n2026-05-19,A\n2025-01-01,B\n", encoding="utf-8")
+        config = TMP / "config.json"
+        write_config(config, [base_item("mixed_class", csv_path)])
+
+        summary = build_data_freshness_summary(
+            config_path=config,
+            as_of_date="2026-05-20",
+            generated_at_utc="2026-05-20T00:00:00Z",
+        )
+        item = summary["items"][0]
+
+        self.assertEqual(item["freshness_status"], "STALE")
+        self.assertEqual(item["as_of_date"], "2025-01-01")
+        self.assertEqual(item["min_as_of_date"], "2025-01-01")
+        self.assertEqual(item["max_as_of_date"], "2026-05-19")
+        self.assertEqual(item["age_days"], 504)
+        self.assertEqual(item["valid_date_count"], 2)
+        self.assertEqual(item["record_count"], 2)
+        self.assertTrue(item["review_required"])
+
+    def test_future_row_date_requires_review(self) -> None:
+        csv_path = TMP / "future_mixed.csv"
+        csv_path.write_text("as_of_date,ticker\n2026-05-19,A\n2026-05-21,B\n", encoding="utf-8")
+        config = TMP / "config.json"
+        write_config(config, [base_item("future_mixed_class", csv_path)])
+
+        summary = build_data_freshness_summary(
+            config_path=config,
+            as_of_date="2026-05-20",
+            generated_at_utc="2026-05-20T00:00:00Z",
+        )
+        item = summary["items"][0]
+
+        self.assertEqual(item["freshness_status"], "REVIEW_REQUIRED")
+        self.assertEqual(item["reason"], "SOURCE_DATE_AFTER_AS_OF")
+        self.assertTrue(item["review_required"])
+        self.assertEqual(item["min_as_of_date"], "2026-05-19")
+        self.assertEqual(item["max_as_of_date"], "2026-05-21")
+
+    def test_invalid_mixed_date_signal_is_not_fresh(self) -> None:
+        csv_path = TMP / "invalid_mixed.csv"
+        csv_path.write_text("as_of_date,ticker\n2026-05-19,A\nnot-a-date,B\n", encoding="utf-8")
+        config = TMP / "config.json"
+        write_config(config, [base_item("invalid_mixed_class", csv_path)])
+
+        summary = build_data_freshness_summary(
+            config_path=config,
+            as_of_date="2026-05-20",
+            generated_at_utc="2026-05-20T00:00:00Z",
+        )
+        item = summary["items"][0]
+
+        self.assertNotEqual(item["freshness_status"], "FRESH")
+        self.assertEqual(item["freshness_status"], "REVIEW_REQUIRED")
+        self.assertEqual(item["reason"], "INVALID_DATE_SIGNAL")
+        self.assertTrue(item["review_required"])
+        self.assertEqual(item["valid_date_count"], 1)
+        self.assertEqual(item["invalid_date_count"], 1)
 
     def test_missing_artifact_is_not_fresh(self) -> None:
         config = TMP / "config.json"
@@ -109,8 +174,28 @@ class DataFreshnessTests(unittest.TestCase):
         self.assertEqual(item["freshness_status"], "UNKNOWN")
         self.assertEqual(item["reason"], "NO_DATE_SIGNAL")
         self.assertTrue(item["review_required"])
+        self.assertEqual(item["record_count"], 1)
+        self.assertEqual(item["valid_date_count"], 0)
 
-    def test_json_date_signal_is_supported(self) -> None:
+    def test_no_date_signal_remains_unknown(self) -> None:
+        csv_path = TMP / "no_dates.csv"
+        csv_path.write_text("symbol,value\nMSFT,1\nAAPL,2\n", encoding="utf-8")
+        config = TMP / "config.json"
+        write_config(config, [base_item("no_dates_class", csv_path)])
+
+        summary = build_data_freshness_summary(
+            config_path=config,
+            as_of_date="2026-05-20",
+            generated_at_utc="2026-05-20T00:00:00Z",
+        )
+        item = summary["items"][0]
+
+        self.assertEqual(item["freshness_status"], "UNKNOWN")
+        self.assertEqual(item["reason"], "NO_DATE_SIGNAL")
+        self.assertEqual(item["record_count"], 2)
+        self.assertEqual(item["missing_date_count"], 2)
+
+    def test_json_object_single_date_still_fresh(self) -> None:
         json_path = TMP / "state.json"
         json_path.write_text(
             json.dumps({"as_of_date": "2026-05-20", "status": "PASS"}, sort_keys=True) + "\n",
@@ -126,6 +211,8 @@ class DataFreshnessTests(unittest.TestCase):
         )
 
         self.assertEqual(summary["items"][0]["freshness_status"], "FRESH")
+        self.assertEqual(summary["items"][0]["min_as_of_date"], "2026-05-20")
+        self.assertEqual(summary["items"][0]["max_as_of_date"], "2026-05-20")
         self.assertFalse(summary["review_required"])
         self.assertEqual(summary["overall_status"], "FRESH")
 
@@ -241,4 +328,3 @@ class DataFreshnessTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

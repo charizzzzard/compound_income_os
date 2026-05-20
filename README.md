@@ -170,18 +170,31 @@ treated as stale in this phase.
 ## Dashboard Operator Summary
 
 `src.dashboard_operator_summary` aggregates the existing Decision Quality,
-Decision Journal Validation and Review Queue artifacts into
+Decision Journal Validation, Review Queue and Data Freshness artifacts into
 `data/processed/review_queue_summary.json`. It is a read-only machine surface
 for operator status, not a visual dashboard, not a dashboard server and not a
 new investment-logic layer.
 
 The `dashboard_operator_summary` stage in `src.personal_run_engine` runs after
-`decision_journal_validation`, records the summary in the artifact index and
+`data_freshness`, records the summary in the artifact index and
 renders a compact Personal Run Report section with `surface_status`,
 `artifact_status`, `operator_attention_level`, queue counts and top reason
 codes. Missing required artifacts remain `NOT_AVAILABLE` or `PARTIAL`; valid
 header-only validation/queue artifacts render as `PASS` with explicit zero
-counts.
+counts only when no Data Freshness review signal is present.
+
+## Data Freshness / Staleness
+
+`src.data_freshness` evaluates configured repo-local artifacts against explicit
+date fields and `configs/data_freshness_thresholds.yaml`. It writes
+`data/processed/data_freshness_summary.json` and
+`reports/<as_of_date>/data_freshness_summary.md`.
+
+The `data_freshness` stage runs after `decision_journal_validation` and before
+`dashboard_operator_summary`. Multi-row artifacts are evaluated
+conservatively: the oldest valid row-level date drives age/staleness, future
+dates and invalid date values require review, and missing or unknown freshness
+is never converted to `FRESH`.
 
 ## Decision Capture
 

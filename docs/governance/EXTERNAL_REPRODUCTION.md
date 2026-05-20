@@ -75,6 +75,7 @@ python -m unittest tests.test_personal_decision_journal_validation -v
 python -m unittest tests.test_monthly_decision_report -v
 python -m unittest tests.test_personal_decision_quality_state -v
 python -m unittest tests.test_data_freshness -v
+python -m unittest tests.test_personal_run_engine -v
 python -m unittest tests.test_readme_and_reports -v
 ```
 
@@ -104,6 +105,7 @@ Expand-Archive .\HANDOFF_LATEST.zip -DestinationPath .\review
 Set-Location .\review
 python -m unittest tests.test_dashboard_operator_summary -v
 python -m unittest tests.test_data_freshness -v
+python -m unittest tests.test_personal_run_engine -v
 python -m unittest tests.test_personal_decision_journal_validation -v
 python -m unittest tests.test_personal_decision_quality_state -v
 python -m unittest tests.test_readme_and_reports -v

@@ -29,6 +29,8 @@ from src.dashboard_operator_summary import (
     read_dashboard_operator_summary,
     run_dashboard_operator_summary,
 )
+from src.data_freshness import DEFAULT_CONFIG as DEFAULT_DATA_FRESHNESS_CONFIG
+from src.data_freshness import run_data_freshness
 from src.data_source_registry import (
     DEFAULT_CONFIG_PATH as DEFAULT_DATA_SOURCES_CONFIG_PATH,
     DEFAULT_RESOLVED_OUTPUT as DEFAULT_DATA_SOURCE_RESOLVED_OUTPUT,
@@ -153,6 +155,7 @@ STAGE_ORDER = [
     "monthly",
     "decision_quality",
     "decision_journal_validation",
+    "data_freshness",
     "dashboard_operator_summary",
     "history",
     "benchmark_archive",
@@ -244,6 +247,8 @@ DEFAULT_PATHS = {
     "decision_quality_json_output": "data/processed/decision_quality_state.json",
     "decision_journal_validation_output": "data/processed/decision_journal_validation.csv",
     "decision_review_queue_output": "data/processed/decision_review_queue.csv",
+    "data_freshness_config": DEFAULT_DATA_FRESHNESS_CONFIG,
+    "data_freshness_summary_output": "data/processed/data_freshness_summary.json",
     "review_queue_summary_output": "data/processed/review_queue_summary.json",
     "portfolio_archive": "data/processed/portfolio_snapshot_archive.csv",
     "portfolio_timeseries_output": "data/processed/portfolio_timeseries.csv",
@@ -410,6 +415,9 @@ class PersonalRunOptions:
     decision_journal_validation_output: str = DEFAULT_PATHS["decision_journal_validation_output"]
     decision_review_queue_output: str = DEFAULT_PATHS["decision_review_queue_output"]
     decision_journal_validation_report_output: str | None = None
+    data_freshness_config: str = DEFAULT_PATHS["data_freshness_config"]
+    data_freshness_summary_output: str = DEFAULT_PATHS["data_freshness_summary_output"]
+    data_freshness_report_output: str | None = None
     review_queue_summary_output: str = DEFAULT_PATHS["review_queue_summary_output"]
     portfolio_archive: str = DEFAULT_PATHS["portfolio_archive"]
     portfolio_timeseries_output: str = DEFAULT_PATHS["portfolio_timeseries_output"]
@@ -485,6 +493,9 @@ class PersonalRunOptions:
             self.dashboard_report_output = default_dated_report_path("dashboard_report.md")
         if self.decision_journal_validation_report_output is None:
             self.decision_journal_validation_report_output = default_dated_report_path("decision_journal_validation_report.md")
+        if self.data_freshness_report_output is None:
+            report_date = self.portfolio_date or date.today().isoformat()
+            self.data_freshness_report_output = f"reports/{report_date}/data_freshness_summary.md"
         if self.report_output is None:
             self.report_output = default_dated_report_path("personal_run_report.md")
         return self
@@ -659,6 +670,9 @@ def input_snapshot(options: PersonalRunOptions) -> dict[str, Any]:
         "decision_journal_validation_output": options.decision_journal_validation_output,
         "decision_review_queue_output": options.decision_review_queue_output,
         "decision_journal_validation_report_output": options.decision_journal_validation_report_output or "",
+        "data_freshness_config": options.data_freshness_config,
+        "data_freshness_summary_output": options.data_freshness_summary_output,
+        "data_freshness_report_output": options.data_freshness_report_output or "",
         "review_queue_summary_output": options.review_queue_summary_output,
     }
 
@@ -1508,6 +1522,7 @@ def run_dashboard_operator_summary_stage(options: PersonalRunOptions) -> StageRe
         decision_quality_state=options.decision_quality_json_output,
         decision_journal_validation=options.decision_journal_validation_output,
         decision_review_queue=options.decision_review_queue_output,
+        data_freshness_summary=options.data_freshness_summary_output,
         run_manifest=options.manifest_output,
         run_artifacts=options.artifacts_output,
         run_used_inputs=options.used_inputs_output,
@@ -1523,11 +1538,13 @@ def run_dashboard_operator_summary_stage(options: PersonalRunOptions) -> StageRe
         [
             "decision_journal_validation",
             "decision_review_queue",
+            "data_freshness_summary",
         ],
         used_inputs={
             "decision_quality_state_json": options.decision_quality_json_output,
             "decision_journal_validation": options.decision_journal_validation_output,
             "decision_review_queue": options.decision_review_queue_output,
+            "data_freshness_summary": options.data_freshness_summary_output,
             "personal_run_manifest": options.manifest_output,
             "personal_run_artifacts": options.artifacts_output,
             "personal_run_used_inputs": options.used_inputs_output,
@@ -1536,7 +1553,40 @@ def run_dashboard_operator_summary_stage(options: PersonalRunOptions) -> StageRe
             "review_queue_summary": str(result.json_output),
         },
         warnings=warnings,
-        notes="Read-only Dashboard Operator Summary generated from Decision Quality, Journal Validation and Review Queue artifacts.",
+        notes="Read-only Dashboard Operator Summary generated from Decision Quality, Journal Validation, Review Queue and Data Freshness artifacts.",
+    )
+
+
+def run_data_freshness_stage(options: PersonalRunOptions) -> StageResult:
+    stage = "data_freshness"
+    result = run_data_freshness(
+        config_path=options.data_freshness_config,
+        as_of_date=options.portfolio_date or date.today().isoformat(),
+        out_json=options.data_freshness_summary_output,
+        report=options.data_freshness_report_output or default_dated_report_path("data_freshness_summary.md"),
+    )
+    warnings = []
+    if result.summary.get("review_required"):
+        warnings.append("Data Freshness summary requires operator review.")
+    evaluated_inputs = {
+        f"freshness_item_{item['data_class']}": str(item.get("source_path") or "")
+        for item in result.summary.get("items", [])
+        if isinstance(item, dict)
+    }
+    return stage_result(
+        stage,
+        SUCCESS,
+        ["data_freshness_config"],
+        used_inputs={
+            "data_freshness_config": options.data_freshness_config,
+            **evaluated_inputs,
+        },
+        produced_outputs={
+            "data_freshness_summary": str(result.json_output),
+            "data_freshness_report": str(result.report_output),
+        },
+        warnings=warnings,
+        notes="Read-only Data Freshness / Staleness summary generated from configured local artifacts and explicit date signals.",
     )
 
 
@@ -1794,6 +1844,7 @@ STAGE_RUNNERS: dict[str, Callable[[PersonalRunOptions], StageResult]] = {
     "monthly": run_monthly_stage,
     "decision_quality": run_decision_quality_stage,
     "decision_journal_validation": run_decision_journal_validation_stage,
+    "data_freshness": run_data_freshness_stage,
     "dashboard_operator_summary": run_dashboard_operator_summary_stage,
     "history": run_history_stage,
     "benchmark_archive": run_benchmark_archive_stage,
@@ -1952,6 +2003,8 @@ def build_manifest(
             "decision_journal_validation_output": options.decision_journal_validation_output,
             "decision_review_queue_output": options.decision_review_queue_output,
             "decision_journal_validation_report_output": options.decision_journal_validation_report_output or "",
+            "data_freshness_summary_output": options.data_freshness_summary_output,
+            "data_freshness_report_output": options.data_freshness_report_output or "",
             "review_queue_summary_output": options.review_queue_summary_output,
             "data_source_status_output": options.data_source_status_output,
             "data_source_resolved_output": options.data_source_resolved_output,
@@ -2186,7 +2239,7 @@ def run_personal_run_engine(options: PersonalRunOptions) -> dict[str, Any]:
             stage_results_by_name[stage_name] = skipped_result(stage_name, failed_stage)
             continue
         try:
-            if stage_name in {"decision_quality", "decision_journal_validation", "dashboard_operator_summary"}:
+            if stage_name in {"decision_quality", "decision_journal_validation", "data_freshness", "dashboard_operator_summary"}:
                 write_decision_quality_preflight_lineage(options, selected_stages, executed_stage_order, stage_results_by_name, run_started_at, warnings)
             executed_stage_order.append(stage_name)
             result = STAGE_RUNNERS[stage_name](options)
@@ -2306,6 +2359,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--decision-journal-validation-output", default=DEFAULT_PATHS["decision_journal_validation_output"], help="Decision Journal Validation CSV output.")
     parser.add_argument("--decision-review-queue-output", default=DEFAULT_PATHS["decision_review_queue_output"], help="Decision Review Queue CSV output.")
     parser.add_argument("--decision-journal-validation-report-output", help="Decision Journal Validation markdown report output.")
+    parser.add_argument("--data-freshness-config", default=DEFAULT_PATHS["data_freshness_config"], help="Data Freshness / Staleness threshold config.")
+    parser.add_argument("--data-freshness-summary-output", default=DEFAULT_PATHS["data_freshness_summary_output"], help="Data Freshness / Staleness JSON summary output.")
+    parser.add_argument("--data-freshness-report-output", help="Data Freshness / Staleness markdown report output; defaults to reports/{as_of_date}/data_freshness_summary.md.")
     parser.add_argument("--review-queue-summary-output", default=DEFAULT_PATHS["review_queue_summary_output"], help="Dashboard Operator Review Queue Summary JSON output.")
     parser.add_argument("--portfolio-archive", default=DEFAULT_PATHS["portfolio_archive"], help="Portfolio snapshot archive path.")
     parser.add_argument("--portfolio-timeseries-output", default=DEFAULT_PATHS["portfolio_timeseries_output"], help="Portfolio timeseries output.")
@@ -2433,6 +2489,9 @@ def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
         decision_journal_validation_output=args.decision_journal_validation_output,
         decision_review_queue_output=args.decision_review_queue_output,
         decision_journal_validation_report_output=args.decision_journal_validation_report_output,
+        data_freshness_config=args.data_freshness_config,
+        data_freshness_summary_output=args.data_freshness_summary_output,
+        data_freshness_report_output=args.data_freshness_report_output,
         review_queue_summary_output=args.review_queue_summary_output,
         portfolio_archive=args.portfolio_archive,
         portfolio_timeseries_output=args.portfolio_timeseries_output,

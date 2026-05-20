@@ -17,6 +17,7 @@ from src.personal_decision_journal_validation import NON_SCOPE_NOTES, QUEUE_FIEL
 DEFAULT_DECISION_QUALITY_STATE = "data/processed/decision_quality_state.json"
 DEFAULT_DECISION_JOURNAL_VALIDATION = "data/processed/decision_journal_validation.csv"
 DEFAULT_DECISION_REVIEW_QUEUE = "data/processed/decision_review_queue.csv"
+DEFAULT_DATA_FRESHNESS_SUMMARY = "data/processed/data_freshness_summary.json"
 DEFAULT_RUN_MANIFEST = "data/processed/personal_run_manifest.json"
 DEFAULT_RUN_ARTIFACTS = "data/processed/personal_run_artifacts.csv"
 DEFAULT_RUN_USED_INPUTS = "data/processed/personal_run_used_inputs.csv"
@@ -177,6 +178,17 @@ def _top_reason_codes(validation_rows: list[dict[str, str]], queue_rows: list[di
     return [code for code, _count in sorted(counter.items(), key=lambda item: (-item[1], item[0]))]
 
 
+def _top_reason_codes_from_freshness(summary: dict[str, Any]) -> list[str]:
+    counter: Counter[str] = Counter()
+    for item in summary.get("items") or []:
+        if not isinstance(item, dict):
+            continue
+        reason = str(item.get("reason") or "").strip()
+        if reason and reason not in {"WITHIN_THRESHOLD", "NOT_APPLICABLE_MISSING_OPTIONAL_ARTIFACT"}:
+            counter[reason] += 1
+    return [code for code, _count in sorted(counter.items(), key=lambda item: (-item[1], item[0]))]
+
+
 def _count_reason(queue_rows: list[dict[str, str]], reason_code: str) -> int:
     return sum(1 for row in queue_rows if reason_code in _reason_codes_from_queue(row))
 
@@ -191,6 +203,7 @@ def _attention_level(
     validation_rows: list[dict[str, str]],
     queue_rows: list[dict[str, str]],
     decision_quality_review_required: bool = False,
+    data_freshness_attention_required: bool = False,
 ) -> str:
     if artifact_status in {"UNREADABLE", "NOT_AVAILABLE"}:
         return "BLOCKER"
@@ -204,6 +217,8 @@ def _attention_level(
         return "MEDIUM"
     if decision_quality_review_required:
         return "MEDIUM"
+    if data_freshness_attention_required:
+        return "MEDIUM"
     return "NONE"
 
 
@@ -213,12 +228,15 @@ def _surface_status(
     validation_rows: list[dict[str, str]],
     queue_rows: list[dict[str, str]],
     decision_quality_review_required: bool = False,
+    data_freshness_attention_required: bool = False,
 ) -> str:
     if artifact_status in {"UNREADABLE", "NOT_AVAILABLE"}:
         return "NOT_AVAILABLE"
     if artifact_status == "PARTIAL":
         return "PARTIAL"
     if decision_quality_review_required:
+        return "REVIEW"
+    if data_freshness_attention_required:
         return "REVIEW"
     if validation_rows or queue_rows:
         return "REVIEW"
@@ -238,6 +256,7 @@ def build_dashboard_operator_summary(
     decision_quality_state: str = DEFAULT_DECISION_QUALITY_STATE,
     decision_journal_validation: str = DEFAULT_DECISION_JOURNAL_VALIDATION,
     decision_review_queue: str = DEFAULT_DECISION_REVIEW_QUEUE,
+    data_freshness_summary: str = DEFAULT_DATA_FRESHNESS_SUMMARY,
     run_manifest: str = DEFAULT_RUN_MANIFEST,
     run_artifacts: str = DEFAULT_RUN_ARTIFACTS,
     run_used_inputs: str = DEFAULT_RUN_USED_INPUTS,
@@ -255,14 +274,22 @@ def build_dashboard_operator_summary(
         expected_fields=QUEUE_FIELDS,
         label="decision_review_queue",
     )
-    decision_quality, decision_quality_artifact = _read_json_artifact(decision_quality_state, required=False, label="decision_quality_state")
     manifest, manifest_artifact = _read_json_artifact(run_manifest, required=False, label="personal_run_manifest")
+    expected_stages = set(manifest.get("selected_stages") or []) | set(manifest.get("executed_stage_order") or [])
+    data_freshness_expected = "data_freshness" in expected_stages
+    decision_quality, decision_quality_artifact = _read_json_artifact(decision_quality_state, required=False, label="decision_quality_state")
+    data_freshness, data_freshness_artifact = _read_json_artifact(
+        data_freshness_summary,
+        required=data_freshness_expected,
+        label="data_freshness_summary",
+    )
     _artifacts, run_artifacts_artifact = _read_csv_artifact(run_artifacts, required=False, expected_fields=[], label="personal_run_artifacts")
     _used_inputs, run_used_inputs_artifact = _read_csv_artifact(run_used_inputs, required=False, expected_fields=[], label="personal_run_used_inputs")
     source_artifacts = [
         validation_artifact,
         queue_artifact,
         decision_quality_artifact,
+        data_freshness_artifact,
         manifest_artifact,
         run_artifacts_artifact,
         run_used_inputs_artifact,
@@ -277,17 +304,36 @@ def build_dashboard_operator_summary(
     missing_required = [artifact["path"] for artifact in source_artifacts if artifact["required"] and artifact["status"] != "COMPLETE"]
     partial_artifacts = [artifact["path"] for artifact in source_artifacts if artifact["status"] not in {"COMPLETE", "NOT_AVAILABLE"}]
     decision_quality_review_required = decision_quality_artifact["status"] == "COMPLETE" and decision_quality.get("review_required") is True
+    freshness_counts = data_freshness.get("summary_counts") if data_freshness_artifact["status"] == "COMPLETE" else {}
+    freshness_items = data_freshness.get("items") if data_freshness_artifact["status"] == "COMPLETE" else []
+    if not isinstance(freshness_counts, dict):
+        freshness_counts = {}
+    if not isinstance(freshness_items, list):
+        freshness_items = []
+    data_freshness_review_required = data_freshness_artifact["status"] == "COMPLETE" and data_freshness.get("review_required") is True
+    data_freshness_bad_count = sum(int(freshness_counts.get(status, 0) or 0) for status in ("STALE", "MISSING", "UNKNOWN", "REVIEW_REQUIRED"))
+    data_freshness_attention_required = bool(data_freshness_review_required or data_freshness_bad_count)
+    data_freshness_top_reasons = _top_reason_codes_from_freshness(data_freshness) if data_freshness_artifact["status"] == "COMPLETE" else []
+    data_freshness_blocking_dashboard_count = sum(
+        1
+        for item in freshness_items
+        if isinstance(item, dict)
+        and item.get("blocks_dashboard") is True
+        and item.get("freshness_status") in {"STALE", "MISSING", "UNKNOWN", "REVIEW_REQUIRED"}
+    )
     attention_level = _attention_level(
         artifact_status=artifact_status,
         validation_rows=validation_rows,
         queue_rows=queue_rows,
         decision_quality_review_required=decision_quality_review_required,
+        data_freshness_attention_required=data_freshness_attention_required,
     )
     surface_status = _surface_status(
         artifact_status=artifact_status,
         validation_rows=validation_rows,
         queue_rows=queue_rows,
         decision_quality_review_required=decision_quality_review_required,
+        data_freshness_attention_required=data_freshness_attention_required,
     )
     validation_status = "PASS" if not validation_rows and artifact_status == "COMPLETE" else ("REVIEW" if validation_rows or queue_rows or decision_quality_review_required else surface_status)
     decision_quality_status = "NOT_AVAILABLE"
@@ -301,6 +347,9 @@ def build_dashboard_operator_summary(
     attention_reasons.extend(top_reasons[:5])
     if decision_quality_review_required:
         attention_reasons.append("DECISION_QUALITY_REVIEW_REQUIRED")
+    if data_freshness_attention_required:
+        attention_reasons.append("DATA_FRESHNESS_REVIEW_REQUIRED")
+        attention_reasons.extend(data_freshness_top_reasons[:5])
     attention_reasons = list(dict.fromkeys(attention_reasons))
     return {
         "schema_version": SCHEMA_VERSION,
@@ -314,6 +363,16 @@ def build_dashboard_operator_summary(
         "decision_quality_status": decision_quality_status,
         "decision_quality_review_required": decision_quality.get("review_required") if decision_quality_artifact["status"] == "COMPLETE" else None,
         "process_confidence_level": decision_quality.get("decision_confidence_level") if decision_quality_artifact["status"] == "COMPLETE" else None,
+        "data_freshness_status": data_freshness.get("overall_status") if data_freshness_artifact["status"] == "COMPLETE" else ("NOT_AVAILABLE" if data_freshness_artifact["status"] == "NOT_AVAILABLE" else data_freshness_artifact["status"]),
+        "data_freshness_review_required": data_freshness.get("review_required") if data_freshness_artifact["status"] == "COMPLETE" else None,
+        "data_freshness_fresh_count": int(freshness_counts.get("FRESH", 0) or 0),
+        "data_freshness_stale_count": int(freshness_counts.get("STALE", 0) or 0),
+        "data_freshness_missing_count": int(freshness_counts.get("MISSING", 0) or 0),
+        "data_freshness_unknown_count": int(freshness_counts.get("UNKNOWN", 0) or 0),
+        "data_freshness_review_required_count": int(freshness_counts.get("REVIEW_REQUIRED", 0) or 0),
+        "data_freshness_not_applicable_count": int(freshness_counts.get("NOT_APPLICABLE", 0) or 0),
+        "data_freshness_blocking_dashboard_count": data_freshness_blocking_dashboard_count,
+        "data_freshness_top_reason_codes": data_freshness_top_reasons,
         "decision_journal_validation_status": validation_status,
         "validation_status": validation_status,
         "validation_findings_count": validation_findings_count,
@@ -353,6 +412,7 @@ def run_dashboard_operator_summary(
     decision_quality_state: str = DEFAULT_DECISION_QUALITY_STATE,
     decision_journal_validation: str = DEFAULT_DECISION_JOURNAL_VALIDATION,
     decision_review_queue: str = DEFAULT_DECISION_REVIEW_QUEUE,
+    data_freshness_summary: str = DEFAULT_DATA_FRESHNESS_SUMMARY,
     run_manifest: str = DEFAULT_RUN_MANIFEST,
     run_artifacts: str = DEFAULT_RUN_ARTIFACTS,
     run_used_inputs: str = DEFAULT_RUN_USED_INPUTS,
@@ -363,6 +423,7 @@ def run_dashboard_operator_summary(
         decision_quality_state=decision_quality_state,
         decision_journal_validation=decision_journal_validation,
         decision_review_queue=decision_review_queue,
+        data_freshness_summary=data_freshness_summary,
         run_manifest=run_manifest,
         run_artifacts=run_artifacts,
         run_used_inputs=run_used_inputs,
@@ -403,6 +464,11 @@ def build_dashboard_operator_summary_surface_lines(summary: dict[str, Any] | Non
         "queue_items",
         "queue_blocker_count",
         "queue_high_count",
+        "data_freshness_status",
+        "data_freshness_review_required",
+        "data_freshness_stale_count",
+        "data_freshness_missing_count",
+        "data_freshness_unknown_count",
     ):
         lines.append(f"- {field}: `{summary.get(field)}`")
     top_reasons = summary.get("top_reason_codes") or []
@@ -418,6 +484,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--decision-quality-state", default=DEFAULT_DECISION_QUALITY_STATE)
     parser.add_argument("--decision-journal-validation", default=DEFAULT_DECISION_JOURNAL_VALIDATION)
     parser.add_argument("--decision-review-queue", default=DEFAULT_DECISION_REVIEW_QUEUE)
+    parser.add_argument("--data-freshness-summary", default=DEFAULT_DATA_FRESHNESS_SUMMARY)
     parser.add_argument("--run-manifest", default=DEFAULT_RUN_MANIFEST)
     parser.add_argument("--run-artifacts", default=DEFAULT_RUN_ARTIFACTS)
     parser.add_argument("--run-used-inputs", default=DEFAULT_RUN_USED_INPUTS)
@@ -432,6 +499,7 @@ def main() -> None:
         decision_quality_state=args.decision_quality_state,
         decision_journal_validation=args.decision_journal_validation,
         decision_review_queue=args.decision_review_queue,
+        data_freshness_summary=args.data_freshness_summary,
         run_manifest=args.run_manifest,
         run_artifacts=args.run_artifacts,
         run_used_inputs=args.run_used_inputs,

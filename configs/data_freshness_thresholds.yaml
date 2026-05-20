@@ -171,13 +171,13 @@
       "source_path": "data/processed/review_queue_summary.json",
       "freshness_date_fields": ["as_of_date", "generated_at_utc", "surface_generated_at"],
       "threshold_days": 7,
-      "required": true,
-      "missing_behavior": "MISSING",
+      "required": false,
+      "missing_behavior": "NOT_APPLICABLE",
       "unknown_behavior": "UNKNOWN",
       "review_on_stale": true,
-      "review_on_missing": true,
+      "review_on_missing": false,
       "review_on_unknown": true,
-      "blocks_dashboard": true,
+      "blocks_dashboard": false,
       "blocks_replay": true,
       "blocks_outcome_attribution": true
     },
@@ -213,4 +213,3 @@
     }
   ]
 }
-
