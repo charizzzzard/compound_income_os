@@ -1,18 +1,18 @@
-# Compound Income OS External LLM Review Packet - Dashboard Operator Surface Contracts
+# Compound Income OS External LLM Review Packet - Minimal Dashboard Operator Summary Producer
 
 Dies ist der Einstiegspunkt fuer die externe LLM-Review von
 `compound_income_os` nach
-`docs: add dashboard operator surface contracts`.
+`feat: add minimal dashboard operator summary producer`.
 
 ## Current Review Head
 
 - project: `compound_income_os`
 - branch: `main`
-- current_handoff_head: `0f267db5a43ac615131977ac2d227b14bc2d90fe`
-- current_handoff_short_head: `0f267db`
-- current_patch_context: `docs: add dashboard operator surface contracts`
-- previous_repo_head: `7fd952731bc584df7f05492dacb02a78472b339a`
-- previous_handoff_head: `e1ec6682942139ad14a7ffc7f59ef88bd6bc4c4e`
+- current_handoff_head: `d827bfc070706edec34cd2f62fa48caacc3888c7`
+- current_handoff_short_head: `d827bfc`
+- current_patch_context: `feat: add minimal dashboard operator summary producer`
+- previous_repo_head: `93edeb8d6c5d6ba077f871392e751677bd040ba5`
+- previous_handoff_head: `0f267db5a43ac615131977ac2d227b14bc2d90fe`
 - canonical_dashboard_operator_surface_contract:
   `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md`
 - canonical_review_queue_summary_contract:
@@ -24,7 +24,7 @@ Dies ist der Einstiegspunkt fuer die externe LLM-Review von
 - canonical_known_gaps:
   `docs/architecture/CURRENT_KNOWN_GAPS.md`
 
-Das vorherige externe Packet fuer `e1ec6682942139ad14a7ffc7f59ef88bd6bc4c4e`
+Das vorherige externe Packet fuer `0f267db5a43ac615131977ac2d227b14bc2d90fe`
 ist durch dieses Packet superseded.
 
 ## Source-of-Truth / Precedence
@@ -54,6 +54,8 @@ Reviewer sollen in dieser Reihenfolge lesen:
    - `HANDOFF_VALIDATION.txt`
    - `HANDOFF_MANIFEST.csv`
    - `HANDOFF_ARTIFACT_INDEX.csv`
+   - `src/dashboard_operator_summary.py`
+   - `tests/test_dashboard_operator_summary.py`
    - `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md`
    - `docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md`
    - `docs/governance/EXTERNAL_REPRODUCTION.md`
@@ -72,7 +74,7 @@ Regeneration, kein Patch-Source-Dirty-State.
 
 Der finale Repo-HEAD kann nach diesem Packet ein separater
 Handoff-Metadatencommit sein. Der aktuelle Handoff-Head bleibt der
-Implementierungscommit `0f267db5a43ac615131977ac2d227b14bc2d90fe`.
+Implementierungscommit `d827bfc070706edec34cd2f62fa48caacc3888c7`.
 
 ## Patch Scope
 
@@ -80,14 +82,15 @@ Dieses Packet enthaelt:
 
 - den Dashboard Operator Surface Contract fuer read-only Operator-/Dashboard-
   Status ohne visuelles Dashboard-Neudesign,
-- den Review Queue Summary Contract als Zielvertrag fuer
-  `review_queue_summary.json`,
-- die externe Reproduktionsmatrix fuer ZIP-safe, private-fixture und local-only
-  Tests,
-- Feature-Status-Haertung mit getrennten Repo-/Packet-/Generated-Handoff-
-  Evidence-Feldern,
-- Known-Gaps-Update fuer Dashboard Surface Contract, Review Queue Summary
-  Contract, External Reproduction Matrix und Partial Artifact Availability.
+- den Minimal Dashboard Operator Summary Producer
+  `src/dashboard_operator_summary.py`,
+- die Run-Engine-Stage `dashboard_operator_summary` nach
+  `decision_journal_validation`,
+- das Output-Artefakt `data/processed/review_queue_summary.json`,
+- Contract-Haertung fuer maschinennahe Surface-Felder, dominante
+  Artifact-Availability und strukturierte `source_artifacts`,
+- Feature-Status-/Known-Gaps-Update fuer den neuen read-only Summary Producer,
+- die externe Reproduktionsmatrix inklusive minimalem ZIP-Smoke.
 
 Der Patch erzeugt keine Decisions, keine Orders, keine Portfolio-Events und
 keine Outcome Attribution.
@@ -95,8 +98,8 @@ keine Outcome Attribution.
 ## Reviewer Rules
 
 - Vollstaendige relative Pfade verwenden.
-- Die neuen Contract-Dateien als Design-/Governance-Contract behandeln, nicht
-  als bereits implementierten Dashboard Producer.
+- Den neuen Producer als read-only Operator-Summary-Aggregator behandeln, nicht
+  als visuelles Dashboard und nicht als Investmentlogik.
 - `PARTIAL`, `NOT_AVAILABLE`, `PASS` und `REVIEW` Semantik gegen die bestehenden
   Decision Quality / Decision Journal Validation Surfaces pruefen.
 - Keine ausgelassenen privaten oder rohen Dateien inferieren.
