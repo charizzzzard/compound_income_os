@@ -1,22 +1,19 @@
-# HANDOFF LATEST CONTEXT - Meta + Data Source Governance Review
+# HANDOFF LATEST CONTEXT - Registry Preflight Delta Review
 
 project_name: compound_income_os
 canonical_name: Compound Income OS
 short_name: CIOS
 profile: full_review
 bundle_name: HANDOFF_LATEST
-bundle_purpose: external_llm_validation_after_meta_governance_and_data_source_license_boundary
-created_at_utc: 2026-05-20T23:16:24Z
+bundle_purpose: external_llm_delta_review_after_data_source_registry_preflight
+created_at_utc: 2026-05-21T09:02:51Z
 branch: main
-current_handoff_head: 8d6a1fc54480ed1ed2cb22d6508ce0228c3c51af
-current_handoff_short_head: 8d6a1fc
-implementation_commit_message: docs: define data source strategy and license boundary
+current_handoff_head: c7a8c64789ad2549ba3e10731cc2dd0fbd864f0a
+current_handoff_short_head: c7a8c64
+implementation_commit_message: feat: add data source registry validation preflight
+implementation_status: DATA_SOURCE_REGISTRY_PREFLIGHT_ACCEPTED_WITH_FINDINGS
 meta_baseline_commit: 10082d6d6ad16febe7bb2e500776b08f7bb38103
-meta_baseline_message: docs: establish CIOS meta governance baseline
-meta_baseline_status: CIOS_META_BASELINE_ACCEPTED_WITH_FINDINGS
 data_source_license_boundary_commit: 8d6a1fc54480ed1ed2cb22d6508ce0228c3c51af
-data_source_license_boundary_message: docs: define data source strategy and license boundary
-data_source_license_boundary_status: DATA_SOURCE_STRATEGY_AND_LICENSE_BOUNDARY_ACCEPTED_WITH_FINDINGS
 tracked_source_worktree_clean_before_handoff_generation: True
 zip_internal_dirty_worktree_present: True
 external_metadata_dirty_after_zip_generation_before_commit: True
@@ -26,16 +23,15 @@ canonical_review_bundle: external_review_packet/HANDOFF_LATEST.zip
 canonical_checksum: external_review_packet/HANDOFF_LATEST.sha256
 canonical_readme: external_review_packet/00_READ_ME_FIRST.md
 
-zip_file_count: 469
-zip_size_bytes: 13009487
-zip_sha256: a6d0cce25ede191527171d4c874310b1cf3ac7be02a517bbffe75bde3d40659e
+zip_file_count: 471
+zip_size_bytes: 13016707
+zip_sha256: e5710502be3c1d0c9b5d77d01eae1a7f8735a225a477d51b71c7fa8d44dd2235
 sha_match: True
 zip_testzip: None
 missing_required: []
 nested_zip_count: 0
 forbidden_match_count: 0
 local_path_leak_count: 0
-gitattributes_in_zip: True
 internal_head_present: True
 
 ## Source-of-Truth / Precedence
@@ -55,63 +51,45 @@ Head/SHA/Scope, Precedence und Reviewer-Instruktionen.
 ## Current Packet Scope
 
 Dieses Packet synchronisiert den externen Review-Kontext auf den committed
-Repo-Stand `8d6a1fc54480ed1ed2cb22d6508ce0228c3c51af` nach
-`docs: define data source strategy and license boundary`.
+Repo-Stand `c7a8c64789ad2549ba3e10731cc2dd0fbd864f0a` nach
+`feat: add data source registry validation preflight`.
 
 Review-Schwerpunkte:
 
-- Meta-Governance Baseline:
-  - `docs/governance/CIOS_SYSTEM_CONSTITUTION.md`
-  - `docs/governance/CIOS_OPERATING_MODEL.md`
-  - `docs/governance/CIOS_RISK_AND_CONTROL_FRAMEWORK.md`
-  - `docs/governance/CIOS_TRACEABILITY_STANDARD.md`
-  - `docs/governance/CIOS_EVOLUTION_GUARDRAILS.md`
-  - `docs/governance/CIOS_FINAL_META_BASELINE_ACCEPTANCE.md`
-  - `docs/architecture/CIOS_META_ARCHITECTURE.md`
-  - `docs/architecture/CIOS_MATURITY_MODEL.yaml`
-- Data Source Strategy / License Boundary:
-  - `docs/architecture/CIOS_DATA_SOURCE_STRATEGY.md`
-  - `docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md`
-  - `docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml`
-  - `docs/governance/DATA_SOURCE_REVIEW_CHECKLIST.md`
-- Cross-reference and status consistency:
-  - `README.md`
-  - `docs/CONTEXT_AND_ROADMAP.md`
-  - `docs/MODULE_CONTRACTS.md`
-  - `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
-  - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
-  - `docs/architecture/CURRENT_KNOWN_GAPS.md`
-  - `docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md`
-  - `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md`
-  - `docs/governance/EXTERNAL_REPRODUCTION.md`
-
-## Handoff Reproducibility Note
-
-Dieses Handoff ist ein Review-Bundle ohne private/raw Artefakte. Externe
-Reviewer sollen nicht annehmen, dass private Broker-Exports, paid raw vendor
-data, Credentials, lokale User-Agent-Dateien oder nicht exportierte Operator-
-Inputs fehlen, weil sie implizit freigegeben waeren. Sie fehlen absichtlich.
+- `src/data_source_registry_validation.py`
+- `tests/test_data_source_registry_validation.py`
+- `docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml`
+- `docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md`
+- `docs/architecture/CIOS_DATA_SOURCE_STRATEGY.md`
+- `docs/governance/DATA_SOURCE_REVIEW_CHECKLIST.md`
+- `docs/architecture/CIOS_FEATURE_STATUS.yaml`
+- `docs/architecture/CIOS_MATURITY_MODEL.yaml`
+- `docs/architecture/CURRENT_KNOWN_GAPS.md`
+- `docs/governance/CIOS_RISK_AND_CONTROL_FRAMEWORK.md`
+- `docs/governance/EXTERNAL_REPRODUCTION.md`
+- `README.md`
+- `docs/CONTEXT_AND_ROADMAP.md`
+- `docs/MODULE_CONTRACTS.md`
 
 ## Explicit Non-Scope
 
-- keine Investmentlogik
 - keine API-Anbindung
 - kein Scraping oder Web-Crawling
-- keine Provider-Integration
-- keine Preisdatenpipeline
-- kein Broker-Parsing
-- keine Runtime Source Registry Enforcement Logic
+- kein Provider-Adapter
+- keine produktive Source Registry
+- keine Runtime-Enforcement-Integration
+- kein Broker Parser
 - kein Dashboard
 - kein Replay, Backtesting oder Simulation
 - keine Outcome Attribution
 - kein Portfolio Event Ledger
+- keine Legal-/Commercial-Freigabe
+- keine Investmentlogik
+- keine Buy/Sell Recommendations
 - keine Steuerberechnung
-- keine rechtliche Bewertung
-- keine Commercial-Readiness-Behauptung
-- keine Kauf-/Verkaufsempfehlungen
-- keine Runtime-LLM-Agentenlogik
 - keine Scoring-/Ranking-Aenderung
 - keine Portfolio-Regel-Aenderung
+- keine Runtime-LLM-Agentenlogik
 
 ## Validation Actually Performed
 
@@ -120,19 +98,26 @@ Preflight:
 - `git branch --show-current`
   - result: `main`
 - `git rev-parse HEAD`
-  - result: `8d6a1fc54480ed1ed2cb22d6508ce0228c3c51af`
+  - result: `c7a8c64789ad2549ba3e10731cc2dd0fbd864f0a`
 - `git status --short`
   - result before handoff generation: clean
-- `git log --oneline -n 8`
+- `git log --oneline -n 10`
+  - result includes `c7a8c64 feat: add data source registry validation preflight`
   - result includes `8d6a1fc docs: define data source strategy and license boundary`
   - result includes `10082d6 docs: establish CIOS meta governance baseline`
 - `git merge-base --is-ancestor 10082d6d6ad16febe7bb2e500776b08f7bb38103 HEAD`
   - result: ancestor true
 - `git merge-base --is-ancestor 8d6a1fc54480ed1ed2cb22d6508ce0228c3c51af HEAD`
   - result: ancestor true
+- `git merge-base --is-ancestor c7a8c64789ad2549ba3e10731cc2dd0fbd864f0a HEAD`
+  - result: ancestor true
 
 Targeted validation:
 
+- `python -m unittest tests.test_data_source_registry_validation -v`
+  - result: `Ran 11 tests`, `OK`
+- `python -m src.data_source_registry_validation docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml`
+  - result: `status: OK`, `template_only: true`, `source_templates: 4`, `errors: []`
 - `python -m unittest tests.test_readme_and_reports -v`
   - result: `Ran 11 tests`, `OK`
 - `python -m unittest tests.test_handoff_zip_export -v`
@@ -149,7 +134,7 @@ Targeted validation:
   - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
   - `docs/architecture/CIOS_MATURITY_MODEL.yaml`
   - `docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml`
-  - result: `{'feature_capabilities': 39, 'maturity_kernels': 26, 'source_templates': 4}`
+  - result: `{'feature_capabilities': 40, 'maturity_kernels': 28, 'source_templates': 4}`
 - `git diff --check`
   - result: exit code `0`; no whitespace errors
 
@@ -158,10 +143,10 @@ No full test suite is claimed by this context file.
 Handoff generation:
 
 - `python -m src.handoff_zip_export --profile full_review --name HANDOFF_LATEST --output-path ".\external_review_packet\HANDOFF_LATEST.zip"`
-  - result: generated ZIP for head `8d6a1fc54480ed1ed2cb22d6508ce0228c3c51af`
-  - file_count: `469`
-  - size_bytes: `13009487`
-  - zip_sha256: `a6d0cce25ede191527171d4c874310b1cf3ac7be02a517bbffe75bde3d40659e`
+  - result: generated ZIP for head `c7a8c64789ad2549ba3e10731cc2dd0fbd864f0a`
+  - file_count: `471`
+  - size_bytes: `13016707`
+  - zip_sha256: `e5710502be3c1d0c9b5d77d01eae1a7f8735a225a477d51b71c7fa8d44dd2235`
   - forbidden_match_count: `0`
   - local_path_leak_count: `0`
 
@@ -172,4 +157,5 @@ Post-generation ZIP validation:
 - `missing_required`: `[]`
 - `nested_zip_count`: `0`
 - `local_path_leak_count`: `0`
+- `forbidden_match_count`: `0`
 - internal `HANDOFF_CONTEXT.md` contains current HEAD: `True`
