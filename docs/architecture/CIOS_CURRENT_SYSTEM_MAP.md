@@ -61,6 +61,10 @@ The meta-governance baseline is defined by:
   sequencing map for clean-room reproduction, cross-patch regression, runtime
   enforcement boundaries, broker/event-ledger readiness, dashboard
   interpretation and compliance review before future feature classes.
+- Cross-Patch Regression Review: read-only governance producer that checks gate
+  registry schema, gate sequencing, known-gaps mapping, feature-status
+  overclaims, validation-reality semantics, source-of-truth order and non-scope
+  preservation.
 - Monthly Decision Report: report surface for portfolio health, decision
   quality and decision journal validation when explicit artifacts are present.
 - Personal Run Engine: explicit stage orchestration with manifest, used-inputs,
@@ -276,7 +280,8 @@ with zero counts.
   production license-enforcement registry, provider-specific approval,
   production adapter, legal review or commercial redistribution approval.
 - External Review Coverage Governance is documented, but the clean-room
-  reproduction and cross-patch regression gates are not fully automated release
+  reproduction gate is not automated. Cross-Patch Regression now has a
+  read-only producer, but it is not release acceptance and not runtime
   enforcement.
 - Decision Quality stale-state handling is conservative: any older
   `as_of_date` is stale in the current MVP.

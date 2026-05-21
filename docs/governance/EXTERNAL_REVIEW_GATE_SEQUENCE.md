@@ -26,11 +26,12 @@ Required gates:
 - `PORTFOLIO_EVENT_LEDGER_RUNTIME_READINESS_REVIEW`
 - `AS_OF_TEMPORAL_INTEGRITY_REVIEW`
 - `RUNTIME_ENFORCEMENT_BOUNDARY_REVIEW`
+- `ADVERSARIAL_INPUT_AND_FAILURE_MODE_REVIEW`
 - `CROSS_PATCH_REGRESSION_REVIEW`
 
 Rationale: Template validation is not runtime event validation. Runtime ledger
 work needs append-only semantics, correction/reversal handling, temporal
-integrity and explicit enforcement boundaries.
+integrity, adversarial input coverage and explicit enforcement boundaries.
 
 ## Before Broker Import Staging
 
@@ -125,10 +126,25 @@ Required gates:
 - `LOCAL_SECURITY_AND_SECRET_HYGIENE_REVIEW`
 - `DECISION_SUPPORT_COMPLIANCE_REVIEW`
 - `OPERATOR_COMPREHENSION_REVIEW`
+- `RELEASE_CI_ENVIRONMENT_PARITY_REVIEW`
 
 Rationale: Public or commercial packaging must not include private/raw data,
-must be reproducible from the packet, and must not imply legal, tax, commercial
-or investment approval.
+must be reproducible from the packet, must keep local/CI validation semantics
+visible, and must not imply legal, tax, commercial or investment approval.
+
+## Before Major External Review Or Release Gate Claims
+
+Required gates:
+
+- `CLEAN_ROOM_REPRODUCTION_REVIEW`
+- `CROSS_PATCH_REGRESSION_REVIEW`
+- `RELEASE_CI_ENVIRONMENT_PARITY_REVIEW`
+- `LOCAL_SECURITY_AND_SECRET_HYGIENE_REVIEW`
+
+Rationale: Major external review and release-gate claims need reproducible
+handoff evidence, cross-kernel regression visibility, environment parity and
+secret-hygiene evidence. Recorded validation commands alone are not pass/fail
+evidence.
 
 ## Non-Scope
 

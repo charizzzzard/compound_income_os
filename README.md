@@ -889,6 +889,19 @@ template-only Platzhalter und erzeugt keine produktive Event-Ledger-Runtime,
 keinen Broker-Import, keine Event-Acceptance, keine Tax-/Legal-/Commercial-
 Freigabe und keine Replay-/Attribution-Funktionalitaet.
 
+`src.external_review_cross_patch_regression` erzeugt einen read-only
+Governance-Regression-Check fuer externe Review-Gates, Known Gaps, Feature
+Status, Handoff-Validation-Realitaet, Source-of-Truth-Reihenfolge und
+Non-Scope-Erhalt:
+
+```powershell
+python -m src.external_review_cross_patch_regression --as-of-date YYYY-MM-DD
+```
+
+Der Check schreibt `data/processed/external_review_cross_patch_regression.csv`
+und `reports/<as_of_date>/external_review_cross_patch_regression_report.md`.
+Er ist keine Runtime-Enforcement-Engine und keine Release-Akzeptanz.
+
 Core-Orchestrator-Beispiel:
 
 ```powershell
