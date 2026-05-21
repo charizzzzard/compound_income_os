@@ -67,6 +67,9 @@ Canonical architecture baseline:
 - [docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md](docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md): Zielvertrag fuer eine maschinenlesbare Review-Queue-Summary
 - [docs/governance/DATA_SOURCE_REVIEW_CHECKLIST.md](docs/governance/DATA_SOURCE_REVIEW_CHECKLIST.md): Review-Checkliste fuer neue Quellen, Adapter, Handoff- und Commercial-Grenzen
 - [docs/governance/EXTERNAL_REPRODUCTION.md](docs/governance/EXTERNAL_REPRODUCTION.md): Reproduzierbarkeitsmatrix fuer externe Handoff-Reviews
+- [docs/governance/EXTERNAL_REVIEW_COVERAGE_STANDARD.md](docs/governance/EXTERNAL_REVIEW_COVERAGE_STANDARD.md): Coverage-Semantik fuer externe Reviews, Ratings, Priority-Level und Akzeptanzgrenzen
+- [docs/governance/EXTERNAL_REVIEW_GATE_REGISTRY.yaml](docs/governance/EXTERNAL_REVIEW_GATE_REGISTRY.yaml): maschinenlesbare Registry fuer externe Review-Gates
+- [docs/governance/EXTERNAL_REVIEW_GATE_SEQUENCE.md](docs/governance/EXTERNAL_REVIEW_GATE_SEQUENCE.md): konservative Gate-Reihenfolge vor Runtime-, Broker-, Replay-, Dashboard-, Valuation- und Packaging-Arbeit
 - [docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md](docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md): naechster Producer-Vertrag, noch nicht implementiert
 - [docs/policies/LLM_CODEX_OPERATING_POLICY.md](docs/policies/LLM_CODEX_OPERATING_POLICY.md): LLM-/Codex-Grenzen
 - [docs/governance/CIOS_FINAL_META_BASELINE_ACCEPTANCE.md](docs/governance/CIOS_FINAL_META_BASELINE_ACCEPTANCE.md): Meta-Baseline-Abschluss; nicht Feature-, Product- oder Commercial-Completion

@@ -34,6 +34,9 @@
 - [docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md](contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md): Zielvertrag fuer `review_queue_summary.json`, Statusregeln und Attention-Level.
 - [docs/governance/DATA_SOURCE_REVIEW_CHECKLIST.md](governance/DATA_SOURCE_REVIEW_CHECKLIST.md): Operator-/Review-Checkliste fuer neue Datenquellen, Adapter, Handoff-Freigaben und Commercial-Grenzen.
 - [docs/governance/EXTERNAL_REPRODUCTION.md](governance/EXTERNAL_REPRODUCTION.md): ZIP-safe/private-fixture/local-only Testreproduktionsmatrix fuer externe Reviews.
+- [docs/governance/EXTERNAL_REVIEW_COVERAGE_STANDARD.md](governance/EXTERNAL_REVIEW_COVERAGE_STANDARD.md): Coverage-Standard fuer externe Reviews; trennt dokumentiert, getestet, enforced, operabel und production-ready.
+- [docs/governance/EXTERNAL_REVIEW_GATE_REGISTRY.yaml](governance/EXTERNAL_REVIEW_GATE_REGISTRY.yaml): maschinenlesbare Review-Gate-Registry fuer Clean-Room-, Regression-, Runtime-, Broker-, Event-Ledger-, Dashboard- und Compliance-Gates.
+- [docs/governance/EXTERNAL_REVIEW_GATE_SEQUENCE.md](governance/EXTERNAL_REVIEW_GATE_SEQUENCE.md): konservative Gate-Reihenfolge vor Instrument-Master-Ausbau, Event-Ledger-Runtime, Broker Import, Replay, Backtesting, Dashboard, Valuation und Public/Commercial Packaging.
 
 ## Kernmodule
 

@@ -283,6 +283,44 @@ class ReadmeAndReportTests(unittest.TestCase):
         for forbidden in ["C:\\Users\\", "C:/Users/", "/Users/", "/home/"]:
             self.assertNotIn(forbidden, dag)
 
+    def test_external_review_coverage_governance_docs_are_linked_and_conservative(self) -> None:
+        required_paths = [
+            Path("docs/governance/EXTERNAL_REVIEW_COVERAGE_STANDARD.md"),
+            Path("docs/governance/EXTERNAL_REVIEW_GATE_REGISTRY.yaml"),
+            Path("docs/governance/EXTERNAL_REVIEW_GATE_SEQUENCE.md"),
+        ]
+        for path in required_paths:
+            with self.subTest(path=path):
+                self.assertTrue(path.exists(), f"missing {path}")
+
+        readme = Path("README.md").read_text(encoding="utf-8")
+        system_map = Path("docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md").read_text(encoding="utf-8")
+        module_contracts = Path("docs/MODULE_CONTRACTS.md").read_text(encoding="utf-8")
+        context = Path("docs/CONTEXT_AND_ROADMAP.md").read_text(encoding="utf-8")
+        combined_refs = "\n".join([readme, system_map, module_contracts, context])
+        for path in required_paths:
+            with self.subTest(reference=path.as_posix()):
+                self.assertIn(path.as_posix(), combined_refs)
+
+        standard = required_paths[0].read_text(encoding="utf-8")
+        registry = json.loads(required_paths[1].read_text(encoding="utf-8"))
+        sequence = required_paths[2].read_text(encoding="utf-8")
+        gate_ids = {gate["gate_id"] for gate in registry["gates"]}
+        for gate_id in [
+            "CLEAN_ROOM_REPRODUCTION_REVIEW",
+            "CROSS_PATCH_REGRESSION_REVIEW",
+            "RUNTIME_ENFORCEMENT_BOUNDARY_REVIEW",
+            "BROKER_IMPORT_STAGING_READINESS_REVIEW",
+            "PORTFOLIO_EVENT_LEDGER_RUNTIME_READINESS_REVIEW",
+        ]:
+            with self.subTest(gate_id=gate_id):
+                self.assertIn(gate_id, gate_ids)
+                self.assertIn(gate_id, sequence)
+        self.assertIn("External reviews may recommend", standard)
+        self.assertIn("Final acceptance remains with the Human Operator.", standard)
+        self.assertIn("No investment advice.", standard)
+        self.assertNotIn("production ready", standard.lower())
+
     def test_sec_related_csv_templates_are_lf_normalized_without_trailing_whitespace(self) -> None:
         gitattributes = Path(".gitattributes").read_text(encoding="utf-8")
         template_paths = [

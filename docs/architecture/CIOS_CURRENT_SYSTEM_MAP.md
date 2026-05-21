@@ -57,6 +57,10 @@ The meta-governance baseline is defined by:
   kernel for future portfolio-event identity, append-only correction/reversal
   semantics, broker/source boundaries, neutral template validation and
   sequencing before replay, performance or outcome attribution.
+- External Review Coverage Governance: coverage standard, gate registry and
+  sequencing map for clean-room reproduction, cross-patch regression, runtime
+  enforcement boundaries, broker/event-ledger readiness, dashboard
+  interpretation and compliance review before future feature classes.
 - Monthly Decision Report: report surface for portfolio health, decision
   quality and decision journal validation when explicit artifacts are present.
 - Personal Run Engine: explicit stage orchestration with manifest, used-inputs,
@@ -89,7 +93,10 @@ The meta-governance baseline is defined by:
    validation, review queue and Data Freshness state for operator follow-up.
 11. Report surfaces render available states and show `NOT_AVAILABLE` only when
    an artifact is missing, unreadable or the stage did not run.
-12. Handoff export packages code, docs, tests, configs and selected review
+12. External review gates classify coverage gaps and block future feature
+   classes where documentation, tests, runtime enforcement, clean-room
+   reproduction or operator acceptance are not yet sufficient.
+13. Handoff export packages code, docs, tests, configs and selected review
    context for external validation.
 
 ## Current `personal_run_engine` Stage Overview
@@ -190,6 +197,9 @@ dashboard.
   - `docs/CONTEXT_AND_ROADMAP.md`
   - `docs/governance/BASELINE_VS_CANDIDATE_VALIDATION.md`
   - `docs/governance/EXTERNAL_REPRODUCTION.md`
+  - `docs/governance/EXTERNAL_REVIEW_COVERAGE_STANDARD.md`
+  - `docs/governance/EXTERNAL_REVIEW_GATE_REGISTRY.yaml`
+  - `docs/governance/EXTERNAL_REVIEW_GATE_SEQUENCE.md`
 - Configs:
   - `configs/portfolio_rules.yaml`
   - `configs/scoring_weights.yaml`
@@ -265,6 +275,9 @@ with zero counts.
   documentation plus template validation preflight only; there is no active
   production license-enforcement registry, provider-specific approval,
   production adapter, legal review or commercial redistribution approval.
+- External Review Coverage Governance is documented, but the clean-room
+  reproduction and cross-patch regression gates are not fully automated release
+  enforcement.
 - Decision Quality stale-state handling is conservative: any older
   `as_of_date` is stale in the current MVP.
 - Scenario, Tail Risk, Calibration and Regret remain non-implemented or
@@ -289,8 +302,8 @@ with zero counts.
 
 ## Next Recommended Hardening Patches
 
-1. External Review Packet Refresh after Event Ledger Template Validation.
-2. Broker Import Staging Contract.
-3. Corporate Actions Contract.
+1. External Review of Review Coverage Governance.
+2. Technical operationalization of CLEAN_ROOM_REPRODUCTION_REVIEW or CROSS_PATCH_REGRESSION_REVIEW.
+3. Broker Import Staging Contract.
 4. Corporate Actions Contract later.
 5. Time-Aware Replay / Outcome contracts later.
