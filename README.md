@@ -878,6 +878,14 @@ validiert `source_type`, blockiert production-artige `current_status`-Claims und
 akzeptiert fuer Lizenz-/Commercial-/Redistribution-Grenzen nur explizite
 `license_evidence_files`.
 
+Die Portfolio-Event-Ledger-Vorlage liegt in
+`docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml`.
+`src.portfolio_event_ledger_validation` validiert sie read-only gegen
+`docs/contracts/PORTFOLIO_EVENT_LEDGER_CONTRACT.md`; der Check erlaubt nur
+template-only Platzhalter und erzeugt keine produktive Event-Ledger-Runtime,
+keinen Broker-Import, keine Event-Acceptance, keine Tax-/Legal-/Commercial-
+Freigabe und keine Replay-/Attribution-Funktionalitaet.
+
 Core-Orchestrator-Beispiel:
 
 ```powershell

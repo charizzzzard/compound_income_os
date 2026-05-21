@@ -166,6 +166,8 @@ class ReadmeAndReportTests(unittest.TestCase):
             Path("docs/contracts/PORTFOLIO_EVENT_LEDGER_CONTRACT.md"),
             Path("docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER.md"),
             Path("docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml"),
+            Path("src/portfolio_event_ledger_validation.py"),
+            Path("tests/test_portfolio_event_ledger_validation.py"),
         ]
         for path in required_paths:
             with self.subTest(path=str(path)):
@@ -193,11 +195,16 @@ class ReadmeAndReportTests(unittest.TestCase):
         self.assertIn("FX_CONVERSION", contract)
         self.assertIn("Relationship To Instrument Master", contract)
         self.assertIn("Relationship To Replay / Outcome / Performance Attribution", contract)
+        self.assertIn("Template Validation Preflight", contract)
         self.assertIn("No production broker import", combined)
         self.assertNotIn("C:\\Users\\", combined)
 
         template = json.loads(Path("docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml").read_text(encoding="utf-8"))
         self.assertTrue(template["template_only"])
+        self.assertIn("required_by_event_type", template)
+        self.assertIn("nullable_by_event_type", template)
+        self.assertIn("not_applicable_by_event_type", template)
+        self.assertIn("review_required_by_event_type", template)
         template_ids = {entry["template_id"] for entry in template["event_templates"]}
         self.assertEqual(
             template_ids,
@@ -257,7 +264,7 @@ class ReadmeAndReportTests(unittest.TestCase):
         for kernel in maturity["kernels"]:
             with self.subTest(kernel=kernel["kernel_id"]):
                 self.assertLessEqual(kernel["maturity_level"], 5)
-        self.assertTrue(any(kernel["kernel_id"] == "portfolio_event_ledger" and kernel["status"] == "CONTRACT_ONLY" for kernel in maturity["kernels"]))
+        self.assertTrue(any(kernel["kernel_id"] == "portfolio_event_ledger" and kernel["status"] == "PARTIAL" for kernel in maturity["kernels"]))
         self.assertTrue(any(kernel["kernel_id"] == "meta_governance" for kernel in maturity["kernels"]))
 
     def test_personal_run_stage_dag_documents_current_stage_order(self) -> None:

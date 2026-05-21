@@ -569,16 +569,38 @@ capabilities:
       - docs/contracts/PORTFOLIO_EVENT_LEDGER_CONTRACT.md
       - docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER.md
       - docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml
+      - src/portfolio_event_ledger_validation.py
+      - tests/test_portfolio_event_ledger_validation.py
     input_artifacts: []
     output_artifacts: []
     report_surface: []
     tests:
       - tests/test_readme_and_reports.py
+      - tests/test_portfolio_event_ledger_validation.py
     limitations:
-      - "Contract, architecture note and template-only placeholder exist, but there is no production event ledger database, runtime, validator, broker import staging pipeline or automatic transaction classification."
+      - "Contract, architecture note, template-only placeholder and read-only template validation preflight exist, but there is no production event ledger database, runtime, broker import staging pipeline or automatic transaction classification."
       - "No corporate-actions processing, FX engine, replay, performance attribution, outcome attribution, dashboard expansion, tax calculation or investment logic is implemented."
       - "Existing cost/tax and broker-document modules remain specialized operational modules, not the canonical Portfolio Event Ledger."
-    next_action: "External delta review after Portfolio Event Ledger Contract; then Event Ledger Registry Template / Validation or Broker Import Staging Contract."
+    next_action: "External review packet refresh or Broker Import Staging Contract."
+  - capability_id: portfolio_event_ledger_validation_preflight
+    display_name: Portfolio Event Ledger Template Validation Preflight
+    status: implemented
+    evidence_files:
+      - src/portfolio_event_ledger_validation.py
+      - tests/test_portfolio_event_ledger_validation.py
+      - docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml
+      - docs/contracts/PORTFOLIO_EVENT_LEDGER_CONTRACT.md
+    input_artifacts:
+      - docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml
+    output_artifacts: []
+    report_surface: []
+    tests:
+      - tests/test_portfolio_event_ledger_validation.py
+    limitations:
+      - "Validates only the template and conservative boundaries; it does not create a production Event Ledger, accept events, parse broker files, classify transactions or enforce Personal Run runtime behavior."
+      - "Blocks accepted/validated template entries, real-looking broker/account/source IDs, real numeric amounts, missing event-type matrix fields, correction/reversal/supersession gaps, FX direction gaps and transfer boundary gaps."
+      - "A passing template is not legal, tax, commercial, investment, public-handoff or broker-import approval."
+    next_action: "Broker Import Staging Contract or external review packet refresh before the next external delta review."
   - capability_id: time_aware_replay
     display_name: Time-Aware Replay
     status: planned

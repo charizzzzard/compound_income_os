@@ -164,15 +164,17 @@
     },
     {
       "kernel_id": "portfolio_event_ledger",
-      "maturity_level": 2,
-      "maturity_label": "CONTRACT_DEFINED",
-      "status": "CONTRACT_ONLY",
-      "next_level_required": "Event Ledger registry template validation, broker import staging contract, correction/reversal validation and Time-Aware Replay contract.",
-      "blocking_gaps": ["event_ledger_registry_validation", "broker_import_staging_contract", "time_aware_replay"],
+      "maturity_level": 3,
+      "maturity_label": "IMPLEMENTED_MANUAL",
+      "status": "PARTIAL",
+      "next_level_required": "Broker import staging contract, production event-store design, runtime correction/reversal validation and Time-Aware Replay contract.",
+      "blocking_gaps": ["production_event_ledger_store", "broker_import_staging_contract", "runtime_correction_reversal_validation", "time_aware_replay"],
       "current_evidence_files": [
         "docs/contracts/PORTFOLIO_EVENT_LEDGER_CONTRACT.md",
         "docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER.md",
-        "docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml"
+        "docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml",
+        "src/portfolio_event_ledger_validation.py",
+        "tests/test_portfolio_event_ledger_validation.py"
       ]
     },
     {
@@ -180,8 +182,8 @@
       "maturity_level": 3,
       "maturity_label": "IMPLEMENTED_MANUAL",
       "status": "PARTIAL",
-      "next_level_required": "Broker import staging contract, validators, review workflow and tests before production broker path.",
-      "blocking_gaps": ["broker_import_staging_contract", "event_ledger_registry_validation"],
+      "next_level_required": "Broker import staging contract, validators, review workflow and tests before production broker path; existing read-only import modules are not a Broker Import Staging Contract.",
+      "blocking_gaps": ["broker_import_staging_contract", "production_event_ledger_store"],
       "current_evidence_files": ["src/import_broker.py", "src/traderepublic_documents.py"]
     },
     {

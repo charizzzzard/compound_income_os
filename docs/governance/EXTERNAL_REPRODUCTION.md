@@ -33,6 +33,8 @@ Recommended examples:
 
 - `python -m unittest tests.test_data_source_registry_validation -v`
 - `python -m src.data_source_registry_validation docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml`
+- `python -m unittest tests.test_portfolio_event_ledger_validation -v`
+- `python -m src.portfolio_event_ledger_validation docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml`
 - `python -m unittest tests.test_personal_decision_journal_validation -v`
 - `python -m unittest tests.test_monthly_decision_report -v`
 - `python -m unittest tests.test_personal_decision_quality_state -v`
@@ -42,6 +44,12 @@ Recommended examples:
 The registry-template validator is `ZIP_SAFE_WITH_PYTHON`: it reads only the
 template and contract-shaped local YAML data and must not contact providers,
 networks or private inputs.
+
+The Portfolio Event Ledger template validator is also `ZIP_SAFE_WITH_PYTHON`:
+it reads only the extracted template and local Python source, checks neutral
+template placeholders, and must not infer private broker events, real portfolio
+history, tax evidence, dividend records, FX conversion, event acceptance or
+broker-import readiness from the template.
 
 `tests.test_readme_and_reports` is ZIP-safe only when the bundle includes
 root-level LF governance files such as `.gitattributes`.
@@ -113,6 +121,7 @@ python -m unittest tests.test_personal_decision_journal_validation -v
 python -m unittest tests.test_monthly_decision_report -v
 python -m unittest tests.test_personal_decision_quality_state -v
 python -m unittest tests.test_data_source_registry_validation -v
+python -m unittest tests.test_portfolio_event_ledger_validation -v
 python -m unittest tests.test_data_freshness -v
 python -m unittest tests.test_personal_run_engine -v
 python -m unittest tests.test_readme_and_reports -v
@@ -136,6 +145,8 @@ Architecture review artifacts that are ZIP-review relevant include:
 - `docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml`
 - `src/data_source_registry_validation.py`
 - `tests/test_data_source_registry_validation.py`
+- `src/portfolio_event_ledger_validation.py`
+- `tests/test_portfolio_event_ledger_validation.py`
 - `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`
 - `docs/governance/CIOS_SYSTEM_CONSTITUTION.md`
 - `docs/governance/CIOS_OPERATING_MODEL.md`

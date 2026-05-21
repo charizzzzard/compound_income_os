@@ -175,6 +175,15 @@ Future ledger events must include:
 - `correction_of_event_id`
 - `reversal_of_event_id`
 - `supersedes_event_id`
+- `correction_reason`
+- `reversal_reason`
+- `supersession_reason`
+- `correction_review_status`
+- `reversal_review_status`
+- `supersession_review_status`
+- `correction_evidence_files`
+- `reversal_evidence_files`
+- `supersession_evidence_files`
 - `predecessor_event_ids`
 - `successor_event_ids`
 - `validation_status`
@@ -184,6 +193,17 @@ Future ledger events must include:
 - `owner`
 - `known_limitations`
 - `notes`
+- `fx_from_currency`
+- `fx_to_currency`
+- `fx_rate_convention`
+- `fx_rate_direction`
+- `fx_rate_includes_spread`
+- `fx_rate_review_status`
+- `source_account_id`
+- `target_account_id`
+- `transfer_direction`
+- `transfer_pair_id`
+- `transfer_review_status`
 
 Nullable and `NOT_APPLICABLE` rules:
 
@@ -196,6 +216,13 @@ Nullable and `NOT_APPLICABLE` rules:
   `base_currency` and no conversion is represented.
 - `source_event_id` can be `UNKNOWN` for manual operator input, but the event
   must then carry a review-required status.
+- The template must publish machine-readable `required_by_event_type`,
+  `nullable_by_event_type`, `not_applicable_by_event_type` and
+  `review_required_by_event_type` matrices before any future event-store
+  implementation uses it.
+- `ACCEPTED_FOR_LOCAL_USE` is only a future local review status. It is not a
+  legal approval, tax approval, commercial approval, investment approval or
+  public-handoff approval for private broker or portfolio events.
 
 ## Allowed Values
 
@@ -326,11 +353,16 @@ Nullable and `NOT_APPLICABLE` rules:
 
 - Instrument and cash transfers must be distinguishable.
 - No automatic gain/loss interpretation is allowed.
-- source and target account boundaries must remain visible.
+- source and target account boundaries must remain visible through
+  `source_account_id`, `target_account_id`, `transfer_direction`,
+  `transfer_pair_id` and `transfer_review_status` where applicable.
 
 ### FX_CONVERSION
 
 - From/to currency, amount, rate, source and `as_of_date` must be visible.
+- `fx_from_currency`, `fx_to_currency`, `fx_rate_convention`,
+  `fx_rate_direction`, `fx_rate_includes_spread` and
+  `fx_rate_review_status` must keep rate direction and review state explicit.
 - No implicit FX rate may be invented.
 
 ### Corporate Action Types
@@ -346,12 +378,41 @@ reversals and supersessions require:
 
 - `correction_of_event_id`, `reversal_of_event_id` or `supersedes_event_id`,
 - predecessor/successor chain where relevant,
-- reason in `notes` or a future structured reason field,
-- evidence,
+- structured reason in `correction_reason`, `reversal_reason` or
+  `supersession_reason`,
+- structured review status in `correction_review_status`,
+  `reversal_review_status` or `supersession_review_status`,
+- evidence in `correction_evidence_files`, `reversal_evidence_files` or
+  `supersession_evidence_files`,
 - operator review,
 - audit trail.
 
 Accepted facts cannot be silently overwritten.
+
+## Template Validation Preflight
+
+`src.portfolio_event_ledger_validation` is the current read-only template
+preflight. It validates only the local
+`docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml` structure and
+does not create or approve ledger events.
+
+The preflight must enforce:
+
+- `template_only: true`,
+- required contract fields in the template and every template entry,
+- allowed enum values,
+- event-type required/nullable/not-applicable/review-required matrices,
+- neutral placeholders only; no real broker, portfolio, tax, dividend or FX
+  data,
+- no `ACCEPTED`, `VALIDATED`, `VALID` or `ACCEPTED_FOR_LOCAL_USE` template
+  entries,
+- structured correction/reversal/supersession rules,
+- explicit FX direction/convention or `FX_REVIEW_REQUIRED`,
+- explicit transfer account boundary or transfer review requirement.
+
+This preflight is not a production Event Ledger, broker import staging layer,
+runtime enforcement, tax calculation, legal/commercial approval, performance
+engine, replay engine or outcome-attribution module.
 
 ## Broker / Source Mapping Boundary
 
@@ -448,16 +509,19 @@ ADR required for:
 
 Future validators should check:
 
+- template-only invariant,
 - required fields,
 - enum values,
+- required/nullable/not-applicable matrix consistency,
 - event_id uniqueness,
 - duplicate transaction detection,
 - ticker-only rejection,
 - missing `canonical_instrument_id`,
-- FX consistency,
+- FX direction/convention consistency,
+- transfer source/target account boundaries,
 - fee/tax/net-amount consistency,
-- correction/reversal chains,
+- structured correction/reversal/supersession chains,
 - source provenance,
 - broker/source mapping,
+- no private/raw broker events in public handoffs,
 - handoff/private-data boundary.
-
