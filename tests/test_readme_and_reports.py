@@ -117,6 +117,50 @@ class ReadmeAndReportTests(unittest.TestCase):
         self.assertFalse(paid_template["commercial_use_allowed"])
         self.assertEqual(paid_template["review_status"], "LEGAL_REVIEW_REQUIRED")
 
+    def test_instrument_master_contract_docs_are_linked_and_conservative(self) -> None:
+        required_paths = [
+            Path("docs/contracts/INSTRUMENT_MASTER_CONTRACT.md"),
+            Path("docs/architecture/CIOS_INSTRUMENT_MASTER.md"),
+            Path("docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml"),
+        ]
+        for path in required_paths:
+            with self.subTest(path=str(path)):
+                self.assertTrue(path.exists(), f"missing {path}")
+
+        readme = Path("README.md").read_text(encoding="utf-8")
+        system_map = Path("docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md").read_text(encoding="utf-8")
+        module_contracts = Path("docs/MODULE_CONTRACTS.md").read_text(encoding="utf-8")
+        external_reproduction = Path("docs/governance/EXTERNAL_REPRODUCTION.md").read_text(encoding="utf-8")
+        combined_refs = "\n".join([readme, system_map, module_contracts, external_reproduction])
+        for path in required_paths:
+            with self.subTest(reference=path.as_posix()):
+                self.assertIn(path.as_posix(), combined_refs)
+
+        contract = Path("docs/contracts/INSTRUMENT_MASTER_CONTRACT.md").read_text(encoding="utf-8")
+        architecture = Path("docs/architecture/CIOS_INSTRUMENT_MASTER.md").read_text(encoding="utf-8")
+        combined = contract + "\n" + architecture
+        self.assertIn("Ticker-only identity is prohibited.", contract)
+        self.assertIn("Name-only identity is prohibited.", contract)
+        self.assertIn("Broker-symbol-only identity is prohibited.", contract)
+        self.assertIn("Provider-ID-only identity is prohibited.", contract)
+        self.assertIn("canonical_instrument_id", contract)
+        self.assertIn("Broker / Provider Mapping Boundary", contract)
+        self.assertIn("Relationship To Portfolio Event Ledger", contract)
+        self.assertIn("Relationship To Replay / Outcome / Performance Attribution", contract)
+        self.assertIn("No production registry", architecture)
+        self.assertNotIn("C:\\Users\\", combined)
+
+        template = json.loads(Path("docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml").read_text(encoding="utf-8"))
+        self.assertTrue(template["template_only"])
+        template_ids = {entry["template_id"] for entry in template["instrument_templates"]}
+        self.assertEqual(template_ids, {"STOCK_TEMPLATE", "ETF_TEMPLATE", "CASH_CURRENCY_TEMPLATE", "CRYPTO_ASSET_TEMPLATE"})
+        for entry in template["instrument_templates"]:
+            with self.subTest(template_id=entry["template_id"]):
+                self.assertTrue(str(entry["canonical_instrument_id"]).startswith("IM_TEMPLATE_"))
+                self.assertIn(entry["instrument_type"], template["allowed_values"]["instrument_type"])
+                self.assertIn(entry["review_status"], template["allowed_values"]["review_status"])
+                self.assertIn("Template only", " ".join(entry["known_limitations"]))
+
     def test_meta_governance_baseline_docs_are_linked_and_conservative(self) -> None:
         required_paths = [
             Path("docs/governance/CIOS_SYSTEM_CONSTITUTION.md"),

@@ -50,6 +50,9 @@ The meta-governance baseline is defined by:
   typology, provider-agnostic adapters, provenance, usage scopes, handoff
   boundaries, template validation preflight and commercial/license review gates
   before future integrations.
+- Instrument Master Contract: governance kernel for canonical instrument
+  identity, alias/provider/broker mapping boundaries, lifecycle status and
+  collision rules before production broker import or event-ledger work.
 - Monthly Decision Report: report surface for portfolio health, decision
   quality and decision journal validation when explicit artifacts are present.
 - Personal Run Engine: explicit stage orchestration with manifest, used-inputs,
@@ -66,16 +69,19 @@ The meta-governance baseline is defined by:
 4. Data Source Strategy and License Boundary define whether source classes may
    be used, displayed, exported or redistributed before any future provider
    integration.
-5. `decision_quality` evaluates process/readiness state from existing outputs.
-6. `decision_journal_validation` evaluates the append-only journal and produces
+5. Instrument Master defines how future holdings, broker aliases and provider
+   identifiers must map to canonical instrument identity before production
+   broker import or Event Ledger implementation.
+6. `decision_quality` evaluates process/readiness state from existing outputs.
+7. `decision_journal_validation` evaluates the append-only journal and produces
    review queue artifacts.
-7. `data_freshness` evaluates configured repo-evidenced artifacts against
+8. `data_freshness` evaluates configured repo-evidenced artifacts against
    explicit freshness signals and thresholds before the operator summary.
-8. `dashboard_operator_summary` aggregates Decision Quality, journal
+9. `dashboard_operator_summary` aggregates Decision Quality, journal
    validation, review queue and Data Freshness state for operator follow-up.
-9. Report surfaces render available states and show `NOT_AVAILABLE` only when
+10. Report surfaces render available states and show `NOT_AVAILABLE` only when
    an artifact is missing, unreadable or the stage did not run.
-10. Handoff export packages code, docs, tests, configs and selected review
+11. Handoff export packages code, docs, tests, configs and selected review
    context for external validation.
 
 ## Current `personal_run_engine` Stage Overview
@@ -149,6 +155,7 @@ dashboard.
   - `docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md`
   - `docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md`
   - `docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md`
+  - `docs/contracts/INSTRUMENT_MASTER_CONTRACT.md`
   - `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md`
   - `docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md`
 - Architecture docs:
@@ -156,6 +163,8 @@ dashboard.
   - `docs/architecture/DECISION_QUALITY_LAYER.md`
   - `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
   - `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`
+  - `docs/architecture/CIOS_INSTRUMENT_MASTER.md`
+  - `docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml`
   - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
   - `docs/architecture/CURRENT_KNOWN_GAPS.md`
 - Governance docs:
@@ -228,6 +237,9 @@ with zero counts.
 - There is no full replay engine yet.
 - There is no outcome attribution.
 - There is no Portfolio Event Ledger.
+- The Instrument Master Contract and template exist, but there is no production
+  Instrument Master registry, validator, broker/provider mapping enforcement or
+  corporate-action processing.
 - There is no Ranking Robustness or Sensitivity producer yet.
 - The dashboard operator surface contract and minimal operator summary producer
   exist, but no full visual dashboard surface has been hardened yet.
@@ -260,8 +272,8 @@ with zero counts.
 
 ## Next Recommended Hardening Patches
 
-1. Data Source Registry Template / Enforcement Preflight.
-2. Instrument Master Contract.
+1. Portfolio Event Ledger Contract.
+2. Instrument Master Registry Template / Validation.
 3. Release Engineering Standard.
-4. Portfolio Event Ledger Contract later.
+4. Corporate Actions Contract later.
 5. Time-Aware Replay / Outcome contracts later.

@@ -151,12 +151,16 @@
     },
     {
       "kernel_id": "instrument_master",
-      "maturity_level": 1,
-      "maturity_label": "DOCUMENTED_GAP",
-      "status": "KNOWN_GAP",
-      "next_level_required": "Instrument Master contract.",
-      "blocking_gaps": ["identity_resolution"],
-      "current_evidence_files": []
+      "maturity_level": 2,
+      "maturity_label": "CONTRACT_DEFINED",
+      "status": "CONTRACT_ONLY",
+      "next_level_required": "Instrument Master registry validation, mapping conflict tests and Event Ledger linkage contract.",
+      "blocking_gaps": ["instrument_master_registry_validation", "broker_provider_mapping_review", "portfolio_event_ledger"],
+      "current_evidence_files": [
+        "docs/contracts/INSTRUMENT_MASTER_CONTRACT.md",
+        "docs/architecture/CIOS_INSTRUMENT_MASTER.md",
+        "docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml"
+      ]
     },
     {
       "kernel_id": "portfolio_event_ledger",

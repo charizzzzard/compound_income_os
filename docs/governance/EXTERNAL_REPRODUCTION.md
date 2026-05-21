@@ -128,6 +128,9 @@ Architecture review artifacts that are ZIP-review relevant include:
 - `docs/architecture/CIOS_MATURITY_MODEL.yaml`
 - `docs/architecture/CIOS_DATA_SOURCE_STRATEGY.md`
 - `docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml`
+- `docs/contracts/INSTRUMENT_MASTER_CONTRACT.md`
+- `docs/architecture/CIOS_INSTRUMENT_MASTER.md`
+- `docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml`
 - `src/data_source_registry_validation.py`
 - `tests/test_data_source_registry_validation.py`
 - `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`
@@ -197,3 +200,7 @@ raw vendor data, credentials, secrets or restricted raw datasets. Where
 source/license metadata is present, review it against
 `docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md`; absence of an active
 source registry does not imply approval for redistribution or commercial use.
+If Instrument Master artifacts are present, treat them as contract/template
+evidence only. Do not infer real instrument approval, broker/provider mapping,
+ISIN/ticker lookup, event-ledger readiness or replay readiness from the
+template.
