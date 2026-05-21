@@ -131,6 +131,9 @@ Architecture review artifacts that are ZIP-review relevant include:
 - `docs/contracts/INSTRUMENT_MASTER_CONTRACT.md`
 - `docs/architecture/CIOS_INSTRUMENT_MASTER.md`
 - `docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml`
+- `docs/contracts/PORTFOLIO_EVENT_LEDGER_CONTRACT.md`
+- `docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER.md`
+- `docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml`
 - `src/data_source_registry_validation.py`
 - `tests/test_data_source_registry_validation.py`
 - `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`
@@ -204,3 +207,11 @@ If Instrument Master artifacts are present, treat them as contract/template
 evidence only. Do not infer real instrument approval, broker/provider mapping,
 ISIN/ticker lookup, event-ledger readiness or replay readiness from the
 template.
+
+If Portfolio Event Ledger artifacts are present, treat them as
+contract/template evidence only. Do not infer real broker-event import, event
+acceptance, transaction classification, tax evidence, FX conversion,
+performance attribution, outcome attribution, replay readiness or public
+redistribution approval from the template. Public handoffs must not include
+private broker events or raw portfolio-history records unless a future
+license/privacy/handoff review explicitly allows them.

@@ -18,6 +18,8 @@
 - [docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml](architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml): nicht-aktive Template-Struktur fuer kuenftige Source-/License-Metadaten; keine produktive Provider-Freigabe.
 - [docs/architecture/CIOS_INSTRUMENT_MASTER.md](architecture/CIOS_INSTRUMENT_MASTER.md): Architekturrolle des Instrument-Master-Kernels zwischen Data Source Strategy, Broker Mapping, Event Ledger und Replay.
 - [docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml](architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml): template-only Platzhalter fuer kuenftige Instrument-Master-Eintraege; keine echten Instrument-, Broker- oder Providerfreigaben.
+- [docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER.md](architecture/CIOS_PORTFOLIO_EVENT_LEDGER.md): Architekturrolle des Portfolio-Event-Ledger-Kernels zwischen Instrument Master, Broker Import, Replay und Outcome Review.
+- [docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml](architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml): template-only Platzhalter fuer kuenftige Ledger-Events; keine echten Broker-, Portfolio-, Steuer- oder Dividendendaten.
 - [docs/governance/CIOS_SYSTEM_CONSTITUTION.md](governance/CIOS_SYSTEM_CONSTITUTION.md): CIOS-Verfassung fuer Zweck, Nicht-Zweck, Invarianten und finale Akzeptanzgrenzen.
 - [docs/governance/CIOS_OPERATING_MODEL.md](governance/CIOS_OPERATING_MODEL.md): Authority-Modell fuer Human Operator, Codex, externe LLMs, Tests, Repo und Releases.
 - [docs/governance/CIOS_RISK_AND_CONTROL_FRAMEWORK.md](governance/CIOS_RISK_AND_CONTROL_FRAMEWORK.md): Risiko-/Kontrolltaxonomie mit Status und Evidence-Gates.
@@ -27,6 +29,7 @@
 - [docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md](contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md): kanonischer Contract fuer `FRESH`, `STALE`, `MISSING`, `UNKNOWN`, `REVIEW_REQUIRED` und `NOT_APPLICABLE` als Data-Freshness-/Staleness-Semantik.
 - [docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md](contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md): Source-/License-Boundary-Contract fuer Klassifikationen, Usage Scopes, Review-Status, Handoff- und Commercial-Grenzen.
 - [docs/contracts/INSTRUMENT_MASTER_CONTRACT.md](contracts/INSTRUMENT_MASTER_CONTRACT.md): Instrument-Master-Contract fuer kanonische Identitaet, Identifier-Konflikte, Alias-/Mapping-Grenzen, Lifecycle-Status und Sequencing vor Event Ledger/Broker-Import.
+- [docs/contracts/PORTFOLIO_EVENT_LEDGER_CONTRACT.md](contracts/PORTFOLIO_EVENT_LEDGER_CONTRACT.md): Portfolio-Event-Ledger-Contract fuer Event-Identitaet, Pflichtfelder, Append-only-/Correction-/Reversal-Semantik, Broker-/Source-Grenzen und Sequencing vor Replay/Attribution.
 - [docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md](contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md): read-only Operator-Surface-Vertrag fuer Decision Quality, Decision Journal Validation und Review Queue Summary.
 - [docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md](contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md): Zielvertrag fuer `review_queue_summary.json`, Statusregeln und Attention-Level.
 - [docs/governance/DATA_SOURCE_REVIEW_CHECKLIST.md](governance/DATA_SOURCE_REVIEW_CHECKLIST.md): Operator-/Review-Checkliste fuer neue Datenquellen, Adapter, Handoff-Freigaben und Commercial-Grenzen.
@@ -102,3 +105,4 @@
 - Dashboard-Kennzahlen werden aus Rohdaten statt aus verarbeiteten Artefakten gebaut.
 - Snapshot-basierte Performance wird als vollstaendige Historie missverstanden.
 - Cost-/Tax-Summaries werden ohne Event-Evidenz als Full Ledger interpretiert.
+- Der Portfolio Event Ledger Contract wird mit bestehender Cost-/Tax-Archivlogik verwechselt; es existiert noch keine produktive Event-Ledger-Runtime, kein Broker-Import-Staging und kein Replay.

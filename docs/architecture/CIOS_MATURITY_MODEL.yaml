@@ -164,20 +164,24 @@
     },
     {
       "kernel_id": "portfolio_event_ledger",
-      "maturity_level": 1,
-      "maturity_label": "DOCUMENTED_GAP",
-      "status": "KNOWN_GAP",
-      "next_level_required": "Portfolio Event Ledger contract.",
-      "blocking_gaps": ["instrument_master"],
-      "current_evidence_files": ["docs/architecture/CURRENT_KNOWN_GAPS.md"]
+      "maturity_level": 2,
+      "maturity_label": "CONTRACT_DEFINED",
+      "status": "CONTRACT_ONLY",
+      "next_level_required": "Event Ledger registry template validation, broker import staging contract, correction/reversal validation and Time-Aware Replay contract.",
+      "blocking_gaps": ["event_ledger_registry_validation", "broker_import_staging_contract", "time_aware_replay"],
+      "current_evidence_files": [
+        "docs/contracts/PORTFOLIO_EVENT_LEDGER_CONTRACT.md",
+        "docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER.md",
+        "docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml"
+      ]
     },
     {
       "kernel_id": "broker_import_staging",
       "maturity_level": 3,
       "maturity_label": "IMPLEMENTED_MANUAL",
       "status": "PARTIAL",
-      "next_level_required": "Identity and event-ledger contracts before production broker path.",
-      "blocking_gaps": ["instrument_master", "portfolio_event_ledger"],
+      "next_level_required": "Broker import staging contract, validators, review workflow and tests before production broker path.",
+      "blocking_gaps": ["broker_import_staging_contract", "event_ledger_registry_validation"],
       "current_evidence_files": ["src/import_broker.py", "src/traderepublic_documents.py"]
     },
     {

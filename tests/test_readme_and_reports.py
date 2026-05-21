@@ -161,6 +161,62 @@ class ReadmeAndReportTests(unittest.TestCase):
                 self.assertIn(entry["review_status"], template["allowed_values"]["review_status"])
                 self.assertIn("Template only", " ".join(entry["known_limitations"]))
 
+    def test_portfolio_event_ledger_contract_docs_are_linked_and_conservative(self) -> None:
+        required_paths = [
+            Path("docs/contracts/PORTFOLIO_EVENT_LEDGER_CONTRACT.md"),
+            Path("docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER.md"),
+            Path("docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml"),
+        ]
+        for path in required_paths:
+            with self.subTest(path=str(path)):
+                self.assertTrue(path.exists(), f"missing {path}")
+
+        readme = Path("README.md").read_text(encoding="utf-8")
+        system_map = Path("docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md").read_text(encoding="utf-8")
+        module_contracts = Path("docs/MODULE_CONTRACTS.md").read_text(encoding="utf-8")
+        external_reproduction = Path("docs/governance/EXTERNAL_REPRODUCTION.md").read_text(encoding="utf-8")
+        combined_refs = "\n".join([readme, system_map, module_contracts, external_reproduction])
+        for path in required_paths:
+            with self.subTest(reference=path.as_posix()):
+                self.assertIn(path.as_posix(), combined_refs)
+
+        contract = Path("docs/contracts/PORTFOLIO_EVENT_LEDGER_CONTRACT.md").read_text(encoding="utf-8")
+        architecture = Path("docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER.md").read_text(encoding="utf-8")
+        combined = contract + "\n" + architecture
+        self.assertIn("event_id", contract)
+        self.assertIn("canonical_instrument_id", contract)
+        self.assertIn("Append-only preference", contract)
+        self.assertIn("Correction / Reversal / Supersession Semantics", contract)
+        self.assertIn("BUY", contract)
+        self.assertIn("SELL", contract)
+        self.assertIn("DIVIDEND", contract)
+        self.assertIn("FX_CONVERSION", contract)
+        self.assertIn("Relationship To Instrument Master", contract)
+        self.assertIn("Relationship To Replay / Outcome / Performance Attribution", contract)
+        self.assertIn("No production broker import", combined)
+        self.assertNotIn("C:\\Users\\", combined)
+
+        template = json.loads(Path("docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml").read_text(encoding="utf-8"))
+        self.assertTrue(template["template_only"])
+        template_ids = {entry["template_id"] for entry in template["event_templates"]}
+        self.assertEqual(
+            template_ids,
+            {
+                "BUY_EVENT_TEMPLATE",
+                "DIVIDEND_EVENT_TEMPLATE",
+                "CASH_DEPOSIT_TEMPLATE",
+                "FX_CONVERSION_TEMPLATE",
+                "CORPORATE_ACTION_REVIEW_TEMPLATE",
+            },
+        )
+        for entry in template["event_templates"]:
+            with self.subTest(template_id=entry["template_id"]):
+                self.assertTrue(str(entry["event_id"]).startswith("PEL_TEMPLATE_"))
+                self.assertIn(entry["event_type"], template["allowed_values"]["event_type"])
+                self.assertIn(entry["event_status"], template["allowed_values"]["event_status"])
+                self.assertIn(entry["review_status"], template["allowed_values"]["review_status"])
+                self.assertIn("Template only", " ".join(entry["known_limitations"]))
+
     def test_meta_governance_baseline_docs_are_linked_and_conservative(self) -> None:
         required_paths = [
             Path("docs/governance/CIOS_SYSTEM_CONSTITUTION.md"),
@@ -201,7 +257,7 @@ class ReadmeAndReportTests(unittest.TestCase):
         for kernel in maturity["kernels"]:
             with self.subTest(kernel=kernel["kernel_id"]):
                 self.assertLessEqual(kernel["maturity_level"], 5)
-        self.assertTrue(any(kernel["kernel_id"] == "portfolio_event_ledger" and kernel["status"] == "KNOWN_GAP" for kernel in maturity["kernels"]))
+        self.assertTrue(any(kernel["kernel_id"] == "portfolio_event_ledger" and kernel["status"] == "CONTRACT_ONLY" for kernel in maturity["kernels"]))
         self.assertTrue(any(kernel["kernel_id"] == "meta_governance" for kernel in maturity["kernels"]))
 
     def test_personal_run_stage_dag_documents_current_stage_order(self) -> None:

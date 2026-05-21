@@ -55,11 +55,14 @@ Canonical architecture baseline:
 - [docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml](docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml): nicht-aktive Template-Struktur fuer kuenftige Source-/License-Metadaten
 - [docs/architecture/CIOS_INSTRUMENT_MASTER.md](docs/architecture/CIOS_INSTRUMENT_MASTER.md): Architekturrolle des kuenftigen Instrument-Master-Kernels
 - [docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml](docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml): template-only Platzhalter fuer kuenftige Instrument-Master-Eintraege ohne echte Instrumentfreigaben
+- [docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER.md](docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER.md): Architekturrolle des kuenftigen Portfolio-Event-Ledger-Kernels
+- [docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml](docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml): template-only Platzhalter fuer kuenftige Ledger-Events ohne echte Broker-/Portfolio-Events
 - [docs/architecture/CIOS_FEATURE_STATUS.yaml](docs/architecture/CIOS_FEATURE_STATUS.yaml): maschinenlesbarer Feature-Status
 - [docs/architecture/CURRENT_KNOWN_GAPS.md](docs/architecture/CURRENT_KNOWN_GAPS.md): bekannte Gaps, Dashboard-/Replay-/Outcome-Blocker und Deferred-Themen
 - [docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md](docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md): kanonischer Freshness-/Staleness-Vertrag fuer stale, missing und unknown Datenzustaende
 - [docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md](docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md): Contract fuer Source-Klassifikation, Nutzungsgrenzen, Handoff-/Commercial-Boundary und Review-Status
 - [docs/contracts/INSTRUMENT_MASTER_CONTRACT.md](docs/contracts/INSTRUMENT_MASTER_CONTRACT.md): Contract fuer kanonische Instrumentidentitaet, Identifier-Konflikte, Alias-/Mapping-Grenzen und Lifecycle-Status
+- [docs/contracts/PORTFOLIO_EVENT_LEDGER_CONTRACT.md](docs/contracts/PORTFOLIO_EVENT_LEDGER_CONTRACT.md): Contract fuer kuenftige Portfolio-Events, Append-only-Korrekturen, Broker-/Source-Boundaries und Replay-/Attribution-Sequencing
 - [docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md](docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md): stabiler Operator-/Dashboard-Surface-Vertrag ohne visuelles Dashboard-Neudesign
 - [docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md](docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md): Zielvertrag fuer eine maschinenlesbare Review-Queue-Summary
 - [docs/governance/DATA_SOURCE_REVIEW_CHECKLIST.md](docs/governance/DATA_SOURCE_REVIEW_CHECKLIST.md): Review-Checkliste fuer neue Quellen, Adapter, Handoff- und Commercial-Grenzen

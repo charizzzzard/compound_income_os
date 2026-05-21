@@ -53,6 +53,9 @@ The meta-governance baseline is defined by:
 - Instrument Master Contract: governance kernel for canonical instrument
   identity, alias/provider/broker mapping boundaries, lifecycle status and
   collision rules before production broker import or event-ledger work.
+- Portfolio Event Ledger Contract: governance kernel for future portfolio-event
+  identity, append-only correction/reversal semantics, broker/source boundaries
+  and sequencing before replay, performance or outcome attribution.
 - Monthly Decision Report: report surface for portfolio health, decision
   quality and decision journal validation when explicit artifacts are present.
 - Personal Run Engine: explicit stage orchestration with manifest, used-inputs,
@@ -72,16 +75,19 @@ The meta-governance baseline is defined by:
 5. Instrument Master defines how future holdings, broker aliases and provider
    identifiers must map to canonical instrument identity before production
    broker import or Event Ledger implementation.
-6. `decision_quality` evaluates process/readiness state from existing outputs.
-7. `decision_journal_validation` evaluates the append-only journal and produces
+6. Portfolio Event Ledger defines how future portfolio events must reference
+   instrument identity, source evidence, accounts, currency and correction
+   chains before broker-import staging, replay or attribution work.
+7. `decision_quality` evaluates process/readiness state from existing outputs.
+8. `decision_journal_validation` evaluates the append-only journal and produces
    review queue artifacts.
-8. `data_freshness` evaluates configured repo-evidenced artifacts against
+9. `data_freshness` evaluates configured repo-evidenced artifacts against
    explicit freshness signals and thresholds before the operator summary.
-9. `dashboard_operator_summary` aggregates Decision Quality, journal
+10. `dashboard_operator_summary` aggregates Decision Quality, journal
    validation, review queue and Data Freshness state for operator follow-up.
-10. Report surfaces render available states and show `NOT_AVAILABLE` only when
+11. Report surfaces render available states and show `NOT_AVAILABLE` only when
    an artifact is missing, unreadable or the stage did not run.
-11. Handoff export packages code, docs, tests, configs and selected review
+12. Handoff export packages code, docs, tests, configs and selected review
    context for external validation.
 
 ## Current `personal_run_engine` Stage Overview
@@ -156,6 +162,7 @@ dashboard.
   - `docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md`
   - `docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md`
   - `docs/contracts/INSTRUMENT_MASTER_CONTRACT.md`
+  - `docs/contracts/PORTFOLIO_EVENT_LEDGER_CONTRACT.md`
   - `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md`
   - `docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md`
 - Architecture docs:
@@ -165,6 +172,8 @@ dashboard.
   - `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`
   - `docs/architecture/CIOS_INSTRUMENT_MASTER.md`
   - `docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml`
+  - `docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER.md`
+  - `docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml`
   - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
   - `docs/architecture/CURRENT_KNOWN_GAPS.md`
 - Governance docs:
@@ -236,7 +245,9 @@ with zero counts.
   are excluded from the handoff bundle.
 - There is no full replay engine yet.
 - There is no outcome attribution.
-- There is no Portfolio Event Ledger.
+- The Portfolio Event Ledger Contract and template exist, but there is no
+  production Event Ledger database, runtime, validator, broker-import staging,
+  correction/reversal validator, FX engine, replay or attribution module.
 - The Instrument Master Contract and template exist, but there is no production
   Instrument Master registry, validator, broker/provider mapping enforcement or
   corporate-action processing.
@@ -265,15 +276,16 @@ with zero counts.
   fields are now stable enough to define a dashboard-facing contract.
 - `READY_FOR_DASHBOARD_SUMMARY_DESIGN`: summary cards can be designed from
   existing fields without adding financial logic.
-- `NOT_READY_FOR_OUTCOME_ATTRIBUTION`: no Portfolio Event Ledger, replay or
-  outcome ledger exists yet.
-- `NOT_READY_FOR_BACKTESTING`: no replay, event ledger, decision journal
-  validation history or bias controls are complete enough for backtesting.
+- `NOT_READY_FOR_OUTCOME_ATTRIBUTION`: Portfolio Event Ledger exists as
+  contract/template only; no production ledger, replay or outcome ledger exists.
+- `NOT_READY_FOR_BACKTESTING`: no replay, production event ledger, decision
+  journal validation history or bias controls are complete enough for
+  backtesting.
 
 ## Next Recommended Hardening Patches
 
-1. Portfolio Event Ledger Contract.
-2. Instrument Master Registry Template / Validation.
-3. Release Engineering Standard.
+1. External Delta Review after Portfolio Event Ledger Contract.
+2. Event Ledger Registry Template / Validation.
+3. Broker Import Staging Contract.
 4. Corporate Actions Contract later.
 5. Time-Aware Replay / Outcome contracts later.
