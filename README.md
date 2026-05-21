@@ -863,6 +863,12 @@ Neue Run-Artefakte:
 
 Die additive read-only Source-Registry fuer den persoenlichen Lauf liegt in `configs/personal_run_data_sources.yaml`. Sie schliesst nur lokale Dateiquellen kontrolliert an; Secrets, API-Keys und direkte Web-/API-Logik gehoeren nicht in diese Schicht.
 
+Die getrennte Data-Source-License-Registry-Vorlage liegt in `docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml`.
+`src.data_source_registry_validation` validiert diese Vorlage read-only gegen
+`docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md`; der Check erzeugt
+keine produktive Source Registry, keine Provider-Freigabe, keine
+Legal-/Commercial-Freigabe und keine Runtime-Datenintegration.
+
 Core-Orchestrator-Beispiel:
 
 ```powershell

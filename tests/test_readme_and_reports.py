@@ -70,6 +70,8 @@ class ReadmeAndReportTests(unittest.TestCase):
             Path("docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md"),
             Path("docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml"),
             Path("docs/governance/DATA_SOURCE_REVIEW_CHECKLIST.md"),
+            Path("src/data_source_registry_validation.py"),
+            Path("tests/test_data_source_registry_validation.py"),
         ]
         for path in required_paths:
             with self.subTest(path=str(path)):
@@ -94,6 +96,10 @@ class ReadmeAndReportTests(unittest.TestCase):
         self.assertIn("PRIVATE_LOCAL_ONLY", contract)
         self.assertIn("LEGAL_REVIEW_REQUIRED", contract)
         self.assertIn("Public availability is not redistribution permission.", contract)
+        self.assertIn("license_evidence_files", contract)
+        self.assertIn("freshness evidence is not license evidence", contract.lower())
+        self.assertIn("Registry Validation Preflight", contract)
+        self.assertIn("Use Class To Usage Scope Mapping", strategy)
         self.assertIn("not legal advice", combined.lower())
         self.assertNotIn("C:\\Users\\", combined)
 
@@ -103,6 +109,10 @@ class ReadmeAndReportTests(unittest.TestCase):
         self.assertIn("TEST_FIXTURE_SOURCE", source_ids)
         self.assertIn("PAID_VENDOR_SOURCE_TEMPLATE", source_ids)
         paid_template = next(source for source in template["sources"] if source["source_id"] == "PAID_VENDOR_SOURCE_TEMPLATE")
+        self.assertIn("license_evidence_files", paid_template)
+        self.assertIn("provenance_evidence_files", paid_template)
+        self.assertIn("freshness_evidence_files", paid_template)
+        self.assertIn("review_evidence_files", paid_template)
         self.assertFalse(paid_template["redistribution_allowed"])
         self.assertFalse(paid_template["commercial_use_allowed"])
         self.assertEqual(paid_template["review_status"], "LEGAL_REVIEW_REQUIRED")

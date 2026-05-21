@@ -63,6 +63,10 @@
       "adapter_required": false,
       "current_status": "APPROVED_FOR_TEST_FIXTURES",
       "evidence_files": ["tests/"],
+      "license_evidence_files": ["tests/"],
+      "provenance_evidence_files": ["tests/"],
+      "freshness_evidence_files": [],
+      "review_evidence_files": ["tests/test_data_source_registry_validation.py"],
       "known_limitations": ["Synthetic fixtures are not production data."],
       "owner": "repo",
       "review_status": "APPROVED_FOR_TEST_FIXTURES"
@@ -93,6 +97,10 @@
       "adapter_required": false,
       "current_status": "OPERATOR_REVIEW_REQUIRED",
       "evidence_files": [],
+      "license_evidence_files": [],
+      "provenance_evidence_files": [],
+      "freshness_evidence_files": [],
+      "review_evidence_files": [],
       "known_limitations": ["Template only; not an approved production source."],
       "owner": "human_operator",
       "review_status": "OPERATOR_REVIEW_REQUIRED"
@@ -123,6 +131,10 @@
       "adapter_required": true,
       "current_status": "OPERATOR_REVIEW_REQUIRED",
       "evidence_files": [],
+      "license_evidence_files": [],
+      "provenance_evidence_files": [],
+      "freshness_evidence_files": [],
+      "review_evidence_files": [],
       "known_limitations": ["Template only; license evidence required before use."],
       "owner": "human_operator",
       "review_status": "OPERATOR_REVIEW_REQUIRED"
@@ -153,6 +165,10 @@
       "adapter_required": true,
       "current_status": "LEGAL_REVIEW_REQUIRED",
       "evidence_files": [],
+      "license_evidence_files": [],
+      "provenance_evidence_files": [],
+      "freshness_evidence_files": [],
+      "review_evidence_files": [],
       "known_limitations": ["Template only; paid data is not approved for handoff or redistribution."],
       "owner": "human_operator",
       "review_status": "LEGAL_REVIEW_REQUIRED"

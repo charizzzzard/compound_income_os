@@ -79,6 +79,25 @@ Out of scope:
 - `REDISTRIBUTION_PROHIBITED`
 - `PROHIBITED_UNTIL_REVIEW`
 
+## Use Class To Usage Scope Mapping
+
+| conceptual_use_class | contract_usage_scope | notes |
+| --- | --- | --- |
+| `LOCAL_PRIVATE_USE` | `PRIVATE_LOCAL_ONLY` | Local operator use only; no public handoff or commercial claim. |
+| `LOCAL_REVIEW_ONLY` | `INTERNAL_REVIEW` | Review and governance only; source remains unresolved for wider use. |
+| `TEST_FIXTURE_ONLY` | `TEST_ONLY` | Synthetic fixtures only; never production source approval. |
+| `PUBLIC_HANDOFF_ALLOWED` | `PUBLIC_HANDOFF_METADATA_ONLY` or `PUBLIC_HANDOFF_DERIVED_ALLOWED` | Requires explicit license/provenance/review evidence; otherwise review-required. |
+| `PUBLIC_DOC_REFERENCE_ALLOWED` | `PUBLIC_DOC_REFERENCE` | Documentation reference only; not raw redistribution. |
+| `DASHBOARD_ALLOWED` | `DASHBOARD_LOCAL_ALLOWED` | Local dashboard display only after provenance and freshness semantics. |
+| `COMMERCIAL_REVIEW_REQUIRED` | `COMMERCIAL_REVIEW_REQUIRED` | Not commercial approval; legal/commercial review remains required. |
+| `REDISTRIBUTION_PROHIBITED` | `PROHIBITED` | Default for private, broker, paid raw or unknown-license data. |
+| `PROHIBITED_UNTIL_REVIEW` | `PROHIBITED` | May move only through documented review and contract update. |
+
+Any mapping not listed here is `REVIEW_REQUIRED` by default. Conceptual use
+classes are strategy language; `usage_scope` values in
+`DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md` are the machine-readable contract
+values.
+
 ## Data Source Decision Matrix
 
 | source_type | private_local_use | public_handoff | dashboard_use | commercial_use | redistribution | required_controls | default_status |
@@ -110,6 +129,22 @@ Future source integration should pass through these boundaries:
 Provider-specific code belongs in adapters. Core scoring, ranking, decision
 quality, freshness and dashboard surfaces should read normalized artifacts and
 metadata, not provider-specific runtime APIs.
+
+## Registry Template / Enforcement Preflight
+
+`docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml` is a template, not a
+production source registry. `src.data_source_registry_validation` validates this
+template against `docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md`.
+
+The preflight is intentionally narrow:
+
+- it checks required metadata fields and allowed enum values,
+- it enforces `template_only: true`,
+- it blocks risky license/private/paid/broker/commercial/redistribution
+  combinations,
+- it does not approve real providers,
+- it does not implement runtime adapters,
+- it does not provide legal or commercial approval.
 
 ## Relationship To Other Kernels
 

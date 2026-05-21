@@ -48,7 +48,8 @@ The meta-governance baseline is defined by:
   `UNKNOWN`, `REVIEW_REQUIRED` and `NOT_APPLICABLE` data states.
 - Data Source Strategy / License Boundary: governance kernel for source
   typology, provider-agnostic adapters, provenance, usage scopes, handoff
-  boundaries and commercial/license review gates before future integrations.
+  boundaries, template validation preflight and commercial/license review gates
+  before future integrations.
 - Monthly Decision Report: report surface for portfolio health, decision
   quality and decision journal validation when explicit artifacts are present.
 - Personal Run Engine: explicit stage orchestration with manifest, used-inputs,
@@ -188,6 +189,7 @@ dashboard.
   - `src/personal_decision_state_capture.py`
   - `src/build_monthly_decision_report.py`
   - `src/data_freshness.py`
+  - `src/data_source_registry_validation.py`
 - Tests:
   - `tests/test_personal_run_engine.py`
   - `tests/test_personal_decision_quality_state.py`
@@ -233,9 +235,9 @@ with zero counts.
   operator-summary fields exist, but no visual dashboard freshness panel,
   replay freshness gate or outcome attribution integration exists yet.
 - The Data Source Strategy / License Boundary exists as governance and contract
-  documentation plus a template only; there is no active license-enforcement
-  registry, provider-specific approval, production adapter, legal review or
-  commercial redistribution approval.
+  documentation plus template validation preflight only; there is no active
+  production license-enforcement registry, provider-specific approval,
+  production adapter, legal review or commercial redistribution approval.
 - Decision Quality stale-state handling is conservative: any older
   `as_of_date` is stale in the current MVP.
 - Scenario, Tail Risk, Calibration and Regret remain non-implemented or

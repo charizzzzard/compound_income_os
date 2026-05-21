@@ -20,6 +20,7 @@ project's standard-library-first assumptions.
 
 Recommended examples:
 
+- `python -m unittest tests.test_data_source_registry_validation -v`
 - `python -m unittest tests.test_personal_decision_journal_validation -v`
 - `python -m unittest tests.test_monthly_decision_report -v`
 - `python -m unittest tests.test_personal_decision_quality_state -v`
@@ -40,6 +41,20 @@ Examples:
 - workflows that parse real local broker documents,
 - workflows that require private `data/raw/private/` content,
 - workflows that depend on the operator's real personal master or watchlist.
+
+### `RUNTIME_OR_DATA_DEPENDENT_TESTS`
+
+Tests in this category may be deterministic in the local repo but can depend on
+generated processed outputs, private configured paths or larger orchestration
+context. They are useful for local validation, but external reviewers should not
+infer missing private/provider inputs from a ZIP-only failure.
+
+Examples:
+
+- full `personal_run_engine` end-to-end paths that expect local source configs,
+- dashboard/server checks that read ignored processed artifacts,
+- any test requiring real broker, provider, paid-vendor or operator-owned raw
+  input files.
 
 ### `LOCAL_ONLY_VALIDATION`
 
@@ -74,6 +89,7 @@ operator surfaces, start with:
 python -m unittest tests.test_personal_decision_journal_validation -v
 python -m unittest tests.test_monthly_decision_report -v
 python -m unittest tests.test_personal_decision_quality_state -v
+python -m unittest tests.test_data_source_registry_validation -v
 python -m unittest tests.test_data_freshness -v
 python -m unittest tests.test_personal_run_engine -v
 python -m unittest tests.test_readme_and_reports -v
@@ -89,6 +105,8 @@ Architecture review artifacts that are ZIP-review relevant include:
 - `docs/architecture/CIOS_MATURITY_MODEL.yaml`
 - `docs/architecture/CIOS_DATA_SOURCE_STRATEGY.md`
 - `docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml`
+- `src/data_source_registry_validation.py`
+- `tests/test_data_source_registry_validation.py`
 - `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`
 - `docs/governance/CIOS_SYSTEM_CONSTITUTION.md`
 - `docs/governance/CIOS_OPERATING_MODEL.md`

@@ -66,6 +66,8 @@ capabilities:
       - docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md
       - docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml
       - docs/governance/DATA_SOURCE_REVIEW_CHECKLIST.md
+      - src/data_source_registry_validation.py
+      - tests/test_data_source_registry_validation.py
     input_artifacts:
       - docs/architecture/CIOS_DATA_SOURCE_STRATEGY.md
       - docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md
@@ -73,11 +75,30 @@ capabilities:
     report_surface: []
     tests:
       - tests/test_readme_and_reports.py
+      - tests/test_data_source_registry_validation.py
     limitations:
-      - "Governance strategy, license boundary contract, registry template and review checklist exist, but there is no active source-registry enforcement."
+      - "Governance strategy, license boundary contract, registry template, review checklist and read-only template validation preflight exist, but there is no active production source-registry enforcement."
       - "No provider-specific approval, paid-data approval, legal/commercial review, production adapter, public redistribution approval or commercial readiness is asserted."
       - "Data Freshness, provenance, source license and handoff boundaries are linked but remain separate controls."
-    next_action: "Add Data Source Registry Template / Enforcement Preflight or Instrument Master Contract before provider-specific runtime integrations."
+    next_action: "Decide whether to add release-gate validation or proceed to Instrument Master Contract before provider-specific runtime integrations."
+  - capability_id: data_source_registry_validation_preflight
+    display_name: Data Source Registry Validation Preflight
+    status: implemented
+    evidence_files:
+      - src/data_source_registry_validation.py
+      - tests/test_data_source_registry_validation.py
+      - docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml
+      - docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md
+    input_artifacts:
+      - docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml
+    output_artifacts: []
+    report_surface: []
+    tests:
+      - tests/test_data_source_registry_validation.py
+    limitations:
+      - "Validates the template and conservative boundaries only; it does not approve providers, query data sources, enforce Personal Run runtime source usage or provide legal/commercial approval."
+      - "Existing configs/data_sources.yaml and configs/personal_run_data_sources.yaml remain operational local input configs, not license registries."
+    next_action: "Optional release-gate wiring after external review; otherwise continue with Instrument Master Contract."
   - capability_id: portfolio_rules
     display_name: Portfolio Rules
     status: implemented

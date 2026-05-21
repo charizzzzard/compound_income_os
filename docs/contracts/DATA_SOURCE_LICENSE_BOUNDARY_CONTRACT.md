@@ -60,9 +60,25 @@ Future registries must include these fields:
 - `adapter_required`
 - `current_status`
 - `evidence_files`
+- `license_evidence_files`
+- `provenance_evidence_files`
+- `freshness_evidence_files`
+- `review_evidence_files`
 - `known_limitations`
 - `owner`
 - `review_status`
+
+`evidence_files` remains as a backward-compatible aggregate field. New
+templates and future registries should also split evidence by purpose:
+
+- `license_evidence_files`: source terms, license text, operator/legal review
+  notes or explicit fixture classification evidence.
+- `provenance_evidence_files`: files that show where the data came from or how
+  it was derived.
+- `freshness_evidence_files`: files that support currentness/staleness only.
+  Freshness evidence is not license evidence.
+- `review_evidence_files`: operator, external, legal or commercial review notes
+  that justify the current review status.
 
 ## Allowed Classification Values
 
@@ -117,6 +133,38 @@ Future registries must include these fields:
 - No silent overwrite of accepted facts.
 - Public handoffs must not bundle private broker exports, paid raw vendor data,
   credentials, secrets or restricted raw datasets.
+
+## Registry Validation Preflight
+
+`src.data_source_registry_validation` is the minimal read-only preflight for
+`docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml`.
+
+The preflight:
+
+- validates that the registry remains `template_only: true`,
+- checks required fields from this contract,
+- checks allowed `license_classification`, `usage_scope` and `review_status`
+  values,
+- keeps license, provenance, freshness and review evidence semantically
+  separate,
+- rejects risky public, commercial, paid, broker, personal-data and
+  redistribution combinations.
+
+It does not approve providers, implement runtime enforcement, contact external
+services, provide legal advice or make CIOS commercial-ready.
+
+Conservative validation rules include:
+
+- unknown license cannot claim public handoff, dashboard, commercial or
+  redistribution use,
+- paid, broker or personal raw data cannot be allowed in public handoff,
+- commercial use requires legal/commercial review status and explicit license
+  evidence,
+- redistribution requires explicit license evidence,
+- freshness evidence cannot satisfy license evidence,
+- provider-specific source classes require an adapter boundary,
+- non-test sources require provenance,
+- time-sensitive sources require `as_of_date` and snapshot semantics.
 
 ## Future Output Expectations
 

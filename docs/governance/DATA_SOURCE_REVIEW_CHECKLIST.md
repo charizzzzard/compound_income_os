@@ -23,6 +23,8 @@ allowance or commercial/product use case. It is not legal advice.
 - Provider URL or reference recorded.
 - License or terms evidence file recorded.
 - Unknown license defaults to review-required and no redistribution.
+- `license_evidence_files` recorded separately from freshness, provenance and
+  review evidence.
 
 ### Access Method
 
@@ -65,6 +67,8 @@ allowance or commercial/product use case. It is not legal advice.
 - `as_of_date` required: yes/no.
 - Snapshot required: yes/no.
 - Point-in-time replay implications documented.
+- `freshness_evidence_files` recorded only as freshness evidence; it is not
+  license evidence.
 
 ### Freshness Policy Mapping
 
@@ -81,12 +85,14 @@ allowance or commercial/product use case. It is not legal advice.
 - Raw data handoff allowed: yes/no.
 - Derived data handoff allowed: yes/no.
 - Handoff scan/allowlist implications documented.
+- Registry validation preflight result recorded: pass/fail.
 
 ### Operator Acceptance
 
 - Human operator review required: yes/no.
 - External review required: yes/no.
 - ADR required: yes/no.
+- `review_evidence_files` recorded for accepted review status.
 
 ## Decision
 
