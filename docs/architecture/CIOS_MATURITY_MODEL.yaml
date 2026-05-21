@@ -131,7 +131,8 @@
       "current_evidence_files": [
         "src/data_source_registry_validation.py",
         "tests/test_data_source_registry_validation.py",
-        "docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml"
+        "docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml",
+        "docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md"
       ]
     },
     {

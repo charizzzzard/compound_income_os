@@ -23,6 +23,8 @@ ALLOWED_CLASSIFICATIONS = {
     "UNKNOWN_REVIEW_REQUIRED",
 }
 
+ALLOWED_SOURCE_TYPES = set(ALLOWED_CLASSIFICATIONS)
+
 ALLOWED_USAGE_SCOPES = {
     "PRIVATE_LOCAL_ONLY",
     "INTERNAL_REVIEW",
@@ -45,6 +47,11 @@ ALLOWED_REVIEW_STATUSES = {
     "OPERATOR_REVIEW_REQUIRED",
     "PROHIBITED",
     "UNKNOWN",
+}
+
+ALLOWED_CURRENT_STATUSES = ALLOWED_REVIEW_STATUSES | {
+    "TEMPLATE_ONLY",
+    "REVIEW_REQUIRED",
 }
 
 REQUIRED_SOURCE_FIELDS = [
@@ -135,11 +142,15 @@ RISKY_USAGE_SCOPES = {
     "COMMERCIAL_REVIEW_REQUIRED",
 }
 
-PRODUCTION_APPROVAL_STATUSES = {
+PROHIBITED_PRODUCTION_APPROVAL_STATUSES = {
     "APPROVED_FOR_PRODUCTION",
     "PRODUCTION_APPROVED",
     "COMMERCIAL_APPROVED",
     "APPROVED_FOR_COMMERCIAL_USE",
+    "PROVIDER_APPROVED",
+    "LEGAL_APPROVED",
+    "RUNTIME_APPROVED",
+    "ACTIVE_PRODUCTION",
 }
 
 
@@ -177,8 +188,10 @@ def validate_registry_template_data(data: dict[str, Any]) -> dict[str, Any]:
         errors.append("registry template requires template_only=true")
 
     registry_status = _string(data.get("registry_status") or data.get("current_status"))
-    if registry_status in PRODUCTION_APPROVAL_STATUSES:
+    if registry_status in PROHIBITED_PRODUCTION_APPROVAL_STATUSES:
         errors.append(f"registry-level status must not imply production approval: {registry_status}")
+    elif registry_status and registry_status not in ALLOWED_CURRENT_STATUSES:
+        errors.append(f"registry-level status is not allowed for template preflight: {registry_status}")
 
     sources = data.get("sources")
     if not isinstance(sources, list):
@@ -201,13 +214,22 @@ def validate_registry_template_data(data: dict[str, Any]) -> dict[str, Any]:
         usage_scope = _string(entry.get("usage_scope"))
         review_status = _string(entry.get("review_status"))
         source_type = _string(entry.get("source_type"))
+        current_status = _string(entry.get("current_status"))
 
         if classification and classification not in ALLOWED_CLASSIFICATIONS:
             _add_error(errors, source_id, f"invalid license_classification: {classification}")
+        if source_type and source_type not in ALLOWED_SOURCE_TYPES:
+            _add_error(errors, source_id, f"invalid source_type: {source_type}")
+        if source_type and classification and source_type != classification:
+            _add_error(errors, source_id, "source_type must match license_classification in the registry template")
         if usage_scope and usage_scope not in ALLOWED_USAGE_SCOPES:
             _add_error(errors, source_id, f"invalid usage_scope: {usage_scope}")
         if review_status and review_status not in ALLOWED_REVIEW_STATUSES:
             _add_error(errors, source_id, f"invalid review_status: {review_status}")
+        if current_status in PROHIBITED_PRODUCTION_APPROVAL_STATUSES:
+            _add_error(errors, source_id, f"current_status must not imply production approval: {current_status}")
+        elif current_status and current_status not in ALLOWED_CURRENT_STATUSES:
+            _add_error(errors, source_id, f"invalid current_status: {current_status}")
 
         for field in BOOL_FIELDS:
             if field in entry and not isinstance(entry.get(field), bool):
@@ -217,8 +239,9 @@ def validate_registry_template_data(data: dict[str, Any]) -> dict[str, Any]:
             if field in entry and not isinstance(entry.get(field), list):
                 _add_error(errors, source_id, f"{field} must be a list")
 
-        is_test_fixture = classification == "TEST_FIXTURE" or source_type == "TEST_FIXTURE"
-        has_license_evidence = _has_any(entry.get("license_evidence_files")) or _has_any(entry.get("evidence_files"))
+        boundary_source_type = source_type if source_type in ALLOWED_SOURCE_TYPES else classification
+        is_test_fixture = classification == "TEST_FIXTURE" or boundary_source_type == "TEST_FIXTURE"
+        has_license_evidence = _has_any(entry.get("license_evidence_files"))
 
         if classification == "UNKNOWN_REVIEW_REQUIRED":
             if usage_scope in RISKY_USAGE_SCOPES or entry.get("commercial_use_allowed") or entry.get("redistribution_allowed"):
@@ -232,8 +255,17 @@ def validate_registry_template_data(data: dict[str, Any]) -> dict[str, Any]:
             _add_error(errors, source_id, "personal raw data must not be allowed in public handoff")
 
         if entry.get("commercial_use_allowed"):
-            if review_status not in {"COMMERCIAL_REVIEW_REQUIRED", "LEGAL_REVIEW_REQUIRED"} or not _has_any(entry.get("license_evidence_files")):
-                _add_error(errors, source_id, "commercial_use_allowed requires legal/commercial review status and license evidence")
+            _add_error(errors, source_id, "commercial_use_allowed is not permitted in the template preflight; use review-required statuses without claiming approval")
+
+        if entry.get("raw_data_handoff_allowed") and not has_license_evidence:
+            _add_error(errors, source_id, "raw_data_handoff_allowed requires explicit license evidence")
+
+        if (
+            entry.get("derived_data_handoff_allowed")
+            and usage_scope in {"PUBLIC_HANDOFF_METADATA_ONLY", "PUBLIC_HANDOFF_DERIVED_ALLOWED"}
+            and not has_license_evidence
+        ):
+            _add_error(errors, source_id, "derived public handoff requires explicit license evidence")
 
         if entry.get("redistribution_allowed") and not has_license_evidence:
             _add_error(errors, source_id, "redistribution_allowed requires explicit license evidence")
@@ -241,17 +273,17 @@ def validate_registry_template_data(data: dict[str, Any]) -> dict[str, Any]:
         if review_status == "UNKNOWN" and usage_scope in RISKY_USAGE_SCOPES:
             _add_error(errors, source_id, "UNKNOWN review_status cannot accompany public, dashboard or commercial usage scope")
 
-        if source_type in PROVIDER_SPECIFIC_SOURCE_TYPES and entry.get("adapter_required") is False:
-            _add_error(errors, source_id, f"{source_type} requires an adapter boundary")
+        if boundary_source_type in PROVIDER_SPECIFIC_SOURCE_TYPES and entry.get("adapter_required") is False:
+            _add_error(errors, source_id, f"{boundary_source_type} requires an adapter boundary")
 
         if not is_test_fixture and entry.get("provenance_required") is False:
             _add_error(errors, source_id, "non-test sources require provenance")
 
-        if source_type in TIME_SENSITIVE_SOURCE_TYPES and entry.get("as_of_date_required") is False:
-            _add_error(errors, source_id, f"{source_type} requires as_of_date metadata")
+        if boundary_source_type in TIME_SENSITIVE_SOURCE_TYPES and entry.get("as_of_date_required") is False:
+            _add_error(errors, source_id, f"{boundary_source_type} requires as_of_date metadata")
 
-        if source_type in TIME_SENSITIVE_SOURCE_TYPES and entry.get("snapshot_required") is False:
-            _add_error(errors, source_id, f"{source_type} requires snapshot metadata")
+        if boundary_source_type in TIME_SENSITIVE_SOURCE_TYPES and entry.get("snapshot_required") is False:
+            _add_error(errors, source_id, f"{boundary_source_type} requires snapshot metadata")
 
         if _has_any(entry.get("freshness_evidence_files")) and not _has_any(entry.get("license_evidence_files")) and entry.get("redistribution_allowed"):
             _add_error(errors, source_id, "freshness evidence does not satisfy redistribution license evidence")

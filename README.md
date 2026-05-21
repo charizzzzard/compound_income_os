@@ -867,7 +867,10 @@ Die getrennte Data-Source-License-Registry-Vorlage liegt in `docs/architecture/C
 `src.data_source_registry_validation` validiert diese Vorlage read-only gegen
 `docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md`; der Check erzeugt
 keine produktive Source Registry, keine Provider-Freigabe, keine
-Legal-/Commercial-Freigabe und keine Runtime-Datenintegration.
+Legal-/Commercial-Freigabe und keine Runtime-Datenintegration. Der Preflight
+validiert `source_type`, blockiert production-artige `current_status`-Claims und
+akzeptiert fuer Lizenz-/Commercial-/Redistribution-Grenzen nur explizite
+`license_evidence_files`.
 
 Core-Orchestrator-Beispiel:
 

@@ -12,6 +12,17 @@ operator files are intentionally excluded.
 
 ## Test Categories
 
+Use these labels when reporting validation:
+
+| label | meaning | ZIP-only expectation |
+| --- | --- | --- |
+| `ZIP_SAFE` | Can be inspected from extracted ZIP content without running code. | Yes. |
+| `ZIP_SAFE_WITH_PYTHON` | Can run from an extracted ZIP with repo files, Python and included synthetic fixtures. | Yes, if the Python version and stdlib assumptions match. |
+| `LOCAL_REPO_REQUIRED` | Requires a real local checkout shape or generated local artifacts outside the review ZIP. | No. |
+| `GIT_CONTEXT_REQUIRED` | May call Git or rely on committed/ignored status, branch, HEAD or local repo metadata. | No, unless the ZIP is unpacked inside a Git checkout with matching history. |
+| `PRIVATE_INPUT_REQUIRED` | Requires private/raw/broker/operator-owned inputs. | No. |
+| `RUNTIME_DATA_REQUIRED` | Requires generated processed/runtime data not included in the handoff. | No. |
+
 ### `ZIP_SAFE_TESTS`
 
 Tests in this category are expected to run from repository source and synthetic
@@ -21,14 +32,26 @@ project's standard-library-first assumptions.
 Recommended examples:
 
 - `python -m unittest tests.test_data_source_registry_validation -v`
+- `python -m src.data_source_registry_validation docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml`
 - `python -m unittest tests.test_personal_decision_journal_validation -v`
 - `python -m unittest tests.test_monthly_decision_report -v`
 - `python -m unittest tests.test_personal_decision_quality_state -v`
 - `python -m unittest tests.test_data_freshness -v`
 - `python -m unittest tests.test_readme_and_reports -v`
 
+The registry-template validator is `ZIP_SAFE_WITH_PYTHON`: it reads only the
+template and contract-shaped local YAML data and must not contact providers,
+networks or private inputs.
+
 `tests.test_readme_and_reports` is ZIP-safe only when the bundle includes
 root-level LF governance files such as `.gitattributes`.
+
+Handoff exporter and bundle tests such as
+`python -m unittest tests.test_handoff_zip_export -v` and
+`python -m unittest tests.test_handoff_bundle -v` are local-repo validation
+tests. They may inspect Git state, ignored-path policy, exporter context or
+local handoff behavior and should be reported as `LOCAL_REPO_REQUIRED` or
+`GIT_CONTEXT_REQUIRED`, not as ZIP-only smoke tests.
 
 ### `REQUIRES_PRIVATE_FIXTURES`
 

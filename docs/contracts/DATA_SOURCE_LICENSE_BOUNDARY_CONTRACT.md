@@ -68,17 +68,22 @@ Future registries must include these fields:
 - `owner`
 - `review_status`
 
-`evidence_files` remains as a backward-compatible aggregate field. New
-templates and future registries should also split evidence by purpose:
+`evidence_files` remains as a backward-compatible aggregate and diagnostic
+field. It is not sufficient for license-sensitive claims. New templates and
+future registries must split evidence by purpose:
 
 - `license_evidence_files`: source terms, license text, operator/legal review
-  notes or explicit fixture classification evidence.
+  notes or explicit fixture classification evidence. This is the authoritative
+  evidence field for license, public handoff, commercial and redistribution
+  boundary checks.
 - `provenance_evidence_files`: files that show where the data came from or how
-  it was derived.
+  it was derived. Provenance evidence is not license evidence.
 - `freshness_evidence_files`: files that support currentness/staleness only.
   Freshness evidence is not license evidence.
 - `review_evidence_files`: operator, external, legal or commercial review notes
-  that justify the current review status.
+  that justify the current review status. Review evidence is not license
+  evidence unless the same artifact is explicitly listed in
+  `license_evidence_files`.
 
 ## Allowed Classification Values
 
@@ -92,6 +97,13 @@ templates and future registries should also split evidence by purpose:
 - `INTERNAL_DERIVED`
 - `TEST_FIXTURE`
 - `UNKNOWN_REVIEW_REQUIRED`
+
+## Allowed Source Type Values
+
+For the current template preflight, `source_type` uses the same allowed values
+as `license_classification` and must match `license_classification` for each
+template entry. This keeps adapter, snapshot and `as_of_date` boundary rules
+from being bypassed by source-type typos.
 
 ## Allowed Usage Scopes
 
@@ -117,13 +129,41 @@ templates and future registries should also split evidence by purpose:
 - `PROHIBITED`
 - `UNKNOWN`
 
+## Allowed Current Status Values
+
+Source-level `current_status` is a template/review state, not a production
+approval field. It may use the required review status values above or:
+
+- `TEMPLATE_ONLY`
+- `REVIEW_REQUIRED`
+
+The preflight must reject production-like overclaims, including:
+
+- `APPROVED_FOR_PRODUCTION`
+- `PRODUCTION_APPROVED`
+- `COMMERCIAL_APPROVED`
+- `APPROVED_FOR_COMMERCIAL_USE`
+- `PROVIDER_APPROVED`
+- `LEGAL_APPROVED`
+- `RUNTIME_APPROVED`
+- `ACTIVE_PRODUCTION`
+
 ## Hard Rules
 
 - Unknown license means not approved for commercial use or public
   redistribution.
 - File existence is not license evidence.
+- General `evidence_files` is not license evidence for license-sensitive
+  claims.
 - Freshness evidence is not license evidence.
+- Provenance evidence is not license evidence.
+- Review evidence is not license evidence unless explicitly mirrored in
+  `license_evidence_files`.
 - Public availability is not redistribution permission.
+- `COMMERCIAL_REVIEW_REQUIRED` and `LEGAL_REVIEW_REQUIRED` are review states,
+  not approvals.
+- `commercial_use_allowed: true` is not valid in the registry template
+  preflight.
 - Paid data must never be bundled into public handoffs unless explicitly
   reviewed and allowed.
 - Broker/user-private exports must remain private unless explicitly sanitized
@@ -143,8 +183,8 @@ The preflight:
 
 - validates that the registry remains `template_only: true`,
 - checks required fields from this contract,
-- checks allowed `license_classification`, `usage_scope` and `review_status`
-  values,
+- checks allowed `source_type`, `license_classification`, `usage_scope`,
+  `review_status` and `current_status` values,
 - keeps license, provenance, freshness and review evidence semantically
   separate,
 - rejects risky public, commercial, paid, broker, personal-data and
@@ -158,10 +198,13 @@ Conservative validation rules include:
 - unknown license cannot claim public handoff, dashboard, commercial or
   redistribution use,
 - paid, broker or personal raw data cannot be allowed in public handoff,
-- commercial use requires legal/commercial review status and explicit license
-  evidence,
-- redistribution requires explicit license evidence,
-- freshness evidence cannot satisfy license evidence,
+- commercial review-required status cannot be treated as commercial approval,
+- `commercial_use_allowed: true` is rejected for template entries,
+- redistribution and public handoff claims require explicit
+  `license_evidence_files`,
+- `evidence_files`, freshness evidence, provenance evidence and review evidence
+  cannot satisfy license evidence,
+- source-level production-like `current_status` values are rejected,
 - provider-specific source classes require an adapter boundary,
 - non-test sources require provenance,
 - time-sensitive sources require `as_of_date` and snapshot semantics.

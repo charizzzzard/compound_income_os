@@ -97,6 +97,7 @@ capabilities:
       - tests/test_data_source_registry_validation.py
     limitations:
       - "Validates the template and conservative boundaries only; it does not approve providers, query data sources, enforce Personal Run runtime source usage or provide legal/commercial approval."
+      - "The preflight now blocks invalid source_type values, production-like current_status values, generic evidence_files as license evidence and commercial_use_allowed overclaims."
       - "Existing configs/data_sources.yaml and configs/personal_run_data_sources.yaml remain operational local input configs, not license registries."
     next_action: "Optional release-gate wiring after external review; otherwise continue with Instrument Master Contract."
   - capability_id: portfolio_rules

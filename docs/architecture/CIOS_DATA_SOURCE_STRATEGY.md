@@ -139,12 +139,28 @@ template against `docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md`.
 The preflight is intentionally narrow:
 
 - it checks required metadata fields and allowed enum values,
+- it validates `source_type` against the same allowed values as
+  `license_classification` and requires both fields to match in the template,
 - it enforces `template_only: true`,
+- it rejects source-level production-like `current_status` overclaims,
 - it blocks risky license/private/paid/broker/commercial/redistribution
   combinations,
+- it treats `license_evidence_files` as the only license-boundary evidence for
+  public handoff, commercial and redistribution claims,
 - it does not approve real providers,
 - it does not implement runtime adapters,
 - it does not provide legal or commercial approval.
+
+Commercial review and commercial approval remain separate. A source may be
+classified as `COMMERCIAL_REVIEW_REQUIRED` or `LEGAL_REVIEW_REQUIRED` to signal
+that review is needed, but that does not make `commercial_use_allowed` true.
+The current template must keep `commercial_use_allowed: false` for all entries.
+
+Evidence fields are intentionally not interchangeable. `evidence_files` is a
+legacy aggregate/diagnostic field. `freshness_evidence_files`,
+`provenance_evidence_files` and `review_evidence_files` cannot satisfy license
+checks unless the same artifact is explicitly listed in
+`license_evidence_files`.
 
 ## Relationship To Other Kernels
 
