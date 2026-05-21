@@ -1,11 +1,11 @@
-# Compound Income OS External LLM Review Packet - Registry Preflight
+# Compound Income OS External LLM Review Packet - Portfolio Event Ledger Contract
 
 Dies ist der Einstiegspunkt fuer die externe Delta-Review von Compound Income
 OS (CIOS) nach dem Patch:
 
-- commit: `c7a8c64789ad2549ba3e10731cc2dd0fbd864f0a`
-- message: `feat: add data source registry validation preflight`
-- status: `DATA_SOURCE_REGISTRY_PREFLIGHT_ACCEPTED_WITH_FINDINGS`
+- commit: `9f4a666490af97bcd85fceb6a6a62327ffc2b73f`
+- message: `docs: define portfolio event ledger contract`
+- status: `PORTFOLIO_EVENT_LEDGER_CONTRACT_ACCEPTED_WITH_FINDINGS`
 
 ## Current Review Head
 
@@ -13,9 +13,9 @@ OS (CIOS) nach dem Patch:
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- current_handoff_head: `c7a8c64789ad2549ba3e10731cc2dd0fbd864f0a`
-- current_handoff_short_head: `c7a8c64`
-- bundle_purpose: `external_llm_delta_review_after_data_source_registry_preflight`
+- current_handoff_head: `9f4a666490af97bcd85fceb6a6a62327ffc2b73f`
+- current_handoff_short_head: `9f4a666`
+- bundle_purpose: `external_llm_review_after_portfolio_event_ledger_contract`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -38,14 +38,20 @@ Head, Scope, SHA, Precedence und Dirty-State-Interpretation.
 
 Reviewer sollen insbesondere pruefen:
 
-- Data Source Registry Validation Preflight:
-  - `src/data_source_registry_validation.py`
-  - `tests/test_data_source_registry_validation.py`
-- Data Source Strategy / License Boundary:
+- Portfolio Event Ledger:
+  - `docs/contracts/PORTFOLIO_EVENT_LEDGER_CONTRACT.md`
+  - `docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER.md`
+  - `docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml`
+- Instrument Master:
+  - `docs/contracts/INSTRUMENT_MASTER_CONTRACT.md`
+  - `docs/architecture/CIOS_INSTRUMENT_MASTER.md`
+  - `docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml`
+- Data Source / License Boundary:
   - `docs/architecture/CIOS_DATA_SOURCE_STRATEGY.md`
   - `docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md`
   - `docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml`
-  - `docs/governance/DATA_SOURCE_REVIEW_CHECKLIST.md`
+  - `src/data_source_registry_validation.py`
+  - `tests/test_data_source_registry_validation.py`
 - Governance/status consistency:
   - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
   - `docs/architecture/CIOS_MATURITY_MODEL.yaml`
@@ -68,30 +74,35 @@ Handoff-Metadatencommit.
 
 Dieses Packet fuehrt nicht ein:
 
+- produktive Event-Ledger-Datenbank
+- Event-Ledger-Runtime
+- Broker Parser
+- Broker Import Pipeline
 - API-Anbindung
 - Scraping oder Web-Crawling
 - Provider-Adapter
-- produktive Source Registry
-- Runtime-Enforcement-Integration
-- Broker Parser
-- Dashboard
+- automatische Transaktionsklassifikation
+- Corporate Actions Processing
+- FX Engine
 - Replay, Backtesting oder Simulation
-- Outcome Attribution
-- Portfolio Event Ledger
-- Legal-/Commercial-Freigabe
+- Outcome oder Performance Attribution
+- Dashboard
 - Investmentlogik
 - Buy/Sell Recommendations
 - Steuerberechnung
+- Legal-/Commercial-Freigabe
 - Scoring-/Ranking-Aenderung
 - Portfolio-Regel-Aenderung
 - Runtime-LLM-Agentenlogik
 
 ## Reviewer Notes
 
-- Der Preflight validiert das Template und konservative Boundary-Regeln.
-- Er genehmigt keine realen Provider.
-- Er ersetzt keine Legal-/Commercial-Review.
-- Er ist nicht in den Personal Run als Runtime-Enforcement integriert.
-- Bestehende `configs/data_sources.yaml` und
-  `configs/personal_run_data_sources.yaml` bleiben operative lokale Input-
-  Configs, keine License Registry.
+- Der Portfolio Event Ledger ist Contract und Template only.
+- Er akzeptiert keine echten Broker-, Portfolio-, Steuer-, Dividenden- oder
+  FX-Events.
+- Bestehende Cost-/Tax- und Broker-Dokumentmodule bleiben operative
+  Spezialmodule, kein kanonischer Event Ledger.
+- Production broker import bleibt blockiert, bis Staging Contract, Validatoren,
+  Review Workflow und Tests existieren.
+- Replay, Performance Attribution und Outcome Attribution bleiben blockiert, bis
+  ein produktiver Event Ledger plus Time-Aware Replay existiert.
