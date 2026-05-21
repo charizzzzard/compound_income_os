@@ -1,11 +1,11 @@
-# Compound Income OS External LLM Review Packet - External Review Coverage Governance
+# Compound Income OS External LLM Review Packet - Cross-Patch Regression Governance
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach dem Governance-Patch:
+(CIOS) nach dem Governance-Automation-Patch:
 
-- commit: `093b4bc57061dddd2a6384f50b72da0143f4043d`
-- message: `chore: add external review coverage governance`
-- status: `EXTERNAL_REVIEW_COVERAGE_GOVERNANCE_ACCEPTED_WITH_FINDINGS`
+- commit: `e20113b374d78dea1bd575f65e587bb37b4f314e`
+- message: `feat: add cross-patch regression governance check`
+- status: `CROSS_PATCH_REGRESSION_REVIEW_OPERATIONALIZED_ACCEPTED_WITH_FINDINGS`
 
 Dieses Packet superseded aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck.
@@ -16,11 +16,11 @@ aktuellen Review-Zweck.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- implementation_head: `093b4bc57061dddd2a6384f50b72da0143f4043d`
-- implementation_short_head: `093b4bc`
-- current_handoff_head: `093b4bc57061dddd2a6384f50b72da0143f4043d`
-- current_handoff_short_head: `093b4bc`
-- bundle_purpose: `external_review_after_external_review_coverage_governance`
+- implementation_head: `e20113b374d78dea1bd575f65e587bb37b4f314e`
+- implementation_short_head: `e20113b`
+- current_handoff_head: `e20113b374d78dea1bd575f65e587bb37b4f314e`
+- current_handoff_short_head: `e20113b`
+- bundle_purpose: `external_review_after_cross_patch_regression_governance_check`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -44,15 +44,14 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 
 - Verwende volle repo-relative Pfade in Findings.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
-- Behandle Review-Gates als Governance-Baseline, nicht als Runtime Enforcement.
+- Behandle `src.external_review_cross_patch_regression` als read-only
+  Governance-Check, nicht als Release-Akzeptanz und nicht als Runtime
+  Enforcement.
+- Unterscheide `RECORDED` Handoff-Commands von tatsaechlich ausgefuehrten
+  Pass/Fail-Ergebnissen.
 - Inferiere keine Release-, Product-, Investment-, Broker-Import-, Replay-,
   Backtesting-, Dashboard- oder Outcome-Attribution-Readiness.
-- Unterscheide `documented`, `tested`, `enforced`, `operationally_ready` und
-  `production_ready`.
-- Unterscheide Template Validation, Runtime Validation, Event Acceptance und
-  Operator Acceptance.
 - Unterscheide tatsaechlich ausgefuehrte Tests von Full-Suite-Validation.
-- Erhalte die Non-Scope-Grenzen.
 - Fehlende, stale oder unknown Daten muessen sichtbar bleiben.
 - Keine stille Imputation, keine stille Ueberschreibung akzeptierter Fakten,
   keine Investment Advice und keine Order Execution.
@@ -61,6 +60,11 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 
 Reviewer sollen insbesondere pruefen:
 
+- Cross-Patch Regression Governance Check:
+  - `src/external_review_cross_patch_regression.py`
+  - `tests/test_external_review_cross_patch_regression.py`
+  - `data/processed/external_review_cross_patch_regression.csv`, falls im ZIP-Profil enthalten
+  - `reports/2026-05-21/external_review_cross_patch_regression_report.md`, falls im ZIP-Profil enthalten
 - External Review Coverage Governance:
   - `docs/governance/EXTERNAL_REVIEW_COVERAGE_STANDARD.md`
   - `docs/governance/EXTERNAL_REVIEW_GATE_REGISTRY.yaml`
@@ -76,12 +80,6 @@ Reviewer sollen insbesondere pruefen:
   - `tests/test_readme_and_reports.py`
   - `tests/test_handoff_zip_export.py`
   - `tests/test_handoff_bundle.py`
-- Existing adjacent kernel context:
-  - `docs/contracts/PORTFOLIO_EVENT_LEDGER_CONTRACT.md`
-  - `docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER.md`
-  - `docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml`
-  - `src/portfolio_event_ledger_validation.py`
-  - `tests/test_portfolio_event_ledger_validation.py`
 
 ## Explicit Non-Scope
 
@@ -107,13 +105,16 @@ Dieses Packet fuehrt nicht ein:
 - Legal-/Commercial-Freigabe
 - Order Execution
 - Runtime-LLM-Agentenlogik
+- Runtime-Enforcement-Engine
+- Clean-Room-Automation
+- vollautomatische Cross-Patch-Regression
 
 ## Reviewer Notes
 
-- Externe Reviews duerfen Empfehlungen und Findings liefern, aber keine finale
-  Release-Akzeptanz aussprechen.
+- Der neue Producer operationalisiert `CROSS_PATCH_REGRESSION_REVIEW` als
+  lokalen read-only Check mit CSV- und Markdown-Output.
+- Der Producer meldet Drift sichtbar, akzeptiert aber keinen Release.
+- Der aktuelle Lauf meldete keine `FAIL`, aber `WARN`-Rows fuer historische
+  patch-relative Known-Gaps-Formulierungen und fuer `RECORDED`-Handoff-Command
+  Semantik.
 - Final Acceptance bleibt beim Human Operator.
-- `CLEAN_ROOM_REPRODUCTION_REVIEW` und `CROSS_PATCH_REGRESSION_REVIEW` sind als
-  Gates dokumentiert, aber in diesem Patch nicht vollautomatisch umgesetzt.
-- Die Gate-Registry ist maschinenlesbare Governance-Dokumentation, keine
-  Runtime-Enforcement-Engine.
