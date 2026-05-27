@@ -932,6 +932,21 @@ und `reports/<as_of_date>/release_ci_environment_parity_review_report.md`. Er
 ist keine CI-Gruenmeldung, keine Release-Akzeptanz und keine Product-,
 Production- oder Investment-Readiness.
 
+`src.runtime_enforcement_boundary_review` erzeugt einen read-only
+Runtime-Enforcement-Boundary-Review. Der Check prueft, ob Non-Scope-Grenzen,
+Gate-Registry/-Sequence, Modulgrenzen und riskante Runtime-/Release-Readiness-
+Sprache konsistent bleiben:
+
+```powershell
+python -m src.runtime_enforcement_boundary_review --as-of-date YYYY-MM-DD
+```
+
+Der Check schreibt `data/processed/runtime_enforcement_boundary_review.csv`
+und `reports/<as_of_date>/runtime_enforcement_boundary_review_report.md`. Er
+ist keine Runtime-Enforcement-Engine, keine Release-Akzeptanz, keine
+Runtime-LLM-Agentenlogik, keine Broker-/Order-Logik und keine Product-,
+Production- oder Investment-Readiness.
+
 Core-Orchestrator-Beispiel:
 
 ```powershell

@@ -73,6 +73,10 @@ The meta-governance baseline is defined by:
   version, platform, unittest/pytest/ruff/git availability, expected validation
   commands and `RECORDED` handoff semantics without claiming CI green or release
   acceptance.
+- Runtime Enforcement Boundary Review: read-only governance producer that checks
+  non-scope language, risky runtime/release readiness claims, gate alignment and
+  module boundary clarity. It is not a Runtime Enforcement Engine and does not
+  approve runtime stage integration.
 - Monthly Decision Report: report surface for portfolio health, decision
   quality and decision journal validation when explicit artifacts are present.
 - Personal Run Engine: explicit stage orchestration with manifest, used-inputs,

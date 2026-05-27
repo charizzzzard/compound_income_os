@@ -862,6 +862,35 @@ capabilities:
       - "It distinguishes unittest/git/python availability from pytest/ruff absence and expected command availability from actual command success."
       - "Handoff commands recorded as RECORDED remain command provenance, not embedded pass/fail execution evidence."
     next_action: "External review of the Release CI Environment Parity producer, then decide whether to operationalize runtime-enforcement boundary checks."
+  - capability_id: runtime_enforcement_boundary_review
+    display_name: Runtime Enforcement Boundary Review
+    status: implemented
+    maturity: IMPLEMENTED_MANUAL
+    evidence_files:
+      - src/runtime_enforcement_boundary_review.py
+      - tests/test_runtime_enforcement_boundary_review.py
+      - docs/governance/EXTERNAL_REVIEW_GATE_REGISTRY.yaml
+      - docs/governance/EXTERNAL_REVIEW_GATE_SEQUENCE.md
+    input_artifacts:
+      - docs/governance/EXTERNAL_REVIEW_GATE_REGISTRY.yaml
+      - docs/governance/EXTERNAL_REVIEW_GATE_SEQUENCE.md
+      - docs/architecture/CIOS_FEATURE_STATUS.yaml
+      - docs/architecture/CURRENT_KNOWN_GAPS.md
+      - docs/MODULE_CONTRACTS.md
+      - docs/CONTEXT_AND_ROADMAP.md
+      - README.md
+    output_artifacts:
+      - data/processed/runtime_enforcement_boundary_review.csv
+      - reports/<as_of_date>/runtime_enforcement_boundary_review_report.md
+    report_surface:
+      - reports/<as_of_date>/runtime_enforcement_boundary_review_report.md
+    tests:
+      - tests/test_runtime_enforcement_boundary_review.py
+    limitations:
+      - "Read-only governance producer; it does not implement a Runtime Enforcement Engine, release acceptance, product readiness, production readiness or investment readiness."
+      - "It checks documentation/review/reporting boundaries and risky readiness language, not runtime behavior or enforcement."
+      - "Findings are Human Operator review evidence, not automatic acceptance."
+    next_action: "External review of the Runtime Enforcement Boundary producer before any runtime-sensitive implementation work."
   - capability_id: human_factors_behaviour_layer
     display_name: Human Factors Behaviour Layer
     status: partial

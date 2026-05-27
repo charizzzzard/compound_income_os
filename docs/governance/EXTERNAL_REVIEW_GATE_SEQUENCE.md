@@ -40,11 +40,14 @@ Required gates:
 - `BROKER_IMPORT_STAGING_READINESS_REVIEW`
 - `INSTRUMENT_IDENTITY_AND_MAPPING_REVIEW`
 - `DATA_CONFLICT_AND_PROVENANCE_REVIEW`
+- `RUNTIME_ENFORCEMENT_BOUNDARY_REVIEW`
 - `LOCAL_SECURITY_AND_SECRET_HYGIENE_REVIEW`
 - `CROSS_PATCH_REGRESSION_REVIEW`
 
 Rationale: Existing read-only import, cost, tax and history modules are not a
 Broker Import Staging Contract and must not be treated as production staging.
+Runtime boundary review is required so staging claims cannot be confused with
+runtime enforcement, event acceptance or production workflow readiness.
 
 ## Before Broker Import Production
 
