@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "registry_purpose": "Machine-readable registry of CIOS external review gates. This is governance documentation only and does not implement runtime enforcement or release acceptance.",
+  "registry_purpose": "Machine-readable registry of CIOS external review gates. This is governance documentation only and does not implement runtime enforcement or release acceptance. Runtime gate classification semantics are defined in docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md.",
   "operator_acceptance_authority": "Human Operator",
   "gates": [
     {
@@ -149,12 +149,12 @@
       "priority": "P0",
       "purpose": "Review whether documentation-only, template-only and runtime-enforced boundaries are clearly separated.",
       "trigger_condition": "Before runtime stage integration, production workflow claims or dashboard readiness claims.",
-      "required_inputs": ["contracts", "validators", "stage DAG", "runtime code", "tests"],
+      "required_inputs": ["runtime gate boundary contract", "contracts", "validators", "stage DAG", "runtime code", "tests"],
       "required_outputs": ["enforcement boundary map", "documentation-only risk findings"],
       "acceptance_criteria": ["template validation is not described as runtime validation", "runtime claims have code and tests", "documentation-only controls remain labeled"],
       "non_scope": ["runtime implementation", "feature readiness approval"],
       "blocks_features": ["runtime_stage_integration", "production_workflow_claims", "dashboard_readiness_claims"],
-      "evidence_required": ["boundary map", "claim-to-evidence trace"],
+      "evidence_required": ["docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md", "boundary map", "claim-to-evidence trace"],
       "operator_acceptance_required": true
     },
     {

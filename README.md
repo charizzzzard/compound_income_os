@@ -947,6 +947,12 @@ ist keine Runtime-Enforcement-Engine, keine Release-Akzeptanz, keine
 Runtime-LLM-Agentenlogik, keine Broker-/Order-Logik und keine Product-,
 Production- oder Investment-Readiness.
 
+`docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md` definiert die kanonische
+Klassifikation fuer Runtime-Gates: `documentation_only`, `review_evidence`,
+`runtime_relevant_candidate` und kuenftige runtime-enforced Zustaende. Der
+Contract ist eine Governance-Grenze; er implementiert keine Runtime-
+Enforcement-Engine und akzeptiert keine Releases.
+
 Core-Orchestrator-Beispiel:
 
 ```powershell

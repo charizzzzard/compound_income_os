@@ -75,6 +75,11 @@ Reviewers must not collapse the following states:
 Documentation alone is not enforcement. A template validator is not a runtime
 workflow. A passing local test is not clean-room release evidence.
 
+Runtime gate classification semantics are governed by
+`docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md`. That contract distinguishes
+`documentation_only`, `review_evidence`, `runtime_relevant_candidate` and
+`runtime_enforced` states and does not implement runtime enforcement.
+
 ## Validation And Acceptance Distinctions
 
 Reviewers must keep these concepts separate:
@@ -152,3 +157,6 @@ The canonical machine-readable review gate list is
 
 The feature-class sequencing rules are documented in
 `docs/governance/EXTERNAL_REVIEW_GATE_SEQUENCE.md`.
+
+Runtime gate boundary semantics are documented in
+`docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md`.

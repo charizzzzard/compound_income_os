@@ -5,7 +5,9 @@ It is a governance standard, not feature readiness and not runtime enforcement.
 
 The gate definitions are machine-readable in
 `docs/governance/EXTERNAL_REVIEW_GATE_REGISTRY.yaml`. The coverage vocabulary is
-defined in `docs/governance/EXTERNAL_REVIEW_COVERAGE_STANDARD.md`.
+defined in `docs/governance/EXTERNAL_REVIEW_COVERAGE_STANDARD.md`. Runtime gate
+classification semantics are defined in
+`docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md`.
 
 ## Before Instrument Master Expansion
 
@@ -32,6 +34,8 @@ Required gates:
 Rationale: Template validation is not runtime event validation. Runtime ledger
 work needs append-only semantics, correction/reversal handling, temporal
 integrity, adversarial input coverage and explicit enforcement boundaries.
+The Runtime Gate Boundary Contract must exist before runtime-sensitive
+implementation so review evidence cannot be mistaken for runtime enforcement.
 
 ## Before Broker Import Staging
 
@@ -48,6 +52,8 @@ Rationale: Existing read-only import, cost, tax and history modules are not a
 Broker Import Staging Contract and must not be treated as production staging.
 Runtime boundary review is required so staging claims cannot be confused with
 runtime enforcement, event acceptance or production workflow readiness.
+The Runtime Gate Boundary Contract must be treated as a prerequisite boundary,
+not as broker-import readiness.
 
 ## Before Broker Import Production
 
@@ -159,4 +165,5 @@ not pass/fail evidence.
 This sequence does not implement any gate as runtime enforcement. It does not
 authorize Broker Import, Event Ledger Runtime, Replay, Backtesting, Dashboard
 Expansion, Valuation Automation, Outcome Attribution or public/commercial
-packaging.
+packaging. The Runtime Gate Boundary Contract classifies gates and candidates;
+it does not promote any current governance producer to runtime_enforced.

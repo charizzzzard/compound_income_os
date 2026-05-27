@@ -891,6 +891,27 @@ capabilities:
       - "It checks documentation/review/reporting boundaries and risky readiness language, not runtime behavior or enforcement."
       - "Findings are Human Operator review evidence, not automatic acceptance."
     next_action: "External review of the Runtime Enforcement Boundary producer before any runtime-sensitive implementation work."
+  - capability_id: runtime_gate_boundary_contract
+    display_name: Runtime Gate Boundary Contract
+    status: documented
+    maturity: GOVERNANCE_BASELINE
+    evidence_files:
+      - docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md
+      - docs/governance/EXTERNAL_REVIEW_GATE_REGISTRY.yaml
+      - docs/governance/EXTERNAL_REVIEW_GATE_SEQUENCE.md
+    input_artifacts:
+      - docs/governance/EXTERNAL_REVIEW_COVERAGE_STANDARD.md
+      - docs/governance/EXTERNAL_REVIEW_GATE_REGISTRY.yaml
+      - docs/governance/EXTERNAL_REVIEW_GATE_SEQUENCE.md
+    output_artifacts: []
+    report_surface: []
+    tests:
+      - tests/test_runtime_gate_boundary_contract.py
+    limitations:
+      - "Contract-only governance baseline; it does not implement a Runtime Enforcement Engine, release acceptance, product readiness, production readiness or investment readiness."
+      - "It classifies documentation-only checks, review evidence, future runtime-relevant candidates and future runtime-enforced states without promoting any current producer to runtime enforcement."
+      - "All runtime-sensitive work remains blocked until separate accepted contracts, tests, evidence artifacts and Human Operator acceptance exist."
+    next_action: "External review of the Runtime Gate Boundary Contract before defining any concrete runtime gate behavior."
   - capability_id: human_factors_behaviour_layer
     display_name: Human Factors Behaviour Layer
     status: partial
