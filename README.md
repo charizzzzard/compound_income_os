@@ -952,6 +952,9 @@ Klassifikation fuer Runtime-Gates: `documentation_only`, `review_evidence`,
 `runtime_relevant_candidate` und kuenftige runtime-enforced Zustaende. Der
 Contract ist eine Governance-Grenze; er implementiert keine Runtime-
 Enforcement-Engine und akzeptiert keine Releases.
+`docs/contracts/RUNTIME_GATE_DEFINITION_TEMPLATE.md` standardisiert die
+Pflichtfelder fuer kuenftige Runtime-Gate-Vorschlaege; das Ausfuellen des
+Templates macht keinen Gate runtime-enforced.
 
 Core-Orchestrator-Beispiel:
 

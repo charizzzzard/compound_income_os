@@ -25,6 +25,11 @@ This contract defines:
 - cases that must not be promoted automatically;
 - prerequisites for future runtime-sensitive work.
 
+Future runtime gate proposals must use
+`docs/contracts/RUNTIME_GATE_DEFINITION_TEMPLATE.md` before any promotion from
+`documentation_only` or `review_evidence` toward `runtime_relevant_candidate` or
+future `runtime_enforced` status.
+
 ## Non-Scope
 
 This contract does not implement:
@@ -141,6 +146,7 @@ Classification rules:
 A check may move from `review_evidence` to `runtime_relevant_candidate` only
 when all of the following exist:
 
+- completed Runtime Gate Definition Template;
 - canonical contract section;
 - owner surface;
 - trigger condition;

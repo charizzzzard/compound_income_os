@@ -897,6 +897,7 @@ capabilities:
     maturity: GOVERNANCE_BASELINE
     evidence_files:
       - docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md
+      - docs/contracts/RUNTIME_GATE_DEFINITION_TEMPLATE.md
       - docs/governance/EXTERNAL_REVIEW_GATE_REGISTRY.yaml
       - docs/governance/EXTERNAL_REVIEW_GATE_SEQUENCE.md
     input_artifacts:
@@ -907,11 +908,13 @@ capabilities:
     report_surface: []
     tests:
       - tests/test_runtime_gate_boundary_contract.py
+      - tests/test_runtime_gate_definition_template.py
     limitations:
       - "Contract-only governance baseline; it does not implement a Runtime Enforcement Engine, release acceptance, product readiness, production readiness or investment readiness."
       - "It classifies documentation-only checks, review evidence, future runtime-relevant candidates and future runtime-enforced states without promoting any current producer to runtime enforcement."
+      - "The Runtime Gate Definition Template standardizes future proposals only; filling it out does not make a gate runtime_enforced."
       - "All runtime-sensitive work remains blocked until separate accepted contracts, tests, evidence artifacts and Human Operator acceptance exist."
-    next_action: "External review of the Runtime Gate Boundary Contract before defining any concrete runtime gate behavior."
+    next_action: "External review of the Runtime Gate Definition Template before defining any concrete runtime gate behavior."
   - capability_id: human_factors_behaviour_layer
     display_name: Human Factors Behaviour Layer
     status: partial

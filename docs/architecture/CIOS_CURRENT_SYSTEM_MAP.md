@@ -77,10 +77,12 @@ The meta-governance baseline is defined by:
   non-scope language, risky runtime/release readiness claims, gate alignment and
   module boundary clarity. It is not a Runtime Enforcement Engine and does not
   approve runtime stage integration.
-- Runtime Gate Boundary Contract: canonical contract that classifies
+- Runtime Gate Boundary Contract:
+  `docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md` classifies
   `documentation_only`, `review_evidence`, `runtime_relevant_candidate` and
-  future runtime-enforced states. It is a governance boundary, not a runtime
-  engine and not release, product, production or investment readiness.
+  future runtime-enforced states. `docs/contracts/RUNTIME_GATE_DEFINITION_TEMPLATE.md`
+  standardizes future gate proposals. These are governance boundaries, not a
+  runtime engine and not release, product, production or investment readiness.
 - Monthly Decision Report: report surface for portfolio health, decision
   quality and decision journal validation when explicit artifacts are present.
 - Personal Run Engine: explicit stage orchestration with manifest, used-inputs,

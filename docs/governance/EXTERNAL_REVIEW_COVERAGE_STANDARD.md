@@ -79,6 +79,9 @@ Runtime gate classification semantics are governed by
 `docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md`. That contract distinguishes
 `documentation_only`, `review_evidence`, `runtime_relevant_candidate` and
 `runtime_enforced` states and does not implement runtime enforcement.
+Future runtime gate proposals must use
+`docs/contracts/RUNTIME_GATE_DEFINITION_TEMPLATE.md` before any promotion toward
+runtime relevance or future runtime enforcement is reviewed.
 
 ## Validation And Acceptance Distinctions
 
@@ -160,3 +163,6 @@ The feature-class sequencing rules are documented in
 
 Runtime gate boundary semantics are documented in
 `docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md`.
+
+Runtime gate proposal fields are standardized in
+`docs/contracts/RUNTIME_GATE_DEFINITION_TEMPLATE.md`.
