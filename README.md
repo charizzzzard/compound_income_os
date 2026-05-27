@@ -917,6 +917,21 @@ Der Check schreibt `data/processed/clean_room_reproduction_review.csv` und
 vollautomatische Release-Akzeptanz, keine Clean-Room-Automation im Sinne eines
 CI-Systems und keine Product-/Investment-/Production-Readiness.
 
+`src.release_ci_environment_parity_review` erzeugt einen read-only
+Environment-Parity-Review fuer lokale Validierungsrealitaet und
+Tool-Verfuegbarkeit. Der Check unterscheidet Tool-Verfuegbarkeit von
+Command-Erfolg und markiert fehlendes `pytest` oder `ruff` als
+Environment-Limitation, nicht als Gruen-Ergebnis:
+
+```powershell
+python -m src.release_ci_environment_parity_review --as-of-date YYYY-MM-DD
+```
+
+Der Check schreibt `data/processed/release_ci_environment_parity_review.csv`
+und `reports/<as_of_date>/release_ci_environment_parity_review_report.md`. Er
+ist keine CI-Gruenmeldung, keine Release-Akzeptanz und keine Product-,
+Production- oder Investment-Readiness.
+
 Core-Orchestrator-Beispiel:
 
 ```powershell

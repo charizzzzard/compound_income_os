@@ -69,6 +69,10 @@ The meta-governance baseline is defined by:
   handoff metadata, SHA/ZIP integrity, internal vs. external context, required
   review files, `RECORDED` validation semantics, ZIP-only/full-packet boundaries
   and Cross-Patch-Regression reproduction counts.
+- Release CI Environment Parity Review: read-only producer that captures Python
+  version, platform, unittest/pytest/ruff/git availability, expected validation
+  commands and `RECORDED` handoff semantics without claiming CI green or release
+  acceptance.
 - Monthly Decision Report: report surface for portfolio health, decision
   quality and decision journal validation when explicit artifacts are present.
 - Personal Run Engine: explicit stage orchestration with manifest, used-inputs,
@@ -284,7 +288,8 @@ with zero counts.
   production license-enforcement registry, provider-specific approval,
   production adapter, legal review or commercial redistribution approval.
 - External Review Coverage Governance is documented. Cross-Patch Regression and
-  Clean-Room Reproduction now have read-only producers, but they are not release
+  Clean-Room Reproduction now have read-only producers. Release CI Environment
+  Parity now makes local tool availability visible. These checks are not release
   acceptance, not CI clean-room automation and not runtime enforcement.
 - Decision Quality stale-state handling is conservative: any older
   `as_of_date` is stale in the current MVP.
@@ -310,8 +315,8 @@ with zero counts.
 
 ## Next Recommended Hardening Patches
 
-1. External Review of the Clean-Room Reproduction producer.
-2. Technical operationalization of RELEASE_CI_ENVIRONMENT_PARITY_REVIEW or RUNTIME_ENFORCEMENT_BOUNDARY_REVIEW.
+1. External Review of the Release CI Environment Parity producer.
+2. Technical operationalization of RUNTIME_ENFORCEMENT_BOUNDARY_REVIEW.
 3. Broker Import Staging Contract.
 4. Corporate Actions Contract later.
 5. Time-Aware Replay / Outcome contracts later.

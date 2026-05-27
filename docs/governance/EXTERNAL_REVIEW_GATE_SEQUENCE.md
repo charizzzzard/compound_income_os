@@ -145,8 +145,11 @@ Rationale: Major external review and release-gate claims need reproducible
 handoff evidence, cross-kernel regression visibility, environment parity and
 secret-hygiene evidence. `src.clean_room_reproduction_review` provides a
 read-only packet reproduction check for current handoff evidence, but it is not
-CI clean-room automation and does not replace environment parity. Recorded
-validation commands alone are not pass/fail evidence.
+CI clean-room automation and does not replace environment parity.
+`src.release_ci_environment_parity_review` makes local Python/tool availability
+and expected validation commands visible, but it is not CI green, not release
+acceptance and not product readiness. Recorded validation commands alone are
+not pass/fail evidence.
 
 ## Non-Scope
 

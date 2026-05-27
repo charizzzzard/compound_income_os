@@ -837,7 +837,31 @@ capabilities:
       - "Read-only packet reproduction producer; it does not implement CI clean-room automation, runtime enforcement, release acceptance, product readiness or investment readiness."
       - "It validates external packet metadata, SHA/ZIP integrity, context alignment, required review files, validation-reality semantics and Cross-Patch-Regression reproduction counts, not private/raw/broker/provider data."
       - "Handoff commands recorded as RECORDED remain distinct from executed pass/fail logs; missing pytest/ruff remain environment limitations unless installed and run."
-    next_action: "External review of the Clean-Room Reproduction producer, then decide whether to operationalize CI/environment parity or runtime-enforcement boundary checks."
+    next_action: "Keep as packet-reproduction evidence for future handoff reviews."
+  - capability_id: release_ci_environment_parity_review
+    display_name: Release CI Environment Parity Review
+    status: implemented
+    maturity: IMPLEMENTED_MANUAL
+    evidence_files:
+      - src/release_ci_environment_parity_review.py
+      - tests/test_release_ci_environment_parity_review.py
+      - docs/governance/EXTERNAL_REVIEW_GATE_REGISTRY.yaml
+      - docs/governance/EXTERNAL_REVIEW_GATE_SEQUENCE.md
+    input_artifacts:
+      - local Python environment
+      - external_review_packet/HANDOFF_LATEST.zip
+    output_artifacts:
+      - data/processed/release_ci_environment_parity_review.csv
+      - reports/<as_of_date>/release_ci_environment_parity_review_report.md
+    report_surface:
+      - reports/<as_of_date>/release_ci_environment_parity_review_report.md
+    tests:
+      - tests/test_release_ci_environment_parity_review.py
+    limitations:
+      - "Read-only local environment parity producer; it does not implement CI execution, CI-green status, release acceptance, runtime enforcement, product readiness or investment readiness."
+      - "It distinguishes unittest/git/python availability from pytest/ruff absence and expected command availability from actual command success."
+      - "Handoff commands recorded as RECORDED remain command provenance, not embedded pass/fail execution evidence."
+    next_action: "External review of the Release CI Environment Parity producer, then decide whether to operationalize runtime-enforcement boundary checks."
   - capability_id: human_factors_behaviour_layer
     display_name: Human Factors Behaviour Layer
     status: partial

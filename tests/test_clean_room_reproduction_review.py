@@ -212,6 +212,10 @@ class CleanRoomReproductionReviewTests(unittest.TestCase):
             text = self._findings_text(root)
             self.assertIn("ZIP_REQUIRED_FILES|PASS", text)
 
+    def test_required_zip_files_include_clean_room_self_protection(self) -> None:
+        self.assertIn("src/clean_room_reproduction_review.py", REQUIRED_ZIP_FILES)
+        self.assertIn("tests/test_clean_room_reproduction_review.py", REQUIRED_ZIP_FILES)
+
     def test_csv_and_markdown_outputs_are_deterministic(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

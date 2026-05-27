@@ -45,6 +45,8 @@ SOURCE_OF_TRUTH_ORDER = [
 ]
 
 REQUIRED_ZIP_FILES = [
+    "src/clean_room_reproduction_review.py",
+    "tests/test_clean_room_reproduction_review.py",
     "src/external_review_cross_patch_regression.py",
     "tests/test_external_review_cross_patch_regression.py",
     "docs/governance/EXTERNAL_REVIEW_COVERAGE_STANDARD.md",
