@@ -1,20 +1,20 @@
-# HANDOFF LATEST CONTEXT - Cross-Patch Regression Governance Check
+# HANDOFF LATEST CONTEXT - Clean-Room Reproduction Review
 
 project_name: compound_income_os
 canonical_name: Compound Income OS
 short_name: CIOS
 profile: full_review
 bundle_name: HANDOFF_LATEST
-bundle_purpose: external_review_after_cross_patch_regression_governance_check
-created_at_utc: 2026-05-21T13:10:00Z
+bundle_purpose: external_review_after_clean_room_reproduction_review
+created_at_utc: 2026-05-21T14:45:00Z
 branch: main
-implementation_head: e20113b374d78dea1bd575f65e587bb37b4f314e
-implementation_short_head: e20113b
-current_handoff_head: e20113b374d78dea1bd575f65e587bb37b4f314e
-current_handoff_short_head: e20113b
-implementation_commit_message: feat: add cross-patch regression governance check
-implementation_status: CROSS_PATCH_REGRESSION_REVIEW_OPERATIONALIZED_ACCEPTED_WITH_FINDINGS
-prior_external_review_coverage_governance_commit: 093b4bc57061dddd2a6384f50b72da0143f4043d
+implementation_head: c5eb5bcbbb58d8a10f14ea348bedcfc1e2d18387
+implementation_short_head: c5eb5bc
+current_handoff_head: c5eb5bcbbb58d8a10f14ea348bedcfc1e2d18387
+current_handoff_short_head: c5eb5bc
+implementation_commit_message: feat: add clean-room reproduction review
+implementation_status: CLEAN_ROOM_REPRODUCTION_REVIEW_OPERATIONALIZED_ACCEPTED_WITH_FINDINGS
+prior_cross_patch_regression_commit: e20113b374d78dea1bd575f65e587bb37b4f314e
 tracked_source_worktree_clean_before_handoff_generation: True
 zip_internal_dirty_worktree_present: False
 external_metadata_dirty_after_zip_generation_before_commit: True
@@ -24,16 +24,16 @@ canonical_review_bundle: external_review_packet/HANDOFF_LATEST.zip
 canonical_checksum: external_review_packet/HANDOFF_LATEST.sha256
 canonical_readme: external_review_packet/00_READ_ME_FIRST.md
 
-zip_file_count: 484
-zip_size_bytes: 13075040
-zip_sha256: b2b0eecaa1e05fdb809020fdf5a4046b75be0986e813dbb51b5b035121da176f
+zip_file_count: 486
+zip_size_bytes: 13088061
+zip_sha256: 0a269998f202f914866193f27c3cf55e6ad493cda5edc960be05c81b59d84374
 sha_match: True
 zip_testzip: None
 missing_required: []
 nested_zip_count: 0
 forbidden_match_count: 0
 local_path_leak_count: 0
-internal_head: e20113b374d78dea1bd575f65e587bb37b4f314e
+internal_head: c5eb5bcbbb58d8a10f14ea348bedcfc1e2d18387
 internal_dirty_worktree_present: False
 
 ## Source-of-Truth / Precedence
@@ -54,11 +54,13 @@ Reviewer-Instruktionen.
 ## Current Packet Scope
 
 Dieses Packet synchronisiert den externen Review-Kontext auf den committed
-Repo-Stand `e20113b374d78dea1bd575f65e587bb37b4f314e` nach
-`feat: add cross-patch regression governance check`.
+Repo-Stand `c5eb5bcbbb58d8a10f14ea348bedcfc1e2d18387` nach
+`feat: add clean-room reproduction review`.
 
 Review-Schwerpunkte:
 
+- `src/clean_room_reproduction_review.py`
+- `tests/test_clean_room_reproduction_review.py`
 - `src/external_review_cross_patch_regression.py`
 - `tests/test_external_review_cross_patch_regression.py`
 - `docs/governance/EXTERNAL_REVIEW_COVERAGE_STANDARD.md`
@@ -97,20 +99,19 @@ Review-Schwerpunkte:
 - keine Order Execution
 - keine Runtime-LLM-Agentenlogik
 - keine Runtime-Enforcement-Engine
-- keine Clean-Room-Automation
-- keine vollautomatische Cross-Patch-Regression
+- keine vollautomatische Release-Akzeptanz
 
-## Cross-Patch Regression Boundary
+## Clean-Room Reproduction Boundary
 
-`src.external_review_cross_patch_regression` operationalisiert
-`CROSS_PATCH_REGRESSION_REVIEW` als read-only Governance-Regression-Check. Der
-Producer liest repo-lokale Governance-, Architecture-, Status-, Known-Gaps- und
-Handoff-Artefakte, schreibt eine CSV und einen Markdown-Report und macht Drift
-sichtbar.
+`src.clean_room_reproduction_review` operationalisiert
+`CLEAN_ROOM_REPRODUCTION_REVIEW` als read-only Packet-Reproduction-Check. Der
+Producer liest lokale Handoff-Metadaten, ZIP/SHA-Artefakte und bestehende
+Governance-Checks, schreibt eine CSV und einen Markdown-Report und macht
+Reproduktionsgrenzen sichtbar.
 
-Der Producer implementiert keine Runtime-Enforcement-Engine, keine
-Clean-Room-Automation, keine Release-Akzeptanz und keine Product-, Investment-
-oder Production-Readiness.
+Der Producer implementiert keine Clean-Room-CI-Automation, keine
+Runtime-Enforcement-Engine, keine Release-Akzeptanz und keine Product-,
+Investment- oder Production-Readiness.
 
 ## Validation Actually Performed
 
@@ -119,26 +120,32 @@ Preflight:
 - `git branch --show-current`
   - result: `main`
 - `git rev-parse HEAD`
-  - result before implementation: `3cfd678479c1391dcea24ef006a9b944b7468fc9`
+  - result before implementation: `a7f6e5244779e24aa477631cb964175789626987`
 - `git rev-parse --short HEAD`
-  - result before implementation: `3cfd678`
+  - result before implementation: `a7f6e52`
 - `git status --short`
   - result before implementation: clean
 - `git status --short --ignored external_review_packet`
   - result included ignored `external_review_packet/HANDOFF_LATEST.zip`
+- `rg -n "CLEAN_ROOM_REPRODUCTION_REVIEW|cross_patch_regression|HANDOFF_LATEST|RECORDED|No full test suite" docs src tests README.md external_review_packet`
+  - result: existing cross-patch, handoff and clean-room gate references found
 
 Targeted validation before handoff:
 
+- `python -m unittest tests.test_clean_room_reproduction_review -v`
+  - result: `Ran 9 tests`, `OK`
+- `python -m src.clean_room_reproduction_review --as-of-date 2026-05-21`
+  - result after external metadata update: `status: WARN`, `findings: 22`, `FAIL: 0`, `WARN: 1`, `PASS: 20`, `NOT_AVAILABLE: 1`
 - `python -m unittest tests.test_external_review_cross_patch_regression -v`
   - result: `Ran 11 tests`, `OK`
-- `python -m src.external_review_cross_patch_regression --as-of-date 2026-05-21`
-  - result: `status: WARN`, `findings: 36`, `FAIL: 0`, `WARN: 14`, `PASS: 22`
 - `python -m unittest tests.test_readme_and_reports -v`
   - result: `Ran 14 tests`, `OK`
 - `python -m unittest tests.test_handoff_zip_export -v`
   - result: `Ran 9 tests`, `OK`
 - `python -m unittest tests.test_handoff_bundle -v`
   - result: `Ran 17 tests`, `OK`
+- `python -m unittest discover -s tests -p "test_*.py" -v`
+  - result: `Ran 789 tests`, `OK`
 - `git diff --check`
   - result: exit code `0`; Git reported line-ending warnings for touched files but no whitespace errors
 
@@ -149,15 +156,20 @@ Optional validation attempted:
 - `python -m ruff check .`
   - result: failed because `ruff` is not installed in the active Python environment: `No module named ruff`
 
-No full test suite is claimed by this context file.
+No full test suite is claimed for pytest because `pytest` is not installed in
+the active environment, and no ruff lint success is claimed. The `unittest
+discover` suite was run and passed as listed above.
 
 Handoff generation:
 
-- `python -m src.handoff_zip_export --profile full_review --name HANDOFF_LATEST --output-path external_review_packet/HANDOFF_LATEST.zip --validation-command "python -m unittest tests.test_external_review_cross_patch_regression -v" --validation-command "python -m unittest tests.test_readme_and_reports -v" --validation-command "python -m unittest tests.test_handoff_zip_export -v" --validation-command "python -m unittest tests.test_handoff_bundle -v" --validation-command "python -m pytest -q" --validation-command "python -m ruff check ." --validation-command "git diff --check"`
-  - result: generated ZIP for head `e20113b374d78dea1bd575f65e587bb37b4f314e`
-  - file_count: `484`
-  - size_bytes: `13075040`
-  - zip_sha256: `b2b0eecaa1e05fdb809020fdf5a4046b75be0986e813dbb51b5b035121da176f`
+- first attempted command failed because PowerShell quoting split the nested `unittest discover` validation command:
+  - result: `python.exe -m src.handoff_zip_export: error: unrecognized arguments: -v --validation-command git diff --check ...`
+- successful command:
+  - `python -m src.handoff_zip_export --profile full_review --name HANDOFF_LATEST --output-path external_review_packet/HANDOFF_LATEST.zip --validation-command 'python -m unittest tests.test_clean_room_reproduction_review -v' --validation-command 'python -m src.clean_room_reproduction_review --as-of-date 2026-05-21' --validation-command 'python -m unittest tests.test_external_review_cross_patch_regression -v' --validation-command 'python -m unittest tests.test_readme_and_reports -v' --validation-command 'python -m unittest tests.test_handoff_zip_export -v' --validation-command 'python -m unittest tests.test_handoff_bundle -v' --validation-command 'python -m unittest discover -s tests -p "test_*.py" -v' --validation-command 'git diff --check' --validation-command 'python -m pytest -q' --validation-command 'python -m ruff check .'`
+  - result: generated ZIP for head `c5eb5bcbbb58d8a10f14ea348bedcfc1e2d18387`
+  - file_count: `486`
+  - size_bytes: `13088061`
+  - zip_sha256: `0a269998f202f914866193f27c3cf55e6ad493cda5edc960be05c81b59d84374`
   - forbidden_match_count: `0`
   - local_path_leak_count: `0`
 
@@ -170,7 +182,8 @@ Post-generation ZIP validation:
 - `forbidden_match_count`: `0`
 - `local_path_leak_count`: `0`
 - internal `HANDOFF_CONTEXT.md` head:
-  `e20113b374d78dea1bd575f65e587bb37b4f314e`
-- Cross-Patch Regression producer in ZIP: `yes`
-- Cross-Patch Regression tests in ZIP: `yes`
+  `c5eb5bcbbb58d8a10f14ea348bedcfc1e2d18387`
+- Clean-Room Reproduction producer in ZIP: `yes`
+- Clean-Room Reproduction tests in ZIP: `yes`
+- Cross-Patch Regression producer/tests in ZIP: `yes`
 - Updated status/governance/cross-reference files in ZIP: `yes`

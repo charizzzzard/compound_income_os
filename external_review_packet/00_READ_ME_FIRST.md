@@ -1,11 +1,11 @@
-# Compound Income OS External LLM Review Packet - Cross-Patch Regression Governance
+# Compound Income OS External LLM Review Packet - Clean-Room Reproduction Review
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
 (CIOS) nach dem Governance-Automation-Patch:
 
-- commit: `e20113b374d78dea1bd575f65e587bb37b4f314e`
-- message: `feat: add cross-patch regression governance check`
-- status: `CROSS_PATCH_REGRESSION_REVIEW_OPERATIONALIZED_ACCEPTED_WITH_FINDINGS`
+- commit: `c5eb5bcbbb58d8a10f14ea348bedcfc1e2d18387`
+- message: `feat: add clean-room reproduction review`
+- status: `CLEAN_ROOM_REPRODUCTION_REVIEW_OPERATIONALIZED_ACCEPTED_WITH_FINDINGS`
 
 Dieses Packet superseded aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck.
@@ -16,11 +16,11 @@ aktuellen Review-Zweck.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- implementation_head: `e20113b374d78dea1bd575f65e587bb37b4f314e`
-- implementation_short_head: `e20113b`
-- current_handoff_head: `e20113b374d78dea1bd575f65e587bb37b4f314e`
-- current_handoff_short_head: `e20113b`
-- bundle_purpose: `external_review_after_cross_patch_regression_governance_check`
+- implementation_head: `c5eb5bcbbb58d8a10f14ea348bedcfc1e2d18387`
+- implementation_short_head: `c5eb5bc`
+- current_handoff_head: `c5eb5bcbbb58d8a10f14ea348bedcfc1e2d18387`
+- current_handoff_short_head: `c5eb5bc`
+- bundle_purpose: `external_review_after_clean_room_reproduction_review`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -44,14 +44,16 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 
 - Verwende volle repo-relative Pfade in Findings.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
+- Behandle `src.clean_room_reproduction_review` als read-only
+  Packet-Reproduction-Check, nicht als Release-Akzeptanz, nicht als
+  CI-Clean-Room-Automation und nicht als Runtime Enforcement.
 - Behandle `src.external_review_cross_patch_regression` als read-only
-  Governance-Check, nicht als Release-Akzeptanz und nicht als Runtime
-  Enforcement.
+  Governance-Regression-Check.
 - Unterscheide `RECORDED` Handoff-Commands von tatsaechlich ausgefuehrten
   Pass/Fail-Ergebnissen.
 - Inferiere keine Release-, Product-, Investment-, Broker-Import-, Replay-,
   Backtesting-, Dashboard- oder Outcome-Attribution-Readiness.
-- Unterscheide tatsaechlich ausgefuehrte Tests von Full-Suite-Validation.
+- Unterscheide tatsaechlich ausgefuehrte Tests von pytest-/ruff-Verfuegbarkeit.
 - Fehlende, stale oder unknown Daten muessen sichtbar bleiben.
 - Keine stille Imputation, keine stille Ueberschreibung akzeptierter Fakten,
   keine Investment Advice und keine Order Execution.
@@ -60,11 +62,14 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 
 Reviewer sollen insbesondere pruefen:
 
+- Clean-Room Reproduction Review:
+  - `src/clean_room_reproduction_review.py`
+  - `tests/test_clean_room_reproduction_review.py`
+  - `data/processed/clean_room_reproduction_review.csv`, falls im ZIP-Profil enthalten
+  - `reports/2026-05-21/clean_room_reproduction_review_report.md`, falls im ZIP-Profil enthalten
 - Cross-Patch Regression Governance Check:
   - `src/external_review_cross_patch_regression.py`
   - `tests/test_external_review_cross_patch_regression.py`
-  - `data/processed/external_review_cross_patch_regression.csv`, falls im ZIP-Profil enthalten
-  - `reports/2026-05-21/external_review_cross_patch_regression_report.md`, falls im ZIP-Profil enthalten
 - External Review Coverage Governance:
   - `docs/governance/EXTERNAL_REVIEW_COVERAGE_STANDARD.md`
   - `docs/governance/EXTERNAL_REVIEW_GATE_REGISTRY.yaml`
@@ -77,6 +82,8 @@ Reviewer sollen insbesondere pruefen:
   - `docs/CONTEXT_AND_ROADMAP.md`
   - `README.md`
 - Regression surfaces:
+  - `tests/test_clean_room_reproduction_review.py`
+  - `tests/test_external_review_cross_patch_regression.py`
   - `tests/test_readme_and_reports.py`
   - `tests/test_handoff_zip_export.py`
   - `tests/test_handoff_bundle.py`
@@ -106,15 +113,17 @@ Dieses Packet fuehrt nicht ein:
 - Order Execution
 - Runtime-LLM-Agentenlogik
 - Runtime-Enforcement-Engine
-- Clean-Room-Automation
-- vollautomatische Cross-Patch-Regression
+- vollautomatische Release-Akzeptanz
 
 ## Reviewer Notes
 
-- Der neue Producer operationalisiert `CROSS_PATCH_REGRESSION_REVIEW` als
-  lokalen read-only Check mit CSV- und Markdown-Output.
-- Der Producer meldet Drift sichtbar, akzeptiert aber keinen Release.
-- Der aktuelle Lauf meldete keine `FAIL`, aber `WARN`-Rows fuer historische
-  patch-relative Known-Gaps-Formulierungen und fuer `RECORDED`-Handoff-Command
-  Semantik.
+- Der neue Producer operationalisiert `CLEAN_ROOM_REPRODUCTION_REVIEW` als
+  lokalen read-only Packet-Review mit CSV- und Markdown-Output.
+- Der Producer prueft externe Packet-Metadaten, SHA/ZIP-Integritaet,
+  interne vs. externe Context-Heads, Required-Files im ZIP, Validation-Reality
+  und Cross-Patch-Reproduction-Counts.
+- Der Producer erzeugt reproduzierbare Review-Evidenz, akzeptiert aber keinen
+  Release und ersetzt keine Clean-Room-CI-Umgebung.
+- `pytest` und `ruff` waren im aktiven Python-Environment nicht installiert;
+  daraus wurde kein Erfolg abgeleitet.
 - Final Acceptance bleibt beim Human Operator.
