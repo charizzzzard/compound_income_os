@@ -1,22 +1,23 @@
-# HANDOFF LATEST CONTEXT - Governance Handoff Hygiene Cleanup
+# HANDOFF LATEST CONTEXT - Runtime Enforcement Boundary Review
 
 project_name: compound_income_os
 canonical_name: Compound Income OS
 short_name: CIOS
 profile: full_review
 bundle_name: HANDOFF_LATEST
-bundle_purpose: external_review_after_governance_handoff_hygiene_cleanup
-created_at_utc: 2026-05-27T10:47:00+00:00
+bundle_purpose: external_review_after_runtime_enforcement_boundary_review
+created_at_utc: see_zip_internal_handoff_context
 branch: main
-implementation_head: 8505a59036e4bc86f37b9ae18e512e0d314edb6d
-implementation_short_head: 8505a59
-current_handoff_head: 8505a59036e4bc86f37b9ae18e512e0d314edb6d
-current_handoff_short_head: 8505a59
+head_before_implementation: 585ef437c6877cb52ed56482d4c42e46183353e0
+implementation_head: a9729e05bb870333acdd3f884dc7840d5ab833d5
+implementation_short_head: a9729e0
+current_handoff_head: a9729e05bb870333acdd3f884dc7840d5ab833d5
+current_handoff_short_head: a9729e0
 handoff_metadata_commit: pending_until_metadata_commit
 handoff_metadata_commit_note: the metadata commit is created after this file is written; use git HEAD after the metadata commit or the operator final report for the exact metadata commit hash. This avoids a self-referential hash requirement.
-implementation_commit_message: chore: harden governance handoff hygiene
-implementation_status: GOVERNANCE_HANDOFF_HYGIENE_ACCEPTED_WITH_FINDINGS
-prior_release_ci_environment_parity_commit: a9adbb5453341f59c464dc2668c5db83aa509274
+implementation_commit_message: chore: add runtime enforcement boundary review
+implementation_status: RUNTIME_ENFORCEMENT_BOUNDARY_REVIEW_ACCEPTED_WITH_FINDINGS
+prior_governance_handoff_hygiene_commit: 8505a59036e4bc86f37b9ae18e512e0d314edb6d
 tracked_source_worktree_clean_before_handoff_generation: True
 zip_internal_dirty_worktree_present: False
 external_metadata_dirty_after_zip_generation_before_commit: True
@@ -26,16 +27,16 @@ canonical_review_bundle: external_review_packet/HANDOFF_LATEST.zip
 canonical_checksum: external_review_packet/HANDOFF_LATEST.sha256
 canonical_readme: external_review_packet/00_READ_ME_FIRST.md
 
-zip_file_count: 488
-zip_size_bytes: 13095939
-zip_sha256: 113fffde9d9885427ca729ffeb87c7869aba5aa067af4b5a45bae080335e8162
+zip_file_count: 490
+zip_size_bytes: 13106062
+zip_sha256: 0a401ce1b54c02c2f1f653f027eab0b5f04da95bf36d0a9e799e0d83151b4dc2
 sha_match: True
 zip_testzip: None
 missing_required: []
 nested_zip_count: 0
 forbidden_match_count: 0
 local_path_leak_count: 0
-internal_head: 8505a59036e4bc86f37b9ae18e512e0d314edb6d
+internal_head: a9729e05bb870333acdd3f884dc7840d5ab833d5
 internal_dirty_worktree_present: False
 
 ## Source-of-Truth / Precedence
@@ -56,28 +57,42 @@ Reviewer-Instruktionen.
 ## Current Packet Scope
 
 Dieses Packet synchronisiert den externen Review-Kontext auf den committed
-Repo-Stand `8505a59036e4bc86f37b9ae18e512e0d314edb6d` nach
-`chore: harden governance handoff hygiene`.
+Repo-Stand `a9729e05bb870333acdd3f884dc7840d5ab833d5` nach
+`chore: add runtime enforcement boundary review`.
 
 Review-Schwerpunkte:
 
-- `src/release_ci_environment_parity_review.py`
-- `tests/test_release_ci_environment_parity_review.py`
-- `src/clean_room_reproduction_review.py`
-- `tests/test_clean_room_reproduction_review.py`
-- `src/handoff_bundle.py`
-- `tests/test_handoff_bundle.py`
-- `src/external_review_cross_patch_regression.py`
-- `tests/test_external_review_cross_patch_regression.py`
-- `docs/governance/EXTERNAL_REVIEW_COVERAGE_STANDARD.md`
+- `src/runtime_enforcement_boundary_review.py`
+- `tests/test_runtime_enforcement_boundary_review.py`
+- `data/processed/runtime_enforcement_boundary_review.csv`, falls im ZIP-Profil enthalten
+- `reports/2026-05-21/runtime_enforcement_boundary_review_report.md`, falls im ZIP-Profil enthalten
 - `docs/governance/EXTERNAL_REVIEW_GATE_REGISTRY.yaml`
 - `docs/governance/EXTERNAL_REVIEW_GATE_SEQUENCE.md`
+- `docs/governance/EXTERNAL_REVIEW_COVERAGE_STANDARD.md`
 - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
 - `docs/architecture/CURRENT_KNOWN_GAPS.md`
 - `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
 - `docs/MODULE_CONTRACTS.md`
 - `docs/CONTEXT_AND_ROADMAP.md`
 - `README.md`
+- `src/external_review_cross_patch_regression.py`
+- `src/clean_room_reproduction_review.py`
+- `src/release_ci_environment_parity_review.py`
+- `src/handoff_bundle.py`
+
+## Runtime Enforcement Boundary
+
+`src.runtime_enforcement_boundary_review` operationalisiert
+`RUNTIME_ENFORCEMENT_BOUNDARY_REVIEW` als lokalen read-only Governance-Check.
+Der Producer prueft Non-Scope-Sichtbarkeit, riskante Runtime-/Release-/Readiness-
+Sprache, Gate-Registry-/Sequence-Ausrichtung, Modulgrenzen und eigene
+read-only Importgrenzen.
+
+Der Producer ist keine Runtime-Enforcement-Engine. Er setzt keine Gates zur
+Laufzeit durch, akzeptiert keine Releases, erzeugt keine Product-/Production-
+oder Investment-Readiness und fuehrt keine Broker-, API-, Order-, Dashboard-,
+Replay-, Backtesting-, Outcome-Attribution- oder Valuation-Automation aus.
+Findings sind Review-Evidenz fuer den Human Operator.
 
 ## Explicit Non-Scope
 
@@ -107,48 +122,6 @@ Review-Schwerpunkte:
 - keine Product-/Production-Readiness
 - keine Investment-Readiness
 
-## Release CI Environment Parity Boundary
-
-`src.release_ci_environment_parity_review` operationalisiert
-`RELEASE_CI_ENVIRONMENT_PARITY_REVIEW` als lokalen read-only
-Environment-Parity-Check. Der Producer macht Python-Version, Plattform,
-Tool-Verfuegbarkeit, erwartete Validierungsbefehle und Handoff-RECORDED-
-Semantik maschinenlesbar sichtbar.
-
-Der Producer fuehrt standardmaessig keine teuren oder gefaehrlichen Commands
-blind aus. Er unterscheidet Tool-Verfuegbarkeit, tatsaechlich ausgefuehrte
-Validierung und nur aufgezeichnete Handoff-Commands. Daraus wird kein CI-Green,
-keine Release-Akzeptanz, keine Product-/Production-Readiness und keine
-Investment-Readiness abgeleitet.
-
-## Clean-Room Self-Protection Boundary
-
-`src.clean_room_reproduction_review.REQUIRED_ZIP_FILES` schuetzt nun auch:
-
-- `src/clean_room_reproduction_review.py`
-- `tests/test_clean_room_reproduction_review.py`
-
-Diese Self-Protection ist durch `tests/test_clean_room_reproduction_review.py`
-abgesichert. Die Clean-Room-Logik wurde nicht zu Release-Akzeptanz,
-CI-Automation oder Runtime Enforcement erweitert.
-
-## Governance Handoff Hygiene Cleanup
-
-Dieser Patch haertet zwei Handoff-Hygiene-Grenzen:
-
-- `NON_SCOPE_PRESERVATION` akzeptiert konservative Negativvarianten wie
-  `keine automatische Release-Akzeptanz`,
-  `keine vollautomatische Release-Akzeptanz`, `no release acceptance`,
-  `no full release acceptance` und `no automated release acceptance`.
-- `src.handoff_bundle` enthaelt keinen hartcodierten lokalen Operatornamen
-  mehr. Der Source-/Test-Scan erkennt den aktuellen lokalen Operatorpfad zur
-  Laufzeit und laesst synthetische Test-Fixture-Pfade wie
-  `C:\Users\Max\private.csv` weiterhin als Tests erkennbar, ohne sie als
-  produktive private Pfadleaks zu behandeln.
-
-Das ist keine Release-Akzeptanz, kein neues Handoff-Gate und keine
-Runtime-Enforcement-Engine.
-
 ## Validation Actually Performed
 
 Preflight:
@@ -156,9 +129,7 @@ Preflight:
 - `git branch --show-current`
   - result: `main`
 - `git rev-parse HEAD`
-  - result before implementation: `76f74ba5276dd8bc0c9d9c0a0661b9313e3d6a03`
-- `git rev-parse --short HEAD`
-  - result before implementation: `76f74ba`
+  - result before implementation: `585ef437c6877cb52ed56482d4c42e46183353e0`
 - `git status --short`
   - result before implementation: clean
 - `git status --short --ignored external_review_packet`
@@ -166,18 +137,20 @@ Preflight:
 
 Targeted validation before handoff:
 
+- `python -m unittest tests.test_runtime_enforcement_boundary_review -v`
+  - result: `Ran 8 tests`, `OK`
+- `python -m src.runtime_enforcement_boundary_review --as-of-date 2026-05-21`
+  - result: `status: OK`, `findings: 6`, `PASS: 6`
+- `python -m unittest tests.test_external_review_cross_patch_regression -v`
+  - result: `Ran 11 tests`, `OK`
 - `python -m unittest tests.test_clean_room_reproduction_review -v`
   - result: `Ran 11 tests`, `OK`
-- `python -m src.clean_room_reproduction_review --as-of-date 2026-05-21`
-  - result before handoff metadata refresh: `status: WARN`, `findings: 22`, `FAIL: 0`, `WARN: 2`, `PASS: 19`, `NOT_AVAILABLE: 1`; `NON_SCOPE_PRESERVATION` was `PASS`
 - `python -m unittest tests.test_handoff_bundle -v`
   - result: `Ran 18 tests`, `OK`
 - `python -m unittest tests.test_release_ci_environment_parity_review -v`
   - result: `Ran 9 tests`, `OK`
-- `python -m src.release_ci_environment_parity_review --as-of-date 2026-05-21`
-  - result: `status: WARN`, `findings: 20`, `INFO: 11`, `PASS: 4`, `WARN: 5`
-- `python -m unittest tests.test_external_review_cross_patch_regression -v`
-  - result: `Ran 11 tests`, `OK`
+- `python -m unittest discover -s tests -p "test_*.py" -v`
+  - result: `Ran 809 tests`, `OK`
 - `git diff --check`
   - result: exit code `0`; Git reported line-ending warnings for touched files but no whitespace errors
 
@@ -187,20 +160,18 @@ Optional validation attempted:
   - result: failed because `pytest` is not installed in the active Python environment: `No module named pytest`
 - `python -m ruff check .`
   - result: failed because `ruff` is not installed in the active Python environment: `No module named ruff`
-- `python -m unittest discover -s tests -p "test_*.py" -v`
-  - result: `Ran 801 tests`, `OK`
 
-No full test suite is claimed for pytest because `pytest` is not installed in
-the active environment, and no ruff lint success is claimed. The `unittest
-discover` suite was run and passed as listed above.
+No pytest full-suite success is claimed because `pytest` is not installed in
+the active environment, and no ruff lint success is claimed. The full unittest
+discovery suite was run and passed as listed above.
 
 Handoff generation:
 
-- `python -m src.handoff_zip_export --profile full_review --name HANDOFF_LATEST --output-path external_review_packet/HANDOFF_LATEST.zip --validation-command "python -m unittest tests.test_clean_room_reproduction_review -v" --validation-command "python -m src.clean_room_reproduction_review --as-of-date 2026-05-21" --validation-command "python -m unittest tests.test_release_ci_environment_parity_review -v" --validation-command "python -m src.release_ci_environment_parity_review --as-of-date 2026-05-21" --validation-command "python -m unittest tests.test_external_review_cross_patch_regression -v" --validation-command "python -m unittest discover -s tests -p test_*.py -v" --validation-command "git diff --check" --validation-command "python -m pytest -q" --validation-command "python -m ruff check ."`
-  - result: generated ZIP for head `8505a59036e4bc86f37b9ae18e512e0d314edb6d`
-  - file_count: `488`
-  - size_bytes: `13095939`
-  - zip_sha256: `113fffde9d9885427ca729ffeb87c7869aba5aa067af4b5a45bae080335e8162`
+- `python -m src.handoff_zip_export --profile full_review --name HANDOFF_LATEST --output-path external_review_packet/HANDOFF_LATEST.zip --validation-command "python -m unittest tests.test_runtime_enforcement_boundary_review -v" --validation-command "python -m src.runtime_enforcement_boundary_review --as-of-date 2026-05-21" --validation-command "python -m unittest tests.test_external_review_cross_patch_regression -v" --validation-command "python -m unittest tests.test_clean_room_reproduction_review -v" --validation-command "python -m unittest tests.test_handoff_bundle -v" --validation-command "python -m unittest tests.test_release_ci_environment_parity_review -v" --validation-command "python -m unittest discover -s tests -p test_*.py -v" --validation-command "git diff --check" --validation-command "python -m pytest -q" --validation-command "python -m ruff check ."`
+  - result: generated ZIP for head `a9729e05bb870333acdd3f884dc7840d5ab833d5`
+  - file_count: `490`
+  - size_bytes: `13106062`
+  - zip_sha256: `0a401ce1b54c02c2f1f653f027eab0b5f04da95bf36d0a9e799e0d83151b4dc2`
   - forbidden_match_count: `0`
   - local_path_leak_count: `0`
 
@@ -212,11 +183,16 @@ Post-generation ZIP validation:
 - `nested_zip_count`: `0`
 - `forbidden_match_count`: `0`
 - `local_path_leak_count`: `0`
-- internal `HANDOFF_CONTEXT.md` head:
-  `8505a59036e4bc86f37b9ae18e512e0d314edb6d`
-- Release CI Environment Parity producer in ZIP: `yes`
-- Release CI Environment Parity tests in ZIP: `yes`
-- Clean-Room Reproduction producer/tests in ZIP: `yes`
+- internal `HANDOFF_CONTEXT.md` head: `a9729e05bb870333acdd3f884dc7840d5ab833d5`
+- Runtime Enforcement Boundary producer in ZIP: `yes`
+- Runtime Enforcement Boundary tests in ZIP: `yes`
 - Cross-Patch Regression producer/tests in ZIP: `yes`
-- Handoff Bundle local-path scanner/tests in ZIP: `yes`
+- Clean-Room Reproduction producer/tests in ZIP: `yes`
+- Release CI Environment Parity producer/tests in ZIP: `yes`
 - Updated status/governance/cross-reference files in ZIP: `yes`
+
+## Next Recommended Step
+
+External delta review of the Runtime Enforcement Boundary Review producer before
+any runtime-sensitive implementation, broker-import staging, dashboard expansion,
+replay/backtesting/outcome-attribution or production-readiness work.

@@ -1,11 +1,11 @@
-# Compound Income OS External LLM Review Packet - Governance Handoff Hygiene Cleanup
+# Compound Income OS External LLM Review Packet - Runtime Enforcement Boundary Review
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach dem Governance-Automation-Patch:
+(CIOS) nach dem Governance-Patch:
 
-- commit: `8505a59036e4bc86f37b9ae18e512e0d314edb6d`
-- message: `chore: harden governance handoff hygiene`
-- status: `GOVERNANCE_HANDOFF_HYGIENE_ACCEPTED_WITH_FINDINGS`
+- commit: `a9729e05bb870333acdd3f884dc7840d5ab833d5`
+- message: `chore: add runtime enforcement boundary review`
+- status: `RUNTIME_ENFORCEMENT_BOUNDARY_REVIEW_ACCEPTED_WITH_FINDINGS`
 
 Dieses Packet superseded aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck.
@@ -16,13 +16,13 @@ aktuellen Review-Zweck.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- implementation_head: `8505a59036e4bc86f37b9ae18e512e0d314edb6d`
-- implementation_short_head: `8505a59`
-- current_handoff_head: `8505a59036e4bc86f37b9ae18e512e0d314edb6d`
-- current_handoff_short_head: `8505a59`
+- implementation_head: `a9729e05bb870333acdd3f884dc7840d5ab833d5`
+- implementation_short_head: `a9729e0`
+- current_handoff_head: `a9729e05bb870333acdd3f884dc7840d5ab833d5`
+- current_handoff_short_head: `a9729e0`
 - handoff_metadata_commit: `pending_until_metadata_commit`
 - handoff_metadata_commit_note: `metadata commit is created after this file is written; use git HEAD after metadata commit or the operator final report for the exact metadata commit hash`
-- bundle_purpose: `external_review_after_governance_handoff_hygiene_cleanup`
+- bundle_purpose: `external_review_after_runtime_enforcement_boundary_review`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -46,14 +46,14 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 
 - Verwende volle repo-relative Pfade in Findings.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
+- Behandle `src.runtime_enforcement_boundary_review` als read-only
+  Governance-Review, nicht als Runtime-Enforcement-Engine, nicht als
+  Release-Akzeptanz und nicht als Product-/Production-/Investment-Readiness.
 - Behandle `src.release_ci_environment_parity_review` als read-only
-  Environment-Parity-Check, nicht als CI-Green, nicht als Release-Akzeptanz
-  und nicht als Product-/Production-Readiness.
+  Environment-Parity-Check, nicht als CI-Green und nicht als Release-Akzeptanz.
 - Behandle `src.clean_room_reproduction_review` als read-only
   Packet-Reproduction-Check, nicht als Release-Akzeptanz, nicht als
   CI-Clean-Room-Automation und nicht als Runtime Enforcement.
-- Behandle die Handoff-Hygiene-Aenderung als Scanner-/Metadaten-Haertung,
-  nicht als neues Release-Gate und nicht als Runtime Enforcement.
 - Behandle `src.external_review_cross_patch_regression` als read-only
   Governance-Regression-Check.
 - Unterscheide `RECORDED` Handoff-Commands von tatsaechlich ausgefuehrten
@@ -69,20 +69,12 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 
 Reviewer sollen insbesondere pruefen:
 
-- Release CI Environment Parity Review:
-  - `src/release_ci_environment_parity_review.py`
-  - `tests/test_release_ci_environment_parity_review.py`
-  - `data/processed/release_ci_environment_parity_review.csv`, falls im ZIP-Profil enthalten
-  - `reports/2026-05-21/release_ci_environment_parity_review_report.md`, falls im ZIP-Profil enthalten
-- Clean-Room Reproduction Review:
-  - `src/clean_room_reproduction_review.py`
-  - `tests/test_clean_room_reproduction_review.py`
-  - `src/handoff_bundle.py`
-  - `tests/test_handoff_bundle.py`
-- Cross-Patch Regression Governance Check:
-  - `src/external_review_cross_patch_regression.py`
-  - `tests/test_external_review_cross_patch_regression.py`
-- External Review Coverage Governance:
+- Runtime Enforcement Boundary Review:
+  - `src/runtime_enforcement_boundary_review.py`
+  - `tests/test_runtime_enforcement_boundary_review.py`
+  - `data/processed/runtime_enforcement_boundary_review.csv`, falls im ZIP-Profil enthalten
+  - `reports/2026-05-21/runtime_enforcement_boundary_review_report.md`, falls im ZIP-Profil enthalten
+- External Review Gate Governance:
   - `docs/governance/EXTERNAL_REVIEW_COVERAGE_STANDARD.md`
   - `docs/governance/EXTERNAL_REVIEW_GATE_REGISTRY.yaml`
   - `docs/governance/EXTERNAL_REVIEW_GATE_SEQUENCE.md`
@@ -93,6 +85,15 @@ Reviewer sollen insbesondere pruefen:
   - `docs/MODULE_CONTRACTS.md`
   - `docs/CONTEXT_AND_ROADMAP.md`
   - `README.md`
+- Adjacent governance producers:
+  - `src/external_review_cross_patch_regression.py`
+  - `tests/test_external_review_cross_patch_regression.py`
+  - `src/clean_room_reproduction_review.py`
+  - `tests/test_clean_room_reproduction_review.py`
+  - `src/release_ci_environment_parity_review.py`
+  - `tests/test_release_ci_environment_parity_review.py`
+  - `src/handoff_bundle.py`
+  - `tests/test_handoff_bundle.py`
 
 ## Explicit Non-Scope
 
@@ -126,22 +127,17 @@ Dieses Packet fuehrt nicht ein:
 
 ## Reviewer Notes
 
-- Der neue Producer operationalisiert `RELEASE_CI_ENVIRONMENT_PARITY_REVIEW`
-  als lokalen read-only Environment-Parity-Check mit CSV- und Markdown-Output.
-- Der Producer prueft lokale Python-/Tool-Verfuegbarkeit, erwartete
-  Validierungsbefehle und Handoff-RECORDED-Semantik. Er behauptet keinen
-  CI-Green.
+- Der neue Producer operationalisiert `RUNTIME_ENFORCEMENT_BOUNDARY_REVIEW`
+  als lokalen read-only Governance-Check mit CSV- und Markdown-Output.
+- Der Producer prueft Non-Scope-Sichtbarkeit, riskante Runtime-/Release-/
+  Readiness-Sprache, Gate-Registry-/Sequence-Ausrichtung, Modulgrenzen und
+  eigene read-only Importgrenzen.
+- Der Producer behauptet keine Runtime Enforcement, kein CI-Green, keine
+  Release-Akzeptanz und keine Product-/Production-/Investment-Readiness.
+- `python -m src.runtime_enforcement_boundary_review --as-of-date 2026-05-21`
+  ergab `status: OK`, `findings: 6`, `PASS: 6`.
+- `python -m unittest discover -s tests -p "test_*.py" -v` wurde ausgefuehrt
+  und ergab `Ran 809 tests`, `OK`.
 - `pytest` und `ruff` waren im aktiven Python-Environment nicht installiert;
   daraus wurde kein Erfolg abgeleitet.
-- `src.clean_room_reproduction_review.REQUIRED_ZIP_FILES` schuetzt nun auch
-  `src/clean_room_reproduction_review.py` und
-  `tests/test_clean_room_reproduction_review.py`.
-- `src.handoff_bundle` enthaelt keinen hartcodierten lokalen Operatornamen
-  mehr; echte aktuelle Operatorpfade werden zur Laufzeit erkannt, waehrend
-  synthetische Test-Fixture-Pfade wie `C:\Users\Max\private.csv` weiterhin als
-  Tests abgegrenzt bleiben.
-- `NON_SCOPE_PRESERVATION` akzeptiert konservative Negativvarianten wie
-  `keine automatische Release-Akzeptanz`,
-  `keine vollautomatische Release-Akzeptanz`, `no release acceptance`,
-  `no full release acceptance` und `no automated release acceptance`.
 - Final Acceptance bleibt beim Human Operator.
