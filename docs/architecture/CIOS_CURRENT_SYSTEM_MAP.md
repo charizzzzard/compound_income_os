@@ -65,6 +65,10 @@ The meta-governance baseline is defined by:
   registry schema, gate sequencing, known-gaps mapping, feature-status
   overclaims, validation-reality semantics, source-of-truth order and non-scope
   preservation.
+- Clean-Room Reproduction Review: read-only packet producer that checks external
+  handoff metadata, SHA/ZIP integrity, internal vs. external context, required
+  review files, `RECORDED` validation semantics, ZIP-only/full-packet boundaries
+  and Cross-Patch-Regression reproduction counts.
 - Monthly Decision Report: report surface for portfolio health, decision
   quality and decision journal validation when explicit artifacts are present.
 - Personal Run Engine: explicit stage orchestration with manifest, used-inputs,
@@ -279,10 +283,9 @@ with zero counts.
   documentation plus template validation preflight only; there is no active
   production license-enforcement registry, provider-specific approval,
   production adapter, legal review or commercial redistribution approval.
-- External Review Coverage Governance is documented, but the clean-room
-  reproduction gate is not automated. Cross-Patch Regression now has a
-  read-only producer, but it is not release acceptance and not runtime
-  enforcement.
+- External Review Coverage Governance is documented. Cross-Patch Regression and
+  Clean-Room Reproduction now have read-only producers, but they are not release
+  acceptance, not CI clean-room automation and not runtime enforcement.
 - Decision Quality stale-state handling is conservative: any older
   `as_of_date` is stale in the current MVP.
 - Scenario, Tail Risk, Calibration and Regret remain non-implemented or
@@ -307,8 +310,8 @@ with zero counts.
 
 ## Next Recommended Hardening Patches
 
-1. External Review of Review Coverage Governance.
-2. Technical operationalization of CLEAN_ROOM_REPRODUCTION_REVIEW or CROSS_PATCH_REGRESSION_REVIEW.
+1. External Review of the Clean-Room Reproduction producer.
+2. Technical operationalization of RELEASE_CI_ENVIRONMENT_PARITY_REVIEW or RUNTIME_ENFORCEMENT_BOUNDARY_REVIEW.
 3. Broker Import Staging Contract.
 4. Corporate Actions Contract later.
 5. Time-Aware Replay / Outcome contracts later.

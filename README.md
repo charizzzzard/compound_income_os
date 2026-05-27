@@ -902,6 +902,21 @@ Der Check schreibt `data/processed/external_review_cross_patch_regression.csv`
 und `reports/<as_of_date>/external_review_cross_patch_regression_report.md`.
 Er ist keine Runtime-Enforcement-Engine und keine Release-Akzeptanz.
 
+`src.clean_room_reproduction_review` erzeugt einen read-only
+Clean-Room-Reproduction-Review fuer das aktuelle externe Handoff-Packet. Der
+Check prueft lokale Packet-Metadaten, SHA/ZIP-Integritaet, interne vs. externe
+Kontextdaten, erforderliche ZIP-Dateien, `RECORDED`-Validierungssemantik und
+die reproduzierbare Ausfuehrung des Cross-Patch-Regression-Producers:
+
+```powershell
+python -m src.clean_room_reproduction_review --as-of-date YYYY-MM-DD
+```
+
+Der Check schreibt `data/processed/clean_room_reproduction_review.csv` und
+`reports/<as_of_date>/clean_room_reproduction_review_report.md`. Er ist keine
+vollautomatische Release-Akzeptanz, keine Clean-Room-Automation im Sinne eines
+CI-Systems und keine Product-/Investment-/Production-Readiness.
+
 Core-Orchestrator-Beispiel:
 
 ```powershell

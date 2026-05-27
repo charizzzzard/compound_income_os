@@ -811,7 +811,33 @@ capabilities:
       - "Read-only governance regression producer; it does not implement runtime enforcement, clean-room automation, release acceptance, product readiness or investment readiness."
       - "Findings are review evidence for the Human Operator; they are not automatic release approval."
       - "Handoff commands recorded as RECORDED remain distinct from executed pass/fail logs."
-    next_action: "External review of the Cross-Patch Regression producer, then decide whether to operationalize clean-room reproduction."
+    next_action: "Keep as prerequisite evidence for future kernel-patch acceptance and release-gate reviews."
+  - capability_id: clean_room_reproduction_review
+    display_name: Clean-Room Reproduction Review
+    status: implemented
+    maturity: IMPLEMENTED_MANUAL
+    evidence_files:
+      - src/clean_room_reproduction_review.py
+      - tests/test_clean_room_reproduction_review.py
+      - docs/governance/EXTERNAL_REVIEW_GATE_REGISTRY.yaml
+      - docs/governance/EXTERNAL_REVIEW_GATE_SEQUENCE.md
+    input_artifacts:
+      - external_review_packet/00_READ_ME_FIRST.md
+      - external_review_packet/HANDOFF_LATEST_CONTEXT.md
+      - external_review_packet/HANDOFF_LATEST.sha256
+      - external_review_packet/HANDOFF_LATEST.zip
+    output_artifacts:
+      - data/processed/clean_room_reproduction_review.csv
+      - reports/<as_of_date>/clean_room_reproduction_review_report.md
+    report_surface:
+      - reports/<as_of_date>/clean_room_reproduction_review_report.md
+    tests:
+      - tests/test_clean_room_reproduction_review.py
+    limitations:
+      - "Read-only packet reproduction producer; it does not implement CI clean-room automation, runtime enforcement, release acceptance, product readiness or investment readiness."
+      - "It validates external packet metadata, SHA/ZIP integrity, context alignment, required review files, validation-reality semantics and Cross-Patch-Regression reproduction counts, not private/raw/broker/provider data."
+      - "Handoff commands recorded as RECORDED remain distinct from executed pass/fail logs; missing pytest/ruff remain environment limitations unless installed and run."
+    next_action: "External review of the Clean-Room Reproduction producer, then decide whether to operationalize CI/environment parity or runtime-enforcement boundary checks."
   - capability_id: human_factors_behaviour_layer
     display_name: Human Factors Behaviour Layer
     status: partial
