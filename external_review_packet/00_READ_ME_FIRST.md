@@ -1,11 +1,11 @@
-# Compound Income OS External LLM Review Packet - Runtime Enforcement Boundary Review
+# Compound Income OS External LLM Review Packet - Runtime Gate Boundary Contract
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach dem Governance-Patch:
+(CIOS) nach dem Governance-/Contract-Patch:
 
-- commit: `a9729e05bb870333acdd3f884dc7840d5ab833d5`
-- message: `chore: add runtime enforcement boundary review`
-- status: `RUNTIME_ENFORCEMENT_BOUNDARY_REVIEW_ACCEPTED_WITH_FINDINGS`
+- commit: `9cd556fe231d443853ee082e323d8161b87cd6d2`
+- message: `docs: define runtime gate boundary contract`
+- status: `RUNTIME_GATE_BOUNDARY_CONTRACT_ACCEPTED_WITH_FINDINGS`
 
 Dieses Packet superseded aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck.
@@ -16,13 +16,13 @@ aktuellen Review-Zweck.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- implementation_head: `a9729e05bb870333acdd3f884dc7840d5ab833d5`
-- implementation_short_head: `a9729e0`
-- current_handoff_head: `a9729e05bb870333acdd3f884dc7840d5ab833d5`
-- current_handoff_short_head: `a9729e0`
+- implementation_head: `9cd556fe231d443853ee082e323d8161b87cd6d2`
+- implementation_short_head: `9cd556f`
+- current_handoff_head: `9cd556fe231d443853ee082e323d8161b87cd6d2`
+- current_handoff_short_head: `9cd556f`
 - handoff_metadata_commit: `pending_until_metadata_commit`
 - handoff_metadata_commit_note: `metadata commit is created after this file is written; use git HEAD after metadata commit or the operator final report for the exact metadata commit hash`
-- bundle_purpose: `external_review_after_runtime_enforcement_boundary_review`
+- bundle_purpose: `external_review_after_runtime_gate_boundary_contract`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -46,16 +46,13 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 
 - Verwende volle repo-relative Pfade in Findings.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
+- Behandle `docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md` als
+  Governance-/Design-Contract, nicht als Runtime-Enforcement-Engine.
 - Behandle `src.runtime_enforcement_boundary_review` als read-only
   Governance-Review, nicht als Runtime-Enforcement-Engine, nicht als
   Release-Akzeptanz und nicht als Product-/Production-/Investment-Readiness.
-- Behandle `src.release_ci_environment_parity_review` als read-only
-  Environment-Parity-Check, nicht als CI-Green und nicht als Release-Akzeptanz.
-- Behandle `src.clean_room_reproduction_review` als read-only
-  Packet-Reproduction-Check, nicht als Release-Akzeptanz, nicht als
-  CI-Clean-Room-Automation und nicht als Runtime Enforcement.
-- Behandle `src.external_review_cross_patch_regression` als read-only
-  Governance-Regression-Check.
+- Unterscheide `documentation_only`, `review_evidence`,
+  `runtime_relevant_candidate` und kuenftige `runtime_enforced` Semantik.
 - Unterscheide `RECORDED` Handoff-Commands von tatsaechlich ausgefuehrten
   Pass/Fail-Ergebnissen.
 - Unterscheide Tool-Verfuegbarkeit von Command-Erfolg.
@@ -69,11 +66,12 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 
 Reviewer sollen insbesondere pruefen:
 
+- Runtime Gate Boundary Contract:
+  - `docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md`
+  - `tests/test_runtime_gate_boundary_contract.py`
 - Runtime Enforcement Boundary Review:
   - `src/runtime_enforcement_boundary_review.py`
   - `tests/test_runtime_enforcement_boundary_review.py`
-  - `data/processed/runtime_enforcement_boundary_review.csv`, falls im ZIP-Profil enthalten
-  - `reports/2026-05-21/runtime_enforcement_boundary_review_report.md`, falls im ZIP-Profil enthalten
 - External Review Gate Governance:
   - `docs/governance/EXTERNAL_REVIEW_COVERAGE_STANDARD.md`
   - `docs/governance/EXTERNAL_REVIEW_GATE_REGISTRY.yaml`
@@ -85,15 +83,6 @@ Reviewer sollen insbesondere pruefen:
   - `docs/MODULE_CONTRACTS.md`
   - `docs/CONTEXT_AND_ROADMAP.md`
   - `README.md`
-- Adjacent governance producers:
-  - `src/external_review_cross_patch_regression.py`
-  - `tests/test_external_review_cross_patch_regression.py`
-  - `src/clean_room_reproduction_review.py`
-  - `tests/test_clean_room_reproduction_review.py`
-  - `src/release_ci_environment_parity_review.py`
-  - `tests/test_release_ci_environment_parity_review.py`
-  - `src/handoff_bundle.py`
-  - `tests/test_handoff_bundle.py`
 
 ## Explicit Non-Scope
 
@@ -127,17 +116,17 @@ Dieses Packet fuehrt nicht ein:
 
 ## Reviewer Notes
 
-- Der neue Producer operationalisiert `RUNTIME_ENFORCEMENT_BOUNDARY_REVIEW`
-  als lokalen read-only Governance-Check mit CSV- und Markdown-Output.
-- Der Producer prueft Non-Scope-Sichtbarkeit, riskante Runtime-/Release-/
-  Readiness-Sprache, Gate-Registry-/Sequence-Ausrichtung, Modulgrenzen und
-  eigene read-only Importgrenzen.
-- Der Producer behauptet keine Runtime Enforcement, kein CI-Green, keine
-  Release-Akzeptanz und keine Product-/Production-/Investment-Readiness.
-- `python -m src.runtime_enforcement_boundary_review --as-of-date 2026-05-21`
-  ergab `status: OK`, `findings: 6`, `PASS: 6`.
+- Der neue Contract definiert Gate-Klassifikation und Promotion-Kriterien.
+- Aktuelle Governance-Producer bleiben `review_evidence` oder
+  `documentation_only`.
+- Kein aktueller Producer wird als runtime-enforced klassifiziert.
+- Kein Gate darf automatische Release-Akzeptanz erhalten.
+- Future runtime-sensitive areas bleiben Kandidaten mit separaten
+  Contract-/Test-/Evidence-/Operator-Acceptance-Anforderungen.
+- `python -m unittest tests.test_runtime_gate_boundary_contract -v` ergab
+  `Ran 7 tests`, `OK`.
 - `python -m unittest discover -s tests -p "test_*.py" -v` wurde ausgefuehrt
-  und ergab `Ran 809 tests`, `OK`.
+  und ergab `Ran 816 tests`, `OK`.
 - `pytest` und `ruff` waren im aktiven Python-Environment nicht installiert;
   daraus wurde kein Erfolg abgeleitet.
 - Final Acceptance bleibt beim Human Operator.
