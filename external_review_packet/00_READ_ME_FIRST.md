@@ -1,11 +1,11 @@
-# Compound Income OS External LLM Review Packet - Release CI Environment Parity Review
+# Compound Income OS External LLM Review Packet - Governance Handoff Hygiene Cleanup
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
 (CIOS) nach dem Governance-Automation-Patch:
 
-- commit: `a9adbb5453341f59c464dc2668c5db83aa509274`
-- message: `feat: add release CI environment parity review`
-- status: `RELEASE_CI_ENVIRONMENT_PARITY_REVIEW_ACCEPTED_WITH_FINDINGS`
+- commit: `8505a59036e4bc86f37b9ae18e512e0d314edb6d`
+- message: `chore: harden governance handoff hygiene`
+- status: `GOVERNANCE_HANDOFF_HYGIENE_ACCEPTED_WITH_FINDINGS`
 
 Dieses Packet superseded aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck.
@@ -16,12 +16,13 @@ aktuellen Review-Zweck.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- implementation_head: `a9adbb5453341f59c464dc2668c5db83aa509274`
-- implementation_short_head: `a9adbb5`
-- current_handoff_head: `a9adbb5453341f59c464dc2668c5db83aa509274`
-- current_handoff_short_head: `a9adbb5`
+- implementation_head: `8505a59036e4bc86f37b9ae18e512e0d314edb6d`
+- implementation_short_head: `8505a59`
+- current_handoff_head: `8505a59036e4bc86f37b9ae18e512e0d314edb6d`
+- current_handoff_short_head: `8505a59`
 - handoff_metadata_commit: `pending_until_metadata_commit`
-- bundle_purpose: `external_review_after_release_ci_environment_parity_review`
+- handoff_metadata_commit_note: `metadata commit is created after this file is written; use git HEAD after metadata commit or the operator final report for the exact metadata commit hash`
+- bundle_purpose: `external_review_after_governance_handoff_hygiene_cleanup`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -51,6 +52,8 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 - Behandle `src.clean_room_reproduction_review` als read-only
   Packet-Reproduction-Check, nicht als Release-Akzeptanz, nicht als
   CI-Clean-Room-Automation und nicht als Runtime Enforcement.
+- Behandle die Handoff-Hygiene-Aenderung als Scanner-/Metadaten-Haertung,
+  nicht als neues Release-Gate und nicht als Runtime Enforcement.
 - Behandle `src.external_review_cross_patch_regression` als read-only
   Governance-Regression-Check.
 - Unterscheide `RECORDED` Handoff-Commands von tatsaechlich ausgefuehrten
@@ -74,6 +77,8 @@ Reviewer sollen insbesondere pruefen:
 - Clean-Room Reproduction Review:
   - `src/clean_room_reproduction_review.py`
   - `tests/test_clean_room_reproduction_review.py`
+  - `src/handoff_bundle.py`
+  - `tests/test_handoff_bundle.py`
 - Cross-Patch Regression Governance Check:
   - `src/external_review_cross_patch_regression.py`
   - `tests/test_external_review_cross_patch_regression.py`
@@ -115,6 +120,7 @@ Dieses Packet fuehrt nicht ein:
 - Runtime-LLM-Agentenlogik
 - Runtime-Enforcement-Engine
 - automatische Release-Akzeptanz
+- vollautomatische Release-Akzeptanz
 - Product-/Production-Readiness
 - Investment-Readiness
 
@@ -130,4 +136,12 @@ Dieses Packet fuehrt nicht ein:
 - `src.clean_room_reproduction_review.REQUIRED_ZIP_FILES` schuetzt nun auch
   `src/clean_room_reproduction_review.py` und
   `tests/test_clean_room_reproduction_review.py`.
+- `src.handoff_bundle` enthaelt keinen hartcodierten lokalen Operatornamen
+  mehr; echte aktuelle Operatorpfade werden zur Laufzeit erkannt, waehrend
+  synthetische Test-Fixture-Pfade wie `C:\Users\Max\private.csv` weiterhin als
+  Tests abgegrenzt bleiben.
+- `NON_SCOPE_PRESERVATION` akzeptiert konservative Negativvarianten wie
+  `keine automatische Release-Akzeptanz`,
+  `keine vollautomatische Release-Akzeptanz`, `no release acceptance`,
+  `no full release acceptance` und `no automated release acceptance`.
 - Final Acceptance bleibt beim Human Operator.
