@@ -90,7 +90,14 @@ NON_SCOPE_PHRASES = {
     "Order Execution": ["Order Execution", "order execution"],
     "Runtime LLM": ["Runtime-LLM-Agentenlogik", "runtime LLM"],
     "Runtime Enforcement": ["Runtime-Enforcement-Engine", "runtime enforcement"],
-    "Full release acceptance": ["keine vollautomatische Release-Akzeptanz", "release acceptance"],
+    "Full release acceptance": [
+        "keine automatische Release-Akzeptanz",
+        "keine vollautomatische Release-Akzeptanz",
+        "no release acceptance",
+        "no full release acceptance",
+        "no automated release acceptance",
+        "release acceptance",
+    ],
 }
 
 

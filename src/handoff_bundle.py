@@ -90,10 +90,20 @@ PRODUCTIVE_LOCAL_PATH_PREFIXES = ("data/processed/", "reports/", "docs/", "READM
 PRODUCTIVE_WINDOWS_USER_RE = re.compile(r"[A-Za-z]:[\\/]+Users[\\/]+[^\\/:\s\"'`<>|]+", re.IGNORECASE)
 PRODUCTIVE_POSIX_USER_RE = re.compile(r"/(?:Users|home)/[^/\s\"'`<>|]+")
 PRODUCTIVE_UNC_RE = re.compile(r"(?:\\\\|//)[^\\/\s\"'`<>|]+[\\/][^\\/\s\"'`<>|]+[\\/]")
-REAL_OPERATOR_PATH_RE = re.compile(
-    r"(?:[A-Za-z]:[\\/]+Users[\\/]+sc_mprinsen[\\/]+|/(?:Users|home)/sc_mprinsen/)",
-    re.IGNORECASE,
-)
+
+
+def _current_operator_path_re() -> re.Pattern[str] | None:
+    user_name = Path.home().name
+    if not user_name:
+        return None
+    escaped = re.escape(user_name)
+    return re.compile(
+        rf"(?:[A-Za-z]:[\\/]+Users[\\/]+{escaped}[\\/]+|/(?:Users|home)/{escaped}/)",
+        re.IGNORECASE,
+    )
+
+
+REAL_OPERATOR_PATH_RE = _current_operator_path_re()
 
 
 @dataclass(frozen=True)
@@ -173,7 +183,7 @@ def _content_local_path_leak_reasons(entry_name: str, text: str) -> tuple[str, .
         if PRODUCTIVE_UNC_RE.search(text):
             reasons.append("LOCAL_UNC_PATH")
     elif name.startswith(("src/", "tests/")):
-        if REAL_OPERATOR_PATH_RE.search(text):
+        if REAL_OPERATOR_PATH_RE is not None and REAL_OPERATOR_PATH_RE.search(text):
             reasons.append("REAL_OPERATOR_LOCAL_PATH")
     return tuple(dict.fromkeys(reasons))
 

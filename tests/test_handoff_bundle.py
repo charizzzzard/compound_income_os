@@ -88,6 +88,24 @@ class HandoffBundleTests(unittest.TestCase):
         self.assertFalse(any(finding.startswith("src/path_rules.py") for finding in findings))
         self.assertFalse(any(finding.startswith("tests/test_path_sanitizer.py") for finding in findings))
 
+    def test_source_scan_detects_current_operator_paths_without_hardcoded_user(self) -> None:
+        source = (ROOT / "src" / "handoff_bundle.py").read_text(encoding="utf-8")
+        self.assertNotIn("sc_" + "mprinsen", source)
+
+        zip_path = self.fixture / "operator_source_leak.zip"
+        current_user = Path.home().name or "operator"
+        with zipfile.ZipFile(zip_path, "w") as archive:
+            archive.writestr(
+                "src/local_path_leak.py",
+                f'LOCAL_PATH = r"C:\\Users\\{current_user}\\Documents\\secret.csv"\n',
+            )
+            archive.writestr("tests/test_synthetic_paths.py", "SYNTHETIC = r'C:\\Users\\Max\\private.csv'\n")
+
+        findings = scan_local_path_leaks_in_zip(zip_path)
+
+        self.assertIn("src/local_path_leak.py:REAL_OPERATOR_LOCAL_PATH", findings)
+        self.assertFalse(any(finding.startswith("tests/test_synthetic_paths.py") for finding in findings))
+
     def test_content_scan_allows_synthetic_test_fixtures_without_allowing_productive_leaks(self) -> None:
         zip_path = self.fixture / "synthetic_fixture_scan.zip"
         with zipfile.ZipFile(zip_path, "w") as archive:

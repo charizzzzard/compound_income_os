@@ -197,6 +197,20 @@ class CleanRoomReproductionReviewTests(unittest.TestCase):
             self.assertIn("VALIDATION_RECORDED_COMMANDS|WARN", text)
             self.assertNotIn("VALIDATION_RECORDED_COMMANDS|PASS", text)
 
+    def test_release_acceptance_non_scope_accepts_negative_variants(self) -> None:
+        variants = [
+            "keine automatische Release-Akzeptanz",
+            "keine vollautomatische Release-Akzeptanz",
+            "no release acceptance",
+            "no full release acceptance",
+            "no automated release acceptance",
+        ]
+        release_variants = NON_SCOPE_PHRASES["Full release acceptance"]
+
+        for variant in variants:
+            with self.subTest(variant=variant):
+                self.assertIn(variant, release_variants)
+
     def test_missing_external_metadata_produces_zip_only_finding(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
