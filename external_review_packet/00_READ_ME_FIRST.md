@@ -1,11 +1,11 @@
-# Compound Income OS External LLM Review Packet - Clean-Room Reproduction Review
+# Compound Income OS External LLM Review Packet - Release CI Environment Parity Review
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
 (CIOS) nach dem Governance-Automation-Patch:
 
-- commit: `c5eb5bcbbb58d8a10f14ea348bedcfc1e2d18387`
-- message: `feat: add clean-room reproduction review`
-- status: `CLEAN_ROOM_REPRODUCTION_REVIEW_OPERATIONALIZED_ACCEPTED_WITH_FINDINGS`
+- commit: `a9adbb5453341f59c464dc2668c5db83aa509274`
+- message: `feat: add release CI environment parity review`
+- status: `RELEASE_CI_ENVIRONMENT_PARITY_REVIEW_ACCEPTED_WITH_FINDINGS`
 
 Dieses Packet superseded aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck.
@@ -16,11 +16,12 @@ aktuellen Review-Zweck.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- implementation_head: `c5eb5bcbbb58d8a10f14ea348bedcfc1e2d18387`
-- implementation_short_head: `c5eb5bc`
-- current_handoff_head: `c5eb5bcbbb58d8a10f14ea348bedcfc1e2d18387`
-- current_handoff_short_head: `c5eb5bc`
-- bundle_purpose: `external_review_after_clean_room_reproduction_review`
+- implementation_head: `a9adbb5453341f59c464dc2668c5db83aa509274`
+- implementation_short_head: `a9adbb5`
+- current_handoff_head: `a9adbb5453341f59c464dc2668c5db83aa509274`
+- current_handoff_short_head: `a9adbb5`
+- handoff_metadata_commit: `pending_until_metadata_commit`
+- bundle_purpose: `external_review_after_release_ci_environment_parity_review`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -44,6 +45,9 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 
 - Verwende volle repo-relative Pfade in Findings.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
+- Behandle `src.release_ci_environment_parity_review` als read-only
+  Environment-Parity-Check, nicht als CI-Green, nicht als Release-Akzeptanz
+  und nicht als Product-/Production-Readiness.
 - Behandle `src.clean_room_reproduction_review` als read-only
   Packet-Reproduction-Check, nicht als Release-Akzeptanz, nicht als
   CI-Clean-Room-Automation und nicht als Runtime Enforcement.
@@ -51,9 +55,9 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
   Governance-Regression-Check.
 - Unterscheide `RECORDED` Handoff-Commands von tatsaechlich ausgefuehrten
   Pass/Fail-Ergebnissen.
+- Unterscheide Tool-Verfuegbarkeit von Command-Erfolg.
 - Inferiere keine Release-, Product-, Investment-, Broker-Import-, Replay-,
   Backtesting-, Dashboard- oder Outcome-Attribution-Readiness.
-- Unterscheide tatsaechlich ausgefuehrte Tests von pytest-/ruff-Verfuegbarkeit.
 - Fehlende, stale oder unknown Daten muessen sichtbar bleiben.
 - Keine stille Imputation, keine stille Ueberschreibung akzeptierter Fakten,
   keine Investment Advice und keine Order Execution.
@@ -62,11 +66,14 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 
 Reviewer sollen insbesondere pruefen:
 
+- Release CI Environment Parity Review:
+  - `src/release_ci_environment_parity_review.py`
+  - `tests/test_release_ci_environment_parity_review.py`
+  - `data/processed/release_ci_environment_parity_review.csv`, falls im ZIP-Profil enthalten
+  - `reports/2026-05-21/release_ci_environment_parity_review_report.md`, falls im ZIP-Profil enthalten
 - Clean-Room Reproduction Review:
   - `src/clean_room_reproduction_review.py`
   - `tests/test_clean_room_reproduction_review.py`
-  - `data/processed/clean_room_reproduction_review.csv`, falls im ZIP-Profil enthalten
-  - `reports/2026-05-21/clean_room_reproduction_review_report.md`, falls im ZIP-Profil enthalten
 - Cross-Patch Regression Governance Check:
   - `src/external_review_cross_patch_regression.py`
   - `tests/test_external_review_cross_patch_regression.py`
@@ -81,12 +88,6 @@ Reviewer sollen insbesondere pruefen:
   - `docs/MODULE_CONTRACTS.md`
   - `docs/CONTEXT_AND_ROADMAP.md`
   - `README.md`
-- Regression surfaces:
-  - `tests/test_clean_room_reproduction_review.py`
-  - `tests/test_external_review_cross_patch_regression.py`
-  - `tests/test_readme_and_reports.py`
-  - `tests/test_handoff_zip_export.py`
-  - `tests/test_handoff_bundle.py`
 
 ## Explicit Non-Scope
 
@@ -113,17 +114,20 @@ Dieses Packet fuehrt nicht ein:
 - Order Execution
 - Runtime-LLM-Agentenlogik
 - Runtime-Enforcement-Engine
-- vollautomatische Release-Akzeptanz
+- automatische Release-Akzeptanz
+- Product-/Production-Readiness
+- Investment-Readiness
 
 ## Reviewer Notes
 
-- Der neue Producer operationalisiert `CLEAN_ROOM_REPRODUCTION_REVIEW` als
-  lokalen read-only Packet-Review mit CSV- und Markdown-Output.
-- Der Producer prueft externe Packet-Metadaten, SHA/ZIP-Integritaet,
-  interne vs. externe Context-Heads, Required-Files im ZIP, Validation-Reality
-  und Cross-Patch-Reproduction-Counts.
-- Der Producer erzeugt reproduzierbare Review-Evidenz, akzeptiert aber keinen
-  Release und ersetzt keine Clean-Room-CI-Umgebung.
+- Der neue Producer operationalisiert `RELEASE_CI_ENVIRONMENT_PARITY_REVIEW`
+  als lokalen read-only Environment-Parity-Check mit CSV- und Markdown-Output.
+- Der Producer prueft lokale Python-/Tool-Verfuegbarkeit, erwartete
+  Validierungsbefehle und Handoff-RECORDED-Semantik. Er behauptet keinen
+  CI-Green.
 - `pytest` und `ruff` waren im aktiven Python-Environment nicht installiert;
   daraus wurde kein Erfolg abgeleitet.
+- `src.clean_room_reproduction_review.REQUIRED_ZIP_FILES` schuetzt nun auch
+  `src/clean_room_reproduction_review.py` und
+  `tests/test_clean_room_reproduction_review.py`.
 - Final Acceptance bleibt beim Human Operator.
