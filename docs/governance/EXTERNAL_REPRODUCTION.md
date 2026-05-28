@@ -29,6 +29,10 @@ The machine-readable command matrix is
 local-repo checks, Git-context checks, private-input exclusions and optional
 tooling checks. Handoff metadata must not treat a command as ZIP-reproducible
 unless it was actually run from ZIP context or is classified as ZIP-safe.
+Patch-delta evidence is separate from snapshot evidence: external reviewers
+should inspect `HANDOFF_PATCH_IDENTITY.md` and
+`HANDOFF_CHANGE_CLASSIFICATION.csv` before accepting that a bundle proves the
+actual patch delta between base and implementation head.
 
 Use these validation result labels when reporting handoff evidence:
 
@@ -37,6 +41,7 @@ Use these validation result labels when reporting handoff evidence:
 | `EXECUTED_IN_CURRENT_REPO` | Command ran in the local checkout. |
 | `EXECUTED_IN_ZIP_CONTEXT` | Command ran from extracted handoff ZIP content without `.git` or private inputs. |
 | `RECORDED_FROM_PREVIOUS_RUN` | Command is recorded as prior evidence only. |
+| `RECORDED_VALIDATION` | Command text was embedded by the handoff exporter; it is not pass/fail proof by itself. |
 | `NOT_AVAILABLE` | Required tool or artifact was unavailable. |
 | `SKIPPED_BY_DESIGN` | Command is intentionally not applicable in the current context. |
 | `FAILED` | Command ran and failed. |

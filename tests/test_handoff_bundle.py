@@ -175,6 +175,7 @@ class HandoffBundleTests(unittest.TestCase):
         self.assertIn("commands_run:", validation_text)
         self.assertIn("python -m compileall src tests", validation_text)
         self.assertIn("status: RECORDED", validation_text)
+        self.assertIn("execution_status: RECORDED_VALIDATION", validation_text)
         self.assertIn("validation_results:", validation_text)
         self.assertIn("file_count=", validation_text)
         self.assertIn("forbidden_count=", validation_text)
@@ -190,6 +191,73 @@ class HandoffBundleTests(unittest.TestCase):
         self.assertIn("manifest_file_count_note=", validation_text)
         self.assertNotIn("sha256_scope=", validation_text)
         self.assertNotIn("\nsha256=", validation_text)
+
+    def test_patch_identity_and_delta_evidence_are_exported(self) -> None:
+        result = export_handoff_bundle(
+            profile="patch",
+            bundle_name="unit_patch_identity",
+            repo_root=ROOT,
+            output_dir=self.fixture,
+            include_paths=[self.safe_file],
+            validation_commands=["python -m unittest tests.test_handoff_bundle -v"],
+        )
+
+        with zipfile.ZipFile(result.zip_path, "r") as archive:
+            names = set(archive.namelist())
+            context_text = archive.read("HANDOFF_CONTEXT.md").decode("utf-8")
+            identity_text = archive.read("HANDOFF_PATCH_IDENTITY.md").decode("utf-8")
+            classification_rows = list(
+                csv.DictReader(archive.read("HANDOFF_CHANGE_CLASSIFICATION.csv").decode("utf-8").splitlines())
+            )
+
+        self.assertIn("HANDOFF_PATCH_IDENTITY.md", names)
+        self.assertIn("base_head:", context_text)
+        self.assertIn("delta_range:", context_text)
+        self.assertIn("patch_identity_entry: `HANDOFF_PATCH_IDENTITY.md`", context_text)
+        self.assertIn("SNAPSHOT_STATE", identity_text)
+        self.assertIn("PATCH_DELTA", identity_text)
+        self.assertIn("RECORDED_VALIDATION", identity_text)
+        self.assertIn("HANDOFF_CHANGE_CLASSIFICATION.csv", identity_text)
+        self.assertTrue(classification_rows)
+        self.assertTrue(
+            {"path", "change_type", "evidence_source", "delta_range", "included_in_zip", "classification", "notes"}.issubset(
+                classification_rows[0]
+            )
+        )
+
+    def test_delta_change_classification_is_non_empty_with_git_context(self) -> None:
+        result = export_handoff_bundle(
+            profile="full_review",
+            bundle_name="unit_delta_context",
+            repo_root=ROOT,
+            output_dir=self.fixture,
+            include_paths=["src/handoff_bundle.py", "tests/test_handoff_bundle.py"],
+        )
+
+        with zipfile.ZipFile(result.zip_path, "r") as archive:
+            rows = list(csv.DictReader(archive.read("HANDOFF_CHANGE_CLASSIFICATION.csv").decode("utf-8").splitlines()))
+
+        self.assertTrue(rows)
+        self.assertNotEqual(rows[0]["path"], "")
+        self.assertIn(rows[0]["evidence_source"], {"git diff --name-status", "GIT_CONTEXT_UNAVAILABLE", "git status --short"})
+
+    def test_patch_identity_preserves_source_of_truth_and_snapshot_delta_distinction(self) -> None:
+        result = export_handoff_bundle(
+            profile="patch",
+            bundle_name="unit_source_of_truth",
+            repo_root=ROOT,
+            output_dir=self.fixture,
+            include_paths=[self.safe_file],
+        )
+
+        with zipfile.ZipFile(result.zip_path, "r") as archive:
+            identity_text = archive.read("HANDOFF_PATCH_IDENTITY.md").decode("utf-8")
+            validation_text = archive.read("HANDOFF_VALIDATION.txt").decode("utf-8")
+
+        self.assertIn("SNAPSHOT_STATE", identity_text)
+        self.assertIn("PATCH_DELTA", identity_text)
+        self.assertIn("commands as `RECORDED`", identity_text)
+        self.assertIn("execution_status: RECORDED_VALIDATION", validation_text)
 
     def test_self_validation_replaces_empty_command_list(self) -> None:
         result = export_handoff_bundle(

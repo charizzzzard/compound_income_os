@@ -300,6 +300,9 @@ python -m unittest tests.test_zip_safe_operator_journey -v
 It uses synthetic test-local fixtures only and does not replace local full-suite
 validation. Local full-suite results, Git-context handoff tests and optional
 `pytest`/`ruff` checks must be reported with their actual execution context.
+Patch identity and delta proof are separated from snapshot contents through
+`HANDOFF_PATCH_IDENTITY.md` and `HANDOFF_CHANGE_CLASSIFICATION.csv` inside the
+handoff ZIP.
 
 Fixture-/Sample-Pipeline:
 

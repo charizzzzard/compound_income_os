@@ -38,6 +38,7 @@ class HandoffZipExportTests(unittest.TestCase):
         self.assertIn("HANDOFF_REPORT.md", names)
         self.assertIn("HANDOFF_MANIFEST.csv", names)
         self.assertIn("HANDOFF_CHANGE_CLASSIFICATION.csv", names)
+        self.assertIn("HANDOFF_PATCH_IDENTITY.md", names)
         self.assertIn("HANDOFF_VALIDATION.txt", names)
         self.assertTrue(any(name.startswith("src/") for name in names))
         self.assertTrue(any(name.startswith("tests/") for name in names))

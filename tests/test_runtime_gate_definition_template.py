@@ -163,6 +163,15 @@ class RuntimeGateDefinitionTemplateTests(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self._assert_required_parent_child_keys_present(misplaced_block)
 
+    def test_wrong_parent_child_presence_does_not_satisfy_correct_parent(self) -> None:
+        yaml_block = self._extract_template_yaml_block(self._read(TEMPLATE_PATH))
+        misplaced_block = yaml_block.replace("  NOT_AVAILABLE: \"\"\n", "")
+        misplaced_block = misplaced_block.replace("  unknown: \"\"\n", "  unknown: \"\"\n  NOT_AVAILABLE: \"\"\n")
+
+        self.assertRegex(misplaced_block, r"failure_modes:\n(?:  .+\n)*  NOT_AVAILABLE:")
+        with self.assertRaises(AssertionError):
+            self._assert_required_parent_child_keys_present(misplaced_block)
+
     def test_parent_section_missing_required_child_is_rejected(self) -> None:
         yaml_block = self._extract_template_yaml_block(self._read(TEMPLATE_PATH))
         missing_child_block = yaml_block.replace("  not_applicable: \"\"\n", "")

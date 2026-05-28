@@ -35,6 +35,7 @@ Every profile writes the same standard metadata files:
 - `HANDOFF_GUARDRAILS.md`
 - `HANDOFF_OMITTED_ARTIFACTS.csv`
 - `HANDOFF_CHANGE_CLASSIFICATION.csv`
+- `HANDOFF_PATCH_IDENTITY.md`
 - `HANDOFF_VALIDATION.txt`
 - `HANDOFF_GIT_STATUS_SANITIZED.txt`
 - `HANDOFF_EXTERNAL_REVIEW_CHECKLIST.md`
@@ -61,6 +62,20 @@ hash match status, validation status, `manifest_sha256`, manifest row count and
 the terminal metadata file-count delta. If no external commands are supplied, the
 exporter records `self_validation_only` rather than a blank or misleading command
 list.
+
+Validation command records are provenance, not execution proof. Unless a
+separate external context states `EXECUTED_IN_CURRENT_REPO` or
+`EXECUTED_IN_ZIP_CONTEXT`, commands listed by the exporter are
+`RECORDED_VALIDATION`.
+
+`HANDOFF_PATCH_IDENTITY.md` separates snapshot evidence from patch-delta
+evidence. It records patch title, bundle purpose, base HEAD, implementation
+HEAD, current handoff HEAD, delta range, changed file count and delta evidence
+status. `HANDOFF_CHANGE_CLASSIFICATION.csv` must be populated from
+`git diff --name-status <base>..<head>` when Git context is available. If the
+base cannot be resolved, the handoff must explicitly report unknown delta
+evidence rather than silently presenting a full snapshot as complete patch
+provenance.
 
 `HANDOFF_CONTEXT.md` preserves `created_at_utc` as the canonical run timestamp.
 Archive and upload-ready filenames use the same UTC timestamp normalized as
