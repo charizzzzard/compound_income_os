@@ -1,11 +1,11 @@
-# Compound Income OS External LLM Review Packet - Runtime Gate Definition Template
+# Compound Income OS External LLM Review Packet - Runtime Gate Template Structural Hardening
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach dem Governance-/Contract-Patch:
+(CIOS) nach dem docs/tests-only Governance-Hardening-Patch:
 
-- commit: `87c95febbd2d05a5bae7e80739e4f9f9719ee358`
-- message: `docs: add runtime gate definition template`
-- status: `RUNTIME_GATE_DEFINITION_TEMPLATE_ACCEPTED_WITH_FINDINGS`
+- commit: `a50a8e3e0807a16a3a6c247876e14bf69b8a09af`
+- message: `tests: harden runtime gate template structure`
+- status: `RUNTIME_GATE_TEMPLATE_STRUCTURAL_HARDENING_ACCEPTED_WITH_FINDINGS`
 
 Dieses Packet superseded aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck.
@@ -16,13 +16,13 @@ aktuellen Review-Zweck.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- implementation_head: `87c95febbd2d05a5bae7e80739e4f9f9719ee358`
-- implementation_short_head: `87c95fe`
-- current_handoff_head: `87c95febbd2d05a5bae7e80739e4f9f9719ee358`
-- current_handoff_short_head: `87c95fe`
+- implementation_head: `a50a8e3e0807a16a3a6c247876e14bf69b8a09af`
+- implementation_short_head: `a50a8e3`
+- current_handoff_head: `a50a8e3e0807a16a3a6c247876e14bf69b8a09af`
+- current_handoff_short_head: `a50a8e3`
 - handoff_metadata_commit: `pending_until_metadata_commit`
 - handoff_metadata_commit_note: `metadata commit is created after this file is written; use git HEAD after metadata commit or the operator final report for the exact metadata commit hash`
-- bundle_purpose: `external_review_after_runtime_gate_definition_template`
+- bundle_purpose: `external_review_after_runtime_gate_template_structural_hardening`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -48,13 +48,13 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
 - Behandle `docs/contracts/RUNTIME_GATE_DEFINITION_TEMPLATE.md` als
   Governance-/Contract-Template, nicht als Runtime-Enforcement-Engine.
+- Pruefe, dass die Required-Fields im fenced YAML block unter `## Template`
+  strukturell vorhanden sind, nicht nur als Dokumenttext.
+- Pruefe die Classification Crosswalk-Semantik:
+  `future_runtime_enforced` ist proposal-only und nicht dasselbe wie actual
+  `runtime_enforced`.
 - Behandle `docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md` als
   Governance-/Design-Contract, nicht als Runtime-Enforcement-Engine.
-- Behandle `src.runtime_enforcement_boundary_review` als read-only
-  Governance-Review, nicht als Runtime-Enforcement-Engine, nicht als
-  Release-Akzeptanz und nicht als Product-/Production-/Investment-Readiness.
-- Das Ausfuellen des Runtime-Gate-Templates macht keinen Gate
-  runtime-enforced.
 - Unterscheide `documentation_only`, `review_evidence`,
   `runtime_relevant_candidate` und kuenftige `runtime_enforced` Semantik.
 - Unterscheide `RECORDED` Handoff-Commands von tatsaechlich ausgefuehrten
@@ -122,19 +122,21 @@ Dieses Packet fuehrt nicht ein:
 
 ## Reviewer Notes
 
-- Das neue Template standardisiert kuenftige Runtime-Gate-Vorschlaege.
-- Aktuelle Governance-Producer bleiben `review_evidence` oder
-  `documentation_only`.
+- Der Patch haertet die Strukturtests des Runtime-Gate-Templates.
+- `future_runtime_enforced` bleibt eine proposal-only Klassifikation im
+  Template.
+- Actual `runtime_enforced` Status bleibt unter
+  `docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md` geregelt.
 - Kein aktueller Producer wird als runtime-enforced klassifiziert.
 - Kein Gate darf automatische Release-Akzeptanz erhalten.
-- Future runtime-sensitive areas bleiben Kandidaten mit separaten
-  Contract-/Test-/Evidence-/Operator-Acceptance-Anforderungen.
 - `python -m unittest tests.test_runtime_gate_definition_template -v` ergab
-  `Ran 8 tests`, `OK`.
+  nach einer kleinen Formulierungskorrektur `Ran 11 tests`, `OK`.
 - `python -m unittest tests.test_runtime_gate_boundary_contract -v` ergab
   `Ran 7 tests`, `OK`.
+- `python -m unittest tests.test_runtime_enforcement_boundary_review -v` ergab
+  `Ran 8 tests`, `OK`.
 - `python -m unittest discover -s tests -p "test_*.py" -v` wurde ausgefuehrt
-  und ergab `Ran 824 tests`, `OK`.
+  und ergab `Ran 827 tests`, `OK`.
 - `pytest` und `ruff` waren im aktiven Python-Environment nicht installiert;
   daraus wurde kein Erfolg abgeleitet.
 - Final Acceptance bleibt beim Human Operator.

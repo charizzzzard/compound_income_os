@@ -1,23 +1,23 @@
-# HANDOFF LATEST CONTEXT - Runtime Gate Definition Template Contract
+# HANDOFF LATEST CONTEXT - Runtime Gate Template Structural Hardening
 
 project_name: compound_income_os
 canonical_name: Compound Income OS
 short_name: CIOS
 profile: full_review
 bundle_name: HANDOFF_LATEST
-bundle_purpose: external_review_after_runtime_gate_definition_template
+bundle_purpose: external_review_after_runtime_gate_template_structural_hardening
 created_at_utc: see_zip_internal_handoff_context
 branch: main
-head_before_implementation: 2f5153746a2bef70d2fd275430ef670b2a258448
-implementation_head: 87c95febbd2d05a5bae7e80739e4f9f9719ee358
-implementation_short_head: 87c95fe
-current_handoff_head: 87c95febbd2d05a5bae7e80739e4f9f9719ee358
-current_handoff_short_head: 87c95fe
+head_before_implementation: 9f210b976e5cee63a7f966d29ed7ec4f7e235ad4
+implementation_head: a50a8e3e0807a16a3a6c247876e14bf69b8a09af
+implementation_short_head: a50a8e3
+current_handoff_head: a50a8e3e0807a16a3a6c247876e14bf69b8a09af
+current_handoff_short_head: a50a8e3
 handoff_metadata_commit: pending_until_metadata_commit
 handoff_metadata_commit_note: the metadata commit is created after this file is written; use git HEAD after the metadata commit or the operator final report for the exact metadata commit hash. This avoids a self-referential hash requirement.
-implementation_commit_message: docs: add runtime gate definition template
-implementation_status: RUNTIME_GATE_DEFINITION_TEMPLATE_ACCEPTED_WITH_FINDINGS
-prior_runtime_gate_boundary_contract_commit: 9cd556fe231d443853ee082e323d8161b87cd6d2
+implementation_commit_message: tests: harden runtime gate template structure
+implementation_status: RUNTIME_GATE_TEMPLATE_STRUCTURAL_HARDENING_ACCEPTED_WITH_FINDINGS
+prior_runtime_gate_definition_template_commit: 87c95febbd2d05a5bae7e80739e4f9f9719ee358
 tracked_source_worktree_clean_before_handoff_generation: True
 zip_internal_dirty_worktree_present: False
 external_metadata_dirty_after_zip_generation_before_commit: True
@@ -28,15 +28,15 @@ canonical_checksum: external_review_packet/HANDOFF_LATEST.sha256
 canonical_readme: external_review_packet/00_READ_ME_FIRST.md
 
 zip_file_count: 494
-zip_size_bytes: 13117891
-zip_sha256: f192a9d621eb81b2ed48493c5c75bdbc90cf33395ae964014a6a56b87f64a846
+zip_size_bytes: 13118649
+zip_sha256: b50153df1f606293ba39279bf8ef0500ec032baee16f509fbfd75eec329d43e3
 sha_match: True
 zip_testzip: None
 missing_required: []
 nested_zip_count: 0
 forbidden_match_count: 0
 local_path_leak_count: 0
-internal_head: 87c95febbd2d05a5bae7e80739e4f9f9719ee358
+internal_head: a50a8e3e0807a16a3a6c247876e14bf69b8a09af
 internal_dirty_worktree_present: False
 
 ## Source-of-Truth / Precedence
@@ -57,8 +57,8 @@ Reviewer-Instruktionen.
 ## Current Packet Scope
 
 Dieses Packet synchronisiert den externen Review-Kontext auf den committed
-Repo-Stand `87c95febbd2d05a5bae7e80739e4f9f9719ee358` nach
-`docs: add runtime gate definition template`.
+Repo-Stand `a50a8e3e0807a16a3a6c247876e14bf69b8a09af` nach
+`tests: harden runtime gate template structure`.
 
 Review-Schwerpunkte:
 
@@ -77,19 +77,24 @@ Review-Schwerpunkte:
 - `docs/CONTEXT_AND_ROADMAP.md`
 - `README.md`
 
-## Runtime Gate Definition Template
+## Runtime Gate Template Structural Hardening
 
-`docs/contracts/RUNTIME_GATE_DEFINITION_TEMPLATE.md` standardisiert die
-Pflichtfelder fuer kuenftige Runtime-Gate-Vorschlaege, darunter Trigger,
-Runtime-Surface, Failure-/Severity-Semantik, Blocking, Override,
-Rollback/Correction, Evidence, Tests, Operator Acceptance, Release-Acceptance-
-Semantik, Non-Scope, Promotion und Demotion.
+`tests/test_runtime_gate_definition_template.py` now extracts the fenced YAML
+block under `## Template` from
+`docs/contracts/RUNTIME_GATE_DEFINITION_TEMPLATE.md` and verifies required
+top-level and nested YAML-like keys inside that block rather than only checking
+document-wide string occurrences.
 
-Das Template ist ein Governance-/Contract-Artefakt. Das Ausfuellen des
-Templates macht keinen Gate runtime-enforced. Runtime-enforced Verhalten
-erfordert eine separate kuenftige Implementierung, Tests, Evidence-Artefakte
-und explizite Human-Operator-Akzeptanz. Es gibt keine automatische
-Release-Akzeptanz.
+`docs/contracts/RUNTIME_GATE_DEFINITION_TEMPLATE.md` now includes a
+Classification Crosswalk. It clarifies that `future_runtime_enforced` is a
+proposal-only template classification, not the same as actual
+`runtime_enforced` status under
+`docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md`.
+
+This patch hardens docs/tests only. It does not implement runtime enforcement,
+release automation, Product-/Production-/Investment-Readiness, broker import,
+order execution, dashboard expansion, replay, backtesting, outcome attribution,
+valuation automation, API integration, scraping or runtime LLM agent behavior.
 
 ## Explicit Non-Scope
 
@@ -126,22 +131,24 @@ Preflight:
 - `git branch --show-current`
   - result: `main`
 - `git rev-parse HEAD`
-  - result before implementation: `2f5153746a2bef70d2fd275430ef670b2a258448`
+  - result before implementation: `9f210b976e5cee63a7f966d29ed7ec4f7e235ad4`
 - `git status --short`
   - result before implementation: clean
 - `git status --short --ignored external_review_packet`
   - result included ignored `external_review_packet/HANDOFF_LATEST.zip`
+- `git ls-files docs/contracts/RUNTIME_GATE_DEFINITION_TEMPLATE.md tests/test_runtime_gate_definition_template.py docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md tests/test_runtime_gate_boundary_contract.py src/runtime_enforcement_boundary_review.py tests/test_runtime_enforcement_boundary_review.py`
+  - result: all six requested files are tracked
 
 Targeted validation before handoff:
 
+- `python -m unittest tests.test_runtime_gate_definition_template -v`
+  - result: first attempt failed because the expected crosswalk phrase was line-wrapped; after the doc wording fix, result: `Ran 11 tests`, `OK`
 - `python -m unittest tests.test_runtime_gate_boundary_contract -v`
   - result: `Ran 7 tests`, `OK`
 - `python -m unittest tests.test_runtime_enforcement_boundary_review -v`
   - result: `Ran 8 tests`, `OK`
-- `python -m unittest tests.test_runtime_gate_definition_template -v`
-  - result: `Ran 8 tests`, `OK`
 - `python -m unittest discover -s tests -p "test_*.py" -v`
-  - result: `Ran 824 tests`, `OK`
+  - result: `Ran 827 tests`, `OK`
 - `git diff --check`
   - result: exit code `0`; Git reported line-ending warnings for touched files but no whitespace errors
 
@@ -158,11 +165,11 @@ discovery suite was run and passed as listed above.
 
 Handoff generation:
 
-- `python -m src.handoff_zip_export --profile full_review --name HANDOFF_LATEST --output-path external_review_packet/HANDOFF_LATEST.zip --validation-command "python -m unittest tests.test_runtime_gate_boundary_contract -v" --validation-command "python -m unittest tests.test_runtime_enforcement_boundary_review -v" --validation-command "python -m unittest tests.test_runtime_gate_definition_template -v" --validation-command "python -m unittest discover -s tests -p test_*.py -v" --validation-command "git diff --check" --validation-command "python -m pytest -q" --validation-command "python -m ruff check ."`
-  - result: generated ZIP for head `87c95febbd2d05a5bae7e80739e4f9f9719ee358`
+- `python -m src.handoff_zip_export --profile full_review --name HANDOFF_LATEST --output-path external_review_packet/HANDOFF_LATEST.zip --validation-command "python -m unittest tests.test_runtime_gate_definition_template -v" --validation-command "python -m unittest tests.test_runtime_gate_boundary_contract -v" --validation-command "python -m unittest tests.test_runtime_enforcement_boundary_review -v" --validation-command "python -m unittest discover -s tests -p test_*.py -v" --validation-command "git diff --check" --validation-command "python -m pytest -q" --validation-command "python -m ruff check ."`
+  - result: generated ZIP for head `a50a8e3e0807a16a3a6c247876e14bf69b8a09af`
   - file_count: `494`
-  - size_bytes: `13117891`
-  - zip_sha256: `f192a9d621eb81b2ed48493c5c75bdbc90cf33395ae964014a6a56b87f64a846`
+  - size_bytes: `13118649`
+  - zip_sha256: `b50153df1f606293ba39279bf8ef0500ec032baee16f509fbfd75eec329d43e3`
   - forbidden_match_count: `0`
   - local_path_leak_count: `0`
 
@@ -171,19 +178,13 @@ Post-generation ZIP validation:
 - SHA match: `True`
 - `zipfile.testzip()`: `None`
 - `missing_required`: `[]`
-- `nested_zip_count`: `0`
-- `forbidden_match_count`: `0`
-- `local_path_leak_count`: `0`
-- internal `HANDOFF_CONTEXT.md` head: `87c95febbd2d05a5bae7e80739e4f9f9719ee358`
-- Runtime Gate Definition Template in ZIP: `yes`
-- Runtime Gate Definition Template tests in ZIP: `yes`
-- Runtime Gate Boundary Contract in ZIP: `yes`
-- Runtime Enforcement Boundary producer/tests in ZIP: `yes`
-- Updated status/governance/cross-reference files in ZIP: `yes`
+- file_count: `494`
+- internal `HANDOFF_CONTEXT.md` head: `a50a8e3e0807a16a3a6c247876e14bf69b8a09af`
+- `HANDOFF_VALIDATION.txt` in ZIP: `yes`
 
 ## Next Recommended Step
 
-External delta review of the Runtime Gate Definition Template Contract. Do not
-proceed to Broker Import, Event Ledger Runtime, Dashboard Expansion,
+External delta review of the Runtime Gate Template Structural Hardening patch.
+Do not proceed to Broker Import, Event Ledger Runtime, Dashboard Expansion,
 Replay/Backtesting, Outcome Attribution or Valuation Automation from this
-template alone.
+template hardening alone.
