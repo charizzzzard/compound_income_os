@@ -67,6 +67,12 @@
       "zip_expectation": "Expected to run from an extracted full_review handoff ZIP."
     },
     {
+      "command": "python -m unittest tests.test_valuation_input_provenance_review -v",
+      "classification": "ZIP_SAFE",
+      "reason": "Uses stdlib unittest, synthetic temp valuation review fixtures, committed contract docs only, no private data, no network and no .git context.",
+      "zip_expectation": "Expected to run from an extracted full_review handoff ZIP."
+    },
+    {
       "command": "python -m unittest tests.test_handoff_zip_export -v",
       "classification": "GIT_CONTEXT_REQUIRED",
       "reason": "Exercises handoff/export behavior against local repository state and ignored-path policy.",
