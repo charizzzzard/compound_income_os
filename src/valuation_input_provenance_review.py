@@ -14,7 +14,6 @@ DEFAULT_REVIEW_INPUT = "data/raw/private/fundamentals/personal_valuation_review_
 DEFAULT_EVIDENCE_INPUT = "data/processed/personal_fundamentals_master_evidence_applied.csv"
 DEFAULT_REVIEW_OUTPUT = "data/processed/personal_valuation_input_provenance_review.csv"
 DEFAULT_SUMMARY_OUTPUT = "data/processed/personal_valuation_input_provenance_summary.csv"
-DEFAULT_REPORT_OUTPUT = f"reports/{date.today().isoformat()}/personal_valuation_input_provenance_review.md"
 
 REVIEW_INPUT_REQUIRED_FIELDS = [
     "ticker",
@@ -396,7 +395,7 @@ def run_valuation_input_provenance_review(
     evidence_input: str = DEFAULT_EVIDENCE_INPUT,
     review_output: str = DEFAULT_REVIEW_OUTPUT,
     summary_output: str = DEFAULT_SUMMARY_OUTPUT,
-    report_output: str = DEFAULT_REPORT_OUTPUT,
+    report_output: str | None = None,
 ) -> ValuationInputProvenanceReviewResult:
     effective_date = date.fromisoformat(as_of_date)
     warnings: list[str] = []
@@ -436,7 +435,8 @@ def run_valuation_input_provenance_review(
         "review_output": review_output,
         "summary_output": summary_output,
     }
-    report_path = resolve_repo_path(report_output)
+    report_target = report_output or f"reports/{as_of_date}/personal_valuation_input_provenance_review.md"
+    report_path = resolve_repo_path(report_target)
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(render_report(summary_rows, review_result_rows, input_paths), encoding="utf-8")
     return ValuationInputProvenanceReviewResult(
@@ -458,7 +458,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--evidence-input", default=DEFAULT_EVIDENCE_INPUT)
     parser.add_argument("--review-output", default=DEFAULT_REVIEW_OUTPUT)
     parser.add_argument("--summary-output", default=DEFAULT_SUMMARY_OUTPUT)
-    parser.add_argument("--report-output", default=DEFAULT_REPORT_OUTPUT)
+    parser.add_argument("--report-output")
     return parser.parse_args()
 
 

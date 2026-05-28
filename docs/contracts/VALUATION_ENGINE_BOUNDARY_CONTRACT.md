@@ -101,6 +101,9 @@ and review. Before any valuation automation, the project must complete the
 relevant review gates for semantic decision quality, as-of temporal integrity,
 data conflict and provenance, operator wording and Human Operator acceptance.
 
+Valuation input temporal integrity review remains outside `src.valuation_engine`
+and must not feed reviewed values into the engine.
+
 Any future runtime-relevant valuation gate would require its own contract,
 tests, evidence artifacts, failure semantics, operator override semantics and
 rollback or correction path under

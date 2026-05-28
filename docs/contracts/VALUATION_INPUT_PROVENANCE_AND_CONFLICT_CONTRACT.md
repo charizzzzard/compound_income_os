@@ -120,6 +120,10 @@ wall-clock date. A reviewed valuation source older than `max_source_age_days`
 must become `STALE` or otherwise require review. Source dates after the
 effective as-of date are invalid review evidence.
 
+Detailed ordering between run `as_of_date`, `valuation_source_as_of_date` and
+`valuation_reviewed_at` is governed by
+`docs/contracts/VALUATION_INPUT_AS_OF_TEMPORAL_INTEGRITY_CONTRACT.md`.
+
 ## Missing / Invalid Semantics
 
 Missing valuation values remain `MISSING` and include `NO_IMPUTATION`. This is

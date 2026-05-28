@@ -657,25 +657,33 @@ capabilities:
       - src/personal_valuation_input_contract.py
       - docs/contracts/VALUATION_ENGINE_BOUNDARY_CONTRACT.md
       - docs/contracts/VALUATION_INPUT_PROVENANCE_AND_CONFLICT_CONTRACT.md
+      - docs/contracts/VALUATION_INPUT_AS_OF_TEMPORAL_INTEGRITY_CONTRACT.md
       - src/valuation_input_provenance_review.py
+      - src/valuation_input_temporal_integrity_review.py
     input_artifacts:
       - data/processed/personal_valuation_input_review_queue.csv
       - data/raw/private/fundamentals/personal_valuation_review_input.csv
+      - data/processed/personal_valuation_input_provenance_review.csv
     output_artifacts:
       - data/processed/personal_valuation_input_contract_summary.csv
       - data/processed/personal_valuation_input_provenance_review.csv
       - data/processed/personal_valuation_input_provenance_summary.csv
+      - data/processed/personal_valuation_input_temporal_integrity_review.csv
+      - data/processed/personal_valuation_input_temporal_integrity_summary.csv
     report_surface:
       - reports/<date>/personal_valuation_input_contract_report.md
       - reports/<date>/personal_valuation_input_provenance_review.md
+      - reports/<date>/personal_valuation_input_temporal_integrity_review.md
     tests:
       - tests/test_personal_valuation_input_contract.py
       - tests/test_valuation_engine_behavior.py
       - tests/test_valuation_input_provenance_review.py
+      - tests/test_valuation_input_temporal_integrity_review.py
     limitations:
       - "Valuation inputs are reviewed, but no full valuation workbench exists."
       - "Valuation engine behavioral tests cover current deterministic formula behavior and missing/invalid data semantics, but this is not valuation automation, investment advice or investment readiness."
       - "Valuation input provenance/conflict review is read-only evidence; it does not feed values into scoring, does not resolve conflicts and does not implement valuation automation."
+      - "Valuation input temporal integrity review is read-only evidence; it checks date ordering against explicit as_of_date and does not implement replay, backtesting or valuation automation."
     next_action: "Personal input data templates or Research Case Workbench."
   - capability_id: simulation_backtesting_monte_carlo
     display_name: Simulation Backtesting Monte Carlo
