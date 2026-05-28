@@ -277,7 +277,10 @@ with zero counts.
 ## Known Limitations
 
 - External ZIP reproducibility is intentionally limited when private/raw inputs
-  are excluded from the handoff bundle.
+  are excluded from the handoff bundle. `configs/test_reproduction_matrix.json`
+  classifies ZIP-safe, local-repo, Git-context, private-input and optional
+  tooling checks; `tests/test_zip_safe_operator_journey.py` provides a minimal
+  ZIP-safe synthetic operator smoke.
 - There is no full replay engine yet.
 - There is no outcome attribution.
 - The Portfolio Event Ledger Contract, template and read-only template

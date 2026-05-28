@@ -22,6 +22,24 @@ Use these labels when reporting validation:
 | `GIT_CONTEXT_REQUIRED` | May call Git or rely on committed/ignored status, branch, HEAD or local repo metadata. | No, unless the ZIP is unpacked inside a Git checkout with matching history. |
 | `PRIVATE_INPUT_REQUIRED` | Requires private/raw/broker/operator-owned inputs. | No. |
 | `RUNTIME_DATA_REQUIRED` | Requires generated processed/runtime data not included in the handoff. | No. |
+| `TOOLING_OPTIONAL` | Depends on optional local tools such as `pytest` or `ruff`. | No, unless the tool is installed and the command is actually executed. |
+
+The machine-readable command matrix is
+`configs/test_reproduction_matrix.json`. It distinguishes ZIP-safe smoke tests,
+local-repo checks, Git-context checks, private-input exclusions and optional
+tooling checks. Handoff metadata must not treat a command as ZIP-reproducible
+unless it was actually run from ZIP context or is classified as ZIP-safe.
+
+Use these validation result labels when reporting handoff evidence:
+
+| label | meaning |
+| --- | --- |
+| `EXECUTED_IN_CURRENT_REPO` | Command ran in the local checkout. |
+| `EXECUTED_IN_ZIP_CONTEXT` | Command ran from extracted handoff ZIP content without `.git` or private inputs. |
+| `RECORDED_FROM_PREVIOUS_RUN` | Command is recorded as prior evidence only. |
+| `NOT_AVAILABLE` | Required tool or artifact was unavailable. |
+| `SKIPPED_BY_DESIGN` | Command is intentionally not applicable in the current context. |
+| `FAILED` | Command ran and failed. |
 
 ### `ZIP_SAFE_TESTS`
 
@@ -31,6 +49,7 @@ project's standard-library-first assumptions.
 
 Recommended examples:
 
+- `python -m unittest tests.test_zip_safe_operator_journey -v`
 - `python -m unittest tests.test_data_source_registry_validation -v`
 - `python -m src.data_source_registry_validation docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml`
 - `python -m unittest tests.test_portfolio_event_ledger_validation -v`
@@ -53,6 +72,13 @@ broker-import readiness from the template.
 
 `tests.test_readme_and_reports` is ZIP-safe only when the bundle includes
 root-level LF governance files such as `.gitattributes`.
+
+`tests.test_zip_safe_operator_journey` is the minimal synthetic operator
+journey smoke test. It uses only stdlib code and test-local synthetic fixtures,
+generates Data Freshness JSON/Markdown plus Dashboard Operator Summary JSON in a
+temporary test directory, and verifies that `MISSING`, `STALE` and `UNKNOWN`
+states remain visible without broker writes, order execution, readiness claims,
+network access or `.git` context.
 
 Handoff exporter and bundle tests such as
 `python -m unittest tests.test_handoff_zip_export -v` and
@@ -117,15 +143,20 @@ For a review focused on Decision Quality, Decision Journal Validation and
 operator surfaces, start with:
 
 ```powershell
+python -m unittest tests.test_zip_safe_operator_journey -v
 python -m unittest tests.test_personal_decision_journal_validation -v
 python -m unittest tests.test_monthly_decision_report -v
 python -m unittest tests.test_personal_decision_quality_state -v
 python -m unittest tests.test_data_source_registry_validation -v
 python -m unittest tests.test_portfolio_event_ledger_validation -v
 python -m unittest tests.test_data_freshness -v
-python -m unittest tests.test_personal_run_engine -v
 python -m unittest tests.test_readme_and_reports -v
 ```
+
+`tests.test_personal_run_engine` remains important local validation, but it is
+not the minimal ZIP-safe operator smoke. Treat it as local-repo validation unless
+the current handoff context explicitly states that it was executed from an
+extracted ZIP context.
 
 Then run any additional targeted tests named in
 `external_review_packet/HANDOFF_LATEST_CONTEXT.md`.
@@ -175,7 +206,7 @@ Expand-Archive .\HANDOFF_LATEST.zip -DestinationPath .\review
 Set-Location .\review
 python -m unittest tests.test_dashboard_operator_summary -v
 python -m unittest tests.test_data_freshness -v
-python -m unittest tests.test_personal_run_engine -v
+python -m unittest tests.test_zip_safe_operator_journey -v
 python -m unittest tests.test_personal_decision_journal_validation -v
 python -m unittest tests.test_personal_decision_quality_state -v
 python -m unittest tests.test_readme_and_reports -v

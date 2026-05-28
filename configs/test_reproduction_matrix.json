@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "purpose": "Classify CIOS validation commands by external handoff reproducibility context.",
+  "classification_values": [
+    "ZIP_SAFE",
+    "LOCAL_REPO_REQUIRED",
+    "PRIVATE_INPUT_REQUIRED",
+    "GIT_CONTEXT_REQUIRED",
+    "TOOLING_OPTIONAL",
+    "UNKNOWN"
+  ],
+  "execution_status_values": [
+    "EXECUTED_IN_CURRENT_REPO",
+    "EXECUTED_IN_ZIP_CONTEXT",
+    "RECORDED_FROM_PREVIOUS_RUN",
+    "NOT_AVAILABLE",
+    "SKIPPED_BY_DESIGN",
+    "FAILED"
+  ],
+  "tests": [
+    {
+      "command": "python -m unittest tests.test_zip_safe_operator_journey -v",
+      "classification": "ZIP_SAFE",
+      "reason": "Runs with stdlib, synthetic temp fixtures, no private raw data and no .git context.",
+      "zip_expectation": "Expected to run from an extracted full_review handoff ZIP."
+    },
+    {
+      "command": "python -m unittest tests.test_data_source_registry_validation -v",
+      "classification": "ZIP_SAFE",
+      "reason": "Validates committed source and template artifacts only.",
+      "zip_expectation": "Expected to run from an extracted full_review handoff ZIP."
+    },
+    {
+      "command": "python -m unittest tests.test_portfolio_event_ledger_validation -v",
+      "classification": "ZIP_SAFE",
+      "reason": "Validates committed template and read-only validator only.",
+      "zip_expectation": "Expected to run from an extracted full_review handoff ZIP."
+    },
+    {
+      "command": "python -m unittest tests.test_data_freshness -v",
+      "classification": "ZIP_SAFE",
+      "reason": "Uses synthetic test-local fixtures and committed stdlib code.",
+      "zip_expectation": "Expected to run from an extracted full_review handoff ZIP."
+    },
+    {
+      "command": "python -m unittest tests.test_dashboard_operator_summary -v",
+      "classification": "ZIP_SAFE",
+      "reason": "Uses synthetic test-local fixtures and verifies path sanitization.",
+      "zip_expectation": "Expected to run from an extracted full_review handoff ZIP."
+    },
+    {
+      "command": "python -m unittest tests.test_personal_decision_journal_validation -v",
+      "classification": "ZIP_SAFE",
+      "reason": "Uses committed source and synthetic test fixtures; no private journal is required.",
+      "zip_expectation": "Expected to run from an extracted full_review handoff ZIP."
+    },
+    {
+      "command": "python -m unittest tests.test_personal_decision_quality_state -v",
+      "classification": "ZIP_SAFE",
+      "reason": "Uses synthetic test-local artifacts and keeps missing inputs visible.",
+      "zip_expectation": "Expected to run from an extracted full_review handoff ZIP."
+    },
+    {
+      "command": "python -m unittest tests.test_handoff_zip_export -v",
+      "classification": "GIT_CONTEXT_REQUIRED",
+      "reason": "Exercises handoff/export behavior against local repository state and ignored-path policy.",
+      "zip_expectation": "Do not treat a ZIP-only failure as a product logic failure."
+    },
+    {
+      "command": "python -m unittest tests.test_handoff_bundle -v",
+      "classification": "GIT_CONTEXT_REQUIRED",
+      "reason": "Exercises bundle metadata and local repository/handoff behavior.",
+      "zip_expectation": "Do not treat a ZIP-only failure as a product logic failure."
+    },
+    {
+      "command": "python -m unittest tests.test_personal_run_engine -v",
+      "classification": "LOCAL_REPO_REQUIRED",
+      "reason": "Covers full local orchestration and default repo-local source paths; not all local runtime/generated context is part of the ZIP contract.",
+      "zip_expectation": "Use targeted ZIP-safe smoke tests for external reproduction."
+    },
+    {
+      "command": "python -m unittest tests.test_cost_tax_engine -v",
+      "classification": "LOCAL_REPO_REQUIRED",
+      "reason": "Uses repo-local sample cost/tax raw fixture that is not part of the minimal ZIP-safe fixture contract.",
+      "zip_expectation": "Do not infer private tax/broker readiness from this classification."
+    },
+    {
+      "command": "python -m pytest -q",
+      "classification": "TOOLING_OPTIONAL",
+      "reason": "pytest may be unavailable in the active environment and must not be reported as passed unless actually executed.",
+      "zip_expectation": "Optional tooling check, not release acceptance."
+    },
+    {
+      "command": "python -m ruff check .",
+      "classification": "TOOLING_OPTIONAL",
+      "reason": "ruff may be unavailable in the active environment and must not be reported as passed unless actually executed.",
+      "zip_expectation": "Optional tooling check, not release acceptance."
+    }
+  ]
+}

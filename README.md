@@ -288,6 +288,19 @@ die empfohlene Quelle. Nicht das generische `HANDOFF_LATEST.zip` hochladen, wenn
 mehrere Handoffs existieren; stattdessen immer das eindeutig benannte Trio aus
 ZIP, `_CONTEXT.md` und `.sha256` verwenden.
 
+External reproduction is classified in
+`configs/test_reproduction_matrix.json` and explained in
+`docs/governance/EXTERNAL_REPRODUCTION.md`. The minimal ZIP-safe operator smoke
+is:
+
+```powershell
+python -m unittest tests.test_zip_safe_operator_journey -v
+```
+
+It uses synthetic test-local fixtures only and does not replace local full-suite
+validation. Local full-suite results, Git-context handoff tests and optional
+`pytest`/`ruff` checks must be reported with their actual execution context.
+
 Fixture-/Sample-Pipeline:
 
 ```powershell
