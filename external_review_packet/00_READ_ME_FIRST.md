@@ -1,11 +1,11 @@
-# Compound Income OS External LLM Review Packet - Runtime Gate Template Structural Hardening
+# Compound Income OS External LLM Review Packet - Runtime Gate Template Nested-Key Hardening
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
 (CIOS) nach dem docs/tests-only Governance-Hardening-Patch:
 
-- commit: `a50a8e3e0807a16a3a6c247876e14bf69b8a09af`
-- message: `tests: harden runtime gate template structure`
-- status: `RUNTIME_GATE_TEMPLATE_STRUCTURAL_HARDENING_ACCEPTED_WITH_FINDINGS`
+- commit: `b285b2156b4f13b065f6294f7b42d546c05fdc9a`
+- message: `tests: harden runtime gate template nested keys`
+- status: `RUNTIME_GATE_TEMPLATE_NESTED_KEY_HARDENING_ACCEPTED_WITH_FINDINGS`
 
 Dieses Packet superseded aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck.
@@ -16,13 +16,13 @@ aktuellen Review-Zweck.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- implementation_head: `a50a8e3e0807a16a3a6c247876e14bf69b8a09af`
-- implementation_short_head: `a50a8e3`
-- current_handoff_head: `a50a8e3e0807a16a3a6c247876e14bf69b8a09af`
-- current_handoff_short_head: `a50a8e3`
+- implementation_head: `b285b2156b4f13b065f6294f7b42d546c05fdc9a`
+- implementation_short_head: `b285b21`
+- current_handoff_head: `b285b2156b4f13b065f6294f7b42d546c05fdc9a`
+- current_handoff_short_head: `b285b21`
 - handoff_metadata_commit: `pending_until_metadata_commit`
 - handoff_metadata_commit_note: `metadata commit is created after this file is written; use git HEAD after metadata commit or the operator final report for the exact metadata commit hash`
-- bundle_purpose: `external_review_after_runtime_gate_template_structural_hardening`
+- bundle_purpose: `external_review_after_runtime_gate_template_nested_key_hardening`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -48,18 +48,18 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
 - Behandle `docs/contracts/RUNTIME_GATE_DEFINITION_TEMPLATE.md` als
   Governance-/Contract-Template, nicht als Runtime-Enforcement-Engine.
-- Pruefe, dass die Required-Fields im fenced YAML block unter `## Template`
-  strukturell vorhanden sind, nicht nur als Dokumenttext.
-- Pruefe die Classification Crosswalk-Semantik:
-  `future_runtime_enforced` ist proposal-only und nicht dasselbe wie actual
-  `runtime_enforced`.
+- Pruefe, dass Nested-Keys im fenced YAML block unter den richtigen Parent-
+  Sections stehen, nicht nur irgendwo als indented keys.
+- Pruefe die pytest collection hygiene in `pytest.ini`: default collection ist
+  auf `tests/` begrenzt und `_archive/` wird nicht rekursiv gesammelt.
+- Behandle fehlendes `pytest` oder `ruff` als Environment-Realitaet, nicht als
+  Erfolg und nicht automatisch als Repo-Logikfehler.
 - Behandle `docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md` als
   Governance-/Design-Contract, nicht als Runtime-Enforcement-Engine.
 - Unterscheide `documentation_only`, `review_evidence`,
   `runtime_relevant_candidate` und kuenftige `runtime_enforced` Semantik.
 - Unterscheide `RECORDED` Handoff-Commands von tatsaechlich ausgefuehrten
   Pass/Fail-Ergebnissen.
-- Unterscheide Tool-Verfuegbarkeit von Command-Erfolg.
 - Inferiere keine Release-, Product-, Investment-, Broker-Import-, Replay-,
   Backtesting-, Dashboard- oder Outcome-Attribution-Readiness.
 - Fehlende, stale oder unknown Daten muessen sichtbar bleiben.
@@ -70,9 +70,11 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 
 Reviewer sollen insbesondere pruefen:
 
-- Runtime Gate Definition Template:
-  - `docs/contracts/RUNTIME_GATE_DEFINITION_TEMPLATE.md`
+- Runtime Gate Definition Template tests:
   - `tests/test_runtime_gate_definition_template.py`
+  - `docs/contracts/RUNTIME_GATE_DEFINITION_TEMPLATE.md`
+- Pytest collection hygiene:
+  - `pytest.ini`
 - Runtime Gate Boundary Contract:
   - `docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md`
   - `tests/test_runtime_gate_boundary_contract.py`
@@ -83,12 +85,6 @@ Reviewer sollen insbesondere pruefen:
   - `docs/governance/EXTERNAL_REVIEW_COVERAGE_STANDARD.md`
   - `docs/governance/EXTERNAL_REVIEW_GATE_REGISTRY.yaml`
   - `docs/governance/EXTERNAL_REVIEW_GATE_SEQUENCE.md`
-- Status and cross-reference consistency:
-  - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
-  - `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
-  - `docs/MODULE_CONTRACTS.md`
-  - `docs/CONTEXT_AND_ROADMAP.md`
-  - `README.md`
 
 ## Explicit Non-Scope
 
@@ -122,21 +118,23 @@ Dieses Packet fuehrt nicht ein:
 
 ## Reviewer Notes
 
-- Der Patch haertet die Strukturtests des Runtime-Gate-Templates.
-- `future_runtime_enforced` bleibt eine proposal-only Klassifikation im
-  Template.
-- Actual `runtime_enforced` Status bleibt unter
-  `docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md` geregelt.
+- Der Patch haertet Nested-Key-Pruefungen im Runtime-Gate-Template-Test.
+- Parent-aware Checks stellen sicher, dass `failure_modes`,
+  `severity_semantics` und `override_policy` ihre erwarteten Child-Keys tragen.
+- Negative Tests pruefen falsch platzierte und fehlende Child-Keys.
+- `pytest.ini` begrenzt default pytest collection auf `tests/` und schliesst
+  `_archive/` aus; pytest war im aktiven Environment trotzdem nicht
+  installiert.
 - Kein aktueller Producer wird als runtime-enforced klassifiziert.
 - Kein Gate darf automatische Release-Akzeptanz erhalten.
 - `python -m unittest tests.test_runtime_gate_definition_template -v` ergab
-  nach einer kleinen Formulierungskorrektur `Ran 11 tests`, `OK`.
+  `Ran 13 tests`, `OK`.
 - `python -m unittest tests.test_runtime_gate_boundary_contract -v` ergab
   `Ran 7 tests`, `OK`.
 - `python -m unittest tests.test_runtime_enforcement_boundary_review -v` ergab
   `Ran 8 tests`, `OK`.
 - `python -m unittest discover -s tests -p "test_*.py" -v` wurde ausgefuehrt
-  und ergab `Ran 827 tests`, `OK`.
+  und ergab `Ran 829 tests`, `OK`.
 - `pytest` und `ruff` waren im aktiven Python-Environment nicht installiert;
   daraus wurde kein Erfolg abgeleitet.
 - Final Acceptance bleibt beim Human Operator.
