@@ -142,6 +142,27 @@ The Human Operator remains final acceptance authority. PASS/OK evidence from
 this review is not release acceptance, not investment advice and not product or
 production readiness.
 
+## Operator-Surface Wording Hardening
+
+Operator-facing reports may preserve internal machine fields in CSV artifacts,
+but Markdown and human-readable summary surfaces must render bounded display
+wording for risky internal terms:
+
+- `BUYABLE` should display as reviewable evidence with explicit operator review,
+  not as an order instruction.
+- `eligible_for_purchase` should display as local screening evidence with
+  operator review required.
+- `valuation_comment` should display as a valuation evidence note.
+- `fair_value_estimate` should display as a heuristic fair-value estimate based
+  on available inputs.
+- `margin_of_safety_pct` should display as an indicative field, not certainty.
+- `Unterbewertung` or equivalent discount wording should display as possible
+  valuation discount based on current inputs.
+
+This hardening does not alter formulas, rankings, target actions, portfolio
+rules or buy/sell logic. Degraded states such as `MISSING`, `MISSING_DATA`,
+`REVIEW`, `STALE`, `CONFLICT`, `UNKNOWN` and `BLOCKED` must remain visible.
+
 ## No-Investment-Advice Boundary
 
 The review may flag terms such as `BUYABLE`, `BUY_CANDIDATE`, `TOP_UP`,

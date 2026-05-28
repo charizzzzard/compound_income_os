@@ -662,6 +662,7 @@ capabilities:
       - src/valuation_input_provenance_review.py
       - src/valuation_input_temporal_integrity_review.py
       - src/valuation_scoring_semantic_decision_quality_review.py
+      - src/operator_surface_wording.py
     input_artifacts:
       - data/processed/personal_valuation_input_review_queue.csv
       - data/raw/private/fundamentals/personal_valuation_review_input.csv
@@ -685,13 +686,15 @@ capabilities:
       - tests/test_valuation_input_provenance_review.py
       - tests/test_valuation_input_temporal_integrity_review.py
       - tests/test_valuation_scoring_semantic_decision_quality_review.py
+      - tests/test_operator_surface_wording.py
     limitations:
       - "Valuation inputs are reviewed, but no full valuation workbench exists."
       - "Valuation engine behavioral tests cover current deterministic formula behavior and missing/invalid data semantics, but this is not valuation automation, investment advice or investment readiness."
       - "Valuation input provenance/conflict review is read-only evidence; it does not feed values into scoring, does not resolve conflicts and does not implement valuation automation."
       - "Valuation input temporal integrity review is read-only evidence; it checks date ordering against explicit as_of_date and does not implement replay, backtesting or valuation automation."
       - "Valuation/scoring semantic decision-quality review is read-only static evidence for wording and interpretation risks; it does not change formulas, rankings, buy/sell behavior or operator acceptance."
-    next_action: "Operator wording hardening or adversarial input/failure-mode review before valuation automation or scoring formula changes."
+      - "Operator-surface wording hardening maps risky internal valuation/scoring terms to bounded report wording only; internal formulas, rankings, target actions and buy/sell semantics are unchanged."
+    next_action: "Adversarial input/failure-mode review or valuation methodology contract before valuation automation or scoring formula changes."
   - capability_id: simulation_backtesting_monte_carlo
     display_name: Simulation Backtesting Monte Carlo
     status: deferred

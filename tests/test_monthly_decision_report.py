@@ -77,7 +77,8 @@ class MonthlyDecisionReportTests(unittest.TestCase):
             self.assertIn("# Monatlicher Entscheidungsbericht", report)
             self.assertIn("- Monatlicher Cash-Zufluss: 321.0 EUR", report)
             self.assertIn("## Vorschlag fuer die naechsten 321.0 EUR", report)
-            self.assertIn("Kaufbar, aber nicht finanziert", report)
+            self.assertIn("Reviewable candidate; not funded this month; not an order instruction", report)
+            self.assertIn("Operator note: review evidence only", report)
             self.assertIn("`EXIT1`", report)
             self.assertNotIn("`WATCHOK`", report)
         finally:
@@ -161,7 +162,9 @@ class MonthlyDecisionReportTests(unittest.TestCase):
                 rules_path=str(rules_path),
             )
             report = output_path.read_text(encoding="utf-8")
-            self.assertIn("Empfohlene Ausfuehrung: SAVINGS_PLAN_NEW (eligible_for_new_plan)", report)
+            self.assertIn("Execution-mode evidence: SAVINGS_PLAN_NEW (eligible_for_new_plan)", report)
+            self.assertIn("operator review required; no order is placed", report)
+            self.assertNotIn("Empfohlene Ausfuehrung", report)
         finally:
             if rules_path.exists():
                 rules_path.unlink()
@@ -197,6 +200,53 @@ class MonthlyDecisionReportTests(unittest.TestCase):
             )
             report = output_path.read_text(encoding="utf-8")
             self.assertNotIn("Empfohlene Ausfuehrung", report)
+        finally:
+            if rules_path.exists():
+                rules_path.unlink()
+            if output_path.exists():
+                output_path.unlink()
+
+    def test_report_hardens_valuation_operator_wording_without_hiding_review_state(self) -> None:
+        rules = load_portfolio_rules()
+        rules_path = Path("tests") / "_tmp_report_wording_rules.yaml"
+        output_path = Path("tests") / "_tmp_monthly_report_wording.md"
+        try:
+            rules_path.write_text(json.dumps(rules), encoding="utf-8")
+            build_monthly_decision_report(
+                positions_rows=[],
+                score_rows=[
+                    {
+                        "ticker": "RISKY",
+                        "classification": "WATCHLIST",
+                        "data_quality_flag": "REVIEW",
+                        "held_in_portfolio": "false",
+                        "main_risks": "valuation input REVIEW",
+                        "current_weight_pct": "0.0",
+                    }
+                ],
+                ranking_rows=[
+                    {
+                        "rank": "1",
+                        "ticker": "RISKY",
+                        "target_action": "BUY",
+                        "allocation_status": "SELECTED_THIS_MONTH",
+                        "suggested_buy_amount_eur": "250.0",
+                        "rationale": "test rationale",
+                        "constraint_checks": "business_ok=YES",
+                        "valuation_comment": "Die hybride Fair-Value-Sicht signalisiert Unterbewertung. REVIEW",
+                        "mandate_fit_comment": "Improves corridor.",
+                    }
+                ],
+                output_path=str(output_path),
+                rules_path=str(rules_path),
+            )
+            report = output_path.read_text(encoding="utf-8")
+            self.assertIn("Valuation evidence note", report)
+            self.assertIn("Possible valuation discount based on current inputs", report)
+            self.assertIn("heuristic fair-value evidence only", report)
+            self.assertIn("REVIEW", report)
+            self.assertIn("Human Operator remains final authority", report)
+            self.assertNotIn("Unterbewertung", report)
         finally:
             if rules_path.exists():
                 rules_path.unlink()

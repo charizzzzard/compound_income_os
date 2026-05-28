@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from src.common import canonicalize_ticker, ensure_parent_dir, load_yaml_config, read_csv_rows, require_columns, require_unique_tickers, round2, to_float, write_csv_rows
+from src.operator_surface_wording import margin_of_safety_evidence, operator_boundary_note, valuation_evidence_note
 from src.portfolio_rules import load_portfolio_rules
 from src.scoring_engine import DEFAULT_RULES_PATH, evaluate_purchase_readiness
 
@@ -149,9 +150,11 @@ def build_watchlist_report(rows: list[dict[str, Any]], output_path: str) -> Path
     report_lines = [
         "# Watchlist-Bericht",
         "",
+        f"- {operator_boundary_note()}",
+        "",
         "## Top Zielkandidaten",
         "",
-        "| Ticker | Status | Buy Score | Bewertung | Sicherheitsmarge | Mandats-Fit |",
+        "| Ticker | Status | Buy Score | Bewertung | Indicative margin field | Mandats-Fit |",
         "| --- | --- | ---: | ---: | ---: | --- |",
     ]
     for row in rows[:8]:
@@ -162,13 +165,13 @@ def build_watchlist_report(rows: list[dict[str, Any]], output_path: str) -> Path
     report_lines.extend(
         [
             "",
-            "## Bewertungskommentare",
+            "## Valuation Evidence Notes",
             "",
         ]
     )
     for row in rows[:5]:
         report_lines.append(
-            f"- `{row['ticker']}`: {row['valuation_comment']} Sicherheitsmarge {row['margin_of_safety_pct']}%. {row['mandate_fit_comment']}"
+            f"- `{row['ticker']}`: {valuation_evidence_note(row.get('valuation_comment'))} {margin_of_safety_evidence(row.get('margin_of_safety_pct'))}. {row['mandate_fit_comment']}"
         )
 
     review_rows = [row for row in rows if row["status"] in {"REVIEW", "REJECT"} or row["data_quality_flag"] != "OK"]

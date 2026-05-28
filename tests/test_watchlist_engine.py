@@ -7,7 +7,7 @@ from pathlib import Path
 
 from src.monthly_ranking_engine import build_monthly_ranking
 from src.scoring_engine import build_fundamentals_index
-from src.watchlist_engine import build_watchlist_ranked, score_index
+from src.watchlist_engine import build_watchlist_ranked, build_watchlist_report, score_index
 
 
 class WatchlistEngineTests(unittest.TestCase):
@@ -134,6 +134,37 @@ class WatchlistEngineTests(unittest.TestCase):
         self.assertEqual(ranked[0]["ticker"], "AAPL")
         self.assertNotEqual(ranked[0]["status"], "REVIEW")
         self.assertNotEqual(ranked[0]["data_quality_flag"], "MISSING_DATA")
+
+    def test_watchlist_report_hardens_valuation_wording_and_preserves_review_state(self) -> None:
+        output_path = Path("tests") / "_tmp_watchlist_wording_report.md"
+        try:
+            build_watchlist_report(
+                [
+                    {
+                        "ticker": "AAA",
+                        "status": "QUALITY_COMPOUNDER_CANDIDATE",
+                        "buy_score": 75.0,
+                        "valuation_score": 68.0,
+                        "margin_of_safety_pct": 12.5,
+                        "mandate_fit": "Hoch (90.0/100)",
+                        "valuation_comment": "Die hybride Fair-Value-Sicht signalisiert Unterbewertung. REVIEW",
+                        "mandate_fit_comment": "Mandats-Fit 90.0/100.",
+                        "data_quality_flag": "REVIEW",
+                        "main_risks": "valuation input REVIEW",
+                    }
+                ],
+                str(output_path),
+            )
+            report = output_path.read_text(encoding="utf-8")
+            self.assertIn("Operator note: review evidence only", report)
+            self.assertIn("Valuation evidence note", report)
+            self.assertIn("Possible valuation discount based on current inputs", report)
+            self.assertIn("Indicative margin-of-safety field; not certainty: 12.5%", report)
+            self.assertIn("REVIEW", report)
+            self.assertNotIn("Unterbewertung", report)
+        finally:
+            if output_path.exists():
+                output_path.unlink()
 
     def test_blank_watchlist_ticker_raises_clear_error(self) -> None:
         with self.assertRaisesRegex(ValueError, "watchlist input row 2 has blank required field\\(s\\): ticker"):

@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from src.common import ensure_parent_dir, read_csv_rows, require_columns, require_unique_tickers, resolve_repo_path, round2, to_bool, to_float
+from src.operator_surface_wording import allocation_status_label, execution_mode_evidence, operator_boundary_note, valuation_evidence_note
 from src.personal_decision_journal_validation import build_decision_journal_surface_lines, read_decision_journal_surface
 from src.portfolio_rules import load_portfolio_rules
 
@@ -175,14 +176,7 @@ def describe_allocation_status(row: dict[str, str]) -> str:
         else:
             status = "NOT_ELIGIBLE"
 
-    labels = {
-        "SELECTED_THIS_MONTH": "Diesen Monat ausgewaehlt",
-        "ELIGIBLE_NOT_FUNDED": "Kaufbar, aber nicht finanziert",
-        "NOT_ELIGIBLE": "Aktuell nicht kaufbar",
-    }
-    if str(row.get("target_action", "")).upper() == "HOLD_CASH":
-        return "Cash halten"
-    return labels.get(status, status)
+    return allocation_status_label(status, str(row.get("target_action", "")))
 
 
 def execution_mode_text(row: dict[str, str]) -> str:
@@ -191,9 +185,7 @@ def execution_mode_text(row: dict[str, str]) -> str:
     if action not in {"BUY", "TOP_UP"} or not mode:
         return ""
     reason = str(row.get("execution_mode_reason", "")).strip()
-    if reason:
-        return f"Empfohlene Ausfuehrung: {mode} ({reason})"
-    return f"Empfohlene Ausfuehrung: {mode}"
+    return execution_mode_evidence(mode, reason)
 
 
 def build_portfolio_health_lines(
@@ -276,6 +268,7 @@ def build_monthly_decision_report(
         f"- Monatlicher Cash-Zufluss: {monthly_cash} EUR",
         f"- Mindest-Cash-Reserve: {rules['min_cash_reserve_eur']} EUR",
         f"- Cash halten ohne Opportunitaet erlaubt: {rules['allow_hold_cash_if_no_opportunity']}",
+        f"- {operator_boundary_note()}",
         "",
     ]
     lines.extend(build_portfolio_health_lines(cash_refill_rows, rebalance_rows))
@@ -332,7 +325,7 @@ def build_monthly_decision_report(
                 lines.append("- allow_hold_cash_if_no_opportunity ist deaktiviert; das System erzwingt trotzdem keinen schlechten Kauf.")
         else:
             lines.append(
-                f"- {top_pick['ticker']} mit {top_pick['suggested_buy_amount_eur']} EUR ({top_pick['target_action']}): {top_pick['valuation_comment']}"
+                f"- {top_pick['ticker']} mit {top_pick['suggested_buy_amount_eur']} EUR ({top_pick['target_action']}): {valuation_evidence_note(top_pick.get('valuation_comment'))}"
             )
             lines.append("- Cash halten bleibt explizit erlaubt, falls sich Bewertungen oder Datenqualitaet verschlechtern.")
     else:
@@ -341,13 +334,13 @@ def build_monthly_decision_report(
     lines.extend(
         [
             "",
-            "## Warum Kandidaten kaufbar oder nicht kaufbar sind",
+            "## Warum Kandidaten Review-Kriterien erfuellen oder Review brauchen",
             "",
         ]
     )
     for row in top_rows:
         lines.append(
-            f"- `{row['ticker']}`: {describe_allocation_status(row)}. {row['constraint_checks']}. {row['valuation_comment']} {row['mandate_fit_comment']}"
+            f"- `{row['ticker']}`: {describe_allocation_status(row)}. {row['constraint_checks']}. {valuation_evidence_note(row.get('valuation_comment'))} {row['mandate_fit_comment']}"
         )
         execution_line = execution_mode_text(row)
         if execution_line:
