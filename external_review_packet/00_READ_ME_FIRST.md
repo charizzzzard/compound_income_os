@@ -1,11 +1,12 @@
-# Compound Income OS External LLM Review Packet - Valuation / Scoring Semantic Decision Quality Review
+# Compound Income OS External LLM Review Packet - Operator Surface Wording Hardening
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach dem Valuation-/Scoring-Semantic-Decision-Quality-Review-Patch:
+(CIOS) nach dem Operator-Surface-Wording-Hardening-Patch fuer
+Valuation-/Scoring-Outputs:
 
-- commit: `9ac28335cb77db2558f82a26ca926d0e2bede052`
-- message: `feat: add valuation scoring semantic review`
-- status: `VALUATION_SCORING_SEMANTIC_DECISION_QUALITY_REVIEW_ACCEPTED_WITH_FINDINGS`
+- commit: `016630a01f7676c04c821cfe16f8d54f042c9efd`
+- message: `feat: harden valuation scoring operator wording`
+- status: `OPERATOR_SURFACE_WORDING_HARDENING_FOR_VALUATION_SCORING_ACCEPTED_WITH_FINDINGS`
 
 Dieses Packet superseded aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck.
@@ -16,15 +17,15 @@ aktuellen Review-Zweck.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- base_head: `b7aca8929c6c832d27c0ff79e9bf94623496184b`
-- implementation_head: `9ac28335cb77db2558f82a26ca926d0e2bede052`
-- implementation_short_head: `9ac2833`
-- current_handoff_head: `9ac28335cb77db2558f82a26ca926d0e2bede052`
-- current_handoff_short_head: `9ac2833`
-- delta_range: `b7aca8929c6c832d27c0ff79e9bf94623496184b..9ac28335cb77db2558f82a26ca926d0e2bede052`
+- base_head: `1a51bb03b40f8a4b0d6a9b470367a8fd257adc4f`
+- implementation_head: `016630a01f7676c04c821cfe16f8d54f042c9efd`
+- implementation_short_head: `016630a`
+- current_handoff_head: `016630a01f7676c04c821cfe16f8d54f042c9efd`
+- current_handoff_short_head: `016630a`
+- delta_range: `1a51bb03b40f8a4b0d6a9b470367a8fd257adc4f..016630a01f7676c04c821cfe16f8d54f042c9efd`
 - handoff_metadata_commit: `pending_until_metadata_commit`
 - handoff_metadata_commit_note: `metadata commit is created after this file is written; use git HEAD after metadata commit or the operator final report for the exact metadata commit hash`
-- bundle_purpose: `external_review_after_valuation_scoring_semantic_decision_quality_review`
+- bundle_purpose: `external_review_after_operator_surface_wording_hardening_for_valuation_scoring`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -50,6 +51,11 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
 - Pruefe `docs/contracts/VALUATION_SCORING_SEMANTIC_DECISION_QUALITY_CONTRACT.md`
   als kanonische Boundary fuer Valuation-/Scoring-Semantic-Decision-Quality.
+- Pruefe `src/operator_surface_wording.py` als reine Display-Wording-Schicht;
+  sie darf keine Formeln, Rankings, Target Actions, Buy/Sell-Logik oder
+  Portfolioentscheidungen veraendern.
+- Pruefe `src/build_monthly_decision_report.py` und `src/watchlist_engine.py`
+  nur auf operator-facing Markdown-/Summary-Wording, nicht auf neue Fachlogik.
 - Pruefe `src/valuation_scoring_semantic_decision_quality_review.py` als
   read-only Producer; er darf keine Werte in `src/valuation_engine.py`
   einspeisen und keine Formeln oder Rankings veraendern.
@@ -73,6 +79,8 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 Reviewer sollen insbesondere pruefen:
 
 - `docs/contracts/VALUATION_SCORING_SEMANTIC_DECISION_QUALITY_CONTRACT.md`
+- `src/operator_surface_wording.py`
+- `tests/test_operator_surface_wording.py`
 - `src/valuation_scoring_semantic_decision_quality_review.py`
 - `tests/test_valuation_scoring_semantic_decision_quality_review.py`
 - `docs/contracts/VALUATION_ENGINE_BOUNDARY_CONTRACT.md`
@@ -80,6 +88,7 @@ Reviewer sollen insbesondere pruefen:
 - `src/scoring_engine.py`
 - `src/monthly_ranking_engine.py`
 - `src/build_monthly_decision_report.py`
+- `src/watchlist_engine.py`
 - `src/personal_decision_quality_state.py`
 - `configs/test_reproduction_matrix.json`
 - `docs/MODULE_CONTRACTS.md`
@@ -88,9 +97,9 @@ Reviewer sollen insbesondere pruefen:
 
 ## Handoff Integrity Summary
 
-- zip_file_count: `510`
-- zip_size_bytes: `13165761`
-- zip_sha256: `13a46e6324b057e22a02e687c9f0beaf8b65ab372a8e8946b5dceb0dee9759ac`
+- zip_file_count: `512`
+- zip_size_bytes: `13170079`
+- zip_sha256: `ff9fbd35d4bb87fc19321402cec91122223dfd0ff29999ff32212707f80fb384`
 - sha_match: `True`
 - zip_testzip: `None`
 - missing_required: `[]`
@@ -99,18 +108,21 @@ Reviewer sollen insbesondere pruefen:
 - local_path_leak_count: `0`
 - delta_evidence_artifact: `HANDOFF_PATCH_IDENTITY.md`
 - change_classification_artifact: `HANDOFF_CHANGE_CLASSIFICATION.csv`
-- change_classification_rows: `7`
+- change_classification_rows: `11`
 
 ## Validation Reality
 
 Executed in current local repo before implementation commit:
 
+- `python -m unittest tests.test_operator_surface_wording -v`: PASS, 4 tests
+- `python -m unittest tests.test_monthly_decision_report -v`: PASS, 13 tests
+- `python -m unittest tests.test_watchlist_engine -v`: PASS, 9 tests
 - `python -m unittest tests.test_valuation_scoring_semantic_decision_quality_review -v`: PASS, 12 tests
 - `python -m unittest tests.test_valuation_engine_behavior -v`: PASS, 11 tests
 - `python -m unittest tests.test_scoring_engine -v`: PASS, 19 tests
 - `python -m unittest tests.test_personal_decision_quality_state -v`: PASS, 26 tests
 - `python -m unittest tests.test_reproduction_matrix -v`: PASS, 3 tests
-- `python -m unittest discover -s tests -p "test_*.py"`: PASS, 888 tests
+- `python -m unittest discover -s tests -p "test_*.py"`: PASS, 894 tests
 - `git diff --check`: PASS with LF-to-CRLF working-copy warnings only
 - `python -m src.valuation_scoring_semantic_decision_quality_review --as-of-date 2026-05-21`: PASS
 
