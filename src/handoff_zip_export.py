@@ -17,7 +17,14 @@ from src.handoff_bundle import (
 )
 
 INCLUDED_DIRS = ("src", "tests", "docs", "configs", "scripts", "website", "_archive")
-INCLUDED_ROOT_FILES = ("README.md", "AGENTS.md", ".gitattributes", "pyproject.toml", "requirements.txt")
+INCLUDED_ROOT_FILES = (
+    "README.md",
+    "AGENTS.md",
+    ".gitattributes",
+    "pyproject.toml",
+    "pytest.ini",
+    "requirements.txt",
+)
 ZIP_SAFE_REPRO_FILES = (
     "data/raw/personal_fundamentals_evidence_template.csv",
     "data/raw/personal_fundamentals_snapshot_review_template.csv",

@@ -44,6 +44,26 @@ REQUIRED_NESTED_KEYS = [
     "operator_record_required",
     "cannot_override",
 ]
+REQUIRED_CHILDREN_BY_PARENT = {
+    "failure_modes": [
+        "missing",
+        "stale",
+        "unknown",
+        "failed",
+        "not_applicable",
+    ],
+    "severity_semantics": [
+        "PASS",
+        "WARN",
+        "FAIL",
+        "NOT_AVAILABLE",
+    ],
+    "override_policy": [
+        "allowed",
+        "operator_record_required",
+        "cannot_override",
+    ],
+}
 
 
 class RuntimeGateDefinitionTemplateTests(unittest.TestCase):
@@ -60,6 +80,36 @@ class RuntimeGateDefinitionTemplateTests(unittest.TestCase):
             self.assertRegex(yaml_block, rf"(?m)^{re.escape(key)}:\s*", key)
         for key in REQUIRED_NESTED_KEYS:
             self.assertRegex(yaml_block, rf"(?m)^\s+{re.escape(key)}:\s*", key)
+        self._assert_required_parent_child_keys_present(yaml_block)
+
+    def _extract_parent_section(self, yaml_block: str, parent: str) -> str:
+        lines = yaml_block.splitlines()
+        start_index = next(
+            (
+                index
+                for index, line in enumerate(lines)
+                if re.match(rf"^{re.escape(parent)}:\s*$", line)
+            ),
+            None,
+        )
+        self.assertIsNotNone(start_index, f"Missing parent section: {parent}")
+
+        section_lines: list[str] = []
+        for line in lines[start_index + 1 :]:
+            if line and not line.startswith(" "):
+                break
+            section_lines.append(line)
+        return "\n".join(section_lines)
+
+    def _assert_required_parent_child_keys_present(self, yaml_block: str) -> None:
+        for parent, child_keys in REQUIRED_CHILDREN_BY_PARENT.items():
+            section = self._extract_parent_section(yaml_block, parent)
+            for child_key in child_keys:
+                self.assertRegex(
+                    section,
+                    rf"(?m)^\s+{re.escape(child_key)}:\s*",
+                    f"{child_key} must be nested under {parent}",
+                )
 
     def test_template_exists_and_contains_required_fields(self) -> None:
         self.assertTrue(TEMPLATE_PATH.exists())
@@ -104,6 +154,21 @@ class RuntimeGateDefinitionTemplateTests(unittest.TestCase):
         self.assertIn("gate_id", text)
         with self.assertRaises(AssertionError):
             self._assert_required_yaml_like_keys_present(mutated_block)
+
+    def test_nested_key_misplacement_is_rejected(self) -> None:
+        yaml_block = self._extract_template_yaml_block(self._read(TEMPLATE_PATH))
+        misplaced_block = yaml_block.replace("  PASS: \"\"\n", "")
+        misplaced_block = misplaced_block.replace("  missing: \"\"\n", "  missing: \"\"\n  PASS: \"\"\n")
+
+        with self.assertRaises(AssertionError):
+            self._assert_required_parent_child_keys_present(misplaced_block)
+
+    def test_parent_section_missing_required_child_is_rejected(self) -> None:
+        yaml_block = self._extract_template_yaml_block(self._read(TEMPLATE_PATH))
+        missing_child_block = yaml_block.replace("  not_applicable: \"\"\n", "")
+
+        with self.assertRaises(AssertionError):
+            self._assert_required_parent_child_keys_present(missing_child_block)
 
     def test_template_contains_allowed_classifications(self) -> None:
         text = self._read(TEMPLATE_PATH)

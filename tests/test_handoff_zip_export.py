@@ -196,6 +196,7 @@ class HandoffZipExportTests(unittest.TestCase):
         joined = "\n".join(sorted(names))
         self.assertIn("tests/handoff_zip_export_fixture/cache_source/safe.txt", names)
         self.assertIn(".gitattributes", names)
+        self.assertIn("pytest.ini", names)
         self.assertIn("data/raw/personal_fundamentals_evidence_template.csv", names)
         self.assertIn("data/raw/personal_fundamentals_snapshot_review_template.csv", names)
         self.assertIn("data/raw/personal_sec_identity_map_template.csv", names)
