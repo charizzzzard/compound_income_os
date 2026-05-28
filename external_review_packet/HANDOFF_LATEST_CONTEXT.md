@@ -1,23 +1,23 @@
-# HANDOFF LATEST CONTEXT - Operator Surface Wording Hardening for Valuation / Scoring
+# HANDOFF LATEST CONTEXT - ZIP-Safe Watchlist Test Reproduction Fix
 
 project_name: compound_income_os
 canonical_name: Compound Income OS
 short_name: CIOS
 profile: full_review
 bundle_name: HANDOFF_LATEST
-bundle_purpose: external_review_after_operator_surface_wording_hardening_for_valuation_scoring
+bundle_purpose: external_review_after_watchlist_zip_safe_fixture_fix
 created_at_utc: see_zip_internal_handoff_context
 branch: main
-head_before_implementation: 1a51bb03b40f8a4b0d6a9b470367a8fd257adc4f
-implementation_head: 016630a01f7676c04c821cfe16f8d54f042c9efd
-implementation_short_head: 016630a
-current_handoff_head: 016630a01f7676c04c821cfe16f8d54f042c9efd
-current_handoff_short_head: 016630a
-delta_range: 1a51bb03b40f8a4b0d6a9b470367a8fd257adc4f..016630a01f7676c04c821cfe16f8d54f042c9efd
+head_before_implementation: 6561ed78ec4204885afb62423d346215c0fc1706
+implementation_head: 1f04816860bbec2970603d68bbdfe7fe36d286fc
+implementation_short_head: 1f04816
+current_handoff_head: 1f04816860bbec2970603d68bbdfe7fe36d286fc
+current_handoff_short_head: 1f04816
+delta_range: 6561ed78ec4204885afb62423d346215c0fc1706..1f04816860bbec2970603d68bbdfe7fe36d286fc
 handoff_metadata_commit: pending_until_metadata_commit
 handoff_metadata_commit_note: the metadata commit is created after this file is written; use git HEAD after the metadata commit or the operator final report for the exact metadata commit hash. This avoids a self-referential hash requirement.
-implementation_commit_message: feat: harden valuation scoring operator wording
-implementation_status: OPERATOR_SURFACE_WORDING_HARDENING_FOR_VALUATION_SCORING_ACCEPTED_WITH_FINDINGS
+implementation_commit_message: test: make watchlist ranking fixture zip safe
+implementation_status: WATCHLIST_ZIP_SAFE_REPRODUCTION_FIX_ACCEPTED_WITH_FINDINGS
 tracked_source_worktree_clean_before_handoff_generation: True
 zip_internal_dirty_worktree_present: False
 external_metadata_dirty_after_zip_generation_before_commit: True
@@ -28,21 +28,21 @@ canonical_checksum: external_review_packet/HANDOFF_LATEST.sha256
 canonical_readme: external_review_packet/00_READ_ME_FIRST.md
 
 zip_file_count: 512
-zip_size_bytes: 13170079
-zip_sha256: ff9fbd35d4bb87fc19321402cec91122223dfd0ff29999ff32212707f80fb384
+zip_size_bytes: 13169694
+zip_sha256: 7de713aa27b0692226999ffeec79d34d2a616a30952d612ef7937cfe5c0ca1a1
 sha_match: True
 zip_testzip: None
 missing_required: []
 nested_zip_count: 0
 forbidden_match_count: 0
 local_path_leak_count: 0
-internal_head: 016630a01f7676c04c821cfe16f8d54f042c9efd
-internal_base_head: 1a51bb03b40f8a4b0d6a9b470367a8fd257adc4f
-internal_delta_range: 1a51bb03b40f8a4b0d6a9b470367a8fd257adc4f..016630a01f7676c04c821cfe16f8d54f042c9efd
+internal_head: 1f04816860bbec2970603d68bbdfe7fe36d286fc
+internal_base_head: 6561ed78ec4204885afb62423d346215c0fc1706
+internal_delta_range: 6561ed78ec4204885afb62423d346215c0fc1706..1f04816860bbec2970603d68bbdfe7fe36d286fc
 internal_dirty_worktree_present: False
 delta_evidence_artifact: HANDOFF_PATCH_IDENTITY.md
 change_classification_artifact: HANDOFF_CHANGE_CLASSIFICATION.csv
-change_classification_rows: 11
+change_classification_rows: 1
 delta_evidence_status: COMPLETE
 validation_result_semantics: HANDOFF_VALIDATION.txt records commands as RECORDED_VALIDATION; pass/fail execution evidence must come from this external context, an operator final report, or an extracted-ZIP reproduction run.
 
@@ -64,27 +64,17 @@ Reviewer-Instruktionen.
 ## Current Packet Scope
 
 Dieses Packet synchronisiert den externen Review-Kontext auf den committed
-Repo-Stand `016630a01f7676c04c821cfe16f8d54f042c9efd` nach
-`feat: harden valuation scoring operator wording`.
+Repo-Stand `1f04816860bbec2970603d68bbdfe7fe36d286fc` nach
+`test: make watchlist ranking fixture zip safe`.
 
 Review-Schwerpunkte:
 
-- `docs/contracts/VALUATION_SCORING_SEMANTIC_DECISION_QUALITY_CONTRACT.md`
-- `src/operator_surface_wording.py`
-- `tests/test_operator_surface_wording.py`
-- `src/valuation_scoring_semantic_decision_quality_review.py`
-- `tests/test_valuation_scoring_semantic_decision_quality_review.py`
-- `docs/contracts/VALUATION_ENGINE_BOUNDARY_CONTRACT.md`
-- `src/valuation_engine.py`
-- `src/scoring_engine.py`
+- `tests/test_watchlist_engine.py`
+- `src.savings_plan_registry.REGISTRY_FIELDS`
 - `src/monthly_ranking_engine.py`
-- `src/build_monthly_decision_report.py`
 - `src/watchlist_engine.py`
-- `src/personal_decision_quality_state.py`
-- `configs/test_reproduction_matrix.json`
-- `docs/MODULE_CONTRACTS.md`
-- `docs/architecture/CIOS_FEATURE_STATUS.yaml`
-- `docs/architecture/CURRENT_KNOWN_GAPS.md`
+- Handoff ZIP extraction and ZIP-safe test reproduction for watchlist/operator
+  wording/semantic-review tests
 
 ## Validation Actually Performed
 
@@ -102,15 +92,12 @@ Executed in current local repo before implementation commit:
 - `python -m unittest tests.test_valuation_scoring_semantic_decision_quality_review -v`
   - result: PASS
   - tests: 12
-- `python -m unittest tests.test_valuation_engine_behavior -v`
+- `python -m unittest tests.test_savings_plan_registry -v`
   - result: PASS
   - tests: 11
-- `python -m unittest tests.test_scoring_engine -v`
+- `python -m unittest tests.test_savings_plan_routing -v`
   - result: PASS
-  - tests: 19
-- `python -m unittest tests.test_personal_decision_quality_state -v`
-  - result: PASS
-  - tests: 26
+  - tests: 21
 - `python -m unittest tests.test_reproduction_matrix -v`
   - result: PASS
   - tests: 3
@@ -120,15 +107,11 @@ Executed in current local repo before implementation commit:
 - `git diff --check`
   - result: PASS
   - notes: Git reported LF-to-CRLF working-copy warnings only.
-- `python -m src.valuation_scoring_semantic_decision_quality_review --as-of-date 2026-05-21`
-  - result: PASS
-  - checks_total: 152
-  - ok_count: 18
-  - warning_count: 108
-  - review_count: 26
-  - fail_count: 0
-  - not_applicable_count: 0
-  - highest_severity: P1
+- Extracted ZIP context validation:
+  - `python -m unittest tests.test_watchlist_engine -v`: PASS, 9 tests
+  - `python -m unittest tests.test_operator_surface_wording -v`: PASS, 4 tests
+  - `python -m unittest tests.test_valuation_scoring_semantic_decision_quality_review -v`: PASS, 12 tests
+  - `.git` directory in extracted ZIP context: False
 
 Optional validation reality:
 
@@ -145,25 +128,19 @@ reviewer executed them from the ZIP.
 
 ## Acceptance Boundary
 
-This patch accepts only operator-facing wording hardening for existing
-valuation/scoring review surfaces:
+This patch accepts only test self-containment hardening for ZIP/external
+handoff reproduction:
 
-- bounded display wording for risky internal terms in monthly/watchlist
-  Markdown surfaces
-- `BUYABLE` / `eligible_for_purchase` rendered as review evidence, not order
-  instructions
-- `valuation_comment`, `fair_value_estimate`, `margin_of_safety_pct` and
-  discount wording rendered with heuristic/indicative/operator-review language
-- degraded states such as `MISSING`, `MISSING_DATA`, `REVIEW`, `STALE`,
-  `CONFLICT`, `UNKNOWN` and `BLOCKED` remain visible
-- no private raw input, no network, no LLM call, no `.git` dependency for the
-  new wording tests
+- `tests/test_watchlist_engine.py` now writes a deterministic header-only
+  savings-plan registry fixture under `tests/`
+- the test passes that fixture explicitly as `savings_plan_registry_path`
+- the test no longer relies on omitted `data/raw/savings_plan_registry.csv`
+- the original assertion intent remains unchanged: missing valuation/scoring
+  data stays blocked and the candidate remains `DO_NOT_BUY` / `NOT_ELIGIBLE`
+- no raw/private fixture was added to the repository or handoff
 
-The current semantic review still finds no `FAIL` findings. It still reports
-P1 review surfaces in internal/source terminology, but the operator-facing
-Markdown report surfaces now render safer wording around the previously
-identified labels. This is a display-boundary change only, not a behavior
-change.
+The extracted ZIP validation confirms `tests.test_watchlist_engine` runs
+without a `.git` directory and without private/raw savings-plan data.
 
 This patch does not implement:
 
@@ -193,7 +170,6 @@ Human Operator remains the final acceptance authority.
 
 Recommended next patch: `ADVERSARIAL_INPUT_AND_FAILURE_MODE_REVIEW_FOR_VALUATION_SCORING`.
 
-Rationale: wording hardening reduces operator-surface interpretation risk, but
-adversarial malformed/conflicting input and failure-mode wording still need a
-separate read-only review before any valuation methodology, formula or
-automation work.
+Rationale: ZIP-safe watchlist reproduction is restored. The next safe valuation
+/ scoring hardening step remains adversarial malformed/conflicting input and
+failure-mode wording review before any methodology, formula or automation work.
