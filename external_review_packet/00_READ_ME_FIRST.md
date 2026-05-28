@@ -1,11 +1,11 @@
-# Compound Income OS External LLM Review Packet - ZIP-Safe Reproduction Hardening
+# Compound Income OS External LLM Review Packet - Handoff Delta Evidence Hardening
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach dem Reproducibility-Hardening-Patch:
+(CIOS) nach dem Handoff-Delta-Evidence-Hardening-Patch:
 
-- commit: `31a9d20986ad6731fd18f9b371d2881292db20c6`
-- message: `test: add zip-safe reproduction smoke`
-- status: `ZIP_SAFE_REPRODUCTION_HARDENING_ACCEPTED_WITH_FINDINGS`
+- commit: `40f43ae9662e72cb530ca8e407f657dda4a6a289`
+- message: `chore: add handoff delta evidence`
+- status: `HANDOFF_DELTA_EVIDENCE_HARDENING_ACCEPTED_WITH_FINDINGS`
 
 Dieses Packet superseded aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck.
@@ -16,13 +16,15 @@ aktuellen Review-Zweck.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- implementation_head: `31a9d20986ad6731fd18f9b371d2881292db20c6`
-- implementation_short_head: `31a9d20`
-- current_handoff_head: `31a9d20986ad6731fd18f9b371d2881292db20c6`
-- current_handoff_short_head: `31a9d20`
+- base_head: `f4fa942b3f4d82f7ac1320dd5805d3319e9b6127`
+- implementation_head: `40f43ae9662e72cb530ca8e407f657dda4a6a289`
+- implementation_short_head: `40f43ae`
+- current_handoff_head: `40f43ae9662e72cb530ca8e407f657dda4a6a289`
+- current_handoff_short_head: `40f43ae`
+- delta_range: `f4fa942b3f4d82f7ac1320dd5805d3319e9b6127..40f43ae9662e72cb530ca8e407f657dda4a6a289`
 - handoff_metadata_commit: `pending_until_metadata_commit`
 - handoff_metadata_commit_note: `metadata commit is created after this file is written; use git HEAD after metadata commit or the operator final report for the exact metadata commit hash`
-- bundle_purpose: `external_review_after_zip_safe_reproduction_hardening`
+- bundle_purpose: `external_review_after_handoff_delta_evidence_hardening`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -46,15 +48,15 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 
 - Verwende volle repo-relative Pfade in Findings.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
-- Starte ZIP-safe Reproduktion mit:
-  - `python -m unittest tests.test_zip_safe_operator_journey -v`
-  - `python -m unittest tests.test_reproduction_matrix -v`
+- Pruefe `HANDOFF_PATCH_IDENTITY.md`, bevor ein Snapshot als Patch-Delta-Beweis
+  behandelt wird.
+- Pruefe `HANDOFF_CHANGE_CLASSIFICATION.csv`; sie muss fuer diesen Patch
+  Git-Delta-Zeilen enthalten und darf nicht nur aus einem Header bestehen.
+- Behandle `HANDOFF_VALIDATION.txt` als `RECORDED_VALIDATION`, sofern keine
+  externe Kontextdatei oder ein Operatorbericht eine tatsaechliche Ausfuehrung
+  als `EXECUTED_IN_CURRENT_REPO` oder `EXECUTED_IN_ZIP_CONTEXT` belegt.
 - Verwende `configs/test_reproduction_matrix.json`, um ZIP-safe, local-repo,
   Git-context, private-input und optional-tooling Checks zu unterscheiden.
-- Behandle lokale Full-Suite-Ergebnisse als `EXECUTED_IN_CURRENT_REPO`, nicht
-  automatisch als `EXECUTED_IN_ZIP_CONTEXT`.
-- Behandle `tests.test_handoff_bundle` und `tests.test_handoff_zip_export` als
-  Git-/Local-Repo-Kontextchecks, nicht als ZIP-only Beweis.
 - Behandle fehlendes `pytest` oder `ruff` als Environment-Realitaet, nicht als
   Erfolg und nicht automatisch als Repo-Logikfehler.
 - Inferiere keine Release-, Product-, Investment-, Broker-Import-, Replay-,
@@ -67,16 +69,16 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 
 Reviewer sollen insbesondere pruefen:
 
-- `configs/test_reproduction_matrix.json`
-- `tests/test_reproduction_matrix.py`
-- `tests/test_zip_safe_operator_journey.py`
+- `HANDOFF_PATCH_IDENTITY.md`
+- `HANDOFF_CHANGE_CLASSIFICATION.csv`
+- `HANDOFF_VALIDATION.txt`
+- `src/handoff_bundle.py`
+- `tests/test_handoff_bundle.py`
+- `tests/test_handoff_zip_export.py`
+- `tests/test_runtime_gate_definition_template.py`
+- `docs/HANDOFF_CONTRACT.md`
 - `docs/governance/EXTERNAL_REPRODUCTION.md`
 - `README.md`
-- `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
-- `src/data_freshness.py`
-- `src/dashboard_operator_summary.py`
-- `src/handoff_zip_export.py`
-- `src/handoff_bundle.py`
 
 ## Explicit Non-Scope
 
