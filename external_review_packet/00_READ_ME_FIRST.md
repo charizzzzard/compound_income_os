@@ -1,11 +1,12 @@
-# Compound Income OS External LLM Review Packet - ZIP-Safe Watchlist Test Reproduction Fix
+# Compound Income OS External LLM Review Packet - Adversarial Input and Failure-Mode Review
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach dem ZIP-safe Watchlist-/Monthly-Ranking-Testreproduktionsfix:
+(CIOS) nach dem Adversarial-Input- und Failure-Mode-Review-Patch fuer
+Valuation-/Scoring-Semantik:
 
-- commit: `1f04816860bbec2970603d68bbdfe7fe36d286fc`
-- message: `test: make watchlist ranking fixture zip safe`
-- status: `WATCHLIST_ZIP_SAFE_REPRODUCTION_FIX_ACCEPTED_WITH_FINDINGS`
+- commit: `0f754c38553d66739f33ff9fb14f00b852982e21`
+- message: `test: add adversarial valuation scoring review coverage`
+- status: `ADVERSARIAL_INPUT_FAILURE_MODE_REVIEW_FOR_VALUATION_SCORING_ACCEPTED_WITH_FINDINGS`
 
 Dieses Packet superseded aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck.
@@ -16,15 +17,15 @@ aktuellen Review-Zweck.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- base_head: `6561ed78ec4204885afb62423d346215c0fc1706`
-- implementation_head: `1f04816860bbec2970603d68bbdfe7fe36d286fc`
-- implementation_short_head: `1f04816`
-- current_handoff_head: `1f04816860bbec2970603d68bbdfe7fe36d286fc`
-- current_handoff_short_head: `1f04816`
-- delta_range: `6561ed78ec4204885afb62423d346215c0fc1706..1f04816860bbec2970603d68bbdfe7fe36d286fc`
+- base_head: `f8cd075dbc9deb332da747809eb58cda66e5d3eb`
+- implementation_head: `0f754c38553d66739f33ff9fb14f00b852982e21`
+- implementation_short_head: `0f754c3`
+- current_handoff_head: `0f754c38553d66739f33ff9fb14f00b852982e21`
+- current_handoff_short_head: `0f754c3`
+- delta_range: `f8cd075dbc9deb332da747809eb58cda66e5d3eb..0f754c38553d66739f33ff9fb14f00b852982e21`
 - handoff_metadata_commit: `pending_until_metadata_commit`
 - handoff_metadata_commit_note: `metadata commit is created after this file is written; use git HEAD after metadata commit or the operator final report for the exact metadata commit hash`
-- bundle_purpose: `external_review_after_watchlist_zip_safe_fixture_fix`
+- bundle_purpose: `external_review_after_adversarial_input_failure_mode_review_for_valuation_scoring`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -48,13 +49,16 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 
 - Verwende volle repo-relative Pfade in Findings.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
-- Pruefe `tests/test_watchlist_engine.py` darauf, dass
-  `test_watchlist_and_monthly_ranking_block_missing_data_consistently` keine
-  implizite Abhaengigkeit auf `data/raw/savings_plan_registry.csv` mehr hat.
-- Pruefe, dass die Test-Fixture header-only, synthetisch und unter `tests/`
-  temporaer erzeugt wird.
-- Pruefe, dass `build_monthly_ranking(...)` im betroffenen Test einen
-  expliziten `savings_plan_registry_path` erhaelt.
+- Pruefe `docs/contracts/VALUATION_SCORING_SEMANTIC_DECISION_QUALITY_CONTRACT.md`
+  auf die neue Adversarial-Input-/Failure-Mode-Semantik.
+- Pruefe `src/valuation_scoring_semantic_decision_quality_review.py` auf
+  deterministic, read-only Regeln fuer malformed numeric surfaces, risky action
+  wording und failure-mode visibility.
+- Pruefe `src/valuation_engine.py` nur darauf, dass degradierte
+  `data_quality_flag`-States und invalid `current_price_eur` nicht still auf
+  `OK` gehoben werden.
+- Pruefe, dass keine Formeln, Rankings, Buy/Sell-Logik oder Automation
+  eingefuehrt wurden.
 - Behandle `HANDOFF_VALIDATION.txt` als `RECORDED_VALIDATION`, sofern keine
   externe Kontextdatei oder ein Operatorbericht eine tatsaechliche Ausfuehrung
   als `EXECUTED_IN_CURRENT_REPO` oder `EXECUTED_IN_ZIP_CONTEXT` belegt.
@@ -71,22 +75,28 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 
 Reviewer sollen insbesondere pruefen:
 
-- `tests/test_watchlist_engine.py`
-- `src/savings_plan_registry.py`
+- `docs/contracts/VALUATION_SCORING_SEMANTIC_DECISION_QUALITY_CONTRACT.md`
+- `src/valuation_scoring_semantic_decision_quality_review.py`
+- `tests/test_valuation_scoring_semantic_decision_quality_review.py`
+- `src/valuation_engine.py`
+- `tests/test_valuation_engine_behavior.py`
+- `src/scoring_engine.py`
+- `tests/test_scoring_engine.py`
 - `src/monthly_ranking_engine.py`
 - `src/watchlist_engine.py`
-- `tests/test_savings_plan_registry.py`
-- `tests/test_savings_plan_routing.py`
+- `tests/test_watchlist_engine.py`
+- `tests/test_monthly_decision_report.py`
 - extracted ZIP context execution for:
-  - `python -m unittest tests.test_watchlist_engine -v`
-  - `python -m unittest tests.test_operator_surface_wording -v`
   - `python -m unittest tests.test_valuation_scoring_semantic_decision_quality_review -v`
+  - `python -m unittest tests.test_valuation_engine_behavior -v`
+  - `python -m unittest tests.test_scoring_engine -v`
+  - `python -m unittest tests.test_watchlist_engine -v`
 
 ## Handoff Integrity Summary
 
 - zip_file_count: `512`
-- zip_size_bytes: `13169694`
-- zip_sha256: `7de713aa27b0692226999ffeec79d34d2a616a30952d612ef7937cfe5c0ca1a1`
+- zip_size_bytes: `13172014`
+- zip_sha256: `9d4d98df929d6585be5d8e528c59f836d518d644e50bc15d0f8d38e5f50f4581`
 - sha_match: `True`
 - zip_testzip: `None`
 - missing_required: `[]`
@@ -95,27 +105,27 @@ Reviewer sollen insbesondere pruefen:
 - local_path_leak_count: `0`
 - delta_evidence_artifact: `HANDOFF_PATCH_IDENTITY.md`
 - change_classification_artifact: `HANDOFF_CHANGE_CLASSIFICATION.csv`
-- change_classification_rows: `1`
+- change_classification_rows: `6`
 
 ## Validation Reality
 
 Executed in current local repo before implementation commit:
 
-- `python -m unittest tests.test_operator_surface_wording -v`: PASS, 4 tests
-- `python -m unittest tests.test_monthly_decision_report -v`: PASS, 13 tests
+- `python -m unittest tests.test_valuation_scoring_semantic_decision_quality_review -v`: PASS, 15 tests
+- `python -m unittest tests.test_valuation_engine_behavior -v`: PASS, 14 tests
+- `python -m unittest tests.test_scoring_engine -v`: PASS, 20 tests
 - `python -m unittest tests.test_watchlist_engine -v`: PASS, 9 tests
-- `python -m unittest tests.test_valuation_scoring_semantic_decision_quality_review -v`: PASS, 12 tests
-- `python -m unittest tests.test_savings_plan_registry -v`: PASS, 11 tests
-- `python -m unittest tests.test_savings_plan_routing -v`: PASS, 21 tests
-- `python -m unittest tests.test_reproduction_matrix -v`: PASS, 3 tests
-- `python -m unittest discover -s tests -p "test_*.py"`: PASS, 894 tests
+- `python -m unittest tests.test_monthly_decision_report -v`: PASS, 13 tests
+- `python -m unittest discover -s tests -p "test_*.py"`: PASS, 901 tests
 - `git diff --check`: PASS with LF-to-CRLF working-copy warnings only
+- `python -m src.valuation_scoring_semantic_decision_quality_review --as-of-date 2026-05-21`: PASS, checks_total=482, review_count=49, fail_count=0, highest_severity=P1
 
 Executed from extracted ZIP context without `.git`:
 
+- `python -m unittest tests.test_valuation_scoring_semantic_decision_quality_review -v`: PASS, 15 tests
+- `python -m unittest tests.test_valuation_engine_behavior -v`: PASS, 14 tests
+- `python -m unittest tests.test_scoring_engine -v`: PASS, 20 tests
 - `python -m unittest tests.test_watchlist_engine -v`: PASS, 9 tests
-- `python -m unittest tests.test_operator_surface_wording -v`: PASS, 4 tests
-- `python -m unittest tests.test_valuation_scoring_semantic_decision_quality_review -v`: PASS, 12 tests
 
 Optional tools:
 
