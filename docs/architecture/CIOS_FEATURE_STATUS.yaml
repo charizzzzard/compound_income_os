@@ -655,6 +655,7 @@ capabilities:
     evidence_files:
       - src/valuation_engine.py
       - src/personal_valuation_input_contract.py
+      - docs/contracts/VALUATION_ENGINE_BOUNDARY_CONTRACT.md
     input_artifacts:
       - data/processed/personal_valuation_input_review_queue.csv
     output_artifacts:
@@ -663,8 +664,10 @@ capabilities:
       - reports/<date>/personal_valuation_input_contract_report.md
     tests:
       - tests/test_personal_valuation_input_contract.py
+      - tests/test_valuation_engine_behavior.py
     limitations:
       - "Valuation inputs are reviewed, but no full valuation workbench exists."
+      - "Valuation engine behavioral tests cover current deterministic formula behavior and missing/invalid data semantics, but this is not valuation automation, investment advice or investment readiness."
     next_action: "Personal input data templates or Research Case Workbench."
   - capability_id: simulation_backtesting_monte_carlo
     display_name: Simulation Backtesting Monte Carlo
