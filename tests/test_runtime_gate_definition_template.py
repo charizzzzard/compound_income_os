@@ -1,17 +1,65 @@
 from __future__ import annotations
 
 import json
+import re
 import unittest
 from pathlib import Path
 
 
 TEMPLATE_PATH = Path("docs/contracts/RUNTIME_GATE_DEFINITION_TEMPLATE.md")
 BOUNDARY_CONTRACT_PATH = Path("docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md")
+REQUIRED_TOP_LEVEL_KEYS = [
+    "gate_id",
+    "gate_name",
+    "gate_classification",
+    "owner_surface",
+    "trigger_condition",
+    "runtime_surface_impacted",
+    "input_artifacts",
+    "output_artifacts",
+    "failure_modes",
+    "severity_semantics",
+    "blocking_behavior",
+    "override_policy",
+    "rollback_or_correction_path",
+    "evidence_required",
+    "tests_required",
+    "operator_acceptance_required",
+    "release_acceptance_semantics",
+    "non_scope",
+    "promotion_prerequisites",
+    "demotion_or_retraction_conditions",
+]
+REQUIRED_NESTED_KEYS = [
+    "missing",
+    "stale",
+    "unknown",
+    "failed",
+    "not_applicable",
+    "PASS",
+    "WARN",
+    "FAIL",
+    "NOT_AVAILABLE",
+    "allowed",
+    "operator_record_required",
+    "cannot_override",
+]
 
 
 class RuntimeGateDefinitionTemplateTests(unittest.TestCase):
     def _read(self, path: str | Path) -> str:
         return Path(path).read_text(encoding="utf-8")
+
+    def _extract_template_yaml_block(self, text: str) -> str:
+        match = re.search(r"(?ms)^## Template\s*^```yaml\s*\n(?P<yaml>.*?)^```$", text)
+        self.assertIsNotNone(match, "Template document must contain a fenced yaml block under ## Template")
+        return match.group("yaml")
+
+    def _assert_required_yaml_like_keys_present(self, yaml_block: str) -> None:
+        for key in REQUIRED_TOP_LEVEL_KEYS:
+            self.assertRegex(yaml_block, rf"(?m)^{re.escape(key)}:\s*", key)
+        for key in REQUIRED_NESTED_KEYS:
+            self.assertRegex(yaml_block, rf"(?m)^\s+{re.escape(key)}:\s*", key)
 
     def test_template_exists_and_contains_required_fields(self) -> None:
         self.assertTrue(TEMPLATE_PATH.exists())
@@ -41,6 +89,22 @@ class RuntimeGateDefinitionTemplateTests(unittest.TestCase):
         ]:
             self.assertIn(field, text)
 
+    def test_required_fields_are_present_in_fenced_yaml_template_block(self) -> None:
+        yaml_block = self._extract_template_yaml_block(self._read(TEMPLATE_PATH))
+
+        self._assert_required_yaml_like_keys_present(yaml_block)
+
+    def test_required_field_check_uses_yaml_block_not_document_text(self) -> None:
+        text = self._read(TEMPLATE_PATH)
+        yaml_block = self._extract_template_yaml_block(text)
+        mutated_block = "\n".join(
+            line for line in yaml_block.splitlines() if not line.startswith("gate_id:")
+        )
+
+        self.assertIn("gate_id", text)
+        with self.assertRaises(AssertionError):
+            self._assert_required_yaml_like_keys_present(mutated_block)
+
     def test_template_contains_allowed_classifications(self) -> None:
         text = self._read(TEMPLATE_PATH)
 
@@ -51,6 +115,20 @@ class RuntimeGateDefinitionTemplateTests(unittest.TestCase):
             "future_runtime_enforced",
         ]:
             self.assertIn(classification, text)
+
+    def test_template_contains_classification_crosswalk(self) -> None:
+        text = self._read(TEMPLATE_PATH)
+
+        for phrase in [
+            "Classification Crosswalk",
+            "future_runtime_enforced",
+            "proposal-only",
+            "not the same as actual `runtime_enforced`",
+            "docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md",
+            "explicit Human Operator acceptance",
+            "cannot promote any current producer to runtime enforcement",
+        ]:
+            self.assertIn(phrase, text)
 
     def test_template_contains_hard_non_overclaim_language(self) -> None:
         text = self._read(TEMPLATE_PATH)

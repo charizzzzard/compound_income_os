@@ -50,8 +50,17 @@ Allowed `gate_classification` values:
 - `runtime_relevant_candidate`
 - `future_runtime_enforced`
 
-`future_runtime_enforced` is only a proposal classification. It is not runtime
-enforcement until a later accepted implementation proves enforcement behavior.
+## Classification Crosswalk
+
+`future_runtime_enforced` is a proposal-only classification in this template.
+It is not the same as actual `runtime_enforced` status.
+
+Actual `runtime_enforced` status remains governed by
+`docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md`. Actual runtime-enforced
+behavior requires a later explicitly scoped implementation, tests, evidence
+artifacts and explicit Human Operator acceptance.
+
+Filling out this template cannot promote any current producer to runtime enforcement.
 
 ## Template
 
