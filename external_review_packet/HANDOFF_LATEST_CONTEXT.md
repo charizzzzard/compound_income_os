@@ -1,23 +1,22 @@
-# HANDOFF LATEST CONTEXT - Runtime Gate Template Nested-Key Hardening
+# HANDOFF LATEST CONTEXT - ZIP-Safe Reproduction Hardening
 
 project_name: compound_income_os
 canonical_name: Compound Income OS
 short_name: CIOS
 profile: full_review
 bundle_name: HANDOFF_LATEST
-bundle_purpose: external_review_after_runtime_gate_template_nested_key_hardening
+bundle_purpose: external_review_after_zip_safe_reproduction_hardening
 created_at_utc: see_zip_internal_handoff_context
 branch: main
-head_before_implementation: 579d50b397d443e200d0b7967cc3693eefe214bf
-implementation_head: b285b2156b4f13b065f6294f7b42d546c05fdc9a
-implementation_short_head: b285b21
-current_handoff_head: b285b2156b4f13b065f6294f7b42d546c05fdc9a
-current_handoff_short_head: b285b21
+head_before_implementation: 99c42e6d925d7dab48ce93423a94f14e1d27c3ba
+implementation_head: 31a9d20986ad6731fd18f9b371d2881292db20c6
+implementation_short_head: 31a9d20
+current_handoff_head: 31a9d20986ad6731fd18f9b371d2881292db20c6
+current_handoff_short_head: 31a9d20
 handoff_metadata_commit: pending_until_metadata_commit
 handoff_metadata_commit_note: the metadata commit is created after this file is written; use git HEAD after the metadata commit or the operator final report for the exact metadata commit hash. This avoids a self-referential hash requirement.
-implementation_commit_message: tests: harden runtime gate template nested keys
-implementation_status: RUNTIME_GATE_TEMPLATE_NESTED_KEY_HARDENING_ACCEPTED_WITH_FINDINGS
-prior_runtime_gate_template_structural_hardening_commit: a50a8e3e0807a16a3a6c247876e14bf69b8a09af
+implementation_commit_message: test: add zip-safe reproduction smoke
+implementation_status: ZIP_SAFE_REPRODUCTION_HARDENING_ACCEPTED_WITH_FINDINGS
 tracked_source_worktree_clean_before_handoff_generation: True
 zip_internal_dirty_worktree_present: False
 external_metadata_dirty_after_zip_generation_before_commit: True
@@ -27,16 +26,16 @@ canonical_review_bundle: external_review_packet/HANDOFF_LATEST.zip
 canonical_checksum: external_review_packet/HANDOFF_LATEST.sha256
 canonical_readme: external_review_packet/00_READ_ME_FIRST.md
 
-zip_file_count: 495
-zip_size_bytes: 13119592
-zip_sha256: db5d9b0373b975d1e797d331f05b770fb555a2694674c1600e8d0756012a5543
+zip_file_count: 498
+zip_size_bytes: 13124717
+zip_sha256: aabc16d9bf275d4b2957e90cd621af89ddad127a44a5a0e99e71e24aa95225ce
 sha_match: True
 zip_testzip: None
 missing_required: []
 nested_zip_count: 0
 forbidden_match_count: 0
 local_path_leak_count: 0
-internal_head: b285b2156b4f13b065f6294f7b42d546c05fdc9a
+internal_head: 31a9d20986ad6731fd18f9b371d2881292db20c6
 internal_dirty_worktree_present: False
 
 ## Source-of-Truth / Precedence
@@ -57,52 +56,46 @@ Reviewer-Instruktionen.
 ## Current Packet Scope
 
 Dieses Packet synchronisiert den externen Review-Kontext auf den committed
-Repo-Stand `b285b2156b4f13b065f6294f7b42d546c05fdc9a` nach
-`tests: harden runtime gate template nested keys`.
+Repo-Stand `31a9d20986ad6731fd18f9b371d2881292db20c6` nach
+`test: add zip-safe reproduction smoke`.
 
 Review-Schwerpunkte:
 
-- `tests/test_runtime_gate_definition_template.py`
-- `docs/contracts/RUNTIME_GATE_DEFINITION_TEMPLATE.md`
-- `pytest.ini`
-- `docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md`
-- `tests/test_runtime_gate_boundary_contract.py`
-- `src/runtime_enforcement_boundary_review.py`
-- `tests/test_runtime_enforcement_boundary_review.py`
-- `docs/governance/EXTERNAL_REVIEW_COVERAGE_STANDARD.md`
-- `docs/governance/EXTERNAL_REVIEW_GATE_REGISTRY.yaml`
-- `docs/governance/EXTERNAL_REVIEW_GATE_SEQUENCE.md`
-- `docs/architecture/CIOS_FEATURE_STATUS.yaml`
-- `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
-- `docs/MODULE_CONTRACTS.md`
-- `docs/CONTEXT_AND_ROADMAP.md`
+- `configs/test_reproduction_matrix.json`
+- `tests/test_reproduction_matrix.py`
+- `tests/test_zip_safe_operator_journey.py`
+- `docs/governance/EXTERNAL_REPRODUCTION.md`
 - `README.md`
+- `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
+- `src/data_freshness.py`
+- `src/dashboard_operator_summary.py`
+- `src/handoff_zip_export.py`
+- `src/handoff_bundle.py`
 
-## Runtime Gate Template Nested-Key Hardening
+## ZIP-Safe Reproduction Hardening
 
-`tests/test_runtime_gate_definition_template.py` now verifies required nested
-YAML-like keys under their intended parent sections inside the fenced YAML
-block under `## Template`.
+`configs/test_reproduction_matrix.json` classifies validation commands as
+`ZIP_SAFE`, `LOCAL_REPO_REQUIRED`, `PRIVATE_INPUT_REQUIRED`,
+`GIT_CONTEXT_REQUIRED`, `TOOLING_OPTIONAL` or `UNKNOWN`.
 
-Parent-aware checks cover:
+It also defines validation-result labels:
 
-- `failure_modes`: `missing`, `stale`, `unknown`, `failed`,
-  `not_applicable`
-- `severity_semantics`: `PASS`, `WARN`, `FAIL`, `NOT_AVAILABLE`
-- `override_policy`: `allowed`, `operator_record_required`, `cannot_override`
+- `EXECUTED_IN_CURRENT_REPO`
+- `EXECUTED_IN_ZIP_CONTEXT`
+- `RECORDED_FROM_PREVIOUS_RUN`
+- `NOT_AVAILABLE`
+- `SKIPPED_BY_DESIGN`
+- `FAILED`
 
-Negative tests prove that a nested key present under the wrong parent is not
-accepted and that a parent section with a missing required child is rejected.
+`tests/test_zip_safe_operator_journey.py` provides a minimal synthetic operator
+journey smoke test. It uses only test-local synthetic fixtures and stdlib code,
+generates Data Freshness JSON/Markdown plus Dashboard Operator Summary JSON in a
+temporary test directory, and verifies that `MISSING`, `STALE` and `UNKNOWN`
+states remain visible.
 
-`pytest.ini` limits default pytest collection to `tests/` and excludes
-`_archive/` from recursive collection. This is collection hygiene only; pytest
-availability is not treated as release acceptance.
-
-This patch hardens docs/tests and collection hygiene only. It does not
-implement runtime enforcement, release automation, Product-/Production-/
-Investment-Readiness, broker import, order execution, dashboard expansion,
-replay, backtesting, outcome attribution, valuation automation, API
-integration, scraping or runtime LLM agent behavior.
+The smoke test is intentionally not a full personal-run replacement. It is a
+ZIP-safe external-review smoke designed to avoid `.git`, private/raw inputs,
+network access, broker writes, order execution and readiness claims.
 
 ## Explicit Non-Scope
 
@@ -128,7 +121,6 @@ integration, scraping or runtime LLM agent behavior.
 - keine Runtime-LLM-Agentenlogik
 - keine Runtime-Enforcement-Engine
 - keine automatische Release-Akzeptanz
-- keine vollautomatische Release-Akzeptanz
 - keine Product-/Production-Readiness
 - keine Investment-Readiness
 
@@ -139,26 +131,30 @@ Preflight:
 - `git branch --show-current`
   - result: `main`
 - `git rev-parse HEAD`
-  - result before implementation: `579d50b397d443e200d0b7967cc3693eefe214bf`
+  - result before implementation: `99c42e6d925d7dab48ce93423a94f14e1d27c3ba`
 - `git status --short`
   - result before implementation: clean
+- `python --version`
+  - result: `Python 3.14.0`
+- `python -m pytest --version`
+  - result: failed because `pytest` is not installed in the active Python environment: `No module named pytest`
+- `python -m ruff --version`
+  - result: failed because `ruff` is not installed in the active Python environment: `No module named ruff`
 - `git status --short --ignored external_review_packet`
   - result included ignored `external_review_packet/HANDOFF_LATEST.zip`
-- `git ls-files docs/contracts/RUNTIME_GATE_DEFINITION_TEMPLATE.md tests/test_runtime_gate_definition_template.py docs/contracts/RUNTIME_GATE_BOUNDARY_CONTRACT.md tests/test_runtime_gate_boundary_contract.py src/runtime_enforcement_boundary_review.py tests/test_runtime_enforcement_boundary_review.py`
-  - result: all six requested files are tracked
 
 Targeted validation before handoff:
 
-- `python -m unittest tests.test_runtime_gate_definition_template -v`
-  - result: `Ran 13 tests`, `OK`
-- `python -m unittest tests.test_runtime_gate_boundary_contract -v`
-  - result: `Ran 7 tests`, `OK`
-- `python -m unittest tests.test_runtime_enforcement_boundary_review -v`
-  - result: `Ran 8 tests`, `OK`
-- `python -m unittest discover -s tests -p "test_*.py" -v`
-  - result: `Ran 829 tests`, `OK`
+- `python -m unittest tests.test_zip_safe_operator_journey -v`
+  - result: `Ran 1 test`, `OK`
+- `python -m unittest tests.test_reproduction_matrix -v`
+  - result: `Ran 3 tests`, `OK`
+- `python -m unittest tests.test_readme_and_reports -v`
+  - result: `Ran 14 tests`, `OK`
+- `python -m unittest discover -s tests -p "test_*.py"`
+  - result: `Ran 833 tests`, `OK`
 - `git diff --check`
-  - result: exit code `0`; Git reported line-ending warnings for touched files but no whitespace errors
+  - result: exit code `0`; no whitespace errors
 
 Optional validation attempted:
 
@@ -169,31 +165,36 @@ Optional validation attempted:
 
 No pytest success is claimed because `pytest` is not installed in the active
 environment, and no ruff lint success is claimed. The full unittest discovery
-suite was run and passed as listed above.
+suite was run locally and passed as listed above; this remains
+`EXECUTED_IN_CURRENT_REPO`, not automatically `EXECUTED_IN_ZIP_CONTEXT`.
 
 Handoff generation:
 
-- `python -m src.handoff_zip_export --profile full_review --name HANDOFF_LATEST --output-path external_review_packet/HANDOFF_LATEST.zip --validation-command "python -m unittest tests.test_runtime_gate_definition_template -v" --validation-command "python -m unittest tests.test_runtime_gate_boundary_contract -v" --validation-command "python -m unittest tests.test_runtime_enforcement_boundary_review -v" --validation-command "python -m unittest discover -s tests -p test_*.py -v" --validation-command "git diff --check" --validation-command "python -m pytest -q" --validation-command "python -m ruff check ."`
-  - result: generated ZIP for head `b285b2156b4f13b065f6294f7b42d546c05fdc9a`
-  - file_count: `495`
-  - size_bytes: `13119592`
-  - zip_sha256: `db5d9b0373b975d1e797d331f05b770fb555a2694674c1600e8d0756012a5543`
+- `python -m src.handoff_zip_export --profile full_review --name HANDOFF_LATEST --output-path external_review_packet/HANDOFF_LATEST.zip --validation-command "python -m unittest tests.test_zip_safe_operator_journey -v" --validation-command "python -m unittest tests.test_reproduction_matrix -v" --validation-command "python -m unittest discover -s tests -p test_*.py" --validation-command "git diff --check" --validation-command "python -m pytest -q" --validation-command "python -m ruff check ."`
+  - result: generated ZIP for head `31a9d20986ad6731fd18f9b371d2881292db20c6`
+  - file_count: `498`
+  - size_bytes: `13124717`
+  - zip_sha256: `aabc16d9bf275d4b2957e90cd621af89ddad127a44a5a0e99e71e24aa95225ce`
   - forbidden_match_count: `0`
   - local_path_leak_count: `0`
 
-Post-generation ZIP validation:
+ZIP-context smoke validation after handoff:
 
-- SHA match: `True`
-- `zipfile.testzip()`: `None`
-- `missing_required`: `[]`
-- file_count: `495`
-- internal `HANDOFF_CONTEXT.md` head: `b285b2156b4f13b065f6294f7b42d546c05fdc9a`
-- `HANDOFF_VALIDATION.txt` in ZIP: `yes`
-- `pytest.ini` in ZIP: `yes`
+- Extracted a minimal subset from `external_review_packet/HANDOFF_LATEST.zip`
+  into a temporary test directory without `.git`.
+- `python -m unittest tests.test_zip_safe_operator_journey -v`
+  - result: return code `0`; `Ran 1 test`, `OK`
+- `python -m unittest tests.test_reproduction_matrix -v`
+  - result: return code `0`; `Ran 3 tests`, `OK`
+- This is `EXECUTED_IN_ZIP_CONTEXT` evidence for the ZIP-safe smoke and matrix
+  only. It is not a claim that the full local unittest suite was executed from
+  ZIP context.
 
-## Next Recommended Step
+## Remaining Findings
 
-External delta review of the Runtime Gate Template Nested-Key Hardening patch.
-Do not proceed to Broker Import, Event Ledger Runtime, Dashboard Expansion,
-Replay/Backtesting, Outcome Attribution or Valuation Automation from this test
-hardening alone.
+- `pytest` is not installed in the active Python environment.
+- `ruff` is not installed in the active Python environment.
+- Full local unittest success is evidence from the current checkout, not proof
+  that every test is ZIP-only reproducible.
+- Handoff exporter/bundle tests remain local-repo/Git-context validation, not
+  ZIP-only smoke tests.
