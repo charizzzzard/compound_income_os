@@ -96,10 +96,12 @@ Data quality flags must remain visible and must not be silently upgraded:
 
 ## Review/Promotion Requirements
 
-Any future methodology change requires a later explicit methodology contract
-and review. Before any valuation automation, the project must complete the
-relevant review gates for semantic decision quality, as-of temporal integrity,
-data conflict and provenance, operator wording and Human Operator acceptance.
+Any future methodology change requires
+`docs/contracts/VALUATION_METHODOLOGY_BOUNDARY_CONTRACT.md` plus a later
+explicit methodology implementation contract and review. Before any valuation
+automation, the project must complete the relevant review gates for semantic
+decision quality, as-of temporal integrity, data conflict and provenance,
+operator wording and Human Operator acceptance.
 
 Valuation input temporal integrity review remains outside `src.valuation_engine`
 and must not feed reviewed values into the engine.

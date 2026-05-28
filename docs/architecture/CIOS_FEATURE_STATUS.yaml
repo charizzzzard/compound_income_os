@@ -656,6 +656,7 @@ capabilities:
       - src/valuation_engine.py
       - src/personal_valuation_input_contract.py
       - docs/contracts/VALUATION_ENGINE_BOUNDARY_CONTRACT.md
+      - docs/contracts/VALUATION_METHODOLOGY_BOUNDARY_CONTRACT.md
       - docs/contracts/VALUATION_INPUT_PROVENANCE_AND_CONFLICT_CONTRACT.md
       - docs/contracts/VALUATION_INPUT_AS_OF_TEMPORAL_INTEGRITY_CONTRACT.md
       - docs/contracts/VALUATION_SCORING_SEMANTIC_DECISION_QUALITY_CONTRACT.md
@@ -682,6 +683,7 @@ capabilities:
       - reports/<date>/valuation_scoring_semantic_decision_quality_review.md
     tests:
       - tests/test_personal_valuation_input_contract.py
+      - tests/test_valuation_methodology_boundary_contract.py
       - tests/test_valuation_engine_behavior.py
       - tests/test_valuation_input_provenance_review.py
       - tests/test_valuation_input_temporal_integrity_review.py
@@ -694,7 +696,8 @@ capabilities:
       - "Valuation input temporal integrity review is read-only evidence; it checks date ordering against explicit as_of_date and does not implement replay, backtesting or valuation automation."
       - "Valuation/scoring semantic decision-quality review is read-only static evidence for wording and interpretation risks; it does not change formulas, rankings, buy/sell behavior or operator acceptance."
       - "Operator-surface wording hardening maps risky internal valuation/scoring terms to bounded report wording only; internal formulas, rankings, target actions and buy/sell semantics are unchanged."
-    next_action: "Adversarial input/failure-mode review or valuation methodology contract before valuation automation or scoring formula changes."
+      - "Valuation methodology boundary contract defines pre-DCF methodology preconditions, but no DCF engine, valuation automation, provider ingestion or formula change is implemented."
+    next_action: "External review of valuation methodology boundary contract before any valuation methodology implementation, DCF work or scoring formula change."
   - capability_id: simulation_backtesting_monte_carlo
     display_name: Simulation Backtesting Monte Carlo
     status: deferred

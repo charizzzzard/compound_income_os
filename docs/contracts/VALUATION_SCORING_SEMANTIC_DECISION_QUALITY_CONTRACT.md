@@ -203,6 +203,7 @@ comments, ranking fields or report summaries.
 ## Related Contracts and Modules
 
 - `docs/contracts/VALUATION_ENGINE_BOUNDARY_CONTRACT.md`
+- `docs/contracts/VALUATION_METHODOLOGY_BOUNDARY_CONTRACT.md`
 - `docs/contracts/VALUATION_INPUT_PROVENANCE_AND_CONFLICT_CONTRACT.md`
 - `docs/contracts/VALUATION_INPUT_AS_OF_TEMPORAL_INTEGRITY_CONTRACT.md`
 - `src/personal_decision_quality_state.py`
