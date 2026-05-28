@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 from src.monthly_ranking_engine import build_monthly_ranking
+from src.savings_plan_registry import REGISTRY_FIELDS
 from src.scoring_engine import build_fundamentals_index
 from src.watchlist_engine import build_watchlist_ranked, build_watchlist_report, score_index
 
@@ -90,23 +91,33 @@ class WatchlistEngineTests(unittest.TestCase):
         ranked = build_watchlist_ranked(watchlist_rows, score_rows)
         self.assertEqual(ranked[0]["status"], "REVIEW")
 
-        ranking, _ = build_monthly_ranking(
-            positions_rows=[
-                {
-                    "ticker": "EUR-CASH",
-                    "company_name": "Cash",
-                    "asset_type": "CASH",
-                    "sleeve": "CASH",
-                    "sector": "Cash",
-                    "market_value_eur": "5000",
-                }
-            ],
-            score_rows=score_rows,
-            watchlist_rows=ranked,
-        )
-        aaa_row = next(row for row in ranking if row["ticker"] == "AAA")
-        self.assertEqual(aaa_row["target_action"], "DO_NOT_BUY")
-        self.assertEqual(aaa_row["allocation_status"], "NOT_ELIGIBLE")
+        registry_path = Path("tests") / "_tmp_watchlist_savings_plan_registry.csv"
+        try:
+            with registry_path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=REGISTRY_FIELDS, lineterminator="\n")
+                writer.writeheader()
+
+            ranking, _ = build_monthly_ranking(
+                positions_rows=[
+                    {
+                        "ticker": "EUR-CASH",
+                        "company_name": "Cash",
+                        "asset_type": "CASH",
+                        "sleeve": "CASH",
+                        "sector": "Cash",
+                        "market_value_eur": "5000",
+                    }
+                ],
+                score_rows=score_rows,
+                watchlist_rows=ranked,
+                savings_plan_registry_path=str(registry_path),
+            )
+            aaa_row = next(row for row in ranking if row["ticker"] == "AAA")
+            self.assertEqual(aaa_row["target_action"], "DO_NOT_BUY")
+            self.assertEqual(aaa_row["allocation_status"], "NOT_ELIGIBLE")
+        finally:
+            if registry_path.exists():
+                registry_path.unlink()
 
     def test_duplicate_score_tickers_raise_clear_error(self) -> None:
         with self.assertRaisesRegex(ValueError, "scores input contains duplicate tickers: AAA"):
