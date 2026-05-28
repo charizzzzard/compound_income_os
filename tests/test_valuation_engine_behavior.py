@@ -120,6 +120,37 @@ class ValuationEngineBehaviorTests(unittest.TestCase):
         self.assertEqual(compute_valuation_metrics(review_row)["data_quality_flag"], "REVIEW")
         self.assertEqual(compute_valuation_metrics(missing_row)["data_quality_flag"], "MISSING_DATA")
 
+    def test_compute_valuation_metrics_preserves_conflict_stale_unknown_and_blocked_flags(self) -> None:
+        for flag in ("CONFLICT", "STALE", "UNKNOWN", "BLOCKED", "INVALID"):
+            with self.subTest(flag=flag):
+                row = complete_row()
+                row["data_quality_flag"] = flag
+                metrics = compute_valuation_metrics(row)
+                self.assertEqual(metrics["data_quality_flag"], flag)
+                self.assertIn("Bewertungsinputs pruefen", metrics["valuation_comment"])
+                self.assertIn("konservativ", metrics["valuation_comment"])
+
+    def test_malformed_numeric_inputs_do_not_create_confident_ok_state(self) -> None:
+        malformed_values = ["", "N/A", "--", "not-a-number"]
+        for value in malformed_values:
+            with self.subTest(value=value):
+                row = complete_row()
+                row["pe_current"] = value
+                metrics = compute_valuation_metrics(row)
+                self.assertNotEqual(metrics["data_quality_flag"], "OK")
+                self.assertIn(metrics["data_quality_flag"], {"REVIEW", "MISSING_DATA"})
+                self.assertIn("konservativ", metrics["valuation_comment"])
+
+    def test_invalid_current_price_with_complete_inputs_is_review_not_ok(self) -> None:
+        for price in ("0", "-100", "not-a-number"):
+            with self.subTest(price=price):
+                row = complete_row()
+                row["current_price_eur"] = price
+                metrics = compute_valuation_metrics(row)
+                self.assertEqual(metrics["margin_of_safety_pct"], 0.0)
+                self.assertNotEqual(metrics["data_quality_flag"], "OK")
+                self.assertIn("konservativ", metrics["valuation_comment"])
+
     def test_invalid_or_zero_current_price_does_not_crash_and_keeps_expected_keys(self) -> None:
         expected_keys = {
             "historical_multiple_score",

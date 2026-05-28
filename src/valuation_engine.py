@@ -133,15 +133,19 @@ def compute_valuation_metrics(
             missing_fields += 1
 
     existing_flag = str(row.get("data_quality_flag", "OK")).strip().upper() or "OK"
+    degraded_flags = {"REVIEW", "MISSING_DATA", "STALE", "CONFLICT", "UNKNOWN", "BLOCKED", "INVALID"}
+    invalid_current_price = current_price <= 0.0
     if missing_fields >= 3:
         data_quality_flag = "MISSING_DATA"
-    elif missing_fields > 0 or existing_flag in {"REVIEW", "MISSING_DATA"}:
+    elif invalid_current_price or missing_fields > 0 or existing_flag in degraded_flags:
         data_quality_flag = existing_flag if existing_flag != "OK" else "REVIEW"
     else:
         data_quality_flag = "OK"
 
     if data_quality_flag == "MISSING_DATA":
         valuation_comment = "Bewertungsinputs fehlen; Fair Value bleibt konservativ angesetzt."
+    elif data_quality_flag != "OK":
+        valuation_comment = "Bewertungsinputs pruefen; Fair Value bleibt konservativ angesetzt."
     elif margin_of_safety_pct >= 10:
         valuation_comment = "Die hybride Fair-Value-Sicht signalisiert Unterbewertung."
     elif margin_of_safety_pct <= -10:

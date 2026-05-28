@@ -139,11 +139,69 @@ class ValuationScoringSemanticDecisionQualityReviewTests(unittest.TestCase):
         self.assertEqual(visibility["status"], "OK")
 
     def test_risky_action_wording_is_fail(self) -> None:
-        self.write_artifact("reports/sample.md", "This candidate should execute order now and is guaranteed.\n")
+        self.write_artifact(
+            "reports/sample.md",
+            "\n".join(
+                [
+                    "buy now",
+                    "must buy",
+                    "guaranteed",
+                    "risk-free",
+                    "automatically buy",
+                    "execute order",
+                ]
+            ),
+        )
         self.run_review(["reports/sample.md"])
 
         rows = read_csv(self.csv_output)
-        self.assertTrue(any(row["status"] == "FAIL" and row["severity"] == "P0" for row in rows))
+        fail_terms = [row["reviewed_term"] for row in rows if row["status"] == "FAIL" and row["severity"] == "P0"]
+        self.assertGreaterEqual(len(fail_terms), 6)
+
+    def test_malformed_numeric_surfaces_are_review_findings(self) -> None:
+        self.write_artifact(
+            "data/synthetic_valuation_surface.txt",
+            "fair_value_estimate='12.5%'\npe_current='N/A'\nev_ebit_current='--'\nnormalized='not-a-number'\nmargin='12,5'\n",
+        )
+        self.run_review(["data/synthetic_valuation_surface.txt"])
+
+        rows = read_csv(self.csv_output)
+        malformed = [row for row in rows if row["check_id"].startswith("MALFORMED_NUMERIC_SURFACE::")]
+        self.assertGreaterEqual(len(malformed), 5)
+        self.assertTrue(all(row["status"] == "REVIEW" for row in malformed))
+        self.assertTrue(all(row["semantic_category"] == "DATA_QUALITY_MASKING" for row in malformed))
+
+    def test_failure_mode_terms_are_visible_even_without_other_review_terms(self) -> None:
+        self.write_artifact(
+            "reports/failure_modes.md",
+            "BLOCKED\nREVIEW\nMISSING_DATA\nSTALE\nCONFLICT\nUNKNOWN\nINVALID\n",
+        )
+        self.run_review(["reports/failure_modes.md"])
+
+        rows = read_csv(self.csv_output)
+        failure_rows = [row for row in rows if row["check_id"].startswith("FAILURE_MODE_TERM::")]
+        found_terms = {row["reviewed_term"] for row in failure_rows}
+        self.assertTrue({"BLOCKED", "REVIEW", "MISSING_DATA", "STALE", "CONFLICT", "UNKNOWN", "INVALID"}.issubset(found_terms))
+        self.assertTrue(all(row["semantic_category"] == "FAILURE_MODE_VISIBILITY" for row in failure_rows))
+        self.assertTrue(any(row["status"] in {"WARNING", "OK"} for row in failure_rows))
+
+    def test_generated_artifacts_preserve_non_scope_boundary_language(self) -> None:
+        self.write_artifact("src/scoring_engine.py", "purchase_state = 'BUYABLE'\nREVIEW\n")
+        self.run_review(["src/scoring_engine.py"])
+
+        json_text = self.json_output.read_text(encoding="utf-8")
+        report_text = self.report_output.read_text(encoding="utf-8")
+        for phrase in [
+            "read-only evidence",
+            "no valuation automation",
+            "no formula change",
+            "no ranking change",
+            "no buy/sell automation",
+            "no investment advice",
+            "Human Operator remains final authority",
+        ]:
+            self.assertIn(phrase, json_text)
+            self.assertIn(phrase, report_text)
 
     def test_missing_input_artifact_is_reported_visibly(self) -> None:
         self.run_review(["src/missing.py"])
@@ -183,6 +241,8 @@ class ValuationScoringSemanticDecisionQualityReviewTests(unittest.TestCase):
             "does not feed any values into `src/valuation_engine.py`",
             "does not alter `src/scoring_engine.py` formulas",
             "does not decide whether to buy, sell, hold, trim or rebalance",
+            "adversarial input / failure mode semantics",
+            "malformed or conflicting inputs must not be silently imputed",
             "investment advice",
             "human operator",
         ]:

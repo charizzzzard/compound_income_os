@@ -40,7 +40,7 @@ NON_SCOPE_CONFIRMATION = (
     "read-only evidence; no valuation automation; no formula change; no ranking change; "
     "no buy/sell automation; no investment advice; Human Operator remains final authority"
 )
-UNCERTAINTY_TERMS = ("MISSING", "MISSING_DATA", "REVIEW", "STALE", "CONFLICT", "UNKNOWN", "BLOCKED")
+UNCERTAINTY_TERMS = ("MISSING", "MISSING_DATA", "REVIEW", "STALE", "CONFLICT", "UNKNOWN", "BLOCKED", "INVALID")
 FORBIDDEN_ACTION_PATTERNS = [
     r"\bexecute\s+order\b",
     r"\bplace\s+order\b",
@@ -52,6 +52,13 @@ FORBIDDEN_ACTION_PATTERNS = [
     r"\bmust\s+sell\b",
     r"\bguaranteed\b",
     r"\brisk[- ]free\b",
+]
+MALFORMED_NUMERIC_PATTERNS = [
+    (r"\bN/A\b", "placeholder numeric text"),
+    (r"(?<!\w)--(?!\w)", "dash placeholder numeric text"),
+    (r"\bnot-a-number\b", "explicit non-numeric text"),
+    (r"\b\d+(?:\.\d+)?%", "percentage-formatted numeric text"),
+    (r"\b\d+,\d+\b", "locale-formatted numeric text"),
 ]
 
 
@@ -319,6 +326,62 @@ def forbidden_action_rows(text: str, *, as_of_date: str, artifact_path: str) -> 
     return rows
 
 
+def malformed_numeric_rows(text: str, *, as_of_date: str, artifact_path: str) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for pattern, label in MALFORMED_NUMERIC_PATTERNS:
+        for index, match in enumerate(re.finditer(pattern, text, re.IGNORECASE), start=1):
+            rows.append(
+                make_row(
+                    check_id=f"MALFORMED_NUMERIC_SURFACE::{artifact_path}::{label}::{index}",
+                    as_of_date=as_of_date,
+                    artifact_path=artifact_path,
+                    reviewed_surface="valuation/scoring input wording",
+                    reviewed_term=label,
+                    semantic_category="DATA_QUALITY_MASKING",
+                    severity="P2",
+                    status="REVIEW",
+                    evidence=evidence_snippet(text, match.start(), match.end()),
+                    risk_description="Malformed or locale-formatted numeric-looking input can mask fallback valuation/scoring behavior.",
+                    expected_operator_interpretation="Malformed numeric inputs must remain review evidence and must not imply confident valuation precision.",
+                    recommended_follow_up="Keep malformed numeric values visible as review/failure-mode evidence; do not silently impute.",
+                )
+            )
+    return rows
+
+
+def failure_mode_term_rows(text: str, *, as_of_date: str, artifact_path: str) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for term in UNCERTAINTY_TERMS:
+        for index, match in enumerate(re.finditer(re.escape(term), text, re.IGNORECASE), start=1):
+            context = evidence_snippet(text, match.start(), match.end())
+            has_explanation = bool(re.search(r"\b(reason|because|requires|visible|review|missing|stale|conflict|unknown|invalid|blocked|not silent|no imputation)\b", context, re.IGNORECASE))
+            rows.append(
+                make_row(
+                    check_id=f"FAILURE_MODE_TERM::{artifact_path}::{term}::{index}",
+                    as_of_date=as_of_date,
+                    artifact_path=artifact_path,
+                    reviewed_surface="failure-mode state",
+                    reviewed_term=term,
+                    semantic_category="FAILURE_MODE_VISIBILITY",
+                    severity="INFO" if has_explanation else "P2",
+                    status="OK" if has_explanation else "WARNING",
+                    evidence=context,
+                    risk_description=(
+                        "Failure-mode state is visible with explanatory context."
+                        if has_explanation
+                        else "Failure-mode state is visible but lacks enough adjacent explanatory context."
+                    ),
+                    expected_operator_interpretation="Missing, stale, conflict, unknown, invalid, review and blocked states must remain visible.",
+                    recommended_follow_up=(
+                        "Maintain adjacent reason/boundary wording."
+                        if has_explanation
+                        else "Add adjacent reason or operator-boundary wording before relying on this surface."
+                    ),
+                )
+            )
+    return rows
+
+
 def uncertainty_visibility_row(text: str, *, as_of_date: str, artifact_path: str, found_relevant_term: bool) -> dict[str, str]:
     has_uncertainty = any(term.lower() in text.lower() for term in UNCERTAINTY_TERMS)
     if found_relevant_term and not has_uncertainty:
@@ -438,6 +501,8 @@ def review_text_artifact(path: Path, *, repo_root: Path, as_of_date: str) -> lis
             )
 
     rows.extend(forbidden_action_rows(text, as_of_date=as_of_date, artifact_path=artifact_path))
+    rows.extend(malformed_numeric_rows(text, as_of_date=as_of_date, artifact_path=artifact_path))
+    rows.extend(failure_mode_term_rows(text, as_of_date=as_of_date, artifact_path=artifact_path))
     rows.append(uncertainty_visibility_row(text, as_of_date=as_of_date, artifact_path=artifact_path, found_relevant_term=found_relevant_term))
     if artifact_path.startswith("docs/contracts/"):
         rows.append(non_scope_alignment_row(text, as_of_date=as_of_date, artifact_path=artifact_path))
@@ -496,9 +561,10 @@ def render_report(*, as_of_date: str, rows: list[dict[str, str]], summary: dict[
         f"- highest_severity: `{summary['highest_severity']}`",
         "",
         "## Boundary",
-        "- This report is read-only governance evidence.",
+        "- This report is read-only evidence and governance review output.",
+        "- Non-scope: no valuation automation; no formula change; no ranking change; no buy/sell automation; no investment advice.",
         "- It does not implement valuation automation, scoring formula changes, ranking changes, buy/sell automation, order execution or investment readiness.",
-        "- Human Operator remains final acceptance authority.",
+        "- Human Operator remains final authority and final acceptance authority.",
         "",
         "## Findings",
         "| check_id | artifact | term | category | severity | status | recommended_follow_up |",

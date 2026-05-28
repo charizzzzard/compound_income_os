@@ -379,6 +379,23 @@ class ScoringEngineTests(unittest.TestCase):
         self.assertEqual(readiness["purchase_state"], "REVIEW")
         self.assertFalse(readiness["eligible_for_purchase"])
 
+    def test_purchase_readiness_keeps_degraded_data_quality_states_under_review(self) -> None:
+        for flag in ("MISSING_DATA", "REVIEW", "STALE", "CONFLICT", "UNKNOWN", "BLOCKED", "INVALID"):
+            with self.subTest(flag=flag):
+                readiness = evaluate_purchase_readiness(
+                    {
+                        "business_score": "95",
+                        "valuation_score": "90",
+                        "buy_score": "92",
+                        "classification": "BUY_CANDIDATE",
+                        "data_quality_flag": flag,
+                        "has_hard_risk_flag": "false",
+                    },
+                    self.rules,
+                )
+                self.assertEqual(readiness["purchase_state"], "REVIEW")
+                self.assertFalse(readiness["eligible_for_purchase"])
+
     def test_core_quality_complete_missing_valuation_is_review_not_missing_data(self) -> None:
         row = self.score_single_personal_row(
             {

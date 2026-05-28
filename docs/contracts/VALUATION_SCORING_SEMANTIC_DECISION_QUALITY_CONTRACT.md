@@ -163,6 +163,23 @@ This hardening does not alter formulas, rankings, target actions, portfolio
 rules or buy/sell logic. Degraded states such as `MISSING`, `MISSING_DATA`,
 `REVIEW`, `STALE`, `CONFLICT`, `UNKNOWN` and `BLOCKED` must remain visible.
 
+## Adversarial Input / Failure Mode Semantics
+
+The review layer must treat malformed, conflicting, stale, unknown, invalid and
+missing valuation/scoring states as review evidence. Examples include empty
+numeric fields, placeholders such as `N/A` or `--`, non-numeric text,
+percentage-formatted strings in unexpected surfaces, conflicting data-quality
+flags and precise-looking valuation fields produced from degraded inputs.
+
+Malformed or conflicting inputs must not be silently imputed and must not be
+silently upgraded to `OK`. They should surface as `REVIEW`, `WARNING` or
+`FAIL` evidence depending on whether the wording can imply advice, certainty,
+automation or order readiness.
+
+This adversarial/failure-mode review does not change valuation formulas,
+scoring formulas, ranking logic, target actions or portfolio behavior. It only
+emits deterministic evidence for the Human Operator and later hardening work.
+
 ## No-Investment-Advice Boundary
 
 The review may flag terms such as `BUYABLE`, `BUY_CANDIDATE`, `TOP_UP`,
