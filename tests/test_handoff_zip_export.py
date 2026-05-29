@@ -86,6 +86,29 @@ class HandoffZipExportTests(unittest.TestCase):
         self.assertIn("<private_raw_file>", omitted_text)
         self.assertEqual(scan_forbidden_entries(result.zip_path), ())
 
+    def test_profile_export_passes_patch_identity_overrides(self) -> None:
+        result = export_profile_handoff_zip(
+            profile="full_review",
+            name="unit_identity_override",
+            output_dir=self.tmp,
+            include_paths=["src/handoff_bundle.py", "tests/test_handoff_bundle.py"],
+            patch_title="VALUATION_METHODOLOGY_CONTRACT_PRE_DCF",
+            patch_bundle_purpose="external_review_after_valuation_methodology_boundary_contract_pre_dcf",
+            validation_commands=["python -m unittest tests.test_handoff_zip_export -v"],
+        )
+
+        with zipfile.ZipFile(result.zip_path, "r") as archive:
+            identity_text = archive.read("HANDOFF_PATCH_IDENTITY.md").decode("utf-8")
+            validation_text = archive.read("HANDOFF_VALIDATION.txt").decode("utf-8")
+            classification_rows = list(
+                csv.DictReader(archive.read("HANDOFF_CHANGE_CLASSIFICATION.csv").decode("utf-8").splitlines())
+            )
+
+        self.assertIn("patch_title: `VALUATION_METHODOLOGY_CONTRACT_PRE_DCF`", identity_text)
+        self.assertIn("bundle_purpose: `external_review_after_valuation_methodology_boundary_contract_pre_dcf`", identity_text)
+        self.assertIn("execution_status: RECORDED_VALIDATION", validation_text)
+        self.assertTrue(classification_rows)
+
     def test_explicit_forbidden_include_is_omitted_not_included(self) -> None:
         forbidden = ROOT / "data" / "raw" / "private" / "fundamentals" / "sec_user_agent.local.txt"
         result = export_profile_handoff_zip(

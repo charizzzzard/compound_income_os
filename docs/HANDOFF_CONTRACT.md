@@ -77,6 +77,11 @@ base cannot be resolved, the handoff must explicitly report unknown delta
 evidence rather than silently presenting a full snapshot as complete patch
 provenance.
 
+Patch-specific identity values may be supplied with `--patch-title` and
+`--bundle-purpose`. If they are omitted, the exporter preserves the historical
+defaults: patch title falls back to the bundle name and bundle purpose falls
+back to the profile handoff purpose.
+
 `HANDOFF_CONTEXT.md` preserves `created_at_utc` as the canonical run timestamp.
 Archive and upload-ready filenames use the same UTC timestamp normalized as
 `YYYYMMDD-HHMMSS`; no local-time timestamp is used for default lifecycle output.

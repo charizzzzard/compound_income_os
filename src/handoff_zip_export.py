@@ -304,6 +304,8 @@ def export_profile_handoff_zip(
     validation_summary: str = "",
     validation_commands: list[str] | None = None,
     validation_log: str = "",
+    patch_title: str | None = None,
+    patch_bundle_purpose: str | None = None,
 ) -> HandoffBundleResult:
     root = resolve_repo_path(repo_root).resolve()
     selected = profile_include_paths(profile, name, root, include_paths)
@@ -320,6 +322,8 @@ def export_profile_handoff_zip(
         validation_log=validation_log,
         recommended_next_step="MANUAL SEC CONCEPT APPROVAL FILL / PRIVATE INPUT ONLY" if profile == "patch" else "Review handoff package.",
         omitted_artifacts=default_omitted_artifacts(profile),
+        patch_title=patch_title,
+        patch_bundle_purpose=patch_bundle_purpose,
     )
 
 
@@ -351,6 +355,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--validation-summary", default="")
     parser.add_argument("--validation-command", action="append", default=[], help="Validation command already run for this bundle; repeatable.")
     parser.add_argument("--validation-log", default="", help="Optional path to a validation log to embed as text.")
+    parser.add_argument("--patch-title", default="", help="Optional patch-specific title for HANDOFF_PATCH_IDENTITY.md.")
+    parser.add_argument("--bundle-purpose", default="", help="Optional patch-specific purpose for HANDOFF_PATCH_IDENTITY.md.")
     return parser.parse_args()
 
 
@@ -371,6 +377,8 @@ def main() -> None:
         validation_summary=args.validation_summary,
         validation_commands=args.validation_command,
         validation_log=validation_log,
+        patch_title=args.patch_title or None,
+        patch_bundle_purpose=args.bundle_purpose or None,
     )
     print(f"ZIP path: {result.zip_path}")
     print(f"HEAD: {result.head}")

@@ -211,6 +211,7 @@ class HandoffBundleTests(unittest.TestCase):
             )
 
         self.assertIn("HANDOFF_PATCH_IDENTITY.md", names)
+        self.assertIn("patch_title: `unit_patch_identity`", identity_text)
         self.assertIn("base_head:", context_text)
         self.assertIn("delta_range:", context_text)
         self.assertIn("patch_identity_entry: `HANDOFF_PATCH_IDENTITY.md`", context_text)
@@ -224,6 +225,31 @@ class HandoffBundleTests(unittest.TestCase):
                 classification_rows[0]
             )
         )
+
+    def test_patch_identity_can_use_explicit_patch_title_and_purpose(self) -> None:
+        result = export_handoff_bundle(
+            profile="patch",
+            bundle_name="unit_patch_identity_override",
+            repo_root=ROOT,
+            output_dir=self.fixture,
+            include_paths=[self.safe_file],
+            purpose="default purpose remains available",
+            patch_title="VALUATION_METHODOLOGY_CONTRACT_PRE_DCF",
+            patch_bundle_purpose="external_review_after_valuation_methodology_boundary_contract_pre_dcf",
+            validation_commands=["python -m unittest tests.test_handoff_bundle -v"],
+        )
+
+        with zipfile.ZipFile(result.zip_path, "r") as archive:
+            identity_text = archive.read("HANDOFF_PATCH_IDENTITY.md").decode("utf-8")
+            validation_text = archive.read("HANDOFF_VALIDATION.txt").decode("utf-8")
+            classification_rows = list(
+                csv.DictReader(archive.read("HANDOFF_CHANGE_CLASSIFICATION.csv").decode("utf-8").splitlines())
+            )
+
+        self.assertIn("patch_title: `VALUATION_METHODOLOGY_CONTRACT_PRE_DCF`", identity_text)
+        self.assertIn("bundle_purpose: `external_review_after_valuation_methodology_boundary_contract_pre_dcf`", identity_text)
+        self.assertIn("execution_status: RECORDED_VALIDATION", validation_text)
+        self.assertTrue(classification_rows)
 
     def test_delta_change_classification_is_non_empty_with_git_context(self) -> None:
         result = export_handoff_bundle(

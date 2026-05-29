@@ -421,7 +421,7 @@ def context_markdown(
         f"- project_name: `{project_name}`",
         f"- profile: `{profile}`",
         f"- bundle_name: `{bundle_name}`",
-        f"- bundle_purpose: `external_llm_validation`",
+        "- bundle_purpose: `external_llm_validation`",
         f"- created_at_utc: `{datetime.now(UTC).isoformat(timespec='seconds')}`",
         f"- branch: `{branch}`",
         f"- head: `{head}`",
@@ -1095,6 +1095,8 @@ def export_handoff_bundle(
     validation_log: str = "",
     recommended_next_step: str = "",
     omitted_artifacts: Iterable[dict[str, str]] = (),
+    patch_title: str | None = None,
+    patch_bundle_purpose: str | None = None,
 ) -> HandoffBundleResult:
     root = resolve_repo_path(repo_root).resolve()
     lifecycle_enabled = output_dir is None and output_path is None
@@ -1152,8 +1154,8 @@ def export_handoff_bundle(
             validation_summary=validation_summary,
         ),
         "HANDOFF_PATCH_IDENTITY.md": patch_identity_markdown(
-            patch_title=bundle_name,
-            bundle_purpose=purpose,
+            patch_title=patch_title or bundle_name,
+            bundle_purpose=patch_bundle_purpose or purpose,
             base_head=base_head,
             implementation_head=head,
             current_handoff_head=head,
