@@ -541,9 +541,9 @@ capabilities:
       - tests/test_personal_run_engine.py
     limitations:
       - "Read-only machine summary only; no visual dashboard server/UI changes and no new investment logic."
-      - "Data Freshness counts are surfaced as governance state, but no visual dashboard freshness panel, replay gate or outcome attribution exists."
-      - "Dashboard Freshness Surface Contract is contract/test-only; it does not implement new runtime rendering."
-    next_action: "DASHBOARD_FRESHNESS_OPERATOR_SURFACE_HARDENING after external review."
+      - "Data Freshness counts, artifact expectation, artifact status and artifact reason are surfaced as governance state, but no visual dashboard freshness panel, replay gate or outcome attribution exists."
+      - "Freshness expected-missing, expected-unreadable and not-selected states are machine-distinguishable in the operator summary."
+    next_action: "External review of DASHBOARD_FRESHNESS_OPERATOR_SURFACE_HARDENING before any visual dashboard expansion."
   - capability_id: meta_governance_baseline
     display_name: Meta Governance Baseline
     status: implemented
@@ -747,10 +747,10 @@ capabilities:
       - tests/test_personal_decision_journal_validation.py
     limitations:
       - "Cross-system freshness contract, thresholds, producer, personal_run_engine stage, operator-summary fields and explicit Monthly Decision Report builder/CLI surface exist, but the standard full-run monthly stage is earlier than data_freshness; final full-run operator visibility is through Personal Run Report / Dashboard Operator Summary."
-      - "Dashboard Freshness Surface Contract now defines operator-surface obligations before any further runtime hardening."
+      - "Dashboard Freshness Surface Contract defines operator-surface obligations; operator-summary runtime now distinguishes readable, expected-missing, expected-unreadable and not-selected Freshness artifacts."
       - "No visual dashboard freshness panel, replay gate or outcome-attribution gate is implemented."
       - "The MVP producer uses explicit date fields only; file modified time is not treated as sufficient FRESH evidence."
-    next_action: "DASHBOARD_FRESHNESS_OPERATOR_SURFACE_HARDENING; do not add replay or outcome gates before their contracts exist."
+    next_action: "External review of dashboard Freshness operator-surface hardening; do not add replay or outcome gates before their contracts exist."
   - capability_id: corporate_actions
     display_name: Corporate Actions
     status: unknown

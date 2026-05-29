@@ -18,6 +18,23 @@ def normalized(text: str) -> str:
     return " ".join(text.lower().split())
 
 
+def extract_section(text: str, heading: str) -> str:
+    lines = text.splitlines()
+    start_index: int | None = None
+    for index, line in enumerate(lines):
+        if line.strip() == heading:
+            start_index = index
+            break
+    if start_index is None:
+        raise AssertionError(f"Missing section: {heading}")
+    end_index = len(lines)
+    for index in range(start_index + 1, len(lines)):
+        if lines[index].startswith("## "):
+            end_index = index
+            break
+    return "\n".join(lines[start_index:end_index])
+
+
 class DashboardFreshnessSurfaceContractTests(unittest.TestCase):
     def test_dashboard_freshness_surface_contract_exists(self) -> None:
         self.assertTrue(CONTRACT_PATH.exists())
@@ -82,6 +99,8 @@ class DashboardFreshnessSurfaceContractTests(unittest.TestCase):
             "data_freshness_status",
             "data_freshness_review_required",
             "data_freshness_artifact_status",
+            "data_freshness_artifact_reason",
+            "data_freshness_expected",
             "data_freshness_fresh_count",
             "data_freshness_stale_count",
             "data_freshness_missing_count",
@@ -114,6 +133,23 @@ class DashboardFreshnessSurfaceContractTests(unittest.TestCase):
         ]:
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, compact)
+
+    def test_future_hardening_requires_missing_unreadable_not_selected_distinguishability(self) -> None:
+        section = normalized(
+            extract_section(
+                read(CONTRACT_PATH),
+                "## Acceptance Criteria For Future Operator Surface Hardening",
+            )
+        )
+
+        for phrase in [
+            "missing",
+            "unreadable",
+            "not-selected",
+            "distinguishable",
+        ]:
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, section)
 
     def test_explicit_non_scope_exists(self) -> None:
         text = normalized(read(CONTRACT_PATH))

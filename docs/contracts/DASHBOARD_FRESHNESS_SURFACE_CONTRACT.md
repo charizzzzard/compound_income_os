@@ -44,6 +44,8 @@ visible or be documented with stable aliases:
 - `data_freshness_review_required`
 - `data_freshness_artifact_status` or equivalent artifact visibility field,
   such as the aggregate `artifact_status` plus `source_artifacts`
+- `data_freshness_artifact_reason` or equivalent stable artifact reason code
+- `data_freshness_expected` or equivalent same-run stage expectation flag
 - `data_freshness_fresh_count`
 - `data_freshness_stale_count`
 - `data_freshness_missing_count`

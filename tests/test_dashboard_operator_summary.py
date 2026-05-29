@@ -201,6 +201,75 @@ class DashboardOperatorSummaryTests(unittest.TestCase):
         self.assertIn("DATA_FRESHNESS_REVIEW_REQUIRED", result.summary["operator_attention_reasons"])
         self.assertIn("THRESHOLD_EXCEEDED", result.summary["data_freshness_top_reason_codes"])
 
+    def test_data_freshness_fresh_can_pass(self) -> None:
+        paths = self._base_inputs("freshness_fresh")
+        self._write_manifest(Path(paths["run_manifest"]), selected_stages=["data_freshness", "dashboard_operator_summary"])
+        self._write_decision_quality(Path(paths["decision_quality_state"]), review_required=False)
+        self._write_data_freshness_summary(
+            Path(paths["data_freshness_summary"]),
+            overall_status="FRESH",
+            review_required=False,
+            counts={"FRESH": 1},
+        )
+
+        result = run_dashboard_operator_summary(**paths)
+
+        self.assertEqual(result.summary["surface_status"], "PASS")
+        self.assertEqual(result.summary["data_freshness_status"], "FRESH")
+        self.assertEqual(result.summary["data_freshness_artifact_status"], "COMPLETE")
+        self.assertEqual(result.summary["data_freshness_artifact_reason"], "DATA_FRESHNESS_ARTIFACT_READABLE")
+        self.assertTrue(result.summary["data_freshness_expected"])
+        self.assertFalse(result.summary["operator_attention_required"])
+
+    def test_data_freshness_not_applicable_can_pass(self) -> None:
+        paths = self._base_inputs("freshness_not_applicable")
+        self._write_manifest(Path(paths["run_manifest"]), selected_stages=["data_freshness", "dashboard_operator_summary"])
+        self._write_decision_quality(Path(paths["decision_quality_state"]), review_required=False)
+        self._write_data_freshness_summary(
+            Path(paths["data_freshness_summary"]),
+            overall_status="NOT_APPLICABLE",
+            review_required=False,
+            counts={"NOT_APPLICABLE": 1},
+            item_reason="NOT_APPLICABLE_MISSING_OPTIONAL_ARTIFACT",
+        )
+
+        result = run_dashboard_operator_summary(**paths)
+
+        self.assertEqual(result.summary["surface_status"], "PASS")
+        self.assertEqual(result.summary["data_freshness_status"], "NOT_APPLICABLE")
+        self.assertEqual(result.summary["data_freshness_not_applicable_count"], 1)
+        self.assertFalse(result.summary["operator_attention_required"])
+
+    def test_data_freshness_stale_missing_unknown_and_review_required_prevent_pass(self) -> None:
+        cases = [
+            ("STALE", "SOURCE_SNAPSHOT_TOO_OLD", "data_freshness_stale_count"),
+            ("MISSING", "ARTIFACT_MISSING", "data_freshness_missing_count"),
+            ("UNKNOWN", "NO_RELIABLE_DATE_SIGNAL", "data_freshness_unknown_count"),
+            ("REVIEW_REQUIRED", "SOURCE_DATE_AFTER_AS_OF", "data_freshness_review_required_count"),
+        ]
+        for status, reason, count_field in cases:
+            with self.subTest(status=status):
+                paths = self._base_inputs(f"freshness_{status.lower()}")
+                self._write_manifest(Path(paths["run_manifest"]), selected_stages=["data_freshness", "dashboard_operator_summary"])
+                self._write_decision_quality(Path(paths["decision_quality_state"]), review_required=False)
+                self._write_data_freshness_summary(
+                    Path(paths["data_freshness_summary"]),
+                    overall_status=status,
+                    review_required=status == "REVIEW_REQUIRED",
+                    counts={status: 1},
+                    item_reason=reason,
+                )
+
+                result = run_dashboard_operator_summary(**paths)
+
+                self.assertEqual(result.summary["surface_status"], "REVIEW")
+                self.assertEqual(result.summary["data_freshness_status"], status)
+                self.assertEqual(result.summary[count_field], 1)
+                self.assertTrue(result.summary["operator_attention_required"])
+                self.assertIn("DATA_FRESHNESS_REVIEW_REQUIRED", result.summary["operator_attention_reasons"])
+                self.assertIn(reason, result.summary["operator_attention_reasons"])
+                self.assertNotIn(result.summary["surface_status"], {"PASS", "OK"})
+
     def test_expected_missing_data_freshness_summary_is_partial_not_pass(self) -> None:
         paths = self._base_inputs("freshness_expected_missing")
         self._write_manifest(Path(paths["run_manifest"]), selected_stages=["data_freshness", "dashboard_operator_summary"])
@@ -210,8 +279,110 @@ class DashboardOperatorSummaryTests(unittest.TestCase):
 
         self.assertEqual(result.summary["surface_status"], "PARTIAL")
         self.assertEqual(result.summary["artifact_status"], "PARTIAL")
+        self.assertEqual(result.summary["data_freshness_status"], "NOT_AVAILABLE")
+        self.assertEqual(result.summary["data_freshness_artifact_status"], "NOT_AVAILABLE")
+        self.assertEqual(result.summary["data_freshness_artifact_reason"], "DATA_FRESHNESS_ARTIFACT_MISSING")
+        self.assertTrue(result.summary["data_freshness_expected"])
         self.assertIn(paths["data_freshness_summary"].replace("\\", "/"), result.summary["missing_required_artifacts"])
         self.assertTrue(result.summary["operator_attention_required"])
+        self.assertEqual(
+            result.summary["operator_attention_reasons"],
+            ["REQUIRED_ARTIFACT_NOT_COMPLETE", "DATA_FRESHNESS_ARTIFACT_MISSING", "DATA_FRESHNESS_PARTIAL"],
+        )
+
+    def test_expected_unreadable_data_freshness_summary_is_not_pass(self) -> None:
+        paths = self._base_inputs("freshness_expected_unreadable")
+        self._write_manifest(Path(paths["run_manifest"]), selected_stages=["data_freshness", "dashboard_operator_summary"])
+        self._write_decision_quality(Path(paths["decision_quality_state"]), review_required=False)
+        Path(paths["data_freshness_summary"]).write_text("{not-json", encoding="utf-8")
+
+        result = run_dashboard_operator_summary(**paths)
+
+        self.assertEqual(result.summary["surface_status"], "NOT_AVAILABLE")
+        self.assertEqual(result.summary["artifact_status"], "UNREADABLE")
+        self.assertEqual(result.summary["data_freshness_status"], "UNREADABLE")
+        self.assertEqual(result.summary["data_freshness_artifact_status"], "UNREADABLE")
+        self.assertEqual(result.summary["data_freshness_artifact_reason"], "DATA_FRESHNESS_ARTIFACT_UNREADABLE")
+        self.assertTrue(result.summary["data_freshness_expected"])
+        self.assertTrue(result.summary["operator_attention_required"])
+        self.assertIn("DATA_FRESHNESS_ARTIFACT_UNREADABLE", result.summary["operator_attention_reasons"])
+        self.assertNotEqual(result.summary["surface_status"], "PASS")
+
+    def test_not_selected_data_freshness_stage_is_distinguishable_from_missing_artifact(self) -> None:
+        not_selected = self._base_inputs("freshness_not_selected")
+        self._write_decision_quality(Path(not_selected["decision_quality_state"]), review_required=False)
+        missing = self._base_inputs("freshness_missing_distinguish")
+        self._write_manifest(Path(missing["run_manifest"]), selected_stages=["data_freshness", "dashboard_operator_summary"])
+        self._write_decision_quality(Path(missing["decision_quality_state"]), review_required=False)
+
+        not_selected_result = run_dashboard_operator_summary(**not_selected)
+        missing_result = run_dashboard_operator_summary(**missing)
+
+        self.assertEqual(not_selected_result.summary["surface_status"], "PASS")
+        self.assertFalse(not_selected_result.summary["data_freshness_expected"])
+        self.assertEqual(not_selected_result.summary["data_freshness_artifact_reason"], "DATA_FRESHNESS_STAGE_NOT_SELECTED")
+        self.assertEqual(missing_result.summary["surface_status"], "PARTIAL")
+        self.assertTrue(missing_result.summary["data_freshness_expected"])
+        self.assertEqual(missing_result.summary["data_freshness_artifact_reason"], "DATA_FRESHNESS_ARTIFACT_MISSING")
+        self.assertNotEqual(
+            not_selected_result.summary["data_freshness_artifact_reason"],
+            missing_result.summary["data_freshness_artifact_reason"],
+        )
+
+    def test_not_selected_data_freshness_stage_is_distinguishable_from_unreadable_artifact(self) -> None:
+        not_selected = self._base_inputs("freshness_not_selected_vs_unreadable")
+        self._write_decision_quality(Path(not_selected["decision_quality_state"]), review_required=False)
+        unreadable = self._base_inputs("freshness_unreadable_distinguish")
+        self._write_manifest(Path(unreadable["run_manifest"]), selected_stages=["data_freshness", "dashboard_operator_summary"])
+        self._write_decision_quality(Path(unreadable["decision_quality_state"]), review_required=False)
+        Path(unreadable["data_freshness_summary"]).write_text("{not-json", encoding="utf-8")
+
+        not_selected_result = run_dashboard_operator_summary(**not_selected)
+        unreadable_result = run_dashboard_operator_summary(**unreadable)
+
+        self.assertEqual(not_selected_result.summary["surface_status"], "PASS")
+        self.assertFalse(not_selected_result.summary["data_freshness_expected"])
+        self.assertEqual(not_selected_result.summary["data_freshness_artifact_reason"], "DATA_FRESHNESS_STAGE_NOT_SELECTED")
+        self.assertEqual(unreadable_result.summary["surface_status"], "NOT_AVAILABLE")
+        self.assertTrue(unreadable_result.summary["data_freshness_expected"])
+        self.assertEqual(unreadable_result.summary["data_freshness_artifact_reason"], "DATA_FRESHNESS_ARTIFACT_UNREADABLE")
+        self.assertNotEqual(
+            not_selected_result.summary["data_freshness_artifact_reason"],
+            unreadable_result.summary["data_freshness_artifact_reason"],
+        )
+
+    def test_no_degraded_freshness_status_is_serialized_as_pass_or_ok(self) -> None:
+        for status, reason in [
+            ("STALE", "SOURCE_SNAPSHOT_TOO_OLD"),
+            ("MISSING", "ARTIFACT_MISSING"),
+            ("UNKNOWN", "NO_RELIABLE_DATE_SIGNAL"),
+            ("REVIEW_REQUIRED", "SOURCE_DATE_AFTER_AS_OF"),
+        ]:
+            with self.subTest(status=status):
+                paths = self._base_inputs(f"freshness_no_pass_{status.lower()}")
+                self._write_manifest(Path(paths["run_manifest"]), selected_stages=["data_freshness", "dashboard_operator_summary"])
+                self._write_decision_quality(Path(paths["decision_quality_state"]), review_required=False)
+                self._write_data_freshness_summary(
+                    Path(paths["data_freshness_summary"]),
+                    overall_status=status,
+                    review_required=status == "REVIEW_REQUIRED",
+                    counts={status: 1},
+                    item_reason=reason,
+                )
+
+                result = run_dashboard_operator_summary(**paths)
+                encoded = json.dumps(
+                    {
+                        "surface_status": result.summary["surface_status"],
+                        "data_freshness_status": result.summary["data_freshness_status"],
+                        "data_freshness_artifact_status": result.summary["data_freshness_artifact_status"],
+                    },
+                    sort_keys=True,
+                )
+
+                self.assertNotIn('"data_freshness_status": "PASS"', encoded)
+                self.assertNotIn('"data_freshness_status": "OK"', encoded)
+                self.assertNotIn('"surface_status": "PASS"', encoded)
 
     def test_one_required_artifact_missing_is_partial(self) -> None:
         paths = self._base_inputs("partial")

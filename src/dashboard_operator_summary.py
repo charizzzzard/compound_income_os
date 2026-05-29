@@ -189,6 +189,23 @@ def _top_reason_codes_from_freshness(summary: dict[str, Any]) -> list[str]:
     return [code for code, _count in sorted(counter.items(), key=lambda item: (-item[1], item[0]))]
 
 
+def _data_freshness_artifact_reason(artifact: dict[str, Any], *, expected: bool) -> str:
+    status = str(artifact.get("status") or "")
+    if status == "COMPLETE":
+        return "DATA_FRESHNESS_ARTIFACT_READABLE"
+    if expected and status == "NOT_AVAILABLE":
+        return "DATA_FRESHNESS_ARTIFACT_MISSING"
+    if expected and status == "UNREADABLE":
+        return "DATA_FRESHNESS_ARTIFACT_UNREADABLE"
+    if expected:
+        return "DATA_FRESHNESS_PARTIAL"
+    if status == "NOT_AVAILABLE":
+        return "DATA_FRESHNESS_STAGE_NOT_SELECTED"
+    if status == "UNREADABLE":
+        return "DATA_FRESHNESS_ARTIFACT_UNREADABLE"
+    return "DATA_FRESHNESS_NOT_AVAILABLE"
+
+
 def _count_reason(queue_rows: list[dict[str, str]], reason_code: str) -> int:
     return sum(1 for row in queue_rows if reason_code in _reason_codes_from_queue(row))
 
@@ -312,7 +329,9 @@ def build_dashboard_operator_summary(
         freshness_items = []
     data_freshness_review_required = data_freshness_artifact["status"] == "COMPLETE" and data_freshness.get("review_required") is True
     data_freshness_bad_count = sum(int(freshness_counts.get(status, 0) or 0) for status in ("STALE", "MISSING", "UNKNOWN", "REVIEW_REQUIRED"))
-    data_freshness_attention_required = bool(data_freshness_review_required or data_freshness_bad_count)
+    data_freshness_artifact_reason = _data_freshness_artifact_reason(data_freshness_artifact, expected=data_freshness_expected)
+    data_freshness_artifact_attention_required = data_freshness_expected and data_freshness_artifact["status"] != "COMPLETE"
+    data_freshness_attention_required = bool(data_freshness_review_required or data_freshness_bad_count or data_freshness_artifact_attention_required)
     data_freshness_top_reasons = _top_reason_codes_from_freshness(data_freshness) if data_freshness_artifact["status"] == "COMPLETE" else []
     data_freshness_blocking_dashboard_count = sum(
         1
@@ -344,10 +363,14 @@ def build_dashboard_operator_summary(
     attention_reasons = []
     if missing_required:
         attention_reasons.append("REQUIRED_ARTIFACT_NOT_COMPLETE")
+    if data_freshness_artifact_attention_required:
+        attention_reasons.append(data_freshness_artifact_reason)
+        if data_freshness_artifact["status"] == "NOT_AVAILABLE":
+            attention_reasons.append("DATA_FRESHNESS_PARTIAL")
     attention_reasons.extend(top_reasons[:5])
     if decision_quality_review_required:
         attention_reasons.append("DECISION_QUALITY_REVIEW_REQUIRED")
-    if data_freshness_attention_required:
+    if data_freshness_review_required or data_freshness_bad_count:
         attention_reasons.append("DATA_FRESHNESS_REVIEW_REQUIRED")
         attention_reasons.extend(data_freshness_top_reasons[:5])
     attention_reasons = list(dict.fromkeys(attention_reasons))
@@ -364,6 +387,10 @@ def build_dashboard_operator_summary(
         "decision_quality_review_required": decision_quality.get("review_required") if decision_quality_artifact["status"] == "COMPLETE" else None,
         "process_confidence_level": decision_quality.get("decision_confidence_level") if decision_quality_artifact["status"] == "COMPLETE" else None,
         "data_freshness_status": data_freshness.get("overall_status") if data_freshness_artifact["status"] == "COMPLETE" else ("NOT_AVAILABLE" if data_freshness_artifact["status"] == "NOT_AVAILABLE" else data_freshness_artifact["status"]),
+        "data_freshness_expected": data_freshness_expected,
+        "data_freshness_artifact_status": data_freshness_artifact["status"],
+        "data_freshness_artifact_reason": data_freshness_artifact_reason,
+        "data_freshness_source_artifact": data_freshness_artifact["path"],
         "data_freshness_review_required": data_freshness.get("review_required") if data_freshness_artifact["status"] == "COMPLETE" else None,
         "data_freshness_fresh_count": int(freshness_counts.get("FRESH", 0) or 0),
         "data_freshness_stale_count": int(freshness_counts.get("STALE", 0) or 0),
@@ -465,6 +492,8 @@ def build_dashboard_operator_summary_surface_lines(summary: dict[str, Any] | Non
         "queue_blocker_count",
         "queue_high_count",
         "data_freshness_status",
+        "data_freshness_artifact_status",
+        "data_freshness_artifact_reason",
         "data_freshness_review_required",
         "data_freshness_stale_count",
         "data_freshness_missing_count",
