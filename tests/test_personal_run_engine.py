@@ -2283,7 +2283,14 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertIn("## Dashboard Operator Summary", run_report)
         self.assertIn("surface_status", run_report)
         self.assertIn("data_freshness_status", run_report)
+        self.assertIn("data_freshness_stale_count", run_report)
+        self.assertIn("data_freshness_missing_count", run_report)
+        self.assertIn("data_freshness_unknown_count", run_report)
         self.assertIn("operator_attention_level", run_report)
+        monthly_report = Path(options.monthly_report_output).read_text(encoding="utf-8")
+        self.assertIn("## Data Freshness", monthly_report)
+        self.assertIn("Data Freshness: `NOT_AVAILABLE`", monthly_report)
+        self.assertIn("kein `PASS`", monthly_report)
 
     def test_history_and_performance_run_uses_existing_single_benchmark_method(self) -> None:
         options = self._core_options("history_perf", ["import", "history", "performance"])

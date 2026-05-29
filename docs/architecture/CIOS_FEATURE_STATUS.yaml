@@ -339,6 +339,7 @@ capabilities:
     limitations:
       - "Report surface only; missing artifacts render NOT_AVAILABLE."
       - "Data Freshness is surfaced as process evidence only; it is not investment confidence, replay approval, outcome attribution approval or an order signal."
+      - "In the standard personal_run_engine full-run order, the monthly stage runs before data_freshness; therefore final Data Freshness evidence is surfaced in reports/<date>/personal_run_report.md through Dashboard Operator Summary, while the Monthly Decision Report Data Freshness section is populated only when an explicit summary artifact is supplied to the builder or CLI."
     next_action: "Feed future dashboard surface contract."
   - capability_id: personal_run_engine
     display_name: Personal Run Engine
@@ -734,12 +735,14 @@ capabilities:
     report_surface:
       - reports/<date>/data_freshness_summary.md
       - reports/<date>/personal_monthly_decision_report.md
+      - reports/<date>/personal_run_report.md
     tests:
       - tests/test_data_freshness.py
       - tests/test_personal_artifact_freshness.py
       - tests/test_personal_decision_journal_validation.py
     limitations:
-      - "Cross-system freshness contract, thresholds, producer, personal_run_engine stage, operator-summary fields and Monthly Decision Report surface exist, but visual dashboard, replay and outcome-attribution gates are not implemented."
+      - "Cross-system freshness contract, thresholds, producer, personal_run_engine stage, operator-summary fields and explicit Monthly Decision Report builder/CLI surface exist, but the standard full-run monthly stage is earlier than data_freshness; final full-run operator visibility is through Personal Run Report / Dashboard Operator Summary."
+      - "No visual dashboard freshness panel, replay gate or outcome-attribution gate is implemented."
       - "The MVP producer uses explicit date fields only; file modified time is not treated as sufficient FRESH evidence."
     next_action: "Review whether a future visual dashboard freshness panel is needed; do not add replay or outcome gates before their contracts exist."
   - capability_id: corporate_actions
