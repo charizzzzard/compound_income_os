@@ -1,12 +1,12 @@
-# Compound Income OS External LLM Review Packet - Test Harden Valuation Methodology Proposal Template Contract
+# Compound Income OS External LLM Review Packet - Structural Harden Valuation Methodology Proposal Template Tests
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach dem Test-Hardening-Patch fuer das proposal-only
+(CIOS) nach dem strukturellen Test-Hardening-Patch fuer das proposal-only
 Valuation-Methodology-Template:
 
-- commit: `71e4bdfacd4924939d638c42a6824caf4b721e7a`
-- message: `tests: harden valuation methodology proposal template`
-- status: `TEST_HARDEN_VALUATION_METHODOLOGY_PROPOSAL_TEMPLATE_CONTRACT_ACCEPTED_WITH_FINDINGS`
+- commit: `7b464c1727704794db6210d135e41be7cd8d1336`
+- message: `tests: validate valuation proposal template structure`
+- status: `STRUCTURAL_HARDEN_VALUATION_METHODOLOGY_PROPOSAL_TEMPLATE_TESTS_ACCEPTED_WITH_FINDINGS`
 
 Dieses Packet superseded aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck.
@@ -17,15 +17,15 @@ aktuellen Review-Zweck.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- base_head: `9e43e19b13e3232d8f77611759cc162a62282f7b`
-- implementation_head: `71e4bdfacd4924939d638c42a6824caf4b721e7a`
-- implementation_short_head: `71e4bdf`
-- current_handoff_head: `71e4bdfacd4924939d638c42a6824caf4b721e7a`
-- current_handoff_short_head: `71e4bdf`
-- delta_range: `9e43e19b13e3232d8f77611759cc162a62282f7b..71e4bdfacd4924939d638c42a6824caf4b721e7a`
+- base_head: `44b9db70cfe9fc7456f43870268cd2ae94ad4217`
+- implementation_head: `7b464c1727704794db6210d135e41be7cd8d1336`
+- implementation_short_head: `7b464c1`
+- current_handoff_head: `7b464c1727704794db6210d135e41be7cd8d1336`
+- current_handoff_short_head: `7b464c1`
+- delta_range: `44b9db70cfe9fc7456f43870268cd2ae94ad4217..7b464c1727704794db6210d135e41be7cd8d1336`
 - handoff_metadata_commit: `pending_until_metadata_commit`
 - handoff_metadata_commit_note: `metadata commit is created after this file is written; use git HEAD after metadata commit or the operator final report for the exact metadata commit hash`
-- bundle_purpose: `external_review_after_test_harden_valuation_methodology_proposal_template_contract`
+- bundle_purpose: `external_review_after_structural_harden_valuation_methodology_proposal_template_tests`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -50,12 +50,12 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 - Verwende volle repo-relative Pfade in Findings.
 - Pruefe, dass `HANDOFF_PATCH_IDENTITY.md` im ZIP die patch-spezifischen Werte
   enthaelt:
-  - `patch_title: TEST_HARDEN_VALUATION_METHODOLOGY_PROPOSAL_TEMPLATE_CONTRACT`
-  - `bundle_purpose: external_review_after_test_harden_valuation_methodology_proposal_template_contract`
+  - `patch_title: STRUCTURAL_HARDEN_VALUATION_METHODOLOGY_PROPOSAL_TEMPLATE_TESTS`
+  - `bundle_purpose: external_review_after_structural_harden_valuation_methodology_proposal_template_tests`
 - Pruefe, dass nur `tests/test_valuation_methodology_proposal_template.py`
   fachlich geaendert wurde.
-- Pruefe, dass die Tests die vorhandene Proposal-Template-Grenze haerter
-  schuetzen, ohne Runtime-Logik oder Bewertungsformeln einzufuehren.
+- Pruefe, dass die Tests Section- und fenced-YAML-aware sind, ohne Runtime-Logik
+  oder Bewertungsformeln einzufuehren.
 - Pruefe, dass `HANDOFF_VALIDATION.txt` weiterhin `RECORDED_VALIDATION` als
   Provenienz verwendet.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
@@ -78,8 +78,8 @@ Reviewer sollen insbesondere pruefen:
 ## Handoff Integrity Summary
 
 - zip_file_count: `516`
-- zip_size_bytes: `13180387`
-- zip_sha256: `0372ace8a04fb3baf6b179dd65289c200666ba74a426e6852c1a6a243eca6bc4`
+- zip_size_bytes: `13181054`
+- zip_sha256: `4345cc2147b41570986ddc82d465dd3d2f41ad98d81328bacbc574f8790dfa98`
 - sha_match: `True`
 - zip_testzip: `None`
 - missing_required: `[]`
@@ -94,10 +94,10 @@ Reviewer sollen insbesondere pruefen:
 
 Executed in current local repo before implementation commit:
 
-- `python -m unittest tests.test_valuation_methodology_proposal_template -v`: PASS, 9 tests
+- `python -m unittest tests.test_valuation_methodology_proposal_template -v`: PASS, 10 tests
 - `python -m unittest tests.test_valuation_methodology_boundary_contract -v`: PASS, 6 tests
 - `python -m unittest tests.test_reproduction_matrix -v`: PASS, 3 tests
-- `python -m pytest -q`: PASS, 918 tests, 219 subtests
+- `python -m pytest -q`: PASS, 919 tests, 219 subtests
 - `python -m ruff check .`: FAIL_EXISTING_LINT_FINDINGS, 45 pre-existing broad lint findings remain outside this patch objective
 - `git diff --check`: PASS with LF-to-CRLF working-copy warnings only
 
