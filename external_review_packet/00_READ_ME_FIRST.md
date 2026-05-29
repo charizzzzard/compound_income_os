@@ -1,11 +1,11 @@
-# Compound Income OS External LLM Review Packet - Data Freshness Operator Surface Hardening
+# Compound Income OS External LLM Review Packet - Data Freshness Personal Run Surface Wiring Review
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach dem Data-Freshness-Operator-Surface-Hardening-Patch:
+(CIOS) nach dem Data-Freshness-Personal-Run-Surface-Wiring-Review-Patch:
 
-- commit: `dacf05698ec94ca2138abc8f5b5ec32a1e835fcd`
-- message: `Add data freshness monthly report surface`
-- status: `DATA_FRESHNESS_OPERATOR_SURFACE_HARDENING_ACCEPTED_WITH_FINDINGS`
+- commit: `079a5d6cd0c8a196dcf29096909455bf79a323bf`
+- message: `Clarify data freshness personal run surface`
+- status: `DATA_FRESHNESS_PERSONAL_RUN_SURFACE_WIRING_REVIEW_ACCEPTED_WITH_FINDINGS`
 
 Dieses Packet superseded aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck.
@@ -16,15 +16,15 @@ aktuellen Review-Zweck.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- base_head: `e9f8beba8d167923250b16b502165ac2a1b0b4cf`
-- implementation_head: `dacf05698ec94ca2138abc8f5b5ec32a1e835fcd`
-- implementation_short_head: `dacf056`
-- current_handoff_head: `dacf05698ec94ca2138abc8f5b5ec32a1e835fcd`
-- current_handoff_short_head: `dacf056`
-- delta_range: `e9f8beba8d167923250b16b502165ac2a1b0b4cf..dacf05698ec94ca2138abc8f5b5ec32a1e835fcd`
+- base_head: `91e044f7187b1bae30a6a1dfa457b86e1b648afe`
+- implementation_head: `079a5d6cd0c8a196dcf29096909455bf79a323bf`
+- implementation_short_head: `079a5d6`
+- current_handoff_head: `079a5d6cd0c8a196dcf29096909455bf79a323bf`
+- current_handoff_short_head: `079a5d6`
+- delta_range: `91e044f7187b1bae30a6a1dfa457b86e1b648afe..079a5d6cd0c8a196dcf29096909455bf79a323bf`
 - handoff_metadata_commit: `pending_until_metadata_commit`
 - handoff_metadata_commit_note: `metadata commit is created after this file is written; use git HEAD after metadata commit or the operator final report for the exact metadata commit hash`
-- bundle_purpose: `external_review_after_data_freshness_operator_surface_hardening`
+- bundle_purpose: `external_review_after_data_freshness_personal_run_surface_wiring_review`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -49,15 +49,13 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 - Verwende volle repo-relative Pfade in Findings.
 - Pruefe, dass `HANDOFF_PATCH_IDENTITY.md` im ZIP die patch-spezifischen Werte
   enthaelt:
-  - `patch_title: DATA_FRESHNESS_OPERATOR_SURFACE_HARDENING`
-  - `bundle_purpose: external_review_after_data_freshness_operator_surface_hardening`
-- Pruefe, dass `HANDOFF_CHANGE_CLASSIFICATION.csv` die fuenf
+  - `patch_title: DATA_FRESHNESS_PERSONAL_RUN_SURFACE_WIRING_REVIEW`
+  - `bundle_purpose: external_review_after_data_freshness_personal_run_surface_wiring_review`
+- Pruefe, dass `HANDOFF_CHANGE_CLASSIFICATION.csv` die drei
   patch-geaenderten Dateien ausweist:
-  - `configs/test_reproduction_matrix.json`
   - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
   - `docs/architecture/CURRENT_KNOWN_GAPS.md`
-  - `src/build_monthly_decision_report.py`
-  - `tests/test_monthly_decision_report.py`
+  - `tests/test_personal_run_engine.py`
 - Pruefe, dass `HANDOFF_VALIDATION.txt` weiterhin `RECORDED_VALIDATION` als
   Provenienz verwendet.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
@@ -69,9 +67,7 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 
 Reviewer sollen insbesondere pruefen:
 
-- `src/build_monthly_decision_report.py`
-- `tests/test_monthly_decision_report.py`
-- `configs/test_reproduction_matrix.json`
+- `tests/test_personal_run_engine.py`
 - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
 - `docs/architecture/CURRENT_KNOWN_GAPS.md`
 - ZIP-internal:
@@ -83,8 +79,8 @@ Reviewer sollen insbesondere pruefen:
 ## Handoff Integrity Summary
 
 - zip_file_count: `516`
-- zip_size_bytes: `13184772`
-- zip_sha256: `f29b409393e1ba22a134f60e477eb7c34cc792ecf38b8b555562fe50d5da3c9d`
+- zip_size_bytes: `13185032`
+- zip_sha256: `a177690c44d6ae4271f0e362f1c26675fd3c21c704cdfa213f487771da1dc94e`
 - sha_match: `True`
 - zip_testzip: `None`
 - missing_required: `[]`
@@ -93,7 +89,7 @@ Reviewer sollen insbesondere pruefen:
 - local_path_leak_count: `0`
 - delta_evidence_artifact: `HANDOFF_PATCH_IDENTITY.md`
 - change_classification_artifact: `HANDOFF_CHANGE_CLASSIFICATION.csv`
-- change_classification_rows: `5`
+- change_classification_rows: `3`
 
 ## Validation Reality
 
@@ -107,7 +103,7 @@ Executed in current local repo before handoff regeneration:
 - `python -m unittest discover -s tests -p "test_*.py"`: PASS, 929 tests
 - `git diff --check`: PASS, LF/CRLF working-copy warnings only
 - `python -m pytest -q`: PASS, 929 tests, 219 subtests
-- `python -m ruff check .`: FAIL_EXISTING_LINT_FINDINGS, 45 pre-existing broad lint findings remain outside this patch objective; no new findings were reported in changed files
+- `python -m ruff check .`: FAIL_EXISTING_LINT_FINDINGS, 45 pre-existing broad lint findings remain outside this patch objective; no findings were reported in changed files
 
 ZIP-internal `HANDOFF_VALIDATION.txt` records requested validation commands as
 `RECORDED_VALIDATION`; those lines are not automatic proof that an external

@@ -1,23 +1,23 @@
-# HANDOFF LATEST CONTEXT - Data Freshness Operator Surface Hardening
+# HANDOFF LATEST CONTEXT - Data Freshness Personal Run Surface Wiring Review
 
 project_name: compound_income_os
 canonical_name: Compound Income OS
 short_name: CIOS
 profile: full_review
 bundle_name: HANDOFF_LATEST
-bundle_purpose: external_review_after_data_freshness_operator_surface_hardening
+bundle_purpose: external_review_after_data_freshness_personal_run_surface_wiring_review
 created_at_utc: see_zip_internal_handoff_context
 branch: main
-head_before_implementation: e9f8beba8d167923250b16b502165ac2a1b0b4cf
-implementation_head: dacf05698ec94ca2138abc8f5b5ec32a1e835fcd
-implementation_short_head: dacf056
-current_handoff_head: dacf05698ec94ca2138abc8f5b5ec32a1e835fcd
-current_handoff_short_head: dacf056
-delta_range: e9f8beba8d167923250b16b502165ac2a1b0b4cf..dacf05698ec94ca2138abc8f5b5ec32a1e835fcd
+head_before_implementation: 91e044f7187b1bae30a6a1dfa457b86e1b648afe
+implementation_head: 079a5d6cd0c8a196dcf29096909455bf79a323bf
+implementation_short_head: 079a5d6
+current_handoff_head: 079a5d6cd0c8a196dcf29096909455bf79a323bf
+current_handoff_short_head: 079a5d6
+delta_range: 91e044f7187b1bae30a6a1dfa457b86e1b648afe..079a5d6cd0c8a196dcf29096909455bf79a323bf
 handoff_metadata_commit: pending_until_metadata_commit
 handoff_metadata_commit_note: the metadata commit is created after this file is written; use git HEAD after the metadata commit or the operator final report for the exact metadata commit hash.
-implementation_commit_message: Add data freshness monthly report surface
-implementation_status: DATA_FRESHNESS_OPERATOR_SURFACE_HARDENING_ACCEPTED_WITH_FINDINGS
+implementation_commit_message: Clarify data freshness personal run surface
+implementation_status: DATA_FRESHNESS_PERSONAL_RUN_SURFACE_WIRING_REVIEW_ACCEPTED_WITH_FINDINGS
 tracked_source_worktree_clean_before_handoff_generation: True
 zip_internal_dirty_worktree_present: False
 external_metadata_dirty_after_zip_generation_before_commit: True
@@ -28,24 +28,24 @@ canonical_checksum: external_review_packet/HANDOFF_LATEST.sha256
 canonical_readme: external_review_packet/00_READ_ME_FIRST.md
 
 zip_file_count: 516
-zip_size_bytes: 13184772
-zip_sha256: f29b409393e1ba22a134f60e477eb7c34cc792ecf38b8b555562fe50d5da3c9d
+zip_size_bytes: 13185032
+zip_sha256: a177690c44d6ae4271f0e362f1c26675fd3c21c704cdfa213f487771da1dc94e
 sha_match: True
 zip_testzip: None
 missing_required: []
 nested_zip_count: 0
 forbidden_match_count: 0
 local_path_leak_count: 0
-internal_head: dacf05698ec94ca2138abc8f5b5ec32a1e835fcd
-internal_base_head: e9f8beba8d167923250b16b502165ac2a1b0b4cf
-internal_delta_range: e9f8beba8d167923250b16b502165ac2a1b0b4cf..dacf05698ec94ca2138abc8f5b5ec32a1e835fcd
+internal_head: 079a5d6cd0c8a196dcf29096909455bf79a323bf
+internal_base_head: 91e044f7187b1bae30a6a1dfa457b86e1b648afe
+internal_delta_range: 91e044f7187b1bae30a6a1dfa457b86e1b648afe..079a5d6cd0c8a196dcf29096909455bf79a323bf
 internal_dirty_worktree_present: False
 delta_evidence_artifact: HANDOFF_PATCH_IDENTITY.md
 change_classification_artifact: HANDOFF_CHANGE_CLASSIFICATION.csv
-change_classification_rows: 5
+change_classification_rows: 3
 delta_evidence_status: COMPLETE
-patch_identity_title_in_zip: DATA_FRESHNESS_OPERATOR_SURFACE_HARDENING
-patch_identity_bundle_purpose_in_zip: external_review_after_data_freshness_operator_surface_hardening
+patch_identity_title_in_zip: DATA_FRESHNESS_PERSONAL_RUN_SURFACE_WIRING_REVIEW
+patch_identity_bundle_purpose_in_zip: external_review_after_data_freshness_personal_run_surface_wiring_review
 validation_result_semantics: HANDOFF_VALIDATION.txt records commands as RECORDED_VALIDATION; pass/fail execution evidence must come from this external context, an operator final report, or an extracted-ZIP reproduction run.
 
 ## Source-of-Truth / Precedence
@@ -66,14 +66,12 @@ Reviewer-Instruktionen.
 ## Current Packet Scope
 
 Dieses Packet synchronisiert den externen Review-Kontext auf den committed
-Repo-Stand `dacf05698ec94ca2138abc8f5b5ec32a1e835fcd` nach
-`Add data freshness monthly report surface`.
+Repo-Stand `079a5d6cd0c8a196dcf29096909455bf79a323bf` nach
+`Clarify data freshness personal run surface`.
 
 Review-Schwerpunkte:
 
-- `src/build_monthly_decision_report.py`
-- `tests/test_monthly_decision_report.py`
-- `configs/test_reproduction_matrix.json`
+- `tests/test_personal_run_engine.py`
 - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
 - `docs/architecture/CURRENT_KNOWN_GAPS.md`
 - ZIP-internal `HANDOFF_PATCH_IDENTITY.md`
@@ -111,7 +109,7 @@ Executed in current local repo before handoff regeneration:
   - subtests: 219
 - `python -m ruff check .`
   - result: FAIL_EXISTING_LINT_FINDINGS
-  - evidence: 45 pre-existing broad lint findings remain outside this patch objective; no new findings were reported in the files changed by this patch.
+  - evidence: 45 pre-existing broad lint findings remain outside this patch objective; no findings were reported in files changed by this patch.
 
 ZIP-internal `HANDOFF_VALIDATION.txt` records requested validation commands as
 `RECORDED_VALIDATION`; those lines are not automatic proof that an external
@@ -120,19 +118,21 @@ reviewer executed them from the ZIP.
 ## Acceptance Boundary
 
 This packet accepts only refreshed external review evidence for the Data
-Freshness operator-surface hardening patch:
+Freshness Personal Run surface wiring review:
 
-- Implementation head is `dacf05698ec94ca2138abc8f5b5ec32a1e835fcd`.
-- Monthly Decision Report unittest reports 19 tests.
-- Full unittest discovery reports 929 tests.
+- Implementation head is `079a5d6cd0c8a196dcf29096909455bf79a323bf`.
+- The standard `personal_run_engine` order is documented and tested: `monthly`
+  runs before `data_freshness` and `dashboard_operator_summary`.
+- The standard Monthly Decision Report remains explicit `NOT_AVAILABLE` for
+  Data Freshness when no summary is passed at monthly stage time.
+- The final Personal Run Report surfaces Data Freshness via Dashboard Operator
+  Summary after `data_freshness` runs.
 - `HANDOFF_PATCH_IDENTITY.md` identifies
-  `DATA_FRESHNESS_OPERATOR_SURFACE_HARDENING`.
-- `HANDOFF_CHANGE_CLASSIFICATION.csv` contains five patch-changed files:
-  `configs/test_reproduction_matrix.json`,
+  `DATA_FRESHNESS_PERSONAL_RUN_SURFACE_WIRING_REVIEW`.
+- `HANDOFF_CHANGE_CLASSIFICATION.csv` contains three patch-changed files:
   `docs/architecture/CIOS_FEATURE_STATUS.yaml`,
-  `docs/architecture/CURRENT_KNOWN_GAPS.md`,
-  `src/build_monthly_decision_report.py`, and
-  `tests/test_monthly_decision_report.py`.
+  `docs/architecture/CURRENT_KNOWN_GAPS.md`, and
+  `tests/test_personal_run_engine.py`.
 
 This packet does not implement or change:
 
@@ -159,5 +159,5 @@ Human Operator remains the final acceptance authority.
 ## Next Recommended Step
 
 Recommended next step: external delta review of
-`DATA_FRESHNESS_OPERATOR_SURFACE_HARDENING` using this refreshed
+`DATA_FRESHNESS_PERSONAL_RUN_SURFACE_WIRING_REVIEW` using this refreshed
 `HANDOFF_LATEST` packet.
