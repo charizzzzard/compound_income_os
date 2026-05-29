@@ -1,12 +1,12 @@
-# Compound Income OS External LLM Review Packet - Repo Remote Preflight / GitHub Setup
+# Compound Income OS External LLM Review Packet - Remote Setup / Push Verification
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach der Repo-Remote-Preflight- und GitHub-Setup-Pruefung
-`REPO_REMOTE_PREFLIGHT_GITHUB_REMOTE_SETUP`.
+(CIOS) nach der Remote-Setup- und Push-Verifikationsaufgabe
+`REMOTE_SETUP_PUSH_VERIFICATION_CENTRAL_HANDOFF_SYNC`.
 
-- commit: `11006751e4c754ccdba60b6b47464013bdba385d`
-- message: `Sync external review packet for dashboard freshness hardening`
-- status: `BLOCKED_GH_AUTH_REQUIRED_WITH_CENTRAL_HANDOFF_EVIDENCE`
+- local_handoff_head: `9c1563d1adca188ac45512784066a8791f4b69f9`
+- remote_main_head_verified: `9c1563d1adca188ac45512784066a8791f4b69f9`
+- status: `REMOTE_EXISTS_PUSHED_AND_HANDOFF_SYNCED`
 
 Dieses Packet ersetzt aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck. Es ist der einzige authoritative externe Handoff fuer
@@ -20,10 +20,11 @@ Quelle und kein paralleler Review-Handoff.
 - short_name: `CIOS`
 - branch: `main`
 - implementation_head: `11006751e4c754ccdba60b6b47464013bdba385d`
-- implementation_short_head: `1100675`
-- current_handoff_head: `11006751e4c754ccdba60b6b47464013bdba385d`
-- current_handoff_short_head: `1100675`
-- bundle_purpose: `external_review_after_repo_remote_preflight_github_remote_setup`
+- preflight_head: `9c1563d1adca188ac45512784066a8791f4b69f9`
+- metadata_commit_head_before_update: `9c1563d1adca188ac45512784066a8791f4b69f9`
+- central_handoff_zip_head: `9c1563d1adca188ac45512784066a8791f4b69f9`
+- current_handoff_head: `9c1563d1adca188ac45512784066a8791f4b69f9`
+- bundle_purpose: `external_review_after_remote_setup_push_verification_central_handoff_sync`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -41,20 +42,20 @@ Bei Konflikten gilt diese Reihenfolge:
 
 ## GitHub Remote Reality
 
-- remote_exists: `False`
-- remote_name: `NOT_AVAILABLE`
-- browser_url: `NOT_AVAILABLE`
-- local_head: `11006751e4c754ccdba60b6b47464013bdba385d`
-- remote_head: `NOT_AVAILABLE`
-- local_head_pushed: `False`
+- remote_exists: `True`
+- remote_name: `origin`
+- fetch_url: `https://github.com/charizzzzard/compound_income_os.git`
+- push_url: `https://github.com/charizzzzard/compound_income_os.git`
+- browser_url: `https://github.com/charizzzzard/compound_income_os`
+- local_head: `9c1563d1adca188ac45512784066a8791f4b69f9`
+- remote_main_head: `9c1563d1adca188ac45512784066a8791f4b69f9`
+- local_head_pushed: `True`
+- visibility: `unknown`
 - gh_cli_available: `False`
 - gh_authenticated: `False`
-- safety_gate_passed: `False`
-- blocked_reasons:
-  - `GH_CLI_NOT_AVAILABLE_AND_NO_REMOTE_EXISTS`
-  - `GH_AUTH_NOT_AVAILABLE_AND_NO_REMOTE_EXISTS`
 - remote_creation_attempted: `False`
 - push_attempted: `False`
+- force_push_used: `False`
 
 ## Reviewer Instructions
 
@@ -79,7 +80,7 @@ Bei Konflikten gilt diese Reihenfolge:
 ## Handoff Integrity Summary
 
 - zip_file_count: `523`
-- zip_sha256: `4734fce821e146ac02d305d40880aa7a184dd16db462476f585d9ef7d9c12668`
+- zip_sha256: `9dc130b13c42e6a0af42dd291000c1a36b1c2063bb5fa02b90d2a208ec60b3b4`
 - sha_match: `True`
 - zip_testzip: `None`
 - nested_zip_count: `0`
@@ -89,6 +90,7 @@ Bei Konflikten gilt diese Reihenfolge:
 - contains_github_remote_status: `True`
 - contains_project_context_link: `True`
 - omitted_preflight_files_count: `1`
+- no_parallel_handoff_claimed: `True`
 
 ## Explicit Non-Scope
 
