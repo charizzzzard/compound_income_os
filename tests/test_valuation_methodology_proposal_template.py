@@ -35,6 +35,7 @@ class ValuationMethodologyProposalTemplateTests(unittest.TestCase):
             "## Output Semantics",
             "## Traceability",
             "## Explicit Non-Scope",
+            "## Proposal Acceptance Boundary",
         ]:
             self.assertIn(section, text)
 
@@ -48,6 +49,10 @@ class ValuationMethodologyProposalTemplateTests(unittest.TestCase):
             "proposal_status",
             "owner_role",
             "reviewer_role",
+            "contract_reference",
+            "related_boundary_contract",
+            "version",
+            "decision_record_reference",
         ]:
             self.assertIn(field, text)
 
@@ -75,10 +80,26 @@ class ValuationMethodologyProposalTemplateTests(unittest.TestCase):
         for phrase in [
             "proposal-only governance evidence",
             "proposal acceptance does not imply runtime enforcement",
-            "proposed_only",
-            "not_runtime_enforced",
-            "formula_implementation_status",
-            "not_implemented",
+            'calculation_status: "proposed_only"',
+            'runtime_status: "not_runtime_enforced"',
+            'formula_implementation_status: "not_implemented"',
+        ]:
+            self.assertIn(phrase, text)
+
+    def test_proposal_acceptance_boundary_requires_future_runtime_prerequisites(self) -> None:
+        text = normalized(read(TEMPLATE_PATH))
+
+        self.assertIn("completing this template can only create review evidence", text)
+        self.assertIn("it cannot promote a methodology to runtime use", text)
+
+        for phrase in [
+            "separate accepted methodology contract",
+            "implementation patch",
+            "tests",
+            "evidence artifacts",
+            "rollback/correction path",
+            "operator-facing wording boundary",
+            "explicit human operator acceptance",
         ]:
             self.assertIn(phrase, text)
 
