@@ -1,17 +1,16 @@
-# Compound Income OS External LLM Review Packet - Remote Setup / Push Verification
+# Compound Income OS External LLM Review Packet - Codex Operationalization Standard
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach der Remote-Setup- und Push-Verifikationsaufgabe
-`REMOTE_SETUP_PUSH_VERIFICATION_CENTRAL_HANDOFF_SYNC`.
+(CIOS) nach dem Governance-Patch `CIOS_CODEX_OPERATIONALIZATION_STANDARD`.
 
-- local_handoff_head: `9c1563d1adca188ac45512784066a8791f4b69f9`
-- remote_main_head_verified: `9c1563d1adca188ac45512784066a8791f4b69f9`
-- status: `REMOTE_EXISTS_PUSHED_AND_HANDOFF_SYNCED`
+- local_handoff_head: `752099da56f0438cbc9ce72249704eb98f608258`
+- remote_main_head_at_export: `86a7481351cbdebf7a282aacd42b0b6d31c622ba`
+- status: `GOVERNANCE_PATCH_HANDOFF_READY`
 
 Dieses Packet ersetzt aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck. Es ist der einzige authoritative externe Handoff fuer
-diese Aufgabe; der lokale Preflight-Ordner unter `outputs/` ist nur Evidence-
-Quelle und kein paralleler Review-Handoff.
+diese Aufgabe; lokale Ordner unter `outputs/` sind nur Evidence-Quellen und kein
+paralleler Review-Handoff.
 
 ## Current Review Head
 
@@ -19,15 +18,20 @@ Quelle und kein paralleler Review-Handoff.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- implementation_head: `11006751e4c754ccdba60b6b47464013bdba385d`
-- preflight_head: `9c1563d1adca188ac45512784066a8791f4b69f9`
-- metadata_commit_head_before_update: `9c1563d1adca188ac45512784066a8791f4b69f9`
-- central_handoff_zip_head: `9c1563d1adca188ac45512784066a8791f4b69f9`
-- current_handoff_head: `9c1563d1adca188ac45512784066a8791f4b69f9`
-- bundle_purpose: `external_review_after_remote_setup_push_verification_central_handoff_sync`
+- base_head: `86a7481351cbdebf7a282aacd42b0b6d31c622ba`
+- implementation_head: `752099da56f0438cbc9ce72249704eb98f608258`
+- preflight_head: `86a7481351cbdebf7a282aacd42b0b6d31c622ba`
+- metadata_commit_head_before_update: `752099da56f0438cbc9ce72249704eb98f608258`
+- central_handoff_zip_head: `752099da56f0438cbc9ce72249704eb98f608258`
+- current_handoff_head: `752099da56f0438cbc9ce72249704eb98f608258`
+- bundle_purpose: `external_review_after_codex_operationalization_standard`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
+
+If this metadata file is committed after ZIP export, the repo HEAD may become a
+metadata-only head that is newer than `central_handoff_zip_head`. That offset is
+expected only when reported explicitly.
 
 ## Source-of-Truth / Precedence
 
@@ -35,10 +39,9 @@ Bei Konflikten gilt diese Reihenfolge:
 
 1. `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
 2. ZIP-internal `HANDOFF_CONTEXT.md`
-3. ZIP-internal preflight evidence under `PRE_FLIGHT_REPO_REMOTE/`
-4. ZIP-internal artifact indexes and omitted-artifact registers
-5. GitHub browser URL for committed repo inspection
-6. Local-only/generated/ignored files only if explicitly included or summarized
+3. ZIP-internal artifact indexes, omitted-artifact registers and patch identity
+4. GitHub browser URL for committed repo inspection
+5. Local-only/generated/ignored files only if explicitly included or summarized
 
 ## GitHub Remote Reality
 
@@ -47,15 +50,8 @@ Bei Konflikten gilt diese Reihenfolge:
 - fetch_url: `https://github.com/charizzzzard/compound_income_os.git`
 - push_url: `https://github.com/charizzzzard/compound_income_os.git`
 - browser_url: `https://github.com/charizzzzard/compound_income_os`
-- local_head: `9c1563d1adca188ac45512784066a8791f4b69f9`
-- remote_main_head: `9c1563d1adca188ac45512784066a8791f4b69f9`
-- local_head_pushed: `True`
-- visibility: `unknown`
-- gh_cli_available: `False`
-- gh_authenticated: `False`
-- remote_creation_attempted: `False`
-- push_attempted: `False`
-- force_push_used: `False`
+- local_head_at_export: `752099da56f0438cbc9ce72249704eb98f608258`
+- remote_main_head_at_export: `86a7481351cbdebf7a282aacd42b0b6d31c622ba`
 
 ## Reviewer Instructions
 
@@ -65,32 +61,35 @@ Bei Konflikten gilt diese Reihenfolge:
   - `HANDOFF_PATCH_IDENTITY.md`
   - `HANDOFF_CHANGE_CLASSIFICATION.csv`
   - `HANDOFF_VALIDATION.txt`
-  - `PRE_FLIGHT_REPO_REMOTE/REPO_REMOTE_PREFLIGHT.md`
-  - `PRE_FLIGHT_REPO_REMOTE/github_remote_status.json`
-  - `PRE_FLIGHT_REPO_REMOTE/dirty_worktree_classification.csv`
-  - `PRE_FLIGHT_REPO_REMOTE/manual_remediation_steps.md`
-  - `PRE_FLIGHT_REPO_REMOTE/CHATGPT_PROJECT_CONTEXT_GITHUB_LINK.md`
-- `PRE_FLIGHT_REPO_REMOTE/preflight_commands.log` ist bewusst ausgelassen und
-  in `HANDOFF_OMITTED_ARTIFACTS.csv` verbucht, weil `*.log` durch die Handoff-
-  Policy verboten ist.
+  - `HANDOFF_MANIFEST.csv`
+  - `HANDOFF_ARTIFACT_INDEX.csv`
+  - `HANDOFF_OMITTED_ARTIFACTS.csv`
+- `HANDOFF_VALIDATION.txt` enthaelt `RECORDED_VALIDATION`-Eintraege. Diese
+  sind Befehlsprovenienz, nicht Ausfuehrungsbeweise, sofern kein separater
+  Operator- oder Reviewer-Bericht die Ausfuehrung belegt.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
 - Inferiere nicht, dass GitHub lokale uncommitted, ignored oder generated files
   enthaelt.
+- Behandle Dokumentations- und Governance-Standards nicht als Runtime
+  Enforcement.
 
 ## Handoff Integrity Summary
 
-- zip_file_count: `523`
-- zip_sha256: `9dc130b13c42e6a0af42dd291000c1a36b1c2063bb5fa02b90d2a208ec60b3b4`
+- zip_file_count: `520`
+- zip_sha256: `d251956517d89d89be3514568ed4ef7f0a768f022d2e838ede7bb921baf178c1`
 - sha_match: `True`
 - zip_testzip: `None`
 - nested_zip_count: `0`
 - forbidden_match_count: `0`
 - local_path_leak_count: `0`
-- contains_repo_remote_preflight: `True`
-- contains_github_remote_status: `True`
-- contains_project_context_link: `True`
-- omitted_preflight_files_count: `1`
-- no_parallel_handoff_claimed: `True`
+- post_manifest_included_evidence: `None observed`
+
+## Patch Delta
+
+`HANDOFF_CHANGE_CLASSIFICATION.csv` lists exactly these patch-changed files:
+
+- `docs/governance/CIOS_CODEX_OPERATIONALIZATION_STANDARD.md`
+- `tests/test_codex_operationalization_standard.py`
 
 ## Explicit Non-Scope
 
@@ -108,7 +107,7 @@ This packet does not claim or introduce:
 - order execution
 - buy/sell automation
 - private/generated/raw publication
-- force push
+- runtime enforcement
 - public GitHub repository visibility
 - product, production or investment readiness
 
