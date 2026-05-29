@@ -9,7 +9,6 @@ from pathlib import Path
 from src.common import read_csv_rows
 from src.fundamentals_master import CORE_KPI_FIELDS, PERSONAL_MASTER_FIELDS
 from src.fundamentals_overlay_engine import (
-    APPLIED_MASTER_FIELDS,
     OVERLAY_INPUT_FIELDS,
     OVERLAY_REVIEW_BACKLOG_FIELDS,
     build_overlay_registry,

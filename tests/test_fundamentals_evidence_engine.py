@@ -9,7 +9,6 @@ from src.common import read_csv_rows
 from src.fundamentals_evidence_engine import (
     EVIDENCE_INPUT_FIELDS,
     PROPOSED_UPDATES_FIELDS,
-    RESEARCH_BACKLOG_FIELDS,
     build_evidence_registry,
     required_kpis_for_profile,
     run_fundamentals_evidence_engine,

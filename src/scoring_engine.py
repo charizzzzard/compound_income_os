@@ -28,7 +28,7 @@ from src.fundamentals_engine import (
     build_score_audit_rows,
     enrich_fundamentals_rows,
 )
-from src.portfolio_rules import aggregate_positions_by_ticker, compute_position_weights, compute_sector_weights, load_portfolio_rules
+from src.portfolio_rules import aggregate_positions_by_ticker, compute_sector_weights, load_portfolio_rules
 from src.valuation_engine import compute_valuation_metrics
 
 DEFAULT_RULES_PATH = "configs/portfolio_rules.yaml"

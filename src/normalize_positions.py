@@ -4,7 +4,7 @@ import hashlib
 import re
 from typing import Any
 
-from src.common import canonicalize_ticker, round2, safe_upper, to_bool, to_float
+from src.common import canonicalize_ticker, round2, safe_upper, to_float
 from src.portfolio_rules import classify_sleeve
 
 FIELD_ALIASES = {

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from src.common import canonicalize_ticker, read_csv_rows, resolve_repo_path, safe_upper, write_csv_rows
 from src.external_sec_companyfacts_fetch import SUPPORTED_ASSET_TYPES, SUPPORTED_COUNTRIES, canonical_cik, canonical_isin, require_header_columns
-from src.fundamentals_master import DEFAULT_PERSONAL_MASTER_PATH, PERSONAL_MASTER_FIELDS, validate_personal_fundamentals_master
+from src.fundamentals_master import DEFAULT_PERSONAL_MASTER_PATH, validate_personal_fundamentals_master
 
 DEFAULT_REVIEW_OUTPUT = "data/processed/personal_sec_scope_review.csv"
 DEFAULT_SUMMARY_OUTPUT = "data/processed/personal_sec_scope_summary.csv"

@@ -6,9 +6,9 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-from src.common import canonicalize_ticker, read_csv_rows, resolve_repo_path, safe_upper, write_csv_rows
+from src.common import canonicalize_ticker, read_csv_rows, resolve_repo_path, write_csv_rows
 from src.fundamentals_evidence_engine import EVIDENCE_INPUT_FIELDS
-from src.fundamentals_master import CORE_KPI_FIELDS, DEFAULT_PERSONAL_MASTER_PATH, PERSONAL_MASTER_FIELDS, validate_personal_fundamentals_master
+from src.fundamentals_master import CORE_KPI_FIELDS, DEFAULT_PERSONAL_MASTER_PATH, validate_personal_fundamentals_master
 
 DEFAULT_SNAPSHOT_INPUT_PATH = "data/raw/private/fundamentals/personal_fundamentals_snapshot.csv"
 DEFAULT_SNAPSHOT_TEMPLATE_PATH = "data/raw/personal_fundamentals_snapshot_template.csv"

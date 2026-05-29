@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import csv
 import os
 from collections import Counter
 from dataclasses import dataclass

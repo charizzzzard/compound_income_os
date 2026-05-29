@@ -8,7 +8,6 @@ from pathlib import Path
 
 from src.common import load_yaml_config
 from src.fundamentals_engine import (
-    build_score_audit_rows,
     detect_fundamentals_format,
     enrich_fundamentals_rows,
 )

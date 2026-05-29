@@ -7,7 +7,7 @@ from datetime import date
 from pathlib import Path
 from typing import Callable
 
-from src.common import read_csv_rows, resolve_repo_path, safe_upper, write_csv_rows
+from src.common import resolve_repo_path, safe_upper, write_csv_rows
 from src.external_sec_companyfacts_fetch import (
     DEFAULT_SEC_FETCH_FAILURES_OUTPUT,
     DEFAULT_SEC_FETCH_REGISTRY_OUTPUT,

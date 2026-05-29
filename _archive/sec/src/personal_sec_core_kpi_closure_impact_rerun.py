@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from src.common import canonicalize_ticker, ensure_parent_dir, read_csv_rows, resolve_repo_path, write_csv_rows
-from src.fundamentals_master import DEFAULT_PERSONAL_MASTER_PATH, PERSONAL_MASTER_FIELDS, validate_personal_fundamentals_master
+from src.fundamentals_master import DEFAULT_PERSONAL_MASTER_PATH, validate_personal_fundamentals_master
 
 DEFAULT_BASELINE_MASTER = DEFAULT_PERSONAL_MASTER_PATH
 DEFAULT_EVIDENCE_APPLIED_MASTER = "data/processed/personal_fundamentals_master_sec_derived_kpi_applied.csv"

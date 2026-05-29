@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from src.common import read_csv_rows
-from src.cost_tax_archive_engine import ARCHIVE_SUMMARY_FIELDS, run_cost_tax_archive_engine
+from src.cost_tax_archive_engine import run_cost_tax_archive_engine
 from src.cost_tax_engine import DOCUMENT_SUMMARY_ONLY, FULL_LEDGER, NORMALIZED_LEDGER_FIELDS, PARTIAL_LEDGER
 
 

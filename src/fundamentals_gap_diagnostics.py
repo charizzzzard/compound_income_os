@@ -7,14 +7,9 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from src.common import canonicalize_ticker, read_csv_rows, require_columns, safe_upper, to_bool, write_csv_rows
+from src.common import canonicalize_ticker, read_csv_rows, require_columns, safe_upper, write_csv_rows
 from src.fundamentals_master import (
-    CORE_KPI_FIELDS,
-    COVERAGE_OUTPUT_FIELDS,
     DEFAULT_COVERAGE_OUTPUT,
-    DEFAULT_PERSONAL_MASTER_PATH,
-    DEFAULT_RESEARCH_PRIORITY_OUTPUT,
-    PERSONAL_MASTER_FIELDS,
     compute_kpi_coverage,
     count_present_core_kpis,
     derive_fundamentals_data_quality,

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from src.common import ROOT, ensure_parent_dir, resolve_repo_path
+from src.common import ensure_parent_dir, resolve_repo_path
 
 APP_PATH = "website/compound-income-os-landing/src/App.jsx"
 CONFIG_PATH = "website/compound-income-os-landing/src/siteConfig.js"

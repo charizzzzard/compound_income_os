@@ -10,7 +10,6 @@ from typing import Any
 from src.common import read_csv_rows
 from src.external_sec_identity_resolve import (
     CANDIDATE_FIELDS,
-    FAILURE_FIELDS,
     SUMMARY_FIELDS,
     run_external_sec_identity_resolve,
 )

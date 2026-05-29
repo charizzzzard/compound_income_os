@@ -11,7 +11,6 @@ from src.dashboard_engine import (
     run_dashboard_engine,
     write_universe_csv,
 )
-from src.savings_plan_registry import REGISTRY_FIELDS
 
 
 class DashboardEngineUniverseSectionTests(unittest.TestCase):

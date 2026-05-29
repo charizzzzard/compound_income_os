@@ -9,7 +9,6 @@ from typing import Any
 
 from src.common import read_csv_rows
 from src.external_sec_companyfacts_fetch import (
-    FAILURES_FIELDS,
     IDENTITY_MAP_FIELDS,
     REGISTRY_FIELDS,
     SUMMARY_FIELDS,

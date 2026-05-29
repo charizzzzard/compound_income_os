@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from src.common import ensure_parent_dir, load_yaml_config, read_csv_rows, require_columns, require_non_blank_fields, round2, to_float, write_csv_rows
-from src.portfolio_rules import classify_sleeve, compute_cash_value, compute_portfolio_value
+from src.portfolio_rules import compute_cash_value, compute_portfolio_value
 
 SNAPSHOT_ONLY = "SNAPSHOT_ONLY"
 PARTIAL_HISTORY = "PARTIAL_HISTORY"

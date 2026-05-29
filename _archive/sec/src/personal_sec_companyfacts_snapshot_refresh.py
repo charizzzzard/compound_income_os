@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import csv
 import hashlib
 import json
 import os
@@ -326,7 +325,7 @@ def main() -> None:
         summary_output=args.summary_output,
         report_output=args.report_output,
     )
-    print(f"snapshot_manifest=<private_sec_companyfacts_snapshot_manifest>")
+    print("snapshot_manifest=<private_sec_companyfacts_snapshot_manifest>")
     print(f"retention_summary={result.summary_path}")
     print(f"retention_report={result.report_path}")
     print(f"run_id={result.run_id}")

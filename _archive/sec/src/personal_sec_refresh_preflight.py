@@ -8,7 +8,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from src.common import read_csv_rows, resolve_repo_path, safe_upper, write_csv_rows
+from src.common import read_csv_rows, resolve_repo_path, write_csv_rows
 
 DEFAULT_SEC_PLAN_INPUT = "data/processed/personal_sec_core_kpi_refresh_plan.csv"
 DEFAULT_SEC_PLAN_SUMMARY_INPUT = "data/processed/personal_sec_core_kpi_refresh_plan_summary.csv"

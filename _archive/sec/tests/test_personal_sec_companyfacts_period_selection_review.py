@@ -169,7 +169,7 @@ class PersonalSecCompanyfactsPeriodSelectionReviewTests(unittest.TestCase):
         self.write_csv(self.queue, list(self.queue_row().keys()), [self.queue_row(kpi_field="share_count_cagr_5y")])
         self.write_csv(
             self.facts,
-            list(self.fact("WeightedAverageNumberOfDilutedSharesOutstanding", "100", unit := "2020").keys()),
+            list(self.fact("WeightedAverageNumberOfDilutedSharesOutstanding", "100", "2020").keys()),
             [
                 self.fact("WeightedAverageNumberOfDilutedSharesOutstanding", "100", "2020"),
                 self.fact("WeightedAverageNumberOfDilutedSharesOutstanding", "120", "2025"),

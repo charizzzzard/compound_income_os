@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from src.common import ensure_parent_dir, resolve_repo_path
+from src.common import ensure_parent_dir
 
 DEFAULT_CSV_OUTPUT = "data/processed/external_review_cross_patch_regression.csv"
 DEFAULT_REPORT_OUTPUT_TEMPLATE = "reports/{as_of_date}/external_review_cross_patch_regression_report.md"
@@ -527,8 +527,8 @@ def run_and_write(
 ) -> dict[str, Any]:
     findings = run_cross_patch_regression(as_of_date=as_of_date, repo_root=repo_root)
     report_path = report_output or DEFAULT_REPORT_OUTPUT_TEMPLATE.format(as_of_date=as_of_date)
-    csv_path = write_csv(findings, csv_output)
-    markdown_path = write_markdown_report(findings, as_of_date, report_path)
+    write_csv(findings, csv_output)
+    write_markdown_report(findings, as_of_date, report_path)
     counts = _status_counts(findings)
     return {
         "status": "WARN" if counts.get("FAIL", 0) or counts.get("WARN", 0) or counts.get("MISSING", 0) or counts.get("NOT_AVAILABLE", 0) else "OK",

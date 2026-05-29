@@ -2,10 +2,8 @@ from __future__ import annotations
 
 import argparse
 import csv
-from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 from src.common import read_csv_rows, resolve_repo_path, write_csv_rows
 from src.personal_sec_derived_kpi_compose import (

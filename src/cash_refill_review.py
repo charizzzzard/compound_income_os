@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from src.common import ensure_parent_dir, load_yaml_config, read_csv_rows, resolve_repo_path, round2, to_float
+from src.common import ensure_parent_dir, load_yaml_config, read_csv_rows, round2, to_float
 from src.portfolio_rules import classify_sleeve, load_portfolio_rules
 
 DEFAULT_POSITIONS_INPUT = "data/processed/personal_positions_snapshot.csv"
