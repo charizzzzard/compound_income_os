@@ -5,7 +5,7 @@ Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
 
 - commit: `079a5d6cd0c8a196dcf29096909455bf79a323bf`
 - message: `Clarify data freshness personal run surface`
-- status: `DATA_FRESHNESS_PERSONAL_RUN_SURFACE_WIRING_REVIEW_ACCEPTED_WITH_FINDINGS`
+- status: `EXTERNAL_REVIEW_ACCEPTED_WITH_FINDINGS_NO_CODE_CHANGE_REQUIRED`
 
 Dieses Packet superseded aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck.
@@ -108,6 +108,30 @@ Executed in current local repo before handoff regeneration:
 ZIP-internal `HANDOFF_VALIDATION.txt` records requested validation commands as
 `RECORDED_VALIDATION`; those lines are not automatic proof that an external
 reviewer executed them from the ZIP.
+
+## External Review Closure
+
+External review verdict ingested:
+
+- reviewed_patch: `DATA_FRESHNESS_PERSONAL_RUN_SURFACE_WIRING_REVIEW`
+- external_verdict: `ACCEPTED_WITH_FINDINGS`
+- blocker_findings: `0`
+- major_findings: `0`
+- required_code_changes: `0`
+- closure_decision: `NO_CODE_CHANGE_REQUIRED`
+
+Accepted findings:
+
+- `HANDOFF_VALIDATION.txt` correctly records validation provenance as
+  `RECORDED_VALIDATION`.
+- ZIP-only execution of `python -m unittest tests.test_personal_run_engine -v`
+  can fail when raw/local fixtures intentionally omitted from the handoff ZIP are
+  absent. This is a reproduction-boundary finding, not a Data Freshness contract
+  failure.
+- Concrete markdown value assertions for Data Freshness in
+  `personal_run_report.md` can be hardened later as optional test hardening.
+- Repo-wide `ruff` findings remain known validation noise outside this patch
+  scope.
 
 ## Explicit Non-Scope
 

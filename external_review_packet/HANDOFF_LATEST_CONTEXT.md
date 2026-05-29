@@ -18,6 +18,11 @@ handoff_metadata_commit: pending_until_metadata_commit
 handoff_metadata_commit_note: the metadata commit is created after this file is written; use git HEAD after the metadata commit or the operator final report for the exact metadata commit hash.
 implementation_commit_message: Clarify data freshness personal run surface
 implementation_status: DATA_FRESHNESS_PERSONAL_RUN_SURFACE_WIRING_REVIEW_ACCEPTED_WITH_FINDINGS
+external_review_status: EXTERNAL_REVIEW_ACCEPTED_WITH_FINDINGS_NO_CODE_CHANGE_REQUIRED
+external_verdict: ACCEPTED_WITH_FINDINGS
+blocker_findings: 0
+major_findings: 0
+required_code_changes: 0
 tracked_source_worktree_clean_before_handoff_generation: True
 zip_internal_dirty_worktree_present: False
 external_metadata_dirty_after_zip_generation_before_commit: True
@@ -156,8 +161,46 @@ This packet does not implement or change:
 
 Human Operator remains the final acceptance authority.
 
+## External Review Ingestion
+
+External review result ingested:
+
+- external_review_status: `EXTERNAL_REVIEW_ACCEPTED_WITH_FINDINGS_NO_CODE_CHANGE_REQUIRED`
+- reviewed_patch: `DATA_FRESHNESS_PERSONAL_RUN_SURFACE_WIRING_REVIEW`
+- implementation_head: `079a5d6cd0c8a196dcf29096909455bf79a323bf`
+- base_head: `91e044f7187b1bae30a6a1dfa457b86e1b648afe`
+- delta_range: `91e044f7187b1bae30a6a1dfa457b86e1b648afe..079a5d6cd0c8a196dcf29096909455bf79a323bf`
+- external_verdict: `ACCEPTED_WITH_FINDINGS`
+- blocker_findings: `0`
+- major_findings: `0`
+- required_code_changes: `0`
+
+Accepted findings:
+
+- `HANDOFF_VALIDATION.txt` uses `RECORDED_VALIDATION` provenance correctly and
+  does not claim external execution.
+- ZIP-only execution of `python -m unittest tests.test_personal_run_engine -v`
+  can fail when raw/local fixtures intentionally omitted from the handoff ZIP are
+  absent. This is accepted as a reproduction boundary, not a Data Freshness
+  contract failure.
+- `personal_run_report.md` markdown assertions can be hardened in a future
+  optional test-only patch to assert concrete Data Freshness rendered values.
+- `python -m ruff check .` still reports known pre-existing repo-wide lint
+  findings outside this patch scope.
+
+Future non-blocking candidates:
+
+- `PERSONAL_RUN_DATA_FRESHNESS_MARKDOWN_ASSERTION_HARDENING`: harden
+  `personal_run_report.md` assertions for concrete Data Freshness rendered
+  values, not only field names, while keeping runtime behavior unchanged.
+- `ZIP_SAFE_PERSONAL_RUN_ENGINE_TEST_FIXTURE_BOUNDARY`: keep
+  `tests.test_personal_run_engine` classified as local-fixture-dependent or
+  replace raw dependencies with synthetic header-only fixtures for ZIP-safe
+  reproduction.
+
 ## Next Recommended Step
 
-Recommended next step: external delta review of
-`DATA_FRESHNESS_PERSONAL_RUN_SURFACE_WIRING_REVIEW` using this refreshed
-`HANDOFF_LATEST` packet.
+Recommended next step: close
+`DATA_FRESHNESS_PERSONAL_RUN_SURFACE_WIRING_REVIEW`. Plan
+`PERSONAL_RUN_DATA_FRESHNESS_MARKDOWN_ASSERTION_HARDENING` or
+`DASHBOARD_FRESHNESS_SURFACE_CONTRACT` separately only after operator selection.
