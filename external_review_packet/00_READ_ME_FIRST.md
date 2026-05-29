@@ -1,11 +1,11 @@
-# Compound Income OS External LLM Review Packet - Valuation Methodology Boundary Contract Pre-DCF
+# Compound Income OS External LLM Review Packet - Handoff Patch Identity Hardening
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach dem Contract-only-Patch:
+(CIOS) nach dem Handoff-Exporter-Hygiene-Patch:
 
-- commit: `c1fd85ae82a268b3c31a839ba0a466f5357b05e0`
-- message: `docs: add valuation methodology boundary contract`
-- status: `VALUATION_METHODOLOGY_BOUNDARY_CONTRACT_PRE_DCF_ACCEPTED_WITH_FINDINGS`
+- commit: `848e8ea32062d5639d35a61a0d047ee393d726bc`
+- message: `chore: add patch identity handoff overrides`
+- status: `HANDOFF_PATCH_IDENTITY_HARDENING_ACCEPTED_WITH_FINDINGS`
 
 Dieses Packet superseded aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck.
@@ -16,15 +16,15 @@ aktuellen Review-Zweck.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- base_head: `fc85aec6050c20e1d556160f7dfd2e2025e7cf91`
-- implementation_head: `c1fd85ae82a268b3c31a839ba0a466f5357b05e0`
-- implementation_short_head: `c1fd85a`
-- current_handoff_head: `c1fd85ae82a268b3c31a839ba0a466f5357b05e0`
-- current_handoff_short_head: `c1fd85a`
-- delta_range: `fc85aec6050c20e1d556160f7dfd2e2025e7cf91..c1fd85ae82a268b3c31a839ba0a466f5357b05e0`
+- base_head: `5bcccd82050d10b2010f52e18b360f8c92526e9b`
+- implementation_head: `848e8ea32062d5639d35a61a0d047ee393d726bc`
+- implementation_short_head: `848e8ea`
+- current_handoff_head: `848e8ea32062d5639d35a61a0d047ee393d726bc`
+- current_handoff_short_head: `848e8ea`
+- delta_range: `5bcccd82050d10b2010f52e18b360f8c92526e9b..848e8ea32062d5639d35a61a0d047ee393d726bc`
 - handoff_metadata_commit: `pending_until_metadata_commit`
 - handoff_metadata_commit_note: `metadata commit is created after this file is written; use git HEAD after metadata commit or the operator final report for the exact metadata commit hash`
-- bundle_purpose: `external_review_after_valuation_methodology_boundary_contract_pre_dcf`
+- bundle_purpose: `external_review_after_handoff_patch_identity_hardening`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -47,38 +47,29 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 ## Reviewer Instructions
 
 - Verwende volle repo-relative Pfade in Findings.
+- Pruefe, dass `HANDOFF_PATCH_IDENTITY.md` im ZIP die patch-spezifischen Werte
+  enthaelt:
+  - `patch_title: VALUATION_METHODOLOGY_CONTRACT_PRE_DCF`
+  - `bundle_purpose: external_review_after_valuation_methodology_boundary_contract_pre_dcf`
+- Pruefe, dass Default-Exporter-Verhalten weiterhin rueckwaertskompatibel ist.
+- Pruefe, dass `HANDOFF_VALIDATION.txt` weiterhin `RECORDED_VALIDATION` als
+  Provenienz verwendet.
+- Pruefe, dass `HANDOFF_CHANGE_CLASSIFICATION.csv` vorhanden und mit Delta-Zeilen
+  befuellt ist.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
-- Pruefe `docs/contracts/VALUATION_METHODOLOGY_BOUNDARY_CONTRACT.md` als
-  kanonischen Pre-DCF-Methodology-Boundary-Contract.
-- Pruefe, dass der Contract nur Methodology-Boundaries definiert und keine DCF,
-  Formel-, Scoring-, Ranking-, Provider-, Order- oder Automationslogik
-  implementiert.
-- Pruefe, dass bestehende Valuation-/Semantic-Boundary-Dokumente nur konservativ
-  auf den neuen Contract verweisen.
-- Behandle `HANDOFF_VALIDATION.txt` als `RECORDED_VALIDATION`, sofern keine
-  externe Kontextdatei oder ein Operatorbericht eine tatsaechliche Ausfuehrung
-  als `EXECUTED_IN_CURRENT_REPO` oder `EXECUTED_IN_ZIP_CONTEXT` belegt.
-- Behandle fehlendes `pytest` oder `ruff` als Environment-Realitaet, nicht als
-  Erfolg und nicht automatisch als Repo-Logikfehler.
-- Inferiere keine Valuation Automation, Investment Advice, Investment
+- Inferiere keine Valuation Automation, DCF, Investment Advice, Investment
   Readiness, Buy/Sell-Automation, Order Execution oder Product-/Production-
   Readiness.
-- Fehlende, stale, unknown, invalid, inconsistent, conflict oder review states
-  muessen sichtbar bleiben.
-- Keine stille Imputation, keine stille Ueberschreibung akzeptierter Fakten.
 
 ## Review Scope
 
 Reviewer sollen insbesondere pruefen:
 
-- `docs/contracts/VALUATION_METHODOLOGY_BOUNDARY_CONTRACT.md`
-- `tests/test_valuation_methodology_boundary_contract.py`
-- `docs/contracts/VALUATION_ENGINE_BOUNDARY_CONTRACT.md`
-- `docs/contracts/VALUATION_SCORING_SEMANTIC_DECISION_QUALITY_CONTRACT.md`
-- `docs/MODULE_CONTRACTS.md`
-- `docs/architecture/CIOS_FEATURE_STATUS.yaml`
-- `docs/architecture/CURRENT_KNOWN_GAPS.md`
-- `configs/test_reproduction_matrix.json`
+- `src/handoff_bundle.py`
+- `src/handoff_zip_export.py`
+- `tests/test_handoff_bundle.py`
+- `tests/test_handoff_zip_export.py`
+- `docs/HANDOFF_CONTRACT.md`
 - ZIP-internal:
   - `HANDOFF_CONTEXT.md`
   - `HANDOFF_PATCH_IDENTITY.md`
@@ -88,8 +79,8 @@ Reviewer sollen insbesondere pruefen:
 ## Handoff Integrity Summary
 
 - zip_file_count: `514`
-- zip_size_bytes: `13175840`
-- zip_sha256: `48631af09a4ce5c5cc76ce8185a4ad2398f1c9f41232e7d78decd16f5ef843ec`
+- zip_size_bytes: `13176183`
+- zip_sha256: `abd801a74c579bfa623d7ae8779b3d1b3d0c3626397493d141d42876f45045ba`
 - sha_match: `True`
 - zip_testzip: `None`
 - missing_required: `[]`
@@ -98,26 +89,23 @@ Reviewer sollen insbesondere pruefen:
 - local_path_leak_count: `0`
 - delta_evidence_artifact: `HANDOFF_PATCH_IDENTITY.md`
 - change_classification_artifact: `HANDOFF_CHANGE_CLASSIFICATION.csv`
-- change_classification_rows: `8`
+- change_classification_rows: `5`
 
 ## Validation Reality
 
 Executed in current local repo before implementation commit:
 
-- `python -m unittest tests.test_valuation_methodology_boundary_contract -v`: PASS, 6 tests
-- `python -m unittest tests.test_valuation_scoring_semantic_decision_quality_review -v`: PASS, 15 tests
-- `python -m unittest tests.test_valuation_engine_behavior -v`: PASS, 14 tests
-- `python -m unittest tests.test_scoring_engine -v`: PASS, 20 tests
-- `python -m unittest tests.test_watchlist_engine -v`: PASS, 9 tests
-- `python -m unittest tests.test_monthly_decision_report -v`: PASS, 13 tests
+- `python -m unittest tests.test_handoff_bundle -v`: PASS, 22 tests
+- `python -m unittest tests.test_handoff_zip_export -v`: PASS, 10 tests
 - `python -m unittest tests.test_reproduction_matrix -v`: PASS, 3 tests
-- `python -m unittest discover -s tests -p "test_*.py"`: PASS, 907 tests
+- `python -m unittest discover -s tests -p "test_*.py"`: PASS, 909 tests
 - `git diff --check`: PASS with LF-to-CRLF working-copy warnings only
+- `python -m pytest -q`: PASS, 909 tests, 219 subtests
+- `python -m ruff check .`: FAIL_EXISTING_LINT_FINDINGS, 45 pre-existing broad lint findings remain outside this patch objective
 
-Optional tools:
-
-- `python -m pytest -q`: NOT_AVAILABLE, `No module named pytest`
-- `python -m ruff check .`: NOT_AVAILABLE, `No module named ruff`
+ZIP-internal `HANDOFF_VALIDATION.txt` records requested validation commands as
+`RECORDED_VALIDATION`; those lines are not automatic proof that an external
+reviewer executed them from the ZIP.
 
 ## Explicit Non-Scope
 
@@ -125,10 +113,9 @@ This packet does not claim or introduce:
 
 - DCF engine
 - valuation automation
-- new valuation formula
-- scoring formula change
-- ranking change
-- analyst target price ingestion
+- valuation formulas
+- scoring formulas
+- ranking logic
 - provider/API integration
 - scraping or crawling
 - broker import
