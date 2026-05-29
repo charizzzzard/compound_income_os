@@ -1,12 +1,12 @@
-# Compound Income OS External LLM Review Packet - Structural Harden Valuation Methodology Boundary Contract Tests
+# Compound Income OS External LLM Review Packet - Structural Harden Valuation Methodology Boundary Contract Existing Section Order Tests
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach dem strukturellen Test-Hardening-Patch fuer den
-Valuation-Methodology-Boundary-Contract:
+(CIOS) nach der Handoff-Aktualisierung fuer den strukturellen
+Existing-Section-Order-Test-Hardening-Patch:
 
-- commit: `abb1e0eb37b11604b3de8c0ed2a35709a7a4871a`
-- message: `tests: validate valuation methodology boundary sections`
-- status: `STRUCTURAL_HARDEN_VALUATION_METHODOLOGY_BOUNDARY_CONTRACT_TESTS_ACCEPTED_WITH_FINDINGS`
+- commit: `4aed495534d03ef04bc759769df7143142477c94`
+- message: `tests: validate valuation methodology boundary section order`
+- status: `STRUCTURAL_HARDEN_VALUATION_METHODOLOGY_BOUNDARY_CONTRACT_EXISTING_SECTION_ORDER_TESTS_ACCEPTED_WITH_FINDINGS`
 
 Dieses Packet superseded aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck.
@@ -17,15 +17,15 @@ aktuellen Review-Zweck.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- base_head: `448e18bbaa216666548088b5e8f5110d9c47f15b`
-- implementation_head: `abb1e0eb37b11604b3de8c0ed2a35709a7a4871a`
-- implementation_short_head: `abb1e0e`
-- current_handoff_head: `abb1e0eb37b11604b3de8c0ed2a35709a7a4871a`
-- current_handoff_short_head: `abb1e0e`
-- delta_range: `448e18bbaa216666548088b5e8f5110d9c47f15b..abb1e0eb37b11604b3de8c0ed2a35709a7a4871a`
+- base_head: `6cf9e6e16c28496276d4203a9530f6b4fbf56d85`
+- implementation_head: `4aed495534d03ef04bc759769df7143142477c94`
+- implementation_short_head: `4aed495`
+- current_handoff_head: `4aed495534d03ef04bc759769df7143142477c94`
+- current_handoff_short_head: `4aed495`
+- delta_range: `6cf9e6e16c28496276d4203a9530f6b4fbf56d85..4aed495534d03ef04bc759769df7143142477c94`
 - handoff_metadata_commit: `pending_until_metadata_commit`
 - handoff_metadata_commit_note: `metadata commit is created after this file is written; use git HEAD after metadata commit or the operator final report for the exact metadata commit hash`
-- bundle_purpose: `external_review_after_structural_harden_valuation_methodology_boundary_contract_tests`
+- bundle_purpose: `external_review_after_structural_harden_valuation_methodology_boundary_contract_existing_section_order_tests`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -50,12 +50,11 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 - Verwende volle repo-relative Pfade in Findings.
 - Pruefe, dass `HANDOFF_PATCH_IDENTITY.md` im ZIP die patch-spezifischen Werte
   enthaelt:
-  - `patch_title: STRUCTURAL_HARDEN_VALUATION_METHODOLOGY_BOUNDARY_CONTRACT_TESTS`
-  - `bundle_purpose: external_review_after_structural_harden_valuation_methodology_boundary_contract_tests`
-- Pruefe, dass nur `tests/test_valuation_methodology_boundary_contract.py`
-  fachlich geaendert wurde.
-- Pruefe, dass die Tests section-aware sind, ohne Runtime-Logik oder
-  Bewertungsformeln einzufuehren.
+  - `patch_title: STRUCTURAL_HARDEN_VALUATION_METHODOLOGY_BOUNDARY_CONTRACT_EXISTING_SECTION_ORDER_TESTS`
+  - `bundle_purpose: external_review_after_structural_harden_valuation_methodology_boundary_contract_existing_section_order_tests`
+- Pruefe, dass `HANDOFF_CHANGE_CLASSIFICATION.csv` genau
+  `tests/test_valuation_methodology_boundary_contract.py` als
+  patch-geaenderte Implementierungsdatei ausweist.
 - Pruefe, dass `HANDOFF_VALIDATION.txt` weiterhin `RECORDED_VALIDATION` als
   Provenienz verwendet.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
@@ -69,7 +68,6 @@ Reviewer sollen insbesondere pruefen:
 
 - `tests/test_valuation_methodology_boundary_contract.py`
 - `docs/contracts/VALUATION_METHODOLOGY_BOUNDARY_CONTRACT.md`
-- linked docs that reference `docs/contracts/VALUATION_METHODOLOGY_BOUNDARY_CONTRACT.md`
 - ZIP-internal:
   - `HANDOFF_CONTEXT.md`
   - `HANDOFF_PATCH_IDENTITY.md`
@@ -79,8 +77,8 @@ Reviewer sollen insbesondere pruefen:
 ## Handoff Integrity Summary
 
 - zip_file_count: `516`
-- zip_size_bytes: `13181636`
-- zip_sha256: `b2afffa4d619c3ac0e31923494dd5d5f37678dba2183543277a90dbb6ad2339a`
+- zip_size_bytes: `13181904`
+- zip_sha256: `179c086872cc14ba04d069f429688ae498588c9b7c47d7552b8d64fbc0af229a`
 - sha_match: `True`
 - zip_testzip: `None`
 - missing_required: `[]`
@@ -93,14 +91,14 @@ Reviewer sollen insbesondere pruefen:
 
 ## Validation Reality
 
-Executed in current local repo before implementation commit:
+Executed in current local repo before handoff regeneration:
 
-- `python -m unittest tests.test_valuation_methodology_boundary_contract -v`: PASS, 9 tests
+- `python -m unittest tests.test_valuation_methodology_boundary_contract -v`: PASS, 10 tests
 - `python -m unittest tests.test_valuation_methodology_proposal_template -v`: PASS, 10 tests
 - `python -m unittest tests.test_reproduction_matrix -v`: PASS, 3 tests
-- `python -m pytest -q`: PASS, 922 tests, 219 subtests
+- `python -m pytest -q`: PASS, 923 tests, 219 subtests
 - `python -m ruff check .`: FAIL_EXISTING_LINT_FINDINGS, 45 pre-existing broad lint findings remain outside this patch objective
-- `git diff --check`: PASS with LF-to-CRLF working-copy warnings only
+- `git diff --check`: PASS
 
 ZIP-internal `HANDOFF_VALIDATION.txt` records requested validation commands as
 `RECORDED_VALIDATION`; those lines are not automatic proof that an external
