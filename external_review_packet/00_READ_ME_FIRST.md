@@ -1,11 +1,12 @@
-# Compound Income OS External LLM Review Packet - Practical Operating Standard
+# Compound Income OS External LLM Review Packet - Practical Operating Standard Acceptance
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach dem Governance-Patch `CIOS_PRACTICAL_OPERATING_STANDARD`.
+(CIOS) nach dem Governance-Acceptance-Record
+`CIOS_PRACTICAL_OPERATING_STANDARD_ACCEPTANCE`.
 
-- local_handoff_head: `af1622a8e1fa3ac89b53a23cda05d50ebb334323`
-- remote_main_head_at_export: `e8ac5583502ad90a9240b857469debb87eacc6b2`
-- status: `GOVERNANCE_PATCH_HANDOFF_READY`
+- local_handoff_head: `92310edd7be283f2d20ae69ce62dfce994c6cb89`
+- remote_main_head_at_export: `7cd7caad97d3ff12179e1883d558164245e1b46c`
+- status: `OPERATOR_ACCEPTANCE_RECORD_HANDOFF_READY`
 
 Dieses Packet ersetzt aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck. Es ist der einzige authoritative externe Handoff fuer
@@ -18,12 +19,11 @@ paralleler Review-Handoff.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- base_head: `e8ac5583502ad90a9240b857469debb87eacc6b2`
-- implementation_head: `af1622a8e1fa3ac89b53a23cda05d50ebb334323`
-- preflight_head: `e8ac5583502ad90a9240b857469debb87eacc6b2`
-- central_handoff_zip_head: `af1622a8e1fa3ac89b53a23cda05d50ebb334323`
-- current_handoff_head: `af1622a8e1fa3ac89b53a23cda05d50ebb334323`
-- bundle_purpose: `external_review_after_cios_practical_operating_standard`
+- base_head: `7cd7caad97d3ff12179e1883d558164245e1b46c`
+- implementation_head: `92310edd7be283f2d20ae69ce62dfce994c6cb89`
+- central_handoff_zip_head: `92310edd7be283f2d20ae69ce62dfce994c6cb89`
+- current_handoff_head: `92310edd7be283f2d20ae69ce62dfce994c6cb89`
+- bundle_purpose: `external_review_after_cios_practical_operating_standard_acceptance`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -56,18 +56,13 @@ Bei Konflikten gilt diese Reihenfolge:
 - `HANDOFF_VALIDATION.txt` enthaelt `RECORDED_VALIDATION`-Eintraege. Diese
   sind Befehlsprovenienz, nicht Ausfuehrungsbeweise, sofern kein separater
   Operator- oder Reviewer-Bericht die Ausfuehrung belegt.
-- Findings muessen die kanonischen Severities `BLOCKER`, `MAJOR`, `MINOR` oder
-  `INFO` verwenden.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
-- Inferiere nicht, dass GitHub lokale uncommitted, ignored oder generated files
-  enthaelt.
-- Behandle Dokumentations- und Governance-Standards nicht als Runtime
-  Enforcement.
+- Behandle den Acceptance-Record nicht als Runtime Enforcement.
 
 ## Handoff Integrity Summary
 
-- zip_file_count: `522`
-- zip_sha256: `cb878971be66cc008c9a793bc54b26ca82dd6ba6d76532836a4bf89878a85c0f`
+- zip_file_count: `523`
+- zip_sha256: `76a591eabaf761f28a9a84bf69ed0c11f7a6622e8f66cf1103837ed7830b3ca0`
 - sha_match: `True`
 - zip_testzip: `None`
 - nested_zip_count: `0`
@@ -76,10 +71,9 @@ Bei Konflikten gilt diese Reihenfolge:
 
 ## Patch Delta
 
-`HANDOFF_CHANGE_CLASSIFICATION.csv` lists exactly these patch-changed files:
+`HANDOFF_CHANGE_CLASSIFICATION.csv` lists exactly this patch-changed file:
 
-- `docs/governance/CIOS_PRACTICAL_OPERATING_STANDARD.md`
-- `tests/test_practical_operating_standard.py`
+- `docs/governance/CIOS_PRACTICAL_OPERATING_STANDARD_ACCEPTANCE.md`
 
 ## Explicit Non-Scope
 

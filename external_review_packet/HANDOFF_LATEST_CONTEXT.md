@@ -4,16 +4,16 @@
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- patch_title: `CIOS_PRACTICAL_OPERATING_STANDARD`
-- bundle_purpose: `external_review_after_cios_practical_operating_standard`
+- patch_title: `CIOS_PRACTICAL_OPERATING_STANDARD_ACCEPTANCE`
+- bundle_purpose: `external_review_after_cios_practical_operating_standard_acceptance`
 - profile: `full_review`
 - bundle_name: `HANDOFF_LATEST`
-- base_head: `e8ac5583502ad90a9240b857469debb87eacc6b2`
-- implementation_head: `af1622a8e1fa3ac89b53a23cda05d50ebb334323`
-- preflight_head: `e8ac5583502ad90a9240b857469debb87eacc6b2`
-- central_handoff_zip_head: `af1622a8e1fa3ac89b53a23cda05d50ebb334323`
-- current_handoff_head: `af1622a8e1fa3ac89b53a23cda05d50ebb334323`
-- remote_main_head_at_export: `e8ac5583502ad90a9240b857469debb87eacc6b2`
+- base_head: `7cd7caad97d3ff12179e1883d558164245e1b46c`
+- implementation_head: `92310edd7be283f2d20ae69ce62dfce994c6cb89`
+- preflight_head: `7cd7caad97d3ff12179e1883d558164245e1b46c`
+- central_handoff_zip_head: `92310edd7be283f2d20ae69ce62dfce994c6cb89`
+- current_handoff_head: `92310edd7be283f2d20ae69ce62dfce994c6cb89`
+- remote_main_head_at_export: `7cd7caad97d3ff12179e1883d558164245e1b46c`
 - dirty_worktree_present_at_export: `False`
 - reviewer_facing_upload_folder: `external_review_packet`
 
@@ -33,37 +33,36 @@ Bei Konflikten gilt diese Reihenfolge:
 
 ## Patch Identity
 
-- patch_title: `CIOS_PRACTICAL_OPERATING_STANDARD`
-- bundle_purpose: `external_review_after_cios_practical_operating_standard`
-- base_head: `e8ac5583502ad90a9240b857469debb87eacc6b2`
-- implementation_head: `af1622a8e1fa3ac89b53a23cda05d50ebb334323`
-- central_handoff_zip_head: `af1622a8e1fa3ac89b53a23cda05d50ebb334323`
-- delta_range: `e8ac5583502ad90a9240b857469debb87eacc6b2..af1622a8e1fa3ac89b53a23cda05d50ebb334323`
-- changed_file_count: `2`
+- patch_title: `CIOS_PRACTICAL_OPERATING_STANDARD_ACCEPTANCE`
+- bundle_purpose: `external_review_after_cios_practical_operating_standard_acceptance`
+- base_head: `7cd7caad97d3ff12179e1883d558164245e1b46c`
+- implementation_head: `92310edd7be283f2d20ae69ce62dfce994c6cb89`
+- central_handoff_zip_head: `92310edd7be283f2d20ae69ce62dfce994c6cb89`
+- delta_range: `7cd7caad97d3ff12179e1883d558164245e1b46c..92310edd7be283f2d20ae69ce62dfce994c6cb89`
+- changed_file_count: `1`
 
-Changed files:
+Changed file:
 
-- `docs/governance/CIOS_PRACTICAL_OPERATING_STANDARD.md`
-- `tests/test_practical_operating_standard.py`
+- `docs/governance/CIOS_PRACTICAL_OPERATING_STANDARD_ACCEPTANCE.md`
 
-## Review Findings Ingested
+## Operator Acceptance Recorded
 
-The externally reviewed draft was accepted with findings and no blocker or
-major finding. This materialized standard incorporates the accepted minor
-hardenings:
+This patch records Human Operator acceptance of
+`docs/governance/CIOS_PRACTICAL_OPERATING_STANDARD.md` as the working operating
+baseline for future CIOS work.
 
-- `MINOR-001`: explicit `push_status` and `remote_main_contains_head` fields.
-- `MINOR-002`: canonical external review severities `BLOCKER`, `MAJOR`,
-  `MINOR`, `INFO`.
-- `MINOR-003`: missing, stale or unknown data must remain visible and must not
-  be silently imputed, overwritten, suppressed or converted into accepted facts.
+The acceptance state is `ACCEPT_BASELINE_AS_WORKING_INPUT`. It preserves the
+distinction between documented, tested, enforced, operationally_ready and
+production_ready, and it does not claim runtime enforcement, product readiness,
+investment readiness, broker/API readiness, order execution or buy/sell
+automation.
 
 ## Handoff Integrity Summary
 
 - zip_path: `external_review_packet/HANDOFF_LATEST.zip`
 - sha_path: `external_review_packet/HANDOFF_LATEST.sha256`
-- zip_file_count: `522`
-- zip_sha256: `cb878971be66cc008c9a793bc54b26ca82dd6ba6d76532836a4bf89878a85c0f`
+- zip_file_count: `523`
+- zip_sha256: `76a591eabaf761f28a9a84bf69ed0c11f7a6622e8f66cf1103837ed7830b3ca0`
 - sha_match: `True`
 - zip_testzip: `None`
 - nested_zip_count: `0`
@@ -77,10 +76,6 @@ Actually executed in the current local repo before handoff regeneration:
 
 - `git diff --check`: PASS
 - `python -m ruff check docs tests src`: PASS, `All checks passed!`
-- `python -m pytest tests/test_practical_operating_standard.py -q`: PASS,
-  `6 passed, 57 subtests passed`
-- `python -m pytest tests/test_readme_and_reports.py -q`: PASS,
-  `14 passed, 130 subtests passed`
 
 ZIP-internal `HANDOFF_VALIDATION.txt` records validation commands as
 `RECORDED_VALIDATION`. It is command provenance, not proof of external execution
@@ -88,14 +83,10 @@ unless a separate reviewer/operator report says so.
 
 ## External LLM Review Instructions
 
-- Review the new practical operating standard and its tests only for this patch
-  delta.
+- Review only the operator acceptance record and central packet consistency.
 - Do not infer omitted private/raw/provider/broker files.
-- Do not treat documentation-only standards as runtime enforcement.
-- Do not treat external LLM review as final acceptance.
-- Map all findings to `BLOCKER`, `MAJOR`, `MINOR` or `INFO`.
-- Distinguish documented, tested, enforced, operationally_ready and
-  production_ready.
+- Do not treat documentation-only standards or acceptance records as runtime
+  enforcement.
 - Cite repo-relative paths in findings.
 
 ## Explicit Non-Scope
