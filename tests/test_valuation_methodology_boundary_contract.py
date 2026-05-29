@@ -17,6 +17,25 @@ def normalized(text: str) -> str:
     return " ".join(text.lower().split())
 
 
+def extract_section(text: str, heading: str) -> str:
+    lines = text.splitlines()
+    start_index: int | None = None
+    for index, line in enumerate(lines):
+        if line.strip() == heading:
+            start_index = index
+            break
+    if start_index is None:
+        raise AssertionError(f"Missing section: {heading}")
+
+    end_index = len(lines)
+    for index in range(start_index + 1, len(lines)):
+        line = lines[index].strip()
+        if line.startswith("## ") and not line.startswith("### "):
+            end_index = index
+            break
+    return "\n".join(lines[start_index:end_index])
+
+
 class ValuationMethodologyBoundaryContractTests(unittest.TestCase):
     def test_contract_file_exists(self) -> None:
         self.assertTrue(CONTRACT_PATH.exists())
@@ -36,7 +55,8 @@ class ValuationMethodologyBoundaryContractTests(unittest.TestCase):
             self.assertIn(section, text)
 
     def test_required_non_scope_phrases_exist(self) -> None:
-        text = normalized(read(CONTRACT_PATH))
+        section = extract_section(read(CONTRACT_PATH), "## Explicit Non-Scope")
+        text = normalized(section)
 
         for phrase in [
             "no dcf engine",
@@ -54,22 +74,53 @@ class ValuationMethodologyBoundaryContractTests(unittest.TestCase):
         ]:
             self.assertIn(phrase, text)
 
-    def test_required_conservative_semantics_exist(self) -> None:
-        text = normalized(read(CONTRACT_PATH))
+    def test_purpose_preserves_operator_authority_and_governance_boundary(self) -> None:
+        section = extract_section(read(CONTRACT_PATH), "## Purpose")
+        text = normalized(section)
 
         for phrase in [
             "human operator remains final authority",
-            "missing/stale/conflicting/unknown/invalid data remains visible",
+            "governance evidence only",
+            "not a runtime gate",
+            "not release acceptance",
+            "not an investment decision",
+        ]:
+            self.assertIn(phrase, text)
+
+    def test_future_methodology_preconditions_keep_degraded_data_visible(self) -> None:
+        section = extract_section(read(CONTRACT_PATH), "## Future Methodology Preconditions")
+        text = normalized(section)
+
+        for phrase in [
+            "stale, missing, conflict, unknown and invalid data handling",
             "no silent imputation",
-            "no silent overwrite",
+            "no silent overwrite of accepted facts",
+            "missing/stale/conflicting/unknown/invalid data remains visible",
+            "no future methodology may silently upgrade degraded evidence to `ok`",
+        ]:
+            self.assertIn(phrase, text)
+
+    def test_required_operator_interpretation_keeps_outputs_as_evidence(self) -> None:
+        section = extract_section(read(CONTRACT_PATH), "## Required Operator Interpretation")
+        text = normalized(section)
+
+        for phrase in [
             "outputs are evidence, not instructions",
+            "human operator remains final authority",
+            "missing, stale, conflicting, unknown and invalid states",
+            "no silent imputation",
+            "no silent overwrite of accepted facts",
+            "not truth and not acceptance",
         ]:
             self.assertIn(phrase, text)
 
     def test_future_method_families_are_candidates_not_implementations(self) -> None:
-        text = normalized(read(CONTRACT_PATH))
+        section = extract_section(read(CONTRACT_PATH), "## Allowed Future Method Families")
+        text = normalized(section)
 
         for phrase in [
+            "future candidates only",
+            "not implemented by this contract",
             "historical multiple comparison",
             "normalized owner earnings / fcf yield view",
             "dividend yield / dividend growth support view",
@@ -82,10 +133,30 @@ class ValuationMethodologyBoundaryContractTests(unittest.TestCase):
             "dcf engine implemented",
             "valuation automation implemented",
             "provider/api integration implemented",
+            "historical multiple comparison implemented",
+            "normalized owner earnings implemented",
+            "dividend growth implemented",
+            "scenario/sensitivity implemented",
             "investment ready",
             "production ready",
         ]:
             self.assertNotIn(overclaim, text)
+
+    def test_prohibited_claims_are_scoped_to_prohibited_claims_section(self) -> None:
+        section = extract_section(read(CONTRACT_PATH), "## Prohibited Claims")
+        text = normalized(section)
+
+        for phrase in [
+            "guaranteed undervaluation",
+            "risk-free return",
+            "automatic buy/sell",
+            "order execution",
+            "investment advice",
+            "complete intrinsic value certainty",
+            "production readiness",
+            "investment readiness",
+        ]:
+            self.assertIn(phrase, text)
 
     def test_linked_docs_reference_contract_without_implying_implementation(self) -> None:
         linked_docs = [
@@ -103,6 +174,7 @@ class ValuationMethodologyBoundaryContractTests(unittest.TestCase):
                 self.assertIn(CONTRACT_REF, text)
                 self.assertNotIn("dcf engine implemented", lowered)
                 self.assertNotIn("valuation automation implemented", lowered)
+                self.assertNotIn("provider/api integration implemented", lowered)
                 self.assertNotIn("investment ready", lowered)
                 self.assertNotIn("production ready", lowered)
 
