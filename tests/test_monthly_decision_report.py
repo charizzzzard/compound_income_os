@@ -19,6 +19,24 @@ class MonthlyDecisionReportTests(unittest.TestCase):
             writer.writeheader()
             writer.writerows(rows)
 
+    def _minimal_ranking_row(self, ticker: str = "AAA") -> dict[str, str]:
+        return {
+            "rank": "1",
+            "ticker": ticker,
+            "target_action": "DO_NOT_BUY",
+            "allocation_status": "NOT_ELIGIBLE",
+            "suggested_buy_amount_eur": "0.0",
+            "rationale": "synthetic",
+            "constraint_checks": "missing_data=REVIEW",
+            "valuation_comment": "REVIEW",
+            "mandate_fit_comment": "Synthetic fixture.",
+        }
+
+    def _data_freshness_section(self, report: str) -> str:
+        start = report.index("## Data Freshness")
+        end = report.index("## Decision Quality")
+        return report[start:end]
+
     def test_report_uses_dynamic_monthly_cash_and_filters_review_noise(self) -> None:
         rules = load_portfolio_rules()
         rules["monthly_new_cash_eur"] = 321.0
@@ -342,6 +360,201 @@ class MonthlyDecisionReportTests(unittest.TestCase):
                 rules_path.unlink()
             if output_path.exists():
                 output_path.unlink()
+
+    def test_report_renders_data_freshness_missing_as_not_available(self) -> None:
+        output_path = Path("tests") / "_tmp_monthly_report_data_freshness_missing.md"
+        try:
+            build_monthly_decision_report([], [], [], str(output_path))
+            report = output_path.read_text(encoding="utf-8")
+            section = self._data_freshness_section(report)
+            self.assertIn("## Data Freshness", section)
+            self.assertIn("Data Freshness: `NOT_AVAILABLE`", section)
+            self.assertIn("`NOT_AVAILABLE` ist kein `PASS`", section)
+            self.assertIn("### Data Freshness Non-Scope", section)
+            self.assertIn("freshness is process evidence", section)
+            self.assertIn("no order execution", section)
+        finally:
+            if output_path.exists():
+                output_path.unlink()
+
+    def test_report_renders_data_freshness_degraded_counts(self) -> None:
+        output_path = Path("tests") / "_tmp_monthly_report_data_freshness_counts.md"
+        summary = {
+            "contract_version": "v1",
+            "generated_at_utc": "2026-05-21T00:00:00Z",
+            "overall_status": "REVIEW_REQUIRED",
+            "review_required": True,
+            "summary_counts": {
+                "FRESH": 1,
+                "STALE": 1,
+                "MISSING": 1,
+                "UNKNOWN": 1,
+                "REVIEW_REQUIRED": 1,
+                "NOT_APPLICABLE": 1,
+            },
+            "items": [],
+        }
+        try:
+            build_monthly_decision_report([], [], [], str(output_path), data_freshness_summary=summary)
+            section = self._data_freshness_section(output_path.read_text(encoding="utf-8"))
+            self.assertIn("overall_status: `REVIEW_REQUIRED`", section)
+            self.assertIn("review_required: `true`", section)
+            for status in ("FRESH", "STALE", "MISSING", "UNKNOWN", "REVIEW_REQUIRED", "NOT_APPLICABLE"):
+                self.assertIn(f"| `{status}` | 1 |", section)
+            self.assertIn("degraded_state_indicators: `STALE;MISSING;UNKNOWN;REVIEW_REQUIRED`", section)
+        finally:
+            if output_path.exists():
+                output_path.unlink()
+
+    def test_report_renders_data_freshness_reason_codes_or_item_reasons(self) -> None:
+        output_path = Path("tests") / "_tmp_monthly_report_data_freshness_reasons.md"
+        summary = {
+            "overall_status": "REVIEW_REQUIRED",
+            "review_required": True,
+            "summary_counts": {"STALE": 1, "MISSING": 1, "UNKNOWN": 1},
+            "items": [
+                {"data_class": "portfolio_snapshot", "freshness_status": "STALE", "reason": "SOURCE_SNAPSHOT_TOO_OLD", "blocks_dashboard": True, "blocks_replay": True, "blocks_outcome_attribution": True},
+                {"data_class": "decision_journal", "freshness_status": "MISSING", "reason": "ARTIFACT_MISSING", "blocks_dashboard": True, "blocks_replay": True, "blocks_outcome_attribution": False},
+                {"data_class": "coverage_outputs", "freshness_status": "UNKNOWN", "reason": "NO_RELIABLE_DATE_SIGNAL", "blocks_dashboard": True, "blocks_replay": False, "blocks_outcome_attribution": False},
+            ],
+        }
+        try:
+            build_monthly_decision_report([], [], [], str(output_path), data_freshness_summary=summary)
+            section = self._data_freshness_section(output_path.read_text(encoding="utf-8"))
+            self.assertIn("SOURCE_SNAPSHOT_TOO_OLD=1", section)
+            self.assertIn("ARTIFACT_MISSING=1", section)
+            self.assertIn("NO_RELIABLE_DATE_SIGNAL=1", section)
+            self.assertIn("portfolio_snapshot", section)
+            self.assertIn("decision_journal", section)
+            self.assertIn("coverage_outputs", section)
+        finally:
+            if output_path.exists():
+                output_path.unlink()
+
+    def test_report_renders_data_freshness_blocker_counts(self) -> None:
+        output_path = Path("tests") / "_tmp_monthly_report_data_freshness_blockers.md"
+        summary = {
+            "overall_status": "REVIEW_REQUIRED",
+            "review_required": True,
+            "summary_counts": {"STALE": 1, "MISSING": 1, "UNKNOWN": 1},
+            "items": [
+                {"data_class": "portfolio_snapshot", "freshness_status": "STALE", "reason": "THRESHOLD_EXCEEDED", "blocks_dashboard": True, "blocks_replay": True, "blocks_outcome_attribution": False},
+                {"data_class": "review_queue", "freshness_status": "MISSING", "reason": "ARTIFACT_MISSING", "blocks_dashboard": False, "blocks_replay": True, "blocks_outcome_attribution": True},
+                {"data_class": "coverage_outputs", "freshness_status": "UNKNOWN", "reason": "NO_DATE_SIGNAL", "blocks_dashboard": True, "blocks_replay": False, "blocks_outcome_attribution": True},
+            ],
+        }
+        try:
+            build_monthly_decision_report([], [], [], str(output_path), data_freshness_summary=summary)
+            section = self._data_freshness_section(output_path.read_text(encoding="utf-8"))
+            self.assertIn("blocks_dashboard_count: `2`", section)
+            self.assertIn("blocks_replay_count: `2`", section)
+            self.assertIn("blocks_outcome_attribution_count: `2`", section)
+        finally:
+            if output_path.exists():
+                output_path.unlink()
+
+    def test_report_data_freshness_non_scope_blocks_investment_advice_wording(self) -> None:
+        output_path = Path("tests") / "_tmp_monthly_report_data_freshness_non_scope.md"
+        try:
+            build_monthly_decision_report([], [], [], str(output_path))
+            section = self._data_freshness_section(output_path.read_text(encoding="utf-8"))
+            self.assertIn("freshness is process evidence, not an investment-confidence signal", section)
+            self.assertIn("no order execution", section)
+            self.assertIn("no purchase/sale instruction", section)
+            self.assertIn("no score formula change", section)
+            self.assertIn("no ranking formula change", section)
+            self.assertIn("no valuation formula change", section)
+            self.assertIn("no replay/backtesting/outcome-attribution approval", section)
+            self.assertIn("no provider/API/broker integration", section)
+            for unsafe in (
+                "order execution approved",
+                "buy instruction",
+                "sell instruction",
+                "investment confidence",
+                "backtesting approved",
+                "outcome attribution approved",
+            ):
+                self.assertNotIn(unsafe, section.lower())
+        finally:
+            if output_path.exists():
+                output_path.unlink()
+
+    def test_cli_accepts_data_freshness_summary(self) -> None:
+        positions_path = Path("tests") / "_tmp_report_freshness_positions.csv"
+        scores_path = Path("tests") / "_tmp_report_freshness_scores.csv"
+        ranking_path = Path("tests") / "_tmp_report_freshness_ranking.csv"
+        freshness_path = Path("tests") / "_tmp_report_data_freshness_summary.json"
+        output_path = Path("tests") / "_tmp_monthly_report_cli_freshness.md"
+        try:
+            self._write_csv(positions_path, ["ticker"], [{"ticker": "AAA"}])
+            self._write_csv(
+                scores_path,
+                ["ticker", "classification", "data_quality_flag", "held_in_portfolio", "main_risks"],
+                [{"ticker": "AAA", "classification": "WATCHLIST", "data_quality_flag": "REVIEW", "held_in_portfolio": "false", "main_risks": "missing"}],
+            )
+            self._write_csv(
+                ranking_path,
+                ["rank", "ticker", "target_action", "suggested_buy_amount_eur", "rationale", "constraint_checks", "valuation_comment", "mandate_fit_comment"],
+                [
+                    {
+                        "rank": "1",
+                        "ticker": "AAA",
+                        "target_action": "DO_NOT_BUY",
+                        "suggested_buy_amount_eur": "0",
+                        "rationale": "blocked",
+                        "constraint_checks": "missing_data=REVIEW",
+                        "valuation_comment": "REVIEW",
+                        "mandate_fit_comment": "Synthetic fixture.",
+                    }
+                ],
+            )
+            freshness_path.write_text(
+                json.dumps(
+                    {
+                        "contract_version": "v1",
+                        "generated_at_utc": "2026-05-21T00:00:00Z",
+                        "overall_status": "STALE",
+                        "review_required": True,
+                        "summary_counts": {"STALE": 1},
+                        "items": [
+                            {"data_class": "portfolio_snapshot", "freshness_status": "STALE", "reason": "THRESHOLD_EXCEEDED", "blocks_dashboard": True, "blocks_replay": True, "blocks_outcome_attribution": True}
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                [
+                    "python",
+                    "-m",
+                    "src.build_monthly_decision_report",
+                    "--positions",
+                    str(positions_path),
+                    "--scores",
+                    str(scores_path),
+                    "--ranking",
+                    str(ranking_path),
+                    "--output",
+                    str(output_path),
+                    "--data-freshness-summary",
+                    str(freshness_path),
+                ],
+                cwd=Path.cwd(),
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, f"{result.stdout}\n{result.stderr}")
+            report = output_path.read_text(encoding="utf-8")
+            self.assertIn("## Data Freshness", report)
+            self.assertIn("Source artifact", report)
+            self.assertIn("overall_status: `STALE`", report)
+            self.assertIn("THRESHOLD_EXCEEDED", report)
+        finally:
+            for path in (positions_path, scores_path, ranking_path, freshness_path, output_path):
+                if path.exists():
+                    path.unlink()
 
     def test_report_renders_decision_quality_state_surface(self) -> None:
         output_path = Path("tests") / "_tmp_monthly_report_decision_quality.md"

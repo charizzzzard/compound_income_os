@@ -329,6 +329,7 @@ capabilities:
       - data/processed/decision_quality_state.csv
       - data/processed/decision_journal_validation.csv
       - data/processed/decision_review_queue.csv
+      - data/processed/data_freshness_summary.json
     output_artifacts:
       - reports/<date>/personal_monthly_decision_report.md
     report_surface:
@@ -337,6 +338,7 @@ capabilities:
       - tests/test_monthly_decision_report.py
     limitations:
       - "Report surface only; missing artifacts render NOT_AVAILABLE."
+      - "Data Freshness is surfaced as process evidence only; it is not investment confidence, replay approval, outcome attribution approval or an order signal."
     next_action: "Feed future dashboard surface contract."
   - capability_id: personal_run_engine
     display_name: Personal Run Engine
@@ -731,14 +733,15 @@ capabilities:
       - reports/<date>/data_freshness_summary.md
     report_surface:
       - reports/<date>/data_freshness_summary.md
+      - reports/<date>/personal_monthly_decision_report.md
     tests:
       - tests/test_data_freshness.py
       - tests/test_personal_artifact_freshness.py
       - tests/test_personal_decision_journal_validation.py
     limitations:
-      - "Cross-system freshness contract, thresholds, producer, personal_run_engine stage and operator-summary fields exist, but visual dashboard, replay and outcome-attribution gates are not implemented."
+      - "Cross-system freshness contract, thresholds, producer, personal_run_engine stage, operator-summary fields and Monthly Decision Report surface exist, but visual dashboard, replay and outcome-attribution gates are not implemented."
       - "The MVP producer uses explicit date fields only; file modified time is not treated as sufficient FRESH evidence."
-    next_action: "Add dashboard freshness surface only after external review."
+    next_action: "Review whether a future visual dashboard freshness panel is needed; do not add replay or outcome gates before their contracts exist."
   - capability_id: corporate_actions
     display_name: Corporate Actions
     status: unknown

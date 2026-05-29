@@ -59,6 +59,28 @@ DECISION_QUALITY_NON_SCOPE_NOTES = [
     "no private raw data",
 ]
 
+DATA_FRESHNESS_STATUS_VALUES = [
+    "FRESH",
+    "STALE",
+    "MISSING",
+    "UNKNOWN",
+    "REVIEW_REQUIRED",
+    "NOT_APPLICABLE",
+]
+
+DATA_FRESHNESS_DEGRADED_STATUSES = {"STALE", "MISSING", "UNKNOWN", "REVIEW_REQUIRED"}
+
+DATA_FRESHNESS_NON_SCOPE_NOTES = [
+    "freshness is process evidence, not an investment-confidence signal",
+    "no order execution",
+    "no purchase/sale instruction",
+    "no score formula change",
+    "no ranking formula change",
+    "no valuation formula change",
+    "no replay/backtesting/outcome-attribution approval",
+    "no provider/API/broker integration",
+]
+
 
 def _display_value(value: Any) -> str:
     if isinstance(value, bool):
@@ -86,6 +108,126 @@ def read_decision_quality_state(path_value: str | None) -> dict[str, Any] | None
         return rows[0] if rows else None
     except (OSError, json.JSONDecodeError, csv.Error):
         return None
+
+
+def read_data_freshness_summary(path_value: str | None) -> dict[str, Any] | None:
+    if not path_value:
+        return None
+    path = resolve_repo_path(path_value)
+    if not path.exists() or path.suffix.lower() != ".json":
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def _data_freshness_count(summary_counts: Mapping[str, Any], status: str) -> int:
+    try:
+        return int(summary_counts.get(status, 0) or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _data_freshness_items(data_freshness_summary: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    items = data_freshness_summary.get("items")
+    if not isinstance(items, list):
+        return []
+    return [item for item in items if isinstance(item, Mapping)]
+
+
+def _data_freshness_reason_counts(items: list[Mapping[str, Any]]) -> list[tuple[str, int]]:
+    counts: dict[str, int] = {}
+    for item in items:
+        reason = str(item.get("reason") or "").strip()
+        if reason:
+            counts[reason] = counts.get(reason, 0) + 1
+    return sorted(counts.items(), key=lambda entry: (-entry[1], entry[0]))
+
+
+def build_data_freshness_surface_lines(
+    data_freshness_summary: Mapping[str, Any] | None = None,
+    *,
+    source_path: str | None = None,
+    include_heading: bool = True,
+) -> list[str]:
+    lines: list[str] = []
+    if include_heading:
+        lines.extend(["## Data Freshness", ""])
+
+    if not data_freshness_summary:
+        lines.extend(
+            [
+                "- Data Freshness: `NOT_AVAILABLE`",
+                "- Grund: Data-Freshness-Summary-Artefakt fehlt, ist nicht lesbar, ist ungueltig oder die Stage ist nicht gelaufen.",
+                "- Semantik: `NOT_AVAILABLE` ist kein `PASS` und darf nicht als Freshness-Nachweis interpretiert werden.",
+            ]
+        )
+    else:
+        if source_path:
+            lines.append(f"- Source artifact: `{source_path}`")
+        for field in ("contract_version", "generated_at_utc", "overall_status", "review_required"):
+            if field in data_freshness_summary:
+                lines.append(f"- {field}: `{_display_value(data_freshness_summary.get(field))}`")
+
+        raw_counts = data_freshness_summary.get("summary_counts")
+        summary_counts = raw_counts if isinstance(raw_counts, Mapping) else {}
+        lines.extend(["", "| Freshness status | Count |", "| --- | ---: |"])
+        degraded_visible: list[str] = []
+        for status in DATA_FRESHNESS_STATUS_VALUES:
+            count = _data_freshness_count(summary_counts, status)
+            lines.append(f"| `{status}` | {count} |")
+            if status in DATA_FRESHNESS_DEGRADED_STATUSES and count > 0:
+                degraded_visible.append(status)
+        lines.extend(
+            [
+                "",
+                f"- degraded_state_indicators: `{';'.join(degraded_visible) if degraded_visible else 'None'}`",
+            ]
+        )
+
+        items = _data_freshness_items(data_freshness_summary)
+        dashboard_blockers = sum(1 for item in items if bool(item.get("blocks_dashboard")) and str(item.get("freshness_status", "")).upper() in DATA_FRESHNESS_DEGRADED_STATUSES)
+        replay_blockers = sum(1 for item in items if bool(item.get("blocks_replay")) and str(item.get("freshness_status", "")).upper() in DATA_FRESHNESS_DEGRADED_STATUSES)
+        outcome_blockers = sum(1 for item in items if bool(item.get("blocks_outcome_attribution")) and str(item.get("freshness_status", "")).upper() in DATA_FRESHNESS_DEGRADED_STATUSES)
+        lines.extend(
+            [
+                f"- blocks_dashboard_count: `{dashboard_blockers}`",
+                f"- blocks_replay_count: `{replay_blockers}`",
+                f"- blocks_outcome_attribution_count: `{outcome_blockers}`",
+            ]
+        )
+
+        reason_counts = _data_freshness_reason_counts(items)
+        if reason_counts:
+            reason_text = ";".join(f"{reason}={count}" for reason, count in reason_counts)
+            lines.append(f"- item_reason_counts: `{reason_text}`")
+
+        degraded_items = [
+            item
+            for item in items
+            if str(item.get("freshness_status", "")).upper() in DATA_FRESHNESS_DEGRADED_STATUSES
+            or bool(item.get("review_required"))
+        ]
+        if degraded_items:
+            lines.extend(
+                [
+                    "",
+                    "| Data class | Status | Reason | Dashboard blocker | Replay blocker | Outcome blocker |",
+                    "| --- | --- | --- | --- | --- | --- |",
+                ]
+            )
+            for item in degraded_items:
+                lines.append(
+                    f"| `{_display_value(item.get('data_class'))}` | `{_display_value(item.get('freshness_status'))}` | "
+                    f"`{_display_value(item.get('reason'))}` | `{_display_value(item.get('blocks_dashboard'))}` | "
+                    f"`{_display_value(item.get('blocks_replay'))}` | `{_display_value(item.get('blocks_outcome_attribution'))}` |"
+                )
+
+    lines.extend(["", "### Data Freshness Non-Scope", ""])
+    lines.extend(f"- {note}" for note in DATA_FRESHNESS_NON_SCOPE_NOTES)
+    return lines
 
 
 def build_decision_quality_surface_lines(
@@ -246,6 +388,8 @@ def build_monthly_decision_report(
     decision_review_queue_rows: list[dict[str, str]] | None = None,
     decision_journal_validation_source_path: str | None = None,
     decision_review_queue_source_path: str | None = None,
+    data_freshness_summary: Mapping[str, Any] | None = None,
+    data_freshness_source_path: str | None = None,
 ) -> Path:
     rules = load_portfolio_rules(rules_path)
     monthly_cash = to_float(rules["monthly_new_cash_eur"])
@@ -272,6 +416,14 @@ def build_monthly_decision_report(
         "",
     ]
     lines.extend(build_portfolio_health_lines(cash_refill_rows, rebalance_rows))
+    lines.extend([""])
+    lines.extend(
+        build_data_freshness_surface_lines(
+            data_freshness_summary,
+            source_path=data_freshness_source_path,
+            include_heading=True,
+        )
+    )
     lines.extend([""])
     lines.extend(
         build_decision_quality_surface_lines(
@@ -412,6 +564,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--decision-quality-state", help="Optional Decision Quality State CSV or JSON.")
     parser.add_argument("--decision-journal-validation", help="Optional Decision Journal Validation CSV.")
     parser.add_argument("--decision-review-queue", help="Optional Decision Review Queue CSV.")
+    parser.add_argument("--data-freshness-summary", help="Optional Data Freshness / Staleness JSON summary.")
     parser.add_argument("--rules", default="configs/portfolio_rules.yaml", help="Portfolio rules config path.")
     return parser.parse_args()
 
@@ -425,6 +578,7 @@ def main() -> None:
     cash_refill_rows = read_csv_rows(args.cash_refill_review) if args.cash_refill_review and resolve_repo_path(args.cash_refill_review).exists() else None
     rebalance_rows = read_csv_rows(args.rebalance_review) if args.rebalance_review and resolve_repo_path(args.rebalance_review).exists() else None
     decision_quality_state = read_decision_quality_state(args.decision_quality_state) if args.decision_quality_state else None
+    data_freshness_summary = read_data_freshness_summary(args.data_freshness_summary) if args.data_freshness_summary else None
     decision_journal_validation_rows, decision_review_queue_rows = read_decision_journal_surface(args.decision_journal_validation, args.decision_review_queue)
     require_columns(
         score_rows,
@@ -453,6 +607,8 @@ def main() -> None:
         decision_review_queue_rows=decision_review_queue_rows,
         decision_journal_validation_source_path=args.decision_journal_validation,
         decision_review_queue_source_path=args.decision_review_queue,
+        data_freshness_summary=data_freshness_summary,
+        data_freshness_source_path=args.data_freshness_summary,
     )
 
 
