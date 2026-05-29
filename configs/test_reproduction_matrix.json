@@ -123,7 +123,7 @@
     {
       "command": "python -m unittest tests.test_personal_run_engine -v",
       "classification": "ZIP_SAFE",
-      "reason": "Uses stdlib unittest, committed source/configs and synthetic test-local fixtures; no private raw data, no network and no .git context.",
+      "reason": "Uses stdlib unittest, committed source/configs, deterministic synthetic source_commit lineage and synthetic test-local fixtures; no private raw data, no network and no .git context.",
       "zip_expectation": "Expected to run from an extracted full_review handoff ZIP."
     },
     {

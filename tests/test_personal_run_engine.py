@@ -10,6 +10,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 from src import monthly_ranking_engine, portfolio_review, scoring_engine, watchlist_engine
+from src import personal_decision_journal_validation as decision_journal_validation
+from src import personal_decision_quality_state as decision_quality_state
 from src.benchmark_history_engine import BENCHMARK_ARCHIVE_FIELDS, BENCHMARK_REGISTRY_FIELDS
 from src.common import read_csv_rows
 from src.cost_tax_archive_engine import DEFAULT_CONFIG_PATH as DEFAULT_COST_TAX_CONFIG_PATH
@@ -32,6 +34,20 @@ class PersonalRunEngineTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp_paths: list[Path] = []
         self.temp_dirs: list[Path] = []
+        self.decision_quality_git_head_patcher = patch.object(
+            decision_quality_state,
+            "_git_head",
+            return_value="zip-safe-synthetic-test-head",
+        )
+        self.decision_journal_git_head_patcher = patch.object(
+            decision_journal_validation,
+            "_git_head",
+            return_value="zip-safe-synthetic-test-head",
+        )
+        self.decision_quality_git_head_patcher.start()
+        self.decision_journal_git_head_patcher.start()
+        self.addCleanup(self.decision_journal_git_head_patcher.stop)
+        self.addCleanup(self.decision_quality_git_head_patcher.stop)
         self._ensure_default_savings_plan_registry_fixture()
 
     def tearDown(self) -> None:
@@ -2080,6 +2096,7 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertIn("monthly_ranking_output", used_inputs)
         self.assertIn("score_audit_output", used_inputs)
         state = json.loads(Path(options.decision_quality_json_output).read_text(encoding="utf-8"))
+        self.assertEqual(state["source_commit_sha"], "zip-safe-synthetic-test-head")
         self.assertEqual(state["decision_confidence_level"], "MEDIUM")
         self.assertIs(state["review_required"], False)
         run_report = Path(options.report_output or "").read_text(encoding="utf-8")
