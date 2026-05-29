@@ -1,23 +1,23 @@
-# HANDOFF LATEST CONTEXT - Valuation Methodology Proposal Template
+# HANDOFF LATEST CONTEXT - Test Harden Valuation Methodology Proposal Template Contract
 
 project_name: compound_income_os
 canonical_name: Compound Income OS
 short_name: CIOS
 profile: full_review
 bundle_name: HANDOFF_LATEST
-bundle_purpose: external_review_after_valuation_methodology_proposal_template
+bundle_purpose: external_review_after_test_harden_valuation_methodology_proposal_template_contract
 created_at_utc: see_zip_internal_handoff_context
 branch: main
-head_before_implementation: c6cf8a5fe99e4a0a770e03fb0f0cba0618dd4b05
-implementation_head: cdaf012644ddb82cabd4a64759f3ae196ed8cf3b
-implementation_short_head: cdaf012
-current_handoff_head: cdaf012644ddb82cabd4a64759f3ae196ed8cf3b
-current_handoff_short_head: cdaf012
-delta_range: c6cf8a5fe99e4a0a770e03fb0f0cba0618dd4b05..cdaf012644ddb82cabd4a64759f3ae196ed8cf3b
+head_before_implementation: 9e43e19b13e3232d8f77611759cc162a62282f7b
+implementation_head: 71e4bdfacd4924939d638c42a6824caf4b721e7a
+implementation_short_head: 71e4bdf
+current_handoff_head: 71e4bdfacd4924939d638c42a6824caf4b721e7a
+current_handoff_short_head: 71e4bdf
+delta_range: 9e43e19b13e3232d8f77611759cc162a62282f7b..71e4bdfacd4924939d638c42a6824caf4b721e7a
 handoff_metadata_commit: pending_until_metadata_commit
 handoff_metadata_commit_note: the metadata commit is created after this file is written; use git HEAD after the metadata commit or the operator final report for the exact metadata commit hash.
-implementation_commit_message: docs: add valuation methodology proposal template
-implementation_status: VALUATION_METHODOLOGY_PROPOSAL_TEMPLATE_ACCEPTED_WITH_FINDINGS
+implementation_commit_message: tests: harden valuation methodology proposal template
+implementation_status: TEST_HARDEN_VALUATION_METHODOLOGY_PROPOSAL_TEMPLATE_CONTRACT_ACCEPTED_WITH_FINDINGS
 tracked_source_worktree_clean_before_handoff_generation: True
 zip_internal_dirty_worktree_present: False
 external_metadata_dirty_after_zip_generation_before_commit: True
@@ -28,24 +28,24 @@ canonical_checksum: external_review_packet/HANDOFF_LATEST.sha256
 canonical_readme: external_review_packet/00_READ_ME_FIRST.md
 
 zip_file_count: 516
-zip_size_bytes: 13180415
-zip_sha256: 3c3ef91e651542861722748e7042dc6c6301bd53d16f9250dc51226f73192b21
+zip_size_bytes: 13180387
+zip_sha256: 0372ace8a04fb3baf6b179dd65289c200666ba74a426e6852c1a6a243eca6bc4
 sha_match: True
 zip_testzip: None
 missing_required: []
 nested_zip_count: 0
 forbidden_match_count: 0
 local_path_leak_count: 0
-internal_head: cdaf012644ddb82cabd4a64759f3ae196ed8cf3b
-internal_base_head: c6cf8a5fe99e4a0a770e03fb0f0cba0618dd4b05
-internal_delta_range: c6cf8a5fe99e4a0a770e03fb0f0cba0618dd4b05..cdaf012644ddb82cabd4a64759f3ae196ed8cf3b
+internal_head: 71e4bdfacd4924939d638c42a6824caf4b721e7a
+internal_base_head: 9e43e19b13e3232d8f77611759cc162a62282f7b
+internal_delta_range: 9e43e19b13e3232d8f77611759cc162a62282f7b..71e4bdfacd4924939d638c42a6824caf4b721e7a
 internal_dirty_worktree_present: False
 delta_evidence_artifact: HANDOFF_PATCH_IDENTITY.md
 change_classification_artifact: HANDOFF_CHANGE_CLASSIFICATION.csv
-change_classification_rows: 5
+change_classification_rows: 1
 delta_evidence_status: COMPLETE
-patch_identity_title_in_zip: VALUATION_METHODOLOGY_PROPOSAL_TEMPLATE
-patch_identity_bundle_purpose_in_zip: external_review_after_valuation_methodology_proposal_template
+patch_identity_title_in_zip: TEST_HARDEN_VALUATION_METHODOLOGY_PROPOSAL_TEMPLATE_CONTRACT
+patch_identity_bundle_purpose_in_zip: external_review_after_test_harden_valuation_methodology_proposal_template_contract
 validation_result_semantics: HANDOFF_VALIDATION.txt records commands as RECORDED_VALIDATION; pass/fail execution evidence must come from this external context, an operator final report, or an extracted-ZIP reproduction run.
 
 ## Source-of-Truth / Precedence
@@ -66,17 +66,13 @@ Reviewer-Instruktionen.
 ## Current Packet Scope
 
 Dieses Packet synchronisiert den externen Review-Kontext auf den committed
-Repo-Stand `cdaf012644ddb82cabd4a64759f3ae196ed8cf3b` nach
-`docs: add valuation methodology proposal template`.
+Repo-Stand `71e4bdfacd4924939d638c42a6824caf4b721e7a` nach
+`tests: harden valuation methodology proposal template`.
 
 Review-Schwerpunkte:
 
-- `docs/contracts/VALUATION_METHODOLOGY_PROPOSAL_TEMPLATE.md`
 - `tests/test_valuation_methodology_proposal_template.py`
-- `docs/contracts/VALUATION_METHODOLOGY_BOUNDARY_CONTRACT.md`
-- `docs/MODULE_CONTRACTS.md`
-- `docs/architecture/CIOS_FEATURE_STATUS.yaml`
-- `configs/test_reproduction_matrix.json`
+- `docs/contracts/VALUATION_METHODOLOGY_PROPOSAL_TEMPLATE.md`
 - ZIP-internal `HANDOFF_PATCH_IDENTITY.md`
 - ZIP-internal `HANDOFF_CHANGE_CLASSIFICATION.csv`
 - ZIP-internal `HANDOFF_VALIDATION.txt`
@@ -87,26 +83,23 @@ Executed in current local repo before implementation commit:
 
 - `python -m unittest tests.test_valuation_methodology_proposal_template -v`
   - result: PASS
-  - tests: 8
+  - tests: 9
 - `python -m unittest tests.test_valuation_methodology_boundary_contract -v`
   - result: PASS
   - tests: 6
 - `python -m unittest tests.test_reproduction_matrix -v`
   - result: PASS
   - tests: 3
-- `python -m unittest discover -s tests -p "test_*.py"`
-  - result: PASS
-  - tests: 917
-- `git diff --check`
-  - result: PASS
-  - notes: Git reported LF-to-CRLF working-copy warnings only.
 - `python -m pytest -q`
   - result: PASS
-  - tests: 917
+  - tests: 918
   - subtests: 219
 - `python -m ruff check .`
   - result: FAIL_EXISTING_LINT_FINDINGS
-  - evidence: 45 lint findings were observed before this patch and remain outside the patch objective, mostly unused imports in archived SEC files and existing modules/tests.
+  - evidence: 45 lint findings remain outside the patch objective, mostly unused imports in archived SEC files and existing modules/tests.
+- `git diff --check`
+  - result: PASS
+  - notes: Git reported LF-to-CRLF working-copy warnings only.
 
 ZIP-internal `HANDOFF_VALIDATION.txt` records requested validation commands as
 `RECORDED_VALIDATION`; those lines are not automatic proof that an external
@@ -114,16 +107,17 @@ reviewer executed them from the ZIP.
 
 ## Acceptance Boundary
 
-This patch accepts only the proposal-template governance scaffold:
+This patch accepts only test hardening for the existing proposal-only valuation
+methodology template:
 
-- `docs/contracts/VALUATION_METHODOLOGY_PROPOSAL_TEMPLATE.md` defines required
-  fields and review boundaries for future valuation methodology proposals.
-- The template is proposal-only and does not implement runtime valuation logic.
-- `tests/test_valuation_methodology_proposal_template.py` locks required
-  sections, non-scope wording, proposal-only semantics and degraded-data
-  handling.
-- `docs/architecture/CIOS_FEATURE_STATUS.yaml`, `docs/MODULE_CONTRACTS.md` and
-  `configs/test_reproduction_matrix.json` reference the template conservatively.
+- Section coverage now includes `## Proposal Acceptance Boundary`.
+- Identity field coverage now includes `contract_reference`,
+  `related_boundary_contract`, `version` and `decision_record_reference`.
+- Proposal-only markers are checked exactly:
+  - `calculation_status: "PROPOSED_ONLY"`
+  - `runtime_status: "NOT_RUNTIME_ENFORCED"`
+  - `formula_implementation_status: "NOT_IMPLEMENTED"`
+- Runtime-promotion prerequisites are locked by test assertions.
 
 This patch does not implement or change:
 
@@ -148,8 +142,7 @@ Human Operator remains the final acceptance authority.
 ## Next Recommended Step
 
 Recommended next step: external delta review of
-`VALUATION_METHODOLOGY_PROPOSAL_TEMPLATE`.
+`TEST_HARDEN_VALUATION_METHODOLOGY_PROPOSAL_TEMPLATE_CONTRACT`.
 
-If accepted, the next narrow governance step may be a methodology review gate
-checklist or a proposal validation preflight. DCF implementation remains out of
-scope.
+If accepted, proceed only to the next narrow governance/test hardening patch.
+DCF implementation remains out of scope.
