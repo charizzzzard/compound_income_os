@@ -4,16 +4,16 @@
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- patch_title: `ZIP_SAFE_PERSONAL_RUN_ENGINE_TEST_FIXTURE_BOUNDARY`
-- bundle_purpose: `external_review_after_zip_safe_personal_run_engine_test_fixture_boundary`
+- patch_title: `ZIP_SAFE_PERSONAL_RUN_ENGINE_TEST_FIXTURE_BOUNDARY_SOURCE_COMMIT_FIX`
+- bundle_purpose: `external_review_after_zip_safe_personal_run_engine_source_commit_fix`
 - profile: `full_review`
 - bundle_name: `HANDOFF_LATEST`
-- base_head: `e1c345e569d150a15eadc3c77c3d0bd02017d57f`
-- implementation_head: `46638c87a23b53a297f111ac693865d9a0309cc6`
-- current_handoff_head: `46638c87a23b53a297f111ac693865d9a0309cc6`
-- delta_range: `e1c345e569d150a15eadc3c77c3d0bd02017d57f..46638c87a23b53a297f111ac693865d9a0309cc6`
+- base_head: `01b38fb629174e1620885234ad22f1aac6805979`
+- implementation_head: `e880b9fe50396a3ae2525574379fef2c1d34055f`
+- current_handoff_head: `e880b9fe50396a3ae2525574379fef2c1d34055f`
+- delta_range: `01b38fb629174e1620885234ad22f1aac6805979..e880b9fe50396a3ae2525574379fef2c1d34055f`
 - dirty_worktree_present_at_export: `False`
-- changed_file_count: `3`
+- changed_file_count: `2`
 - generated_source_folder: `outputs/handoffs/latest`
 - reviewer_facing_upload_folder: `external_review_packet`
 
@@ -38,33 +38,34 @@ Patch-geaenderte Dateien laut `HANDOFF_CHANGE_CLASSIFICATION.csv`:
 
 - `configs/test_reproduction_matrix.json`
 - `tests/test_personal_run_engine.py`
-- `tests/test_reproduction_matrix.py`
 
 ## Handoff Integrity Summary
 
 - zip_path: `external_review_packet/HANDOFF_LATEST.zip`
 - sha_path: `external_review_packet/HANDOFF_LATEST.sha256`
 - zip_file_count: `516`
-- zip_size_bytes: `13185518`
-- zip_sha256: `94fdb918727d6a11d837e69d199e049d0b03884658a083c5c2a19e4313f1e798`
+- zip_size_bytes: `13185696`
+- zip_sha256: `1fab8d6ebaa99f13b3efeecf4b55da39ce4ae90299766be62b3a546068b7100f`
 - sha_match: `True`
 - zip_testzip: `None`
 - nested_zip_count: `0`
 - forbidden_match_count: `0`
 - local_path_leak_count: `0`
 - required_metadata_present: `True`
-- change_classification_rows: `3`
+- change_classification_rows: `2`
 
 ## Validation Reality
 
 Actually executed in the current local repo for this patch:
 
 - `python -m ruff check .`: PASS
-- `python -m pytest tests/test_personal_run_engine.py -q`: PASS, 60 tests, 2 subtests
+- `python -m unittest tests.test_reproduction_matrix -v`: PASS, 3 tests
 - `python -m unittest tests.test_personal_run_engine -v`: PASS, 60 tests
+- `python -m pytest tests/test_reproduction_matrix.py -q`: PASS, 3 tests
+- `python -m pytest tests/test_personal_run_engine.py -q`: PASS, 60 tests, 2 subtests
 - `python -m pytest -q`: PASS, 929 tests, 219 subtests
-- `python -m unittest discover -s tests -p "test_*.py"`: PASS, 929 tests
 - `git diff --check`: PASS, LF/CRLF working-copy warning only
+- Extracted ZIP context without `.git`: `python -m unittest tests.test_reproduction_matrix -v`: PASS, 3 tests
 - Extracted ZIP context without `.git`: `python -m unittest tests.test_personal_run_engine -v`: PASS, 60 tests
 
 ZIP-internes `HANDOFF_VALIDATION.txt` records validation commands as

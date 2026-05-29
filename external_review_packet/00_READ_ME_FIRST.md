@@ -1,12 +1,12 @@
-# Compound Income OS External LLM Review Packet - ZIP-Safe Personal Run Engine Test Fixture Boundary
+# Compound Income OS External LLM Review Packet - ZIP-Safe Personal Run Engine Source Commit Fix
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach dem test-/reproduction-only Patch
-`ZIP_SAFE_PERSONAL_RUN_ENGINE_TEST_FIXTURE_BOUNDARY`.
+(CIOS) nach dem test-/reproduction-only Korrekturpatch
+`ZIP_SAFE_PERSONAL_RUN_ENGINE_TEST_FIXTURE_BOUNDARY_SOURCE_COMMIT_FIX`.
 
-- commit: `46638c87a23b53a297f111ac693865d9a0309cc6`
-- message: `Make personal run engine tests ZIP-safe`
-- status: `ZIP_SAFE_PERSONAL_RUN_ENGINE_TEST_FIXTURE_BOUNDARY_READY_FOR_EXTERNAL_REVIEW`
+- commit: `e880b9fe50396a3ae2525574379fef2c1d34055f`
+- message: `Harden personal run tests against missing git metadata`
+- status: `ZIP_SAFE_PERSONAL_RUN_ENGINE_TEST_FIXTURE_BOUNDARY_SOURCE_COMMIT_FIX_READY_FOR_EXTERNAL_REVIEW`
 
 Dieses Packet ersetzt aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck.
@@ -17,15 +17,15 @@ aktuellen Review-Zweck.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- base_head: `e1c345e569d150a15eadc3c77c3d0bd02017d57f`
-- implementation_head: `46638c87a23b53a297f111ac693865d9a0309cc6`
-- implementation_short_head: `46638c8`
-- current_handoff_head: `46638c87a23b53a297f111ac693865d9a0309cc6`
-- current_handoff_short_head: `46638c8`
-- delta_range: `e1c345e569d150a15eadc3c77c3d0bd02017d57f..46638c87a23b53a297f111ac693865d9a0309cc6`
-- handoff_metadata_commit: `none`
-- handoff_metadata_commit_note: `external_review_packet files were synchronized after the implementation commit; no separate metadata commit was created before this packet.`
-- bundle_purpose: `external_review_after_zip_safe_personal_run_engine_test_fixture_boundary`
+- base_head: `01b38fb629174e1620885234ad22f1aac6805979`
+- implementation_head: `e880b9fe50396a3ae2525574379fef2c1d34055f`
+- implementation_short_head: `e880b9f`
+- current_handoff_head: `e880b9fe50396a3ae2525574379fef2c1d34055f`
+- current_handoff_short_head: `e880b9f`
+- delta_range: `01b38fb629174e1620885234ad22f1aac6805979..e880b9fe50396a3ae2525574379fef2c1d34055f`
+- handoff_metadata_commit: `pending_metadata_commit_after_packet_synchronization`
+- handoff_metadata_commit_note: `external_review_packet tracked metadata is synchronized after the implementation commit; the ZIP content itself is exported from implementation_head.`
+- bundle_purpose: `external_review_after_zip_safe_personal_run_engine_source_commit_fix`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -50,14 +50,13 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 - Verwende volle repo-relative Pfade in Findings.
 - Pruefe, dass `HANDOFF_PATCH_IDENTITY.md` im ZIP die patch-spezifischen Werte
   enthaelt:
-  - `patch_title: ZIP_SAFE_PERSONAL_RUN_ENGINE_TEST_FIXTURE_BOUNDARY`
-  - `bundle_purpose: external_review_after_zip_safe_personal_run_engine_test_fixture_boundary`
-  - `implementation_head: 46638c87a23b53a297f111ac693865d9a0309cc6`
-- Pruefe, dass `HANDOFF_CHANGE_CLASSIFICATION.csv` genau diese drei
+  - `patch_title: ZIP_SAFE_PERSONAL_RUN_ENGINE_TEST_FIXTURE_BOUNDARY_SOURCE_COMMIT_FIX`
+  - `bundle_purpose: external_review_after_zip_safe_personal_run_engine_source_commit_fix`
+  - `implementation_head: e880b9fe50396a3ae2525574379fef2c1d34055f`
+- Pruefe, dass `HANDOFF_CHANGE_CLASSIFICATION.csv` genau diese zwei
   patch-geaenderten Dateien ausweist:
   - `configs/test_reproduction_matrix.json`
   - `tests/test_personal_run_engine.py`
-  - `tests/test_reproduction_matrix.py`
 - Pruefe, dass `HANDOFF_VALIDATION.txt` weiterhin `RECORDED_VALIDATION` als
   Provenienz verwendet.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
@@ -81,8 +80,8 @@ Reviewer sollen insbesondere pruefen:
 ## Handoff Integrity Summary
 
 - zip_file_count: `516`
-- zip_size_bytes: `13185518`
-- zip_sha256: `94fdb918727d6a11d837e69d199e049d0b03884658a083c5c2a19e4313f1e798`
+- zip_size_bytes: `13185696`
+- zip_sha256: `1fab8d6ebaa99f13b3efeecf4b55da39ce4ae90299766be62b3a546068b7100f`
 - sha_match: `True`
 - zip_testzip: `None`
 - missing_required: `[]`
@@ -91,18 +90,20 @@ Reviewer sollen insbesondere pruefen:
 - local_path_leak_count: `0`
 - delta_evidence_artifact: `HANDOFF_PATCH_IDENTITY.md`
 - change_classification_artifact: `HANDOFF_CHANGE_CLASSIFICATION.csv`
-- change_classification_rows: `3`
+- change_classification_rows: `2`
 
 ## Validation Reality
 
 Executed in current local repo before handoff synchronization:
 
 - `python -m ruff check .`: PASS
-- `python -m pytest tests/test_personal_run_engine.py -q`: PASS, 60 tests, 2 subtests
+- `python -m unittest tests.test_reproduction_matrix -v`: PASS, 3 tests
 - `python -m unittest tests.test_personal_run_engine -v`: PASS, 60 tests
+- `python -m pytest tests/test_reproduction_matrix.py -q`: PASS, 3 tests
+- `python -m pytest tests/test_personal_run_engine.py -q`: PASS, 60 tests, 2 subtests
 - `python -m pytest -q`: PASS, 929 tests, 219 subtests
-- `python -m unittest discover -s tests -p "test_*.py"`: PASS, 929 tests
 - `git diff --check`: PASS, LF/CRLF working-copy warning only
+- Extracted ZIP context without `.git`: `python -m unittest tests.test_reproduction_matrix -v`: PASS, 3 tests
 - Extracted ZIP context without `.git`: `python -m unittest tests.test_personal_run_engine -v`: PASS, 60 tests
 
 ZIP-internes `HANDOFF_VALIDATION.txt` records requested validation commands as
