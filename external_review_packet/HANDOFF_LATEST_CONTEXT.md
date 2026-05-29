@@ -4,43 +4,22 @@
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- patch_title: `CIOS_CODEX_OPERATIONALIZATION_STANDARD`
-- bundle_purpose: `external_review_after_codex_operationalization_standard`
+- patch_title: `CIOS_PRACTICAL_OPERATING_STANDARD`
+- bundle_purpose: `external_review_after_cios_practical_operating_standard`
 - profile: `full_review`
 - bundle_name: `HANDOFF_LATEST`
-- base_head: `86a7481351cbdebf7a282aacd42b0b6d31c622ba`
-- implementation_head: `752099da56f0438cbc9ce72249704eb98f608258`
-- preflight_head: `86a7481351cbdebf7a282aacd42b0b6d31c622ba`
-- metadata_commit_head_before_update: `752099da56f0438cbc9ce72249704eb98f608258`
-- central_handoff_zip_head: `752099da56f0438cbc9ce72249704eb98f608258`
-- current_handoff_head: `752099da56f0438cbc9ce72249704eb98f608258`
+- base_head: `e8ac5583502ad90a9240b857469debb87eacc6b2`
+- implementation_head: `af1622a8e1fa3ac89b53a23cda05d50ebb334323`
+- preflight_head: `e8ac5583502ad90a9240b857469debb87eacc6b2`
+- central_handoff_zip_head: `af1622a8e1fa3ac89b53a23cda05d50ebb334323`
+- current_handoff_head: `af1622a8e1fa3ac89b53a23cda05d50ebb334323`
+- remote_main_head_at_export: `e8ac5583502ad90a9240b857469debb87eacc6b2`
 - dirty_worktree_present_at_export: `False`
 - reviewer_facing_upload_folder: `external_review_packet`
 
 If this context file and checksum are committed after ZIP export, the repo HEAD
 may become a metadata-only head newer than `central_handoff_zip_head`. That is an
-allowed head-offset case only because it is explicitly reported here and in
-`docs/governance/CIOS_CODEX_OPERATIONALIZATION_STANDARD.md`.
-
-## Metadata-Only Head Offset After Previous Handoff Publication
-
-- central_handoff_zip_head: `752099da56f0438cbc9ce72249704eb98f608258`
-- current_handoff_head: `752099da56f0438cbc9ce72249704eb98f608258`
-- previous_metadata_publication_head: `934f26bc0e0e78b5b0522f3c8dd47598caca0a1f`
-- previous_remote_main_head_after_metadata_publication: `934f26bc0e0e78b5b0522f3c8dd47598caca0a1f`
-- repo_current_head_before_this_followup: `934f26bc0e0e78b5b0522f3c8dd47598caca0a1f`
-- remote_main_head_before_this_followup: `934f26bc0e0e78b5b0522f3c8dd47598caca0a1f`
-
-The ZIP represents the implementation snapshot at
-`752099da56f0438cbc9ce72249704eb98f608258`. The repository and remote later
-exposed metadata-only publication head
-`934f26bc0e0e78b5b0522f3c8dd47598caca0a1f`, which updated reviewer-facing
-context/checksum files and did not change source, runtime, tests or configs.
-
-This follow-up records the known offset explicitly to satisfy
-`docs/governance/CIOS_CODEX_OPERATIONALIZATION_STANDARD.md`. The follow-up
-commit itself is reported in the operator report after commit creation; it is
-not prewritten into this file to avoid self-referential commit metadata.
+allowed head-offset case only when explicitly reported by the operator report.
 
 ## Source-of-Truth / Precedence
 
@@ -54,43 +33,54 @@ Bei Konflikten gilt diese Reihenfolge:
 
 ## Patch Identity
 
-- patch_title: `CIOS_CODEX_OPERATIONALIZATION_STANDARD`
-- bundle_purpose: `external_review_after_codex_operationalization_standard`
-- base_head: `86a7481351cbdebf7a282aacd42b0b6d31c622ba`
-- implementation_head: `752099da56f0438cbc9ce72249704eb98f608258`
-- central_handoff_zip_head: `752099da56f0438cbc9ce72249704eb98f608258`
-- delta_range: `86a7481351cbdebf7a282aacd42b0b6d31c622ba..752099da56f0438cbc9ce72249704eb98f608258`
+- patch_title: `CIOS_PRACTICAL_OPERATING_STANDARD`
+- bundle_purpose: `external_review_after_cios_practical_operating_standard`
+- base_head: `e8ac5583502ad90a9240b857469debb87eacc6b2`
+- implementation_head: `af1622a8e1fa3ac89b53a23cda05d50ebb334323`
+- central_handoff_zip_head: `af1622a8e1fa3ac89b53a23cda05d50ebb334323`
+- delta_range: `e8ac5583502ad90a9240b857469debb87eacc6b2..af1622a8e1fa3ac89b53a23cda05d50ebb334323`
 - changed_file_count: `2`
 
 Changed files:
 
-- `docs/governance/CIOS_CODEX_OPERATIONALIZATION_STANDARD.md`
-- `tests/test_codex_operationalization_standard.py`
+- `docs/governance/CIOS_PRACTICAL_OPERATING_STANDARD.md`
+- `tests/test_practical_operating_standard.py`
+
+## Review Findings Ingested
+
+The externally reviewed draft was accepted with findings and no blocker or
+major finding. This materialized standard incorporates the accepted minor
+hardenings:
+
+- `MINOR-001`: explicit `push_status` and `remote_main_contains_head` fields.
+- `MINOR-002`: canonical external review severities `BLOCKER`, `MAJOR`,
+  `MINOR`, `INFO`.
+- `MINOR-003`: missing, stale or unknown data must remain visible and must not
+  be silently imputed, overwritten, suppressed or converted into accepted facts.
 
 ## Handoff Integrity Summary
 
 - zip_path: `external_review_packet/HANDOFF_LATEST.zip`
 - sha_path: `external_review_packet/HANDOFF_LATEST.sha256`
-- zip_file_count: `520`
-- zip_sha256: `d251956517d89d89be3514568ed4ef7f0a768f022d2e838ede7bb921baf178c1`
+- zip_file_count: `522`
+- zip_sha256: `cb878971be66cc008c9a793bc54b26ca82dd6ba6d76532836a4bf89878a85c0f`
 - sha_match: `True`
 - zip_testzip: `None`
 - nested_zip_count: `0`
 - forbidden_match_count: `0`
 - local_path_leak_count: `0`
-- post_manifest_included_evidence: `None observed`
 - no_parallel_handoff_claimed: `True`
 
 ## Validation Reality
 
 Actually executed in the current local repo before handoff regeneration:
 
-- `python -m pytest tests/test_codex_operationalization_standard.py -q`: PASS,
-  `11 passed, 61 subtests passed`
+- `git diff --check`: PASS
+- `python -m ruff check docs tests src`: PASS, `All checks passed!`
+- `python -m pytest tests/test_practical_operating_standard.py -q`: PASS,
+  `6 passed, 57 subtests passed`
 - `python -m pytest tests/test_readme_and_reports.py -q`: PASS,
   `14 passed, 130 subtests passed`
-- `python -m ruff check docs tests src`: PASS, `All checks passed!`
-- `git diff --check`: PASS
 
 ZIP-internal `HANDOFF_VALIDATION.txt` records validation commands as
 `RECORDED_VALIDATION`. It is command provenance, not proof of external execution
@@ -98,10 +88,12 @@ unless a separate reviewer/operator report says so.
 
 ## External LLM Review Instructions
 
-- Review the new governance standard and its tests only for this patch delta.
+- Review the new practical operating standard and its tests only for this patch
+  delta.
 - Do not infer omitted private/raw/provider/broker files.
 - Do not treat documentation-only standards as runtime enforcement.
 - Do not treat external LLM review as final acceptance.
+- Map all findings to `BLOCKER`, `MAJOR`, `MINOR` or `INFO`.
 - Distinguish documented, tested, enforced, operationally_ready and
   production_ready.
 - Cite repo-relative paths in findings.

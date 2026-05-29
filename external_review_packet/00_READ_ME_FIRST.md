@@ -1,10 +1,10 @@
-# Compound Income OS External LLM Review Packet - Codex Operationalization Standard
+# Compound Income OS External LLM Review Packet - Practical Operating Standard
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach dem Governance-Patch `CIOS_CODEX_OPERATIONALIZATION_STANDARD`.
+(CIOS) nach dem Governance-Patch `CIOS_PRACTICAL_OPERATING_STANDARD`.
 
-- local_handoff_head: `752099da56f0438cbc9ce72249704eb98f608258`
-- remote_main_head_at_export: `86a7481351cbdebf7a282aacd42b0b6d31c622ba`
+- local_handoff_head: `af1622a8e1fa3ac89b53a23cda05d50ebb334323`
+- remote_main_head_at_export: `e8ac5583502ad90a9240b857469debb87eacc6b2`
 - status: `GOVERNANCE_PATCH_HANDOFF_READY`
 
 Dieses Packet ersetzt aeltere Dateien in `external_review_packet/` fuer den
@@ -18,33 +18,19 @@ paralleler Review-Handoff.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- base_head: `86a7481351cbdebf7a282aacd42b0b6d31c622ba`
-- implementation_head: `752099da56f0438cbc9ce72249704eb98f608258`
-- preflight_head: `86a7481351cbdebf7a282aacd42b0b6d31c622ba`
-- metadata_commit_head_before_update: `752099da56f0438cbc9ce72249704eb98f608258`
-- central_handoff_zip_head: `752099da56f0438cbc9ce72249704eb98f608258`
-- current_handoff_head: `752099da56f0438cbc9ce72249704eb98f608258`
-- bundle_purpose: `external_review_after_codex_operationalization_standard`
+- base_head: `e8ac5583502ad90a9240b857469debb87eacc6b2`
+- implementation_head: `af1622a8e1fa3ac89b53a23cda05d50ebb334323`
+- preflight_head: `e8ac5583502ad90a9240b857469debb87eacc6b2`
+- central_handoff_zip_head: `af1622a8e1fa3ac89b53a23cda05d50ebb334323`
+- current_handoff_head: `af1622a8e1fa3ac89b53a23cda05d50ebb334323`
+- bundle_purpose: `external_review_after_cios_practical_operating_standard`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
 
 If this metadata file is committed after ZIP export, the repo HEAD may become a
 metadata-only head that is newer than `central_handoff_zip_head`. That offset is
-expected only when reported explicitly.
-
-## Metadata-Only Head Offset Note
-
-The central ZIP still represents implementation snapshot
-`752099da56f0438cbc9ce72249704eb98f608258`. After that ZIP was published, the
-repo and remote exposed known metadata-only publication head
-`934f26bc0e0e78b5b0522f3c8dd47598caca0a1f`. That offset affected
-reviewer-facing context/checksum metadata only; it did not change source,
-runtime, tests, configs or financial logic.
-
-This follow-up records the offset explicitly. The follow-up commit head is not
-prewritten into this file; it must be read from the operator report or Git after
-the commit exists.
+expected only when reported explicitly in the operator report.
 
 ## Source-of-Truth / Precedence
 
@@ -55,16 +41,6 @@ Bei Konflikten gilt diese Reihenfolge:
 3. ZIP-internal artifact indexes, omitted-artifact registers and patch identity
 4. GitHub browser URL for committed repo inspection
 5. Local-only/generated/ignored files only if explicitly included or summarized
-
-## GitHub Remote Reality
-
-- remote_exists: `True`
-- remote_name: `origin`
-- fetch_url: `https://github.com/charizzzzard/compound_income_os.git`
-- push_url: `https://github.com/charizzzzard/compound_income_os.git`
-- browser_url: `https://github.com/charizzzzard/compound_income_os`
-- local_head_at_export: `752099da56f0438cbc9ce72249704eb98f608258`
-- remote_main_head_at_export: `86a7481351cbdebf7a282aacd42b0b6d31c622ba`
 
 ## Reviewer Instructions
 
@@ -80,6 +56,8 @@ Bei Konflikten gilt diese Reihenfolge:
 - `HANDOFF_VALIDATION.txt` enthaelt `RECORDED_VALIDATION`-Eintraege. Diese
   sind Befehlsprovenienz, nicht Ausfuehrungsbeweise, sofern kein separater
   Operator- oder Reviewer-Bericht die Ausfuehrung belegt.
+- Findings muessen die kanonischen Severities `BLOCKER`, `MAJOR`, `MINOR` oder
+  `INFO` verwenden.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
 - Inferiere nicht, dass GitHub lokale uncommitted, ignored oder generated files
   enthaelt.
@@ -88,21 +66,20 @@ Bei Konflikten gilt diese Reihenfolge:
 
 ## Handoff Integrity Summary
 
-- zip_file_count: `520`
-- zip_sha256: `d251956517d89d89be3514568ed4ef7f0a768f022d2e838ede7bb921baf178c1`
+- zip_file_count: `522`
+- zip_sha256: `cb878971be66cc008c9a793bc54b26ca82dd6ba6d76532836a4bf89878a85c0f`
 - sha_match: `True`
 - zip_testzip: `None`
 - nested_zip_count: `0`
 - forbidden_match_count: `0`
 - local_path_leak_count: `0`
-- post_manifest_included_evidence: `None observed`
 
 ## Patch Delta
 
 `HANDOFF_CHANGE_CLASSIFICATION.csv` lists exactly these patch-changed files:
 
-- `docs/governance/CIOS_CODEX_OPERATIONALIZATION_STANDARD.md`
-- `tests/test_codex_operationalization_standard.py`
+- `docs/governance/CIOS_PRACTICAL_OPERATING_STANDARD.md`
+- `tests/test_practical_operating_standard.py`
 
 ## Explicit Non-Scope
 
