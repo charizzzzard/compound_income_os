@@ -22,6 +22,26 @@ may become a metadata-only head newer than `central_handoff_zip_head`. That is a
 allowed head-offset case only because it is explicitly reported here and in
 `docs/governance/CIOS_CODEX_OPERATIONALIZATION_STANDARD.md`.
 
+## Metadata-Only Head Offset After Previous Handoff Publication
+
+- central_handoff_zip_head: `752099da56f0438cbc9ce72249704eb98f608258`
+- current_handoff_head: `752099da56f0438cbc9ce72249704eb98f608258`
+- previous_metadata_publication_head: `934f26bc0e0e78b5b0522f3c8dd47598caca0a1f`
+- previous_remote_main_head_after_metadata_publication: `934f26bc0e0e78b5b0522f3c8dd47598caca0a1f`
+- repo_current_head_before_this_followup: `934f26bc0e0e78b5b0522f3c8dd47598caca0a1f`
+- remote_main_head_before_this_followup: `934f26bc0e0e78b5b0522f3c8dd47598caca0a1f`
+
+The ZIP represents the implementation snapshot at
+`752099da56f0438cbc9ce72249704eb98f608258`. The repository and remote later
+exposed metadata-only publication head
+`934f26bc0e0e78b5b0522f3c8dd47598caca0a1f`, which updated reviewer-facing
+context/checksum files and did not change source, runtime, tests or configs.
+
+This follow-up records the known offset explicitly to satisfy
+`docs/governance/CIOS_CODEX_OPERATIONALIZATION_STANDARD.md`. The follow-up
+commit itself is reported in the operator report after commit creation; it is
+not prewritten into this file to avoid self-referential commit metadata.
+
 ## Source-of-Truth / Precedence
 
 Bei Konflikten gilt diese Reihenfolge:

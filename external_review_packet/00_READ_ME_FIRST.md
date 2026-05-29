@@ -33,6 +33,19 @@ If this metadata file is committed after ZIP export, the repo HEAD may become a
 metadata-only head that is newer than `central_handoff_zip_head`. That offset is
 expected only when reported explicitly.
 
+## Metadata-Only Head Offset Note
+
+The central ZIP still represents implementation snapshot
+`752099da56f0438cbc9ce72249704eb98f608258`. After that ZIP was published, the
+repo and remote exposed known metadata-only publication head
+`934f26bc0e0e78b5b0522f3c8dd47598caca0a1f`. That offset affected
+reviewer-facing context/checksum metadata only; it did not change source,
+runtime, tests, configs or financial logic.
+
+This follow-up records the offset explicitly. The follow-up commit head is not
+prewritten into this file; it must be read from the operator report or Git after
+the commit exists.
+
 ## Source-of-Truth / Precedence
 
 Bei Konflikten gilt diese Reihenfolge:
