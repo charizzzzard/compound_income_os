@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import unittest
 from pathlib import Path
 
@@ -16,6 +17,51 @@ def read(path: Path) -> str:
 
 def normalized(text: str) -> str:
     return " ".join(text.lower().split())
+
+
+def extract_section(text: str, heading: str) -> str:
+    lines = text.splitlines()
+    start_index: int | None = None
+    for index, line in enumerate(lines):
+        if line.strip() == heading:
+            start_index = index
+            break
+    if start_index is None:
+        raise AssertionError(f"Missing section: {heading}")
+
+    end_index = len(lines)
+    for index in range(start_index + 1, len(lines)):
+        line = lines[index].strip()
+        if line.startswith("## ") and not line.startswith("### "):
+            end_index = index
+            break
+    return "\n".join(lines[start_index:end_index])
+
+
+def extract_fenced_yaml_blocks(section_text: str) -> list[str]:
+    blocks: list[str] = []
+    current: list[str] = []
+    in_yaml_block = False
+
+    for line in section_text.splitlines():
+        stripped = line.strip()
+        if not in_yaml_block and stripped == "```yaml":
+            in_yaml_block = True
+            current = []
+            continue
+        if in_yaml_block and stripped == "```":
+            blocks.append("\n".join(current))
+            in_yaml_block = False
+            current = []
+            continue
+        if in_yaml_block:
+            current.append(line)
+
+    return blocks
+
+
+def assert_yaml_key_present(testcase: unittest.TestCase, yaml_block: str, key: str) -> None:
+    testcase.assertRegex(yaml_block, rf"(?m)^{re.escape(key)}:\s*")
 
 
 class ValuationMethodologyProposalTemplateTests(unittest.TestCase):
@@ -39,8 +85,11 @@ class ValuationMethodologyProposalTemplateTests(unittest.TestCase):
         ]:
             self.assertIn(section, text)
 
-    def test_required_identity_fields_exist(self) -> None:
-        text = normalized(read(TEMPLATE_PATH))
+    def test_methodology_identity_yaml_block_has_required_fields(self) -> None:
+        section = extract_section(read(TEMPLATE_PATH), "## Methodology Identity")
+        blocks = extract_fenced_yaml_blocks(section)
+        self.assertTrue(blocks, "Methodology Identity must contain a fenced yaml block")
+        yaml_block = blocks[0]
 
         for field in [
             "methodology_id",
@@ -54,10 +103,18 @@ class ValuationMethodologyProposalTemplateTests(unittest.TestCase):
             "version",
             "decision_record_reference",
         ]:
-            self.assertIn(field, text)
+            assert_yaml_key_present(self, yaml_block, field)
+
+        for exact_line in [
+            'proposal_status: "PROPOSED_ONLY"',
+            'contract_reference: "docs/contracts/VALUATION_METHODOLOGY_PROPOSAL_TEMPLATE.md"',
+            'related_boundary_contract: "docs/contracts/VALUATION_METHODOLOGY_BOUNDARY_CONTRACT.md"',
+        ]:
+            self.assertIn(exact_line, yaml_block)
 
     def test_required_non_scope_phrases_exist(self) -> None:
-        text = normalized(read(TEMPLATE_PATH))
+        section = extract_section(read(TEMPLATE_PATH), "## Explicit Non-Scope")
+        text = normalized(section)
 
         for phrase in [
             "this template does not implement",
@@ -80,14 +137,25 @@ class ValuationMethodologyProposalTemplateTests(unittest.TestCase):
         for phrase in [
             "proposal-only governance evidence",
             "proposal acceptance does not imply runtime enforcement",
-            'calculation_status: "proposed_only"',
-            'runtime_status: "not_runtime_enforced"',
-            'formula_implementation_status: "not_implemented"',
         ]:
             self.assertIn(phrase, text)
 
+    def test_calculation_semantics_yaml_block_has_exact_proposal_only_markers(self) -> None:
+        section = extract_section(read(TEMPLATE_PATH), "## Calculation Semantics")
+        blocks = extract_fenced_yaml_blocks(section)
+        self.assertTrue(blocks, "Calculation Semantics must contain a fenced yaml block")
+        yaml_block = blocks[0]
+
+        for exact_line in [
+            'calculation_status: "PROPOSED_ONLY"',
+            'runtime_status: "NOT_RUNTIME_ENFORCED"',
+            'formula_implementation_status: "NOT_IMPLEMENTED"',
+        ]:
+            self.assertIn(exact_line, yaml_block)
+
     def test_proposal_acceptance_boundary_requires_future_runtime_prerequisites(self) -> None:
-        text = normalized(read(TEMPLATE_PATH))
+        section = extract_section(read(TEMPLATE_PATH), "## Proposal Acceptance Boundary")
+        text = normalized(section)
 
         self.assertIn("completing this template can only create review evidence", text)
         self.assertIn("it cannot promote a methodology to runtime use", text)
