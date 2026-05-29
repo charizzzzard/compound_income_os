@@ -657,6 +657,7 @@ capabilities:
       - src/personal_valuation_input_contract.py
       - docs/contracts/VALUATION_ENGINE_BOUNDARY_CONTRACT.md
       - docs/contracts/VALUATION_METHODOLOGY_BOUNDARY_CONTRACT.md
+      - docs/contracts/VALUATION_METHODOLOGY_PROPOSAL_TEMPLATE.md
       - docs/contracts/VALUATION_INPUT_PROVENANCE_AND_CONFLICT_CONTRACT.md
       - docs/contracts/VALUATION_INPUT_AS_OF_TEMPORAL_INTEGRITY_CONTRACT.md
       - docs/contracts/VALUATION_SCORING_SEMANTIC_DECISION_QUALITY_CONTRACT.md
@@ -684,6 +685,7 @@ capabilities:
     tests:
       - tests/test_personal_valuation_input_contract.py
       - tests/test_valuation_methodology_boundary_contract.py
+      - tests/test_valuation_methodology_proposal_template.py
       - tests/test_valuation_engine_behavior.py
       - tests/test_valuation_input_provenance_review.py
       - tests/test_valuation_input_temporal_integrity_review.py
@@ -697,7 +699,8 @@ capabilities:
       - "Valuation/scoring semantic decision-quality review is read-only static evidence for wording and interpretation risks; it does not change formulas, rankings, buy/sell behavior or operator acceptance."
       - "Operator-surface wording hardening maps risky internal valuation/scoring terms to bounded report wording only; internal formulas, rankings, target actions and buy/sell semantics are unchanged."
       - "Valuation methodology boundary contract defines pre-DCF methodology preconditions, but no DCF engine, valuation automation, provider ingestion or formula change is implemented."
-    next_action: "External review of valuation methodology boundary contract before any valuation methodology implementation, DCF work or scoring formula change."
+      - "Valuation methodology proposal template is proposal/governance-only; it does not implement DCF, valuation automation, scoring integration, ranking integration or investment readiness."
+    next_action: "External review of valuation methodology proposal template before any valuation methodology implementation, DCF work or scoring formula change."
   - capability_id: simulation_backtesting_monte_carlo
     display_name: Simulation Backtesting Monte Carlo
     status: deferred
