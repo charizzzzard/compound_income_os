@@ -122,9 +122,9 @@
     },
     {
       "command": "python -m unittest tests.test_personal_run_engine -v",
-      "classification": "LOCAL_REPO_REQUIRED",
-      "reason": "Covers full local orchestration and default repo-local source paths; not all local runtime/generated context is part of the ZIP contract.",
-      "zip_expectation": "Use targeted ZIP-safe smoke tests for external reproduction."
+      "classification": "ZIP_SAFE",
+      "reason": "Uses stdlib unittest, committed source/configs and synthetic test-local fixtures; no private raw data, no network and no .git context.",
+      "zip_expectation": "Expected to run from an extracted full_review handoff ZIP."
     },
     {
       "command": "python -m unittest tests.test_cost_tax_engine -v",

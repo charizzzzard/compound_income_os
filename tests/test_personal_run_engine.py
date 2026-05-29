@@ -13,6 +13,7 @@ from src import monthly_ranking_engine, portfolio_review, scoring_engine, watchl
 from src.benchmark_history_engine import BENCHMARK_ARCHIVE_FIELDS, BENCHMARK_REGISTRY_FIELDS
 from src.common import read_csv_rows
 from src.cost_tax_archive_engine import DEFAULT_CONFIG_PATH as DEFAULT_COST_TAX_CONFIG_PATH
+from src.cost_tax_engine import NORMALIZED_LEDGER_FIELDS
 from src.data_source_registry import RESOLVED_FIELDS, STATUS_FIELDS
 from src.dashboard_engine import DEFAULT_CONFIG_PATH as DEFAULT_DASHBOARD_CONFIG_PATH
 from src.fundamentals_evidence_apply import APPLY_SUMMARY_FIELDS
@@ -30,16 +31,34 @@ from src.savings_plan_registry import REGISTRY_FIELDS
 class PersonalRunEngineTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp_paths: list[Path] = []
+        self.temp_dirs: list[Path] = []
+        self._ensure_default_savings_plan_registry_fixture()
 
     def tearDown(self) -> None:
         for path in reversed(self.temp_paths):
             if path.exists():
                 path.unlink()
+        for path in reversed(self.temp_dirs):
+            if path.exists():
+                try:
+                    path.rmdir()
+                except OSError:
+                    pass
 
     def _path(self, name: str) -> Path:
         path = Path("tests") / name
         self.temp_paths.append(path)
         return path
+
+    def _ensure_default_savings_plan_registry_fixture(self) -> None:
+        default_registry = Path("data/raw/savings_plan_registry.csv")
+        if default_registry.exists():
+            return
+        if not default_registry.parent.exists():
+            default_registry.parent.mkdir(parents=True)
+            self.temp_dirs.append(default_registry.parent)
+        self._write_csv(default_registry, REGISTRY_FIELDS, [])
+        self.temp_paths.append(default_registry)
 
     def _write_csv(self, path: Path, fieldnames: list[str], rows: list[dict[str, object]]) -> None:
         with path.open("w", encoding="utf-8", newline="") as handle:
@@ -124,6 +143,65 @@ class PersonalRunEngineTests(unittest.TestCase):
 
     def _write_personal_master_rows(self, path: Path, rows: list[dict[str, object]]) -> None:
         self._write_csv(path, PERSONAL_MASTER_FIELDS, rows)
+
+    def _write_personal_master_fixture(self, path: Path) -> None:
+        self._write_personal_master_rows(path, [self._personal_master_row()])
+
+    def _write_benchmark_timeseries_fixture(self, path: Path) -> None:
+        self._write_csv(
+            path,
+            [
+                "date",
+                "benchmark_name",
+                "benchmark_symbol",
+                "currency",
+                "close",
+                "adjusted_close",
+                "total_return_index",
+                "source_name",
+            ],
+            [
+                {
+                    "date": "2026-04-10",
+                    "benchmark_name": "Unit Benchmark",
+                    "benchmark_symbol": "UNIT_WORLD_TR_EUR",
+                    "currency": "EUR",
+                    "close": "100",
+                    "adjusted_close": "100",
+                    "total_return_index": "100",
+                    "source_name": "unit_benchmark_fixture",
+                }
+            ],
+        )
+
+    def _write_cost_tax_ledger_fixture(self, path: Path) -> None:
+        row = {field: "" for field in NORMALIZED_LEDGER_FIELDS}
+        row.update(
+            {
+                "event_date": "2026-04-10",
+                "broker": "MANUAL_LEDGER",
+                "document_type": "TRADE_CONFIRMATION",
+                "record_granularity": "EVENT",
+                "event_type": "BUY",
+                "instrument_name": "Unit Equity",
+                "ticker": "MSFT",
+                "isin": "US5949181045",
+                "currency": "EUR",
+                "gross_amount": "100.00",
+                "net_amount": "100.00",
+                "fee_amount": "0.00",
+                "tax_amount": "0.00",
+                "withholding_tax_amount": "0.00",
+                "quantity": "1",
+                "price_per_unit": "100.00",
+                "reference_id": "UNIT-TRADE-001",
+                "source_name": "unit_cost_tax_fixture",
+                "verification_status": "VERIFIED",
+                "data_quality_flag": "OK",
+                "notes": "Synthetic unit ledger row.",
+            }
+        )
+        self._write_csv(path, NORMALIZED_LEDGER_FIELDS, [row])
 
     def _write_empty_evidence(self, path: Path) -> None:
         self._write_csv(path, EVIDENCE_INPUT_FIELDS, [])
@@ -1561,7 +1639,7 @@ class PersonalRunEngineTests(unittest.TestCase):
     def test_explicit_cli_fundamentals_master_wins_against_registry_default(self) -> None:
         options = self._core_options("registry_cli_priority", ["import", "fundamentals_seed", "scoring"])
         registry_master = self._path("_tmp_registry_cli_priority_master.csv")
-        registry_master.write_text(Path("data/raw/personal_fundamentals_master.csv").read_text(encoding="utf-8"), encoding="utf-8")
+        self._write_personal_master_fixture(registry_master)
         self._write_data_sources_config(
             Path(options.data_sources_config),
             {
@@ -1588,7 +1666,7 @@ class PersonalRunEngineTests(unittest.TestCase):
     def test_registry_default_fundamentals_master_overrides_repo_default_when_no_cli_override_exists(self) -> None:
         options = self._core_options("registry_default_priority", ["import", "scoring"])
         registry_master = self._path("_tmp_registry_default_priority_master.csv")
-        registry_master.write_text(Path("data/raw/personal_fundamentals_master.csv").read_text(encoding="utf-8"), encoding="utf-8")
+        self._write_personal_master_fixture(registry_master)
         options.fundamentals_master = "data/raw/personal_fundamentals_master.csv"
         self._write_data_sources_config(
             Path(options.data_sources_config),
@@ -2298,7 +2376,9 @@ class PersonalRunEngineTests(unittest.TestCase):
 
     def test_history_and_performance_run_uses_existing_single_benchmark_method(self) -> None:
         options = self._core_options("history_perf", ["import", "history", "performance"])
-        options.performance_benchmark = "data/raw/sample_benchmark_timeseries.csv"
+        benchmark_input = self._path("_tmp_history_perf_benchmark_timeseries.csv")
+        self._write_benchmark_timeseries_fixture(benchmark_input)
+        options.performance_benchmark = str(benchmark_input)
 
         manifest = run_personal_run_engine(options)
 
@@ -2313,7 +2393,9 @@ class PersonalRunEngineTests(unittest.TestCase):
 
     def test_cost_tax_run_works_through_orchestrator(self) -> None:
         options = self._base_options("cost_tax", ["cost_tax"])
-        options.ledger = "data/raw/sample_cost_tax_ledger.csv"
+        ledger = self._path("_tmp_cost_tax_ledger.csv")
+        self._write_cost_tax_ledger_fixture(ledger)
+        options.ledger = str(ledger)
 
         manifest = run_personal_run_engine(options)
 

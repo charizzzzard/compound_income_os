@@ -50,7 +50,7 @@ class TestReproductionMatrixTests(unittest.TestCase):
         )
         self.assertEqual(
             by_command["python -m unittest tests.test_personal_run_engine -v"]["classification"],
-            "LOCAL_REPO_REQUIRED",
+            "ZIP_SAFE",
         )
         self.assertEqual(by_command["python -m pytest -q"]["classification"], "TOOLING_OPTIONAL")
         self.assertEqual(by_command["python -m ruff check ."]["classification"], "TOOLING_OPTIONAL")
