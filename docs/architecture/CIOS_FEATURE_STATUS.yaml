@@ -523,6 +523,7 @@ capabilities:
       - src/dashboard_operator_summary.py
       - tests/test_dashboard_operator_summary.py
       - docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md
+      - docs/contracts/DASHBOARD_FRESHNESS_SURFACE_CONTRACT.md
       - docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md
     input_artifacts:
       - data/processed/decision_journal_validation.csv
@@ -535,12 +536,14 @@ capabilities:
     report_surface:
       - reports/<date>/personal_run_report.md
     tests:
+      - tests/test_dashboard_freshness_surface_contract.py
       - tests/test_dashboard_operator_summary.py
       - tests/test_personal_run_engine.py
     limitations:
       - "Read-only machine summary only; no visual dashboard server/UI changes and no new investment logic."
       - "Data Freshness counts are surfaced as governance state, but no visual dashboard freshness panel, replay gate or outcome attribution exists."
-    next_action: "External review, then dashboard surface refinement."
+      - "Dashboard Freshness Surface Contract is contract/test-only; it does not implement new runtime rendering."
+    next_action: "DASHBOARD_FRESHNESS_OPERATOR_SURFACE_HARDENING after external review."
   - capability_id: meta_governance_baseline
     display_name: Meta Governance Baseline
     status: implemented
@@ -721,6 +724,7 @@ capabilities:
     status: partial
     evidence_files:
       - docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md
+      - docs/contracts/DASHBOARD_FRESHNESS_SURFACE_CONTRACT.md
       - configs/data_freshness_thresholds.yaml
       - src/data_freshness.py
       - tests/test_data_freshness.py
@@ -737,14 +741,16 @@ capabilities:
       - reports/<date>/personal_monthly_decision_report.md
       - reports/<date>/personal_run_report.md
     tests:
+      - tests/test_dashboard_freshness_surface_contract.py
       - tests/test_data_freshness.py
       - tests/test_personal_artifact_freshness.py
       - tests/test_personal_decision_journal_validation.py
     limitations:
       - "Cross-system freshness contract, thresholds, producer, personal_run_engine stage, operator-summary fields and explicit Monthly Decision Report builder/CLI surface exist, but the standard full-run monthly stage is earlier than data_freshness; final full-run operator visibility is through Personal Run Report / Dashboard Operator Summary."
+      - "Dashboard Freshness Surface Contract now defines operator-surface obligations before any further runtime hardening."
       - "No visual dashboard freshness panel, replay gate or outcome-attribution gate is implemented."
       - "The MVP producer uses explicit date fields only; file modified time is not treated as sufficient FRESH evidence."
-    next_action: "Review whether a future visual dashboard freshness panel is needed; do not add replay or outcome gates before their contracts exist."
+    next_action: "DASHBOARD_FRESHNESS_OPERATOR_SURFACE_HARDENING; do not add replay or outcome gates before their contracts exist."
   - capability_id: corporate_actions
     display_name: Corporate Actions
     status: unknown

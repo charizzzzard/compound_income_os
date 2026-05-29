@@ -207,6 +207,11 @@ Freshness is a governance and operator-attention signal:
   buy/sell decision.
 - Dashboard surfaces must not render missing freshness as `PASS`.
 
+Freshness-specific dashboard/report exposure is bounded by
+`docs/contracts/DASHBOARD_FRESHNESS_SURFACE_CONTRACT.md`, which bridges this
+producer contract to `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md`
+without replacing either contract.
+
 ## Replay / Outcome Boundary
 
 This contract is a prerequisite for replay and outcome attribution. It does not:

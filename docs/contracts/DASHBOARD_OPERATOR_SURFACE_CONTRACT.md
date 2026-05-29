@@ -233,6 +233,12 @@ Data Freshness may be `NOT_AVAILABLE` for standalone legacy calls; when the
 same run selected `data_freshness`, missing or unreadable freshness output is
 `PARTIAL` and must not be rendered as `PASS`.
 
+Freshness-specific dashboard/report obligations are further bounded by
+`docs/contracts/DASHBOARD_FRESHNESS_SURFACE_CONTRACT.md`. That contract bridges
+this operator-surface contract to
+`docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md` without replacing either
+parent contract.
+
 ## Review Queue Summary Semantics
 
 The dashboard surface must preserve these Review Queue Summary fields:

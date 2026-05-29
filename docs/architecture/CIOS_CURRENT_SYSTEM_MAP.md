@@ -45,7 +45,9 @@ The meta-governance baseline is defined by:
   append-only journal and deterministic operator review queue.
 - Data Freshness / Staleness: contract, read-only summary producer and
   `personal_run_engine` stage for explicit `FRESH`, `STALE`, `MISSING`,
-  `UNKNOWN`, `REVIEW_REQUIRED` and `NOT_APPLICABLE` data states.
+  `UNKNOWN`, `REVIEW_REQUIRED` and `NOT_APPLICABLE` data states. The dashboard
+  Freshness surface bridge contract defines how those states must remain visible
+  on operator-facing dashboard/report surfaces.
 - Data Source Strategy / License Boundary: governance kernel for source
   typology, provider-agnostic adapters, provenance, usage scopes, handoff
   boundaries, template validation preflight and commercial/license review gates
@@ -192,6 +194,7 @@ dashboard.
   - `docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md`
   - `docs/contracts/DECISION_QUALITY_STATE_CONTRACT.md`
   - `docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md`
+  - `docs/contracts/DASHBOARD_FRESHNESS_SURFACE_CONTRACT.md`
   - `docs/contracts/INSTRUMENT_MASTER_CONTRACT.md`
   - `docs/contracts/PORTFOLIO_EVENT_LEDGER_CONTRACT.md`
   - `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md`
@@ -294,7 +297,8 @@ with zero counts.
 - The dashboard operator surface contract and minimal operator summary producer
   exist, but no full visual dashboard surface has been hardened yet.
 - The Data Freshness / Staleness Contract, producer, personal-run stage and
-  operator-summary fields exist, but no visual dashboard freshness panel,
+  operator-summary fields exist, and the dashboard Freshness surface bridge
+  contract defines surface obligations. No visual dashboard freshness panel,
   replay freshness gate or outcome attribution integration exists yet.
 - The Data Source Strategy / License Boundary exists as governance and contract
   documentation plus template validation preflight only; there is no active
