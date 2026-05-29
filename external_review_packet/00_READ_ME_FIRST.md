@@ -1,15 +1,17 @@
-# Compound Income OS External LLM Review Packet - Dashboard Freshness Operator Surface Hardening
+# Compound Income OS External LLM Review Packet - Repo Remote Preflight / GitHub Setup
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach dem Runtime-/Operator-Surface-Hardening-Patch
-`DASHBOARD_FRESHNESS_OPERATOR_SURFACE_HARDENING`.
+(CIOS) nach der Repo-Remote-Preflight- und GitHub-Setup-Pruefung
+`REPO_REMOTE_PREFLIGHT_GITHUB_REMOTE_SETUP`.
 
-- commit: `7b7add3239c99c79f69e60e4be16a35486684558`
-- message: `Harden dashboard freshness operator surface`
-- status: `DASHBOARD_FRESHNESS_OPERATOR_SURFACE_HARDENING_READY_FOR_EXTERNAL_REVIEW`
+- commit: `11006751e4c754ccdba60b6b47464013bdba385d`
+- message: `Sync external review packet for dashboard freshness hardening`
+- status: `BLOCKED_GH_AUTH_REQUIRED_WITH_CENTRAL_HANDOFF_EVIDENCE`
 
 Dieses Packet ersetzt aeltere Dateien in `external_review_packet/` fuer den
-aktuellen Review-Zweck.
+aktuellen Review-Zweck. Es ist der einzige authoritative externe Handoff fuer
+diese Aufgabe; der lokale Preflight-Ordner unter `outputs/` ist nur Evidence-
+Quelle und kein paralleler Review-Handoff.
 
 ## Current Review Head
 
@@ -17,15 +19,11 @@ aktuellen Review-Zweck.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- base_head: `01ed8314c53fb165e2edd0e6ac283d6e37c26127`
-- implementation_head: `7b7add3239c99c79f69e60e4be16a35486684558`
-- implementation_short_head: `7b7add3`
-- current_handoff_head: `7b7add3239c99c79f69e60e4be16a35486684558`
-- current_handoff_short_head: `7b7add3`
-- delta_range: `01ed8314c53fb165e2edd0e6ac283d6e37c26127..7b7add3239c99c79f69e60e4be16a35486684558`
-- handoff_metadata_commit: `pending_metadata_commit_after_packet_synchronization`
-- handoff_metadata_commit_note: `external_review_packet tracked metadata is synchronized after the implementation commit; the ZIP content itself is exported from implementation_head.`
-- bundle_purpose: `external_review_after_dashboard_freshness_operator_surface_hardening`
+- implementation_head: `11006751e4c754ccdba60b6b47464013bdba385d`
+- implementation_short_head: `1100675`
+- current_handoff_head: `11006751e4c754ccdba60b6b47464013bdba385d`
+- current_handoff_short_head: `1100675`
+- bundle_purpose: `external_review_after_repo_remote_preflight_github_remote_setup`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -34,110 +32,82 @@ aktuellen Review-Zweck.
 
 Bei Konflikten gilt diese Reihenfolge:
 
-1. `external_review_packet/00_READ_ME_FIRST.md`
-2. `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
-3. `external_review_packet/HANDOFF_LATEST.zip`
-4. `external_review_packet/HANDOFF_LATEST.sha256`
-5. historische Reports nur als Kontext
+1. `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
+2. ZIP-internal `HANDOFF_CONTEXT.md`
+3. ZIP-internal preflight evidence under `PRE_FLIGHT_REPO_REMOTE/`
+4. ZIP-internal artifact indexes and omitted-artifact registers
+5. GitHub browser URL for committed repo inspection
+6. Local-only/generated/ignored files only if explicitly included or summarized
 
-ZIP-internes `HANDOFF_CONTEXT.md` ist generischer Exporter-Kontext. Wenn es mit
-`external_review_packet/HANDOFF_LATEST_CONTEXT.md` kollidiert, gewinnt die
-externe Kontextdatei fuer Packet-Metadaten, Review-Scope, Precedence,
-Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
+## GitHub Remote Reality
+
+- remote_exists: `False`
+- remote_name: `NOT_AVAILABLE`
+- browser_url: `NOT_AVAILABLE`
+- local_head: `11006751e4c754ccdba60b6b47464013bdba385d`
+- remote_head: `NOT_AVAILABLE`
+- local_head_pushed: `False`
+- gh_cli_available: `False`
+- gh_authenticated: `False`
+- safety_gate_passed: `False`
+- blocked_reasons:
+  - `GH_CLI_NOT_AVAILABLE_AND_NO_REMOTE_EXISTS`
+  - `GH_AUTH_NOT_AVAILABLE_AND_NO_REMOTE_EXISTS`
+- remote_creation_attempted: `False`
+- push_attempted: `False`
 
 ## Reviewer Instructions
 
 - Verwende volle repo-relative Pfade in Findings.
-- Pruefe, dass `HANDOFF_PATCH_IDENTITY.md` im ZIP die patch-spezifischen Werte
-  enthaelt:
-  - `patch_title: DASHBOARD_FRESHNESS_OPERATOR_SURFACE_HARDENING`
-  - `bundle_purpose: external_review_after_dashboard_freshness_operator_surface_hardening`
-  - `implementation_head: 7b7add3239c99c79f69e60e4be16a35486684558`
-- Pruefe, dass `HANDOFF_CHANGE_CLASSIFICATION.csv` genau diese sechs
-  patch-geaenderten Dateien ausweist:
-  - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
-  - `docs/architecture/CURRENT_KNOWN_GAPS.md`
-  - `docs/contracts/DASHBOARD_FRESHNESS_SURFACE_CONTRACT.md`
-  - `src/dashboard_operator_summary.py`
-  - `tests/test_dashboard_freshness_surface_contract.py`
-  - `tests/test_dashboard_operator_summary.py`
-- Pruefe, dass `HANDOFF_VALIDATION.txt` weiterhin `RECORDED_VALIDATION` als
-  Provenienz verwendet.
-- Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
-- Inferiere keine Valuation Automation, DCF, Investment Advice, Investment
-  Readiness, Buy/Sell-Automation, Order Execution oder Product-/Production-
-  Readiness.
-
-## Review Scope
-
-Reviewer sollen insbesondere pruefen:
-
-- `src/dashboard_operator_summary.py`
-- `tests/test_dashboard_operator_summary.py`
-- `tests/test_dashboard_freshness_surface_contract.py`
-- `docs/contracts/DASHBOARD_FRESHNESS_SURFACE_CONTRACT.md`
-- `docs/contracts/DATA_FRESHNESS_STALENESS_CONTRACT.md`
-- `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md`
-- `docs/architecture/CIOS_FEATURE_STATUS.yaml`
-- `docs/architecture/CURRENT_KNOWN_GAPS.md`
-- ZIP-internal:
+- Pruefe ZIP-intern:
   - `HANDOFF_CONTEXT.md`
   - `HANDOFF_PATCH_IDENTITY.md`
   - `HANDOFF_CHANGE_CLASSIFICATION.csv`
   - `HANDOFF_VALIDATION.txt`
+  - `PRE_FLIGHT_REPO_REMOTE/REPO_REMOTE_PREFLIGHT.md`
+  - `PRE_FLIGHT_REPO_REMOTE/github_remote_status.json`
+  - `PRE_FLIGHT_REPO_REMOTE/dirty_worktree_classification.csv`
+  - `PRE_FLIGHT_REPO_REMOTE/manual_remediation_steps.md`
+  - `PRE_FLIGHT_REPO_REMOTE/CHATGPT_PROJECT_CONTEXT_GITHUB_LINK.md`
+- `PRE_FLIGHT_REPO_REMOTE/preflight_commands.log` ist bewusst ausgelassen und
+  in `HANDOFF_OMITTED_ARTIFACTS.csv` verbucht, weil `*.log` durch die Handoff-
+  Policy verboten ist.
+- Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
+- Inferiere nicht, dass GitHub lokale uncommitted, ignored oder generated files
+  enthaelt.
 
 ## Handoff Integrity Summary
 
-- zip_file_count: `518`
-- zip_size_bytes: `13191924`
-- zip_sha256: `702fb84a5dd622503e5b9d88785b3a4cbcc038f96f659e192f1e6e4a8b324839`
+- zip_file_count: `523`
+- zip_sha256: `4734fce821e146ac02d305d40880aa7a184dd16db462476f585d9ef7d9c12668`
 - sha_match: `True`
 - zip_testzip: `None`
-- missing_required: `[]`
 - nested_zip_count: `0`
 - forbidden_match_count: `0`
 - local_path_leak_count: `0`
-- delta_evidence_artifact: `HANDOFF_PATCH_IDENTITY.md`
-- change_classification_artifact: `HANDOFF_CHANGE_CLASSIFICATION.csv`
-- change_classification_rows: `6`
-
-## Validation Reality
-
-Executed in current local repo before handoff synchronization:
-
-- `python -m pytest tests/test_dashboard_freshness_surface_contract.py -q`: PASS, 11 tests, 65 subtests
-- `python -m pytest tests/test_dashboard_operator_summary.py -q`: PASS, 23 tests, 8 subtests
-- `python -m pytest tests/test_personal_run_engine.py -q`: PASS, 60 tests, 2 subtests
-- `python -m pytest -q`: PASS, 947 tests, 292 subtests
-- `python -m ruff check .`: PASS
-- `python -m unittest discover -s tests -p "test_*.py" -v`: PASS, 947 tests
-- `git diff --check`: PASS, LF/CRLF working-copy warning only
-
-ZIP-internes `HANDOFF_VALIDATION.txt` records requested validation commands as
-`RECORDED_VALIDATION`; those lines are not automatic proof that an external
-reviewer executed them from the ZIP.
+- contains_repo_remote_preflight: `True`
+- contains_github_remote_status: `True`
+- contains_project_context_link: `True`
+- omitted_preflight_files_count: `1`
 
 ## Explicit Non-Scope
 
 This packet does not claim or introduce:
 
+- CIOS feature logic
+- investment logic changes
 - scoring changes
 - ranking changes
 - valuation changes
 - portfolio-rule changes
-- monthly report semantic changes
-- dashboard UI/server
-- DCF engine
-- valuation automation
+- dashboard/data-freshness/report semantic changes
+- broker import changes
 - provider/API integration
-- scraping or crawling
-- broker import
 - order execution
 - buy/sell automation
-- investment advice
-- replay, backtesting or simulation
-- outcome attribution
-- runtime enforcement gate
+- private/generated/raw publication
+- force push
+- public GitHub repository visibility
 - product, production or investment readiness
 
 Human Operator remains final acceptance authority.

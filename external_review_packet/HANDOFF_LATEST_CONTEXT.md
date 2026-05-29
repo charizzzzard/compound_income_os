@@ -4,16 +4,13 @@
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- patch_title: `DASHBOARD_FRESHNESS_OPERATOR_SURFACE_HARDENING`
-- bundle_purpose: `external_review_after_dashboard_freshness_operator_surface_hardening`
+- patch_title: `REPO_REMOTE_PREFLIGHT_GITHUB_REMOTE_SETUP`
+- bundle_purpose: `external_review_after_repo_remote_preflight_github_remote_setup`
 - profile: `full_review`
 - bundle_name: `HANDOFF_LATEST`
-- base_head: `01ed8314c53fb165e2edd0e6ac283d6e37c26127`
-- implementation_head: `7b7add3239c99c79f69e60e4be16a35486684558`
-- current_handoff_head: `7b7add3239c99c79f69e60e4be16a35486684558`
-- delta_range: `01ed8314c53fb165e2edd0e6ac283d6e37c26127..7b7add3239c99c79f69e60e4be16a35486684558`
+- implementation_head: `11006751e4c754ccdba60b6b47464013bdba385d`
+- current_handoff_head: `11006751e4c754ccdba60b6b47464013bdba385d`
 - dirty_worktree_present_at_export: `False`
-- changed_file_count: `6`
 - generated_source_folder: `outputs/handoffs/latest`
 - reviewer_facing_upload_folder: `external_review_packet`
 
@@ -21,80 +18,154 @@
 
 Bei Konflikten gilt diese Reihenfolge:
 
-1. `external_review_packet/00_READ_ME_FIRST.md`
-2. `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
-3. `external_review_packet/HANDOFF_LATEST.zip`
-4. `external_review_packet/HANDOFF_LATEST.sha256`
-5. historische Reports nur als Kontext
+1. `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
+2. ZIP-internal `HANDOFF_CONTEXT.md`
+3. ZIP-internal preflight evidence under `PRE_FLIGHT_REPO_REMOTE/`
+4. ZIP-internal artifact indexes and omitted-artifact registers
+5. GitHub browser URL for committed repo inspection
+6. Local-only/generated/ignored files only if explicitly included or summarized
 
-ZIP-internes `HANDOFF_CONTEXT.md` ist generischer Exporter-Kontext. Wenn es mit
-dieser externen Kontextdatei kollidiert, gewinnt diese externe Kontextdatei fuer
-Packet-Metadaten, Review-Scope, Precedence, Dirty-State-Interpretation und
-Operator-/Reviewer-Instruktionen.
+## Repo Remote Preflight Summary
 
-## Patch Delta
+- git_version: `git version 2.52.0.windows.1`
+- current_branch: `main`
+- local_head: `11006751e4c754ccdba60b6b47464013bdba385d`
+- short_head: `1100675`
+- dirty_state: `clean`
+- remote_exists: `False`
+- remote_name: `NOT_AVAILABLE`
+- remote_fetch_url: `NOT_AVAILABLE`
+- remote_push_url: `NOT_AVAILABLE`
+- is_github_remote: `False`
+- browser_url: `NOT_AVAILABLE`
+- clone_url_https: `NOT_AVAILABLE`
+- clone_url_ssh: `NOT_AVAILABLE`
+- visibility: `NOT_AVAILABLE`
+- remote_head: `NOT_AVAILABLE`
+- local_head_pushed: `False`
+- gh_cli_available: `False`
+- gh_authenticated: `False`
+- safety_gate_passed: `False`
+- blocked_reasons:
+  - `GH_CLI_NOT_AVAILABLE_AND_NO_REMOTE_EXISTS`
+  - `GH_AUTH_NOT_AVAILABLE_AND_NO_REMOTE_EXISTS`
+- remote_creation_attempted: `False`
+- push_attempted: `False`
+- final_operator_action: `AUTHENTICATE_GH_AND_RERUN`
 
-Patch-geaenderte Dateien laut `HANDOFF_CHANGE_CLASSIFICATION.csv`:
+## Dirty-State Classification Summary
 
-- `docs/architecture/CIOS_FEATURE_STATUS.yaml`
-- `docs/architecture/CURRENT_KNOWN_GAPS.md`
-- `docs/contracts/DASHBOARD_FRESHNESS_SURFACE_CONTRACT.md`
-- `src/dashboard_operator_summary.py`
-- `tests/test_dashboard_freshness_surface_contract.py`
-- `tests/test_dashboard_operator_summary.py`
+- tracked_dirty_files: `0`
+- untracked_files_visible_to_git: `0`
+- ignored_local_files_present: `True`
+- private_or_forbidden_risk_present_in_ignored_local_files: `True`
+- private_or_forbidden_files_included_in_handoff: `False`
+- source_test_docs_config_dirty_count: `0`
+- generated_output_dirty_count: `0`
+- files_requiring_operator_review_before_push: `0`
+
+## Included Preflight Evidence
+
+The central ZIP includes:
+
+- `PRE_FLIGHT_REPO_REMOTE/REPO_REMOTE_PREFLIGHT.md`
+- `PRE_FLIGHT_REPO_REMOTE/github_remote_status.json`
+- `PRE_FLIGHT_REPO_REMOTE/dirty_worktree_classification.csv`
+- `PRE_FLIGHT_REPO_REMOTE/manual_remediation_steps.md`
+- `PRE_FLIGHT_REPO_REMOTE/CHATGPT_PROJECT_CONTEXT_GITHUB_LINK.md`
+
+The central ZIP explicitly omits:
+
+- `PRE_FLIGHT_REPO_REMOTE/preflight_commands.log`
+
+Reason: `COMMAND_OUTPUT_REDACTED`; `*.log` files are forbidden by handoff
+policy. The local file remains under `outputs/repo_remote_preflight/`.
 
 ## Handoff Integrity Summary
 
 - zip_path: `external_review_packet/HANDOFF_LATEST.zip`
 - sha_path: `external_review_packet/HANDOFF_LATEST.sha256`
-- zip_file_count: `518`
-- zip_size_bytes: `13191924`
-- zip_sha256: `702fb84a5dd622503e5b9d88785b3a4cbcc038f96f659e192f1e6e4a8b324839`
+- zip_file_count: `523`
+- zip_sha256: `4734fce821e146ac02d305d40880aa7a184dd16db462476f585d9ef7d9c12668`
 - sha_match: `True`
 - zip_testzip: `None`
 - nested_zip_count: `0`
 - forbidden_match_count: `0`
 - local_path_leak_count: `0`
-- required_metadata_present: `True`
-- change_classification_rows: `6`
+- contains_handoff_context: `True`
+- contains_repo_remote_preflight: `True`
+- contains_github_remote_status: `True`
+- contains_project_context_link: `True`
+- omitted_preflight_files_count: `1`
+- no_parallel_handoff_claimed: `True`
 
 ## Validation Reality
 
-Actually executed in the current local repo for this patch:
+Actually executed in the current local repo for this preflight:
 
-- `python -m pytest tests/test_dashboard_freshness_surface_contract.py -q`: PASS, 11 tests, 65 subtests
-- `python -m pytest tests/test_dashboard_operator_summary.py -q`: PASS, 23 tests, 8 subtests
-- `python -m pytest tests/test_personal_run_engine.py -q`: PASS, 60 tests, 2 subtests
-- `python -m pytest -q`: PASS, 947 tests, 292 subtests
-- `python -m ruff check .`: PASS
-- `python -m unittest discover -s tests -p "test_*.py" -v`: PASS, 947 tests
-- `git diff --check`: PASS, LF/CRLF working-copy warning only
+- `git --version`: PASS
+- `git branch --show-current`: PASS, `main`
+- `git rev-parse HEAD`: PASS, `11006751e4c754ccdba60b6b47464013bdba385d`
+- `git rev-parse --short HEAD`: PASS, `1100675`
+- `git status --short --branch`: PASS, clean branch state
+- `git log --oneline -n 20`: PASS
+- `git remote -v`: PASS, no configured remotes
+- `git diff --name-status`: PASS, no tracked diff
+- `git diff --check`: PASS
+- `python --version`: PASS, `Python 3.14.0`
+- `python -m pytest --version`: PASS, `pytest 9.0.3`
+- `python -m ruff --version`: PASS, `ruff 0.15.15`
+- `gh --version`: NOT_AVAILABLE
+- `gh auth status`: NOT_AVAILABLE
+- `git ls-remote --heads origin main`: FAIL_EXPECTED_NO_REMOTE
 
 ZIP-internes `HANDOFF_VALIDATION.txt` records validation commands as
 `RECORDED_VALIDATION`. It is command provenance, not proof of external execution
 unless a separate reviewer/operator report says so.
 
+## Manual Remediation
+
+GitHub browser URL is currently:
+
+```text
+NOT_AVAILABLE
+```
+
+Recommended operator action:
+
+```powershell
+gh auth login
+gh repo create compound_income_os --private --source=. --remote=origin --push
+```
+
+If the GitHub repository was created manually:
+
+```powershell
+git remote add origin https://github.com/<owner>/compound_income_os.git
+git push -u origin main
+```
+
+Do not force-push. Do not make the repository public. Do not add private/raw or
+generated local-only files.
+
 ## Explicit Non-Scope
 
 This packet does not claim or introduce:
 
+- CIOS feature logic
+- investment logic changes
 - scoring changes
 - ranking changes
 - valuation changes
 - portfolio-rule changes
-- monthly report semantic changes
-- dashboard UI/server
-- DCF engine
-- valuation automation
+- dashboard/data-freshness/report semantic changes
+- broker import changes
 - provider/API integration
-- scraping or crawling
-- broker import
 - order execution
 - buy/sell automation
-- investment advice
-- replay, backtesting or simulation
-- outcome attribution
-- runtime enforcement gate
+- private/generated/raw publication
+- force push
+- public GitHub repository visibility
 - product, production or investment readiness
 
 Human Operator remains final acceptance authority.
