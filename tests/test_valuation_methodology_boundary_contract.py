@@ -36,9 +36,38 @@ def extract_section(text: str, heading: str) -> str:
     return "\n".join(lines[start_index:end_index])
 
 
+def extract_top_level_sections(text: str) -> list[str]:
+    return [line.strip() for line in text.splitlines() if line.startswith("## ")]
+
+
 class ValuationMethodologyBoundaryContractTests(unittest.TestCase):
     def test_contract_file_exists(self) -> None:
         self.assertTrue(CONTRACT_PATH.exists())
+
+    def test_canonical_sections_exist_once_and_in_current_contract_order(self) -> None:
+        expected_sections = [
+            "## Purpose",
+            "## Current State",
+            "## Explicit Non-Scope",
+            "## Future Methodology Preconditions",
+            "## Allowed Future Method Families",
+            "## Prohibited Claims",
+            "## Required Operator Interpretation",
+        ]
+        observed_sections = extract_top_level_sections(read(CONTRACT_PATH))
+        observed_canonical = [section for section in observed_sections if section in expected_sections]
+        missing = [section for section in expected_sections if section not in observed_sections]
+        duplicates = [
+            section for section in expected_sections if observed_sections.count(section) != 1
+        ]
+
+        self.assertEqual([], missing, f"Missing canonical sections: {missing}")
+        self.assertEqual([], duplicates, f"Duplicate canonical sections: {duplicates}")
+        self.assertEqual(
+            expected_sections,
+            observed_canonical,
+            f"Expected canonical order {expected_sections}, observed {observed_canonical}",
+        )
 
     def test_required_sections_exist(self) -> None:
         text = read(CONTRACT_PATH)
