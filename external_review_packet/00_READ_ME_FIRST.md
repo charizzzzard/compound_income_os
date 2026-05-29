@@ -1,10 +1,11 @@
-# Compound Income OS External LLM Review Packet - Data Freshness Personal Run Surface Wiring Review
+# Compound Income OS External LLM Review Packet - Data Freshness Personal Run Surface Wiring Review Closure
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach dem Data-Freshness-Personal-Run-Surface-Wiring-Review-Patch:
+(CIOS) nach der External-Review-Ingestion fuer
+`DATA_FRESHNESS_PERSONAL_RUN_SURFACE_WIRING_REVIEW`:
 
-- commit: `079a5d6cd0c8a196dcf29096909455bf79a323bf`
-- message: `Clarify data freshness personal run surface`
+- commit: `7b5035218f3d4bedb2a8e2e729639b2ca8b73a6a`
+- message: `Record data freshness surface review closure`
 - status: `EXTERNAL_REVIEW_ACCEPTED_WITH_FINDINGS_NO_CODE_CHANGE_REQUIRED`
 
 Dieses Packet superseded aeltere Dateien in `external_review_packet/` fuer den
@@ -16,15 +17,16 @@ aktuellen Review-Zweck.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- base_head: `91e044f7187b1bae30a6a1dfa457b86e1b648afe`
-- implementation_head: `079a5d6cd0c8a196dcf29096909455bf79a323bf`
-- implementation_short_head: `079a5d6`
-- current_handoff_head: `079a5d6cd0c8a196dcf29096909455bf79a323bf`
-- current_handoff_short_head: `079a5d6`
-- delta_range: `91e044f7187b1bae30a6a1dfa457b86e1b648afe..079a5d6cd0c8a196dcf29096909455bf79a323bf`
+- base_head: `db4b3cc807b71e21361581eab05cf227b6419b95`
+- implementation_head: `7b5035218f3d4bedb2a8e2e729639b2ca8b73a6a`
+- implementation_short_head: `7b50352`
+- reviewed_patch_implementation_head: `079a5d6cd0c8a196dcf29096909455bf79a323bf`
+- current_handoff_head: `7b5035218f3d4bedb2a8e2e729639b2ca8b73a6a`
+- current_handoff_short_head: `7b50352`
+- delta_range: `db4b3cc807b71e21361581eab05cf227b6419b95..7b5035218f3d4bedb2a8e2e729639b2ca8b73a6a`
 - handoff_metadata_commit: `pending_until_metadata_commit`
 - handoff_metadata_commit_note: `metadata commit is created after this file is written; use git HEAD after metadata commit or the operator final report for the exact metadata commit hash`
-- bundle_purpose: `external_review_after_data_freshness_personal_run_surface_wiring_review`
+- bundle_purpose: `external_review_after_data_freshness_personal_run_surface_wiring_review_closure`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -49,13 +51,13 @@ Dirty-State-Interpretation und Operator-/Reviewer-Instruktionen.
 - Verwende volle repo-relative Pfade in Findings.
 - Pruefe, dass `HANDOFF_PATCH_IDENTITY.md` im ZIP die patch-spezifischen Werte
   enthaelt:
-  - `patch_title: DATA_FRESHNESS_PERSONAL_RUN_SURFACE_WIRING_REVIEW`
-  - `bundle_purpose: external_review_after_data_freshness_personal_run_surface_wiring_review`
+  - `patch_title: DATA_FRESHNESS_PERSONAL_RUN_SURFACE_WIRING_REVIEW_CLOSURE`
+  - `bundle_purpose: external_review_after_data_freshness_personal_run_surface_wiring_review_closure`
 - Pruefe, dass `HANDOFF_CHANGE_CLASSIFICATION.csv` die drei
   patch-geaenderten Dateien ausweist:
-  - `docs/architecture/CIOS_FEATURE_STATUS.yaml`
   - `docs/architecture/CURRENT_KNOWN_GAPS.md`
-  - `tests/test_personal_run_engine.py`
+  - `external_review_packet/00_READ_ME_FIRST.md`
+  - `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
 - Pruefe, dass `HANDOFF_VALIDATION.txt` weiterhin `RECORDED_VALIDATION` als
   Provenienz verwendet.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
@@ -79,8 +81,8 @@ Reviewer sollen insbesondere pruefen:
 ## Handoff Integrity Summary
 
 - zip_file_count: `516`
-- zip_size_bytes: `13185032`
-- zip_sha256: `a177690c44d6ae4271f0e362f1c26675fd3c21c704cdfa213f487771da1dc94e`
+- zip_size_bytes: `13185467`
+- zip_sha256: `aca243d9c5eae2e96ec7bff1abf11d2176ceb955dbf2bb4ffea10eb34f51ca5e`
 - sha_match: `True`
 - zip_testzip: `None`
 - missing_required: `[]`
