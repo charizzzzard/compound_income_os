@@ -101,7 +101,9 @@ def _safe_path_for_output(path_value: str | Path, label: str) -> tuple[str, bool
         return _redacted_path(label), True
 
     path = Path(raw)
-    if _is_external_syntax(raw) or path.is_absolute():
+    if _is_external_syntax(raw) and not path.is_absolute():
+        return _redacted_path(label), True
+    if path.is_absolute():
         try:
             return path.resolve().relative_to(_repo_root()).as_posix(), False
         except ValueError:

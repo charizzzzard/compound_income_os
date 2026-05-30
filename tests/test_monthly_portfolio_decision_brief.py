@@ -266,6 +266,42 @@ def test_outputs_do_not_leak_local_absolute_or_private_paths() -> None:
         shutil.rmtree(paths["root"], ignore_errors=True)
 
 
+def test_foreign_windows_absolute_path_is_redacted_cross_platform() -> None:
+    paths = _fixture_paths("_tmp_monthly_brief_windows_path")
+    try:
+        _write_complete_inputs(paths)
+
+        brief = build_monthly_portfolio_decision_brief(
+            as_of_date="2026-05-30",
+            monthly_ranking=paths["ranking"],
+            decision_quality=r"C:\Users\Operator\private_decision_quality.json",
+        )
+        text = json.dumps(brief, sort_keys=True)
+
+        assert r"C:\Users\Operator\private_decision_quality.json" not in text
+        assert "EXTERNAL_PATH_REDACTED:decision_quality_state" in text
+    finally:
+        shutil.rmtree(paths["root"], ignore_errors=True)
+
+
+def test_foreign_unc_path_is_redacted_cross_platform() -> None:
+    paths = _fixture_paths("_tmp_monthly_brief_unc_path")
+    try:
+        _write_complete_inputs(paths)
+
+        brief = build_monthly_portfolio_decision_brief(
+            as_of_date="2026-05-30",
+            monthly_ranking=paths["ranking"],
+            decision_quality=r"\\server\share\private.json",
+        )
+        text = json.dumps(brief, sort_keys=True)
+
+        assert r"\\server\share\private.json" not in text
+        assert "EXTERNAL_PATH_REDACTED:decision_quality_state" in text
+    finally:
+        shutil.rmtree(paths["root"], ignore_errors=True)
+
+
 def test_markdown_contains_explicit_non_claims() -> None:
     paths = _fixture_paths("_tmp_monthly_brief_non_claims")
     try:
