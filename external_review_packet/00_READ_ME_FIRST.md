@@ -1,12 +1,12 @@
-# Compound Income OS External LLM Review Packet - Data Visibility Artifact Boundary Audit
+# Compound Income OS External LLM Review Packet - Monthly Portfolio Decision Brief MVP
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach dem Engineering-Audit-Patch
-`DATA_VISIBILITY_AND_ARTIFACT_BOUNDARY_AUDIT`.
+(CIOS) nach dem Implementierungs-Patch
+`MONTHLY_PORTFOLIO_DECISION_BRIEF_MVP`.
 
-- local_handoff_head: `31a30228645e9a908b12db5d95a3a02b44045ea2`
-- remote_main_head_at_export: `5c9b87f5bcdbe2ac32ba2388f62258809ac10701`
-- status: `AUDIT_PATCH_HANDOFF_READY`
+- local_handoff_head: `9d669c285bcebee496cc48385f689463ce29a7c1`
+- remote_main_head_at_export: `c730cc975c3974245f191cebd0699ad863cf7fe8`
+- status: `MVP_PATCH_HANDOFF_READY`
 
 Dieses Packet ersetzt aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck. Es ist der einzige authoritative externe Handoff fuer
@@ -19,11 +19,11 @@ paralleler Review-Handoff.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- base_head: `5c9b87f5bcdbe2ac32ba2388f62258809ac10701`
-- implementation_head: `31a30228645e9a908b12db5d95a3a02b44045ea2`
-- central_handoff_zip_head: `31a30228645e9a908b12db5d95a3a02b44045ea2`
-- current_handoff_head: `31a30228645e9a908b12db5d95a3a02b44045ea2`
-- bundle_purpose: `external_review_after_data_visibility_and_artifact_boundary_audit`
+- base_head: `c730cc975c3974245f191cebd0699ad863cf7fe8`
+- implementation_head: `9d669c285bcebee496cc48385f689463ce29a7c1`
+- central_handoff_zip_head: `9d669c285bcebee496cc48385f689463ce29a7c1`
+- current_handoff_head: `9d669c285bcebee496cc48385f689463ce29a7c1`
+- bundle_purpose: `external_review_after_monthly_portfolio_decision_brief_mvp`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -57,13 +57,13 @@ Bei Konflikten gilt diese Reihenfolge:
   sind Befehlsprovenienz, nicht Ausfuehrungsbeweise, sofern kein separater
   Operator- oder Reviewer-Bericht die Ausfuehrung belegt.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
-- Behandle diesen Audit nicht als `.gitignore`-Cleanup oder Runtime
-  Enforcement.
+- Behandle diesen MVP als deterministische Evidence-Konsolidierung, nicht als
+  Entscheidungsautomatisierung.
 
 ## Handoff Integrity Summary
 
-- zip_file_count: `526`
-- zip_sha256: `c30f83c128233730ea7248b09a28e5168b0a6689963625c17dd34ea92751cce9`
+- zip_file_count: `529`
+- zip_sha256: `4a4965cab060800ffb7ef94d1555dc3d2502f26d87fc163d029a4ac8c1dbbb0a`
 - sha_match: `True`
 - zip_testzip: `None`
 - nested_zip_count: `0`
@@ -74,28 +74,40 @@ Bei Konflikten gilt diese Reihenfolge:
 
 `HANDOFF_CHANGE_CLASSIFICATION.csv` lists exactly these patch-changed files:
 
-- `docs/governance/DATA_VISIBILITY_AND_ARTIFACT_BOUNDARY.md`
-- `src/data_visibility_artifact_boundary_audit.py`
-- `tests/test_data_visibility_artifact_boundary_audit.py`
+- `docs/architecture/CIOS_FEATURE_STATUS.yaml`
+- `docs/contracts/MONTHLY_PORTFOLIO_DECISION_BRIEF_CONTRACT.md`
+- `src/monthly_portfolio_decision_brief.py`
+- `tests/test_monthly_portfolio_decision_brief.py`
+
+## Generated Output Boundary
+
+The producer default outputs are generated/local-only by default:
+
+- `data/processed/monthly_portfolio_decision_brief.json`
+- `data/processed/monthly_portfolio_decision_brief.csv`
+- `reports/<as_of_date>/monthly_portfolio_decision_brief.md`
+
+Real generated monthly decision brief outputs are not committed by this patch
+and must not be inferred from the handoff packet.
 
 ## Explicit Non-Scope
 
 This packet does not claim or introduce:
 
-- CIOS feature logic
-- investment logic changes
-- scoring changes
-- ranking changes
-- valuation changes
-- portfolio-rule changes
-- dashboard/data-freshness/report semantic changes
-- broker import changes
-- provider/API integration
+- broker import
+- broker/provider/API integration
 - order execution
 - buy/sell automation
+- investment advice automation
+- scoring formula changes
+- ranking formula changes
+- valuation methodology changes
+- portfolio-rule changes
+- dashboard/report semantic changes outside the new standalone brief producer
+- replay/backtesting/simulation/outcome attribution
+- tax/legal/commercial approval
 - private/generated/raw publication
 - runtime enforcement
-- public GitHub repository visibility
 - product, production or investment readiness
 
 Human Operator remains final acceptance authority.
