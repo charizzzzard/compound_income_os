@@ -4,16 +4,16 @@
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- patch_title: `CIOS_PRACTICAL_OPERATING_STANDARD_ACCEPTANCE`
-- bundle_purpose: `external_review_after_cios_practical_operating_standard_acceptance`
+- patch_title: `DATA_VISIBILITY_AND_ARTIFACT_BOUNDARY_AUDIT`
+- bundle_purpose: `external_review_after_data_visibility_and_artifact_boundary_audit`
 - profile: `full_review`
 - bundle_name: `HANDOFF_LATEST`
-- base_head: `7cd7caad97d3ff12179e1883d558164245e1b46c`
-- implementation_head: `92310edd7be283f2d20ae69ce62dfce994c6cb89`
-- preflight_head: `7cd7caad97d3ff12179e1883d558164245e1b46c`
-- central_handoff_zip_head: `92310edd7be283f2d20ae69ce62dfce994c6cb89`
-- current_handoff_head: `92310edd7be283f2d20ae69ce62dfce994c6cb89`
-- remote_main_head_at_export: `7cd7caad97d3ff12179e1883d558164245e1b46c`
+- base_head: `5c9b87f5bcdbe2ac32ba2388f62258809ac10701`
+- implementation_head: `31a30228645e9a908b12db5d95a3a02b44045ea2`
+- preflight_head: `5c9b87f5bcdbe2ac32ba2388f62258809ac10701`
+- central_handoff_zip_head: `31a30228645e9a908b12db5d95a3a02b44045ea2`
+- current_handoff_head: `31a30228645e9a908b12db5d95a3a02b44045ea2`
+- remote_main_head_at_export: `5c9b87f5bcdbe2ac32ba2388f62258809ac10701`
 - dirty_worktree_present_at_export: `False`
 - reviewer_facing_upload_folder: `external_review_packet`
 
@@ -33,36 +33,41 @@ Bei Konflikten gilt diese Reihenfolge:
 
 ## Patch Identity
 
-- patch_title: `CIOS_PRACTICAL_OPERATING_STANDARD_ACCEPTANCE`
-- bundle_purpose: `external_review_after_cios_practical_operating_standard_acceptance`
-- base_head: `7cd7caad97d3ff12179e1883d558164245e1b46c`
-- implementation_head: `92310edd7be283f2d20ae69ce62dfce994c6cb89`
-- central_handoff_zip_head: `92310edd7be283f2d20ae69ce62dfce994c6cb89`
-- delta_range: `7cd7caad97d3ff12179e1883d558164245e1b46c..92310edd7be283f2d20ae69ce62dfce994c6cb89`
-- changed_file_count: `1`
+- patch_title: `DATA_VISIBILITY_AND_ARTIFACT_BOUNDARY_AUDIT`
+- bundle_purpose: `external_review_after_data_visibility_and_artifact_boundary_audit`
+- base_head: `5c9b87f5bcdbe2ac32ba2388f62258809ac10701`
+- implementation_head: `31a30228645e9a908b12db5d95a3a02b44045ea2`
+- central_handoff_zip_head: `31a30228645e9a908b12db5d95a3a02b44045ea2`
+- delta_range: `5c9b87f5bcdbe2ac32ba2388f62258809ac10701..31a30228645e9a908b12db5d95a3a02b44045ea2`
+- changed_file_count: `3`
 
-Changed file:
+Changed files:
 
-- `docs/governance/CIOS_PRACTICAL_OPERATING_STANDARD_ACCEPTANCE.md`
+- `docs/governance/DATA_VISIBILITY_AND_ARTIFACT_BOUNDARY.md`
+- `src/data_visibility_artifact_boundary_audit.py`
+- `tests/test_data_visibility_artifact_boundary_audit.py`
 
-## Operator Acceptance Recorded
+## Audit Purpose
 
-This patch records Human Operator acceptance of
-`docs/governance/CIOS_PRACTICAL_OPERATING_STANDARD.md` as the working operating
-baseline for future CIOS work.
+This packet reviews the deterministic Data Visibility and Artifact Boundary Audit.
+The audit classifies representative CIOS paths across Git tracking, ignore rules,
+handoff visibility, forbidden-pattern boundaries, omitted-artifact handling,
+reproduction classification, data-source registry relation, privacy risk and
+future portfolio-decision reviewability.
 
-The acceptance state is `ACCEPT_BASELINE_AS_WORKING_INPUT`. It preserves the
-distinction between documented, tested, enforced, operationally_ready and
-production_ready, and it does not claim runtime enforcement, product readiness,
-investment readiness, broker/API readiness, order execution or buy/sell
-automation.
+The patch is not a runtime portfolio-decision patch and not a `.gitignore`
+cleanup. It adds an audit producer, focused tests and a governance boundary
+document so future operational portfolio-decision patches can reason explicitly
+about which artifacts remain private, which artifacts are reviewable, and which
+artifacts should be represented only by manifests, hashes, status rows or
+omitted-artifact records.
 
 ## Handoff Integrity Summary
 
 - zip_path: `external_review_packet/HANDOFF_LATEST.zip`
 - sha_path: `external_review_packet/HANDOFF_LATEST.sha256`
-- zip_file_count: `523`
-- zip_sha256: `76a591eabaf761f28a9a84bf69ed0c11f7a6622e8f66cf1103837ed7830b3ca0`
+- zip_file_count: `526`
+- zip_sha256: `c30f83c128233730ea7248b09a28e5168b0a6689963625c17dd34ea92751cce9`
 - sha_match: `True`
 - zip_testzip: `None`
 - nested_zip_count: `0`
@@ -75,19 +80,38 @@ automation.
 Actually executed in the current local repo before handoff regeneration:
 
 - `git diff --check`: PASS
+- `python -m pytest tests/test_data_visibility_artifact_boundary_audit.py -q`: PASS, `13 passed in 4.60s`
 - `python -m ruff check docs tests src`: PASS, `All checks passed!`
+- `python -m pytest -q`: PASS, `977 passed, 410 subtests passed in 165.84s`
+- `python -m src.data_visibility_artifact_boundary_audit --as-of-date 2026-05-30`: PASS
 
 ZIP-internal `HANDOFF_VALIDATION.txt` records validation commands as
 `RECORDED_VALIDATION`. It is command provenance, not proof of external execution
 unless a separate reviewer/operator report says so.
 
+## Generated Output Boundary
+
+The audit producer writes generated outputs to ignored local paths by default:
+
+- `data/processed/data_visibility_artifact_boundary_audit.csv`
+- `data/processed/data_visibility_artifact_boundary_audit.json`
+- `reports/<as_of_date>/data_visibility_artifact_boundary_audit.md`
+
+These outputs are local generated evidence, not committed source truth and not
+automatically authoritative external review artifacts unless a future operator
+decision explicitly accepts that boundary.
+
 ## External LLM Review Instructions
 
-- Review only the operator acceptance record and central packet consistency.
+- Review the audit producer, governance boundary document, tests and central
+  packet consistency.
+- Use repo-relative paths in findings.
 - Do not infer omitted private/raw/provider/broker files.
-- Do not treat documentation-only standards or acceptance records as runtime
-  enforcement.
-- Cite repo-relative paths in findings.
+- Do not treat ignored generated outputs as committed repo truth.
+- Do not treat this patch as runtime enforcement, portfolio-decision automation,
+  broker/provider integration or `.gitignore` cleanup.
+- Distinguish evidence from inference and use canonical severities:
+  `BLOCKER`, `MAJOR`, `MINOR`, `INFO`.
 
 ## Explicit Non-Scope
 
@@ -105,6 +129,7 @@ This packet does not claim or introduce:
 - order execution
 - buy/sell automation
 - private/generated/raw publication
+- replay/backtesting/simulation/outcome attribution
 - runtime enforcement
 - product, production or investment readiness
 

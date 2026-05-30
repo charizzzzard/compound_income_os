@@ -1,12 +1,12 @@
-# Compound Income OS External LLM Review Packet - Practical Operating Standard Acceptance
+# Compound Income OS External LLM Review Packet - Data Visibility Artifact Boundary Audit
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach dem Governance-Acceptance-Record
-`CIOS_PRACTICAL_OPERATING_STANDARD_ACCEPTANCE`.
+(CIOS) nach dem Engineering-Audit-Patch
+`DATA_VISIBILITY_AND_ARTIFACT_BOUNDARY_AUDIT`.
 
-- local_handoff_head: `92310edd7be283f2d20ae69ce62dfce994c6cb89`
-- remote_main_head_at_export: `7cd7caad97d3ff12179e1883d558164245e1b46c`
-- status: `OPERATOR_ACCEPTANCE_RECORD_HANDOFF_READY`
+- local_handoff_head: `31a30228645e9a908b12db5d95a3a02b44045ea2`
+- remote_main_head_at_export: `5c9b87f5bcdbe2ac32ba2388f62258809ac10701`
+- status: `AUDIT_PATCH_HANDOFF_READY`
 
 Dieses Packet ersetzt aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck. Es ist der einzige authoritative externe Handoff fuer
@@ -19,11 +19,11 @@ paralleler Review-Handoff.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- base_head: `7cd7caad97d3ff12179e1883d558164245e1b46c`
-- implementation_head: `92310edd7be283f2d20ae69ce62dfce994c6cb89`
-- central_handoff_zip_head: `92310edd7be283f2d20ae69ce62dfce994c6cb89`
-- current_handoff_head: `92310edd7be283f2d20ae69ce62dfce994c6cb89`
-- bundle_purpose: `external_review_after_cios_practical_operating_standard_acceptance`
+- base_head: `5c9b87f5bcdbe2ac32ba2388f62258809ac10701`
+- implementation_head: `31a30228645e9a908b12db5d95a3a02b44045ea2`
+- central_handoff_zip_head: `31a30228645e9a908b12db5d95a3a02b44045ea2`
+- current_handoff_head: `31a30228645e9a908b12db5d95a3a02b44045ea2`
+- bundle_purpose: `external_review_after_data_visibility_and_artifact_boundary_audit`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -57,12 +57,13 @@ Bei Konflikten gilt diese Reihenfolge:
   sind Befehlsprovenienz, nicht Ausfuehrungsbeweise, sofern kein separater
   Operator- oder Reviewer-Bericht die Ausfuehrung belegt.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
-- Behandle den Acceptance-Record nicht als Runtime Enforcement.
+- Behandle diesen Audit nicht als `.gitignore`-Cleanup oder Runtime
+  Enforcement.
 
 ## Handoff Integrity Summary
 
-- zip_file_count: `523`
-- zip_sha256: `76a591eabaf761f28a9a84bf69ed0c11f7a6622e8f66cf1103837ed7830b3ca0`
+- zip_file_count: `526`
+- zip_sha256: `c30f83c128233730ea7248b09a28e5168b0a6689963625c17dd34ea92751cce9`
 - sha_match: `True`
 - zip_testzip: `None`
 - nested_zip_count: `0`
@@ -71,9 +72,11 @@ Bei Konflikten gilt diese Reihenfolge:
 
 ## Patch Delta
 
-`HANDOFF_CHANGE_CLASSIFICATION.csv` lists exactly this patch-changed file:
+`HANDOFF_CHANGE_CLASSIFICATION.csv` lists exactly these patch-changed files:
 
-- `docs/governance/CIOS_PRACTICAL_OPERATING_STANDARD_ACCEPTANCE.md`
+- `docs/governance/DATA_VISIBILITY_AND_ARTIFACT_BOUNDARY.md`
+- `src/data_visibility_artifact_boundary_audit.py`
+- `tests/test_data_visibility_artifact_boundary_audit.py`
 
 ## Explicit Non-Scope
 
