@@ -1,12 +1,12 @@
-# Compound Income OS External LLM Review Packet - Monthly Portfolio Decision Brief MVP
+# Compound Income OS External LLM Review Packet - Monthly Brief Path Redaction P0
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach dem Implementierungs-Patch
-`MONTHLY_PORTFOLIO_DECISION_BRIEF_MVP`.
+(CIOS) nach dem P0-Hardening-Patch
+`MONTHLY_PORTFOLIO_DECISION_BRIEF_PATH_REDACTION_P0`.
 
-- local_handoff_head: `9d669c285bcebee496cc48385f689463ce29a7c1`
-- remote_main_head_at_export: `c730cc975c3974245f191cebd0699ad863cf7fe8`
-- status: `MVP_PATCH_HANDOFF_READY`
+- local_handoff_head: `10fc5f7ace8708502ba68c5f1068bae76a0e67f7`
+- remote_main_head_at_export: `26dfcec438615cbc56d4e01979081a4e145c7402`
+- status: `P0_PATH_REDACTION_HANDOFF_READY`
 
 Dieses Packet ersetzt aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck. Es ist der einzige authoritative externe Handoff fuer
@@ -19,11 +19,11 @@ paralleler Review-Handoff.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- base_head: `c730cc975c3974245f191cebd0699ad863cf7fe8`
-- implementation_head: `9d669c285bcebee496cc48385f689463ce29a7c1`
-- central_handoff_zip_head: `9d669c285bcebee496cc48385f689463ce29a7c1`
-- current_handoff_head: `9d669c285bcebee496cc48385f689463ce29a7c1`
-- bundle_purpose: `external_review_after_monthly_portfolio_decision_brief_mvp`
+- base_head: `26dfcec438615cbc56d4e01979081a4e145c7402`
+- implementation_head: `10fc5f7ace8708502ba68c5f1068bae76a0e67f7`
+- central_handoff_zip_head: `10fc5f7ace8708502ba68c5f1068bae76a0e67f7`
+- current_handoff_head: `10fc5f7ace8708502ba68c5f1068bae76a0e67f7`
+- bundle_purpose: `external_review_after_monthly_portfolio_decision_brief_path_redaction_p0`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
@@ -57,13 +57,13 @@ Bei Konflikten gilt diese Reihenfolge:
   sind Befehlsprovenienz, nicht Ausfuehrungsbeweise, sofern kein separater
   Operator- oder Reviewer-Bericht die Ausfuehrung belegt.
 - Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
-- Behandle diesen MVP als deterministische Evidence-Konsolidierung, nicht als
-  Entscheidungsautomatisierung.
+- Pruefe insbesondere, dass fremde Windows- und UNC-Pfade in ZIP-/POSIX-Kontext
+  deterministisch redigiert werden.
 
 ## Handoff Integrity Summary
 
 - zip_file_count: `529`
-- zip_sha256: `4a4965cab060800ffb7ef94d1555dc3d2502f26d87fc163d029a4ac8c1dbbb0a`
+- zip_sha256: `e196164231c0f0b31304d9f4b8cfa44a4ccba35216b747963e5cefb9afa1d746`
 - sha_match: `True`
 - zip_testzip: `None`
 - nested_zip_count: `0`
@@ -74,21 +74,8 @@ Bei Konflikten gilt diese Reihenfolge:
 
 `HANDOFF_CHANGE_CLASSIFICATION.csv` lists exactly these patch-changed files:
 
-- `docs/architecture/CIOS_FEATURE_STATUS.yaml`
-- `docs/contracts/MONTHLY_PORTFOLIO_DECISION_BRIEF_CONTRACT.md`
 - `src/monthly_portfolio_decision_brief.py`
 - `tests/test_monthly_portfolio_decision_brief.py`
-
-## Generated Output Boundary
-
-The producer default outputs are generated/local-only by default:
-
-- `data/processed/monthly_portfolio_decision_brief.json`
-- `data/processed/monthly_portfolio_decision_brief.csv`
-- `reports/<as_of_date>/monthly_portfolio_decision_brief.md`
-
-Real generated monthly decision brief outputs are not committed by this patch
-and must not be inferred from the handoff packet.
 
 ## Explicit Non-Scope
 
@@ -103,7 +90,8 @@ This packet does not claim or introduce:
 - ranking formula changes
 - valuation methodology changes
 - portfolio-rule changes
-- dashboard/report semantic changes outside the new standalone brief producer
+- personal_run_engine stage-order changes
+- dashboard/data-freshness/decision-quality semantic changes
 - replay/backtesting/simulation/outcome attribution
 - tax/legal/commercial approval
 - private/generated/raw publication
