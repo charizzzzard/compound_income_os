@@ -115,6 +115,9 @@ Tracked sanitized example outputs live under
 `examples/monthly_portfolio_decision_brief/`. They are reviewer-facing
 documentation artifacts only and do not replace real generated local outputs.
 
+The reviewer-facing JSON, CSV and Markdown surface is documented in
+`docs/contracts/MONTHLY_PORTFOLIO_DECISION_BRIEF_SURFACE_SCHEMA.md`.
+
 ## Personal Run Integration
 
 The brief is available as the optional Personal Run stage
@@ -137,8 +140,8 @@ clean `READY` state.
 
 Future patches may add:
 
-- Sanitized example brief outputs.
-- Schema-level review artifacts.
+- Additional sanitized example brief outputs, including a `BLOCKED` example.
+- Machine-readable schema-level review artifacts, if a future patch needs them.
 - Manifest/hash rows for local generated briefs.
 - Ranking robustness and sensitivity evidence once a producer exists.
 
