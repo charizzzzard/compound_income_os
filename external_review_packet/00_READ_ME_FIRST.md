@@ -1,16 +1,16 @@
-# Compound Income OS External LLM Review Packet - Monthly Brief Personal Run Integration
+# Compound Income OS External LLM Review Packet - Sanitized Monthly Brief Examples
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach der optionalen Integration des bestehenden Monthly Portfolio
-Decision Brief in den Personal Run.
+(CIOS) nach dem Hinzufuegen synthetischer, sanitizierter Monthly Portfolio
+Decision Brief Beispielausgaben.
 
-- patch_title: `MONTHLY_PORTFOLIO_DECISION_BRIEF_PERSONAL_RUN_INTEGRATION_IMPLEMENTATION`
-- bundle_purpose: `external_review_after_monthly_portfolio_decision_brief_personal_run_integration_implementation`
-- implementation_head: `9cb03c172c40307b576f165a51c6ae352db34e27`
-- central_handoff_zip_head: `9cb03c172c40307b576f165a51c6ae352db34e27`
-- current_handoff_head: `9cb03c172c40307b576f165a51c6ae352db34e27`
-- base_head: `627b186022c7fd456a07378af8333a503b1d40e3`
-- status: `PERSONAL_RUN_INTEGRATION_HANDOFF_READY`
+- patch_title: `SANITIZED_MONTHLY_BRIEF_EXAMPLE_OUTPUT`
+- bundle_purpose: `external_review_after_sanitized_monthly_brief_example_output`
+- implementation_head: `88d931233964824abe0400a1cfc87884199f4b64`
+- central_handoff_zip_head: `88d931233964824abe0400a1cfc87884199f4b64`
+- current_handoff_head: `88d931233964824abe0400a1cfc87884199f4b64`
+- base_head: `9aceb38e12a8500237efc9ddd090919b8f8adddc`
+- status: `SANITIZED_EXAMPLE_OUTPUT_HANDOFF_READY`
 
 Dieses Paket ersetzt aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck. Es ist der einzige authoritative externe Handoff fuer
@@ -20,12 +20,12 @@ paralleler Review-Handoff.
 ## Metadata-Only Publication Offset
 
 The ZIP represents the implementation snapshot at
-`9cb03c172c40307b576f165a51c6ae352db34e27`. If this README, the external
+`88d931233964824abe0400a1cfc87884199f4b64`. If this README, the external
 context file or checksum are committed after ZIP export, the resulting repo HEAD
 is a metadata-only publication offset. That offset affects reviewer-facing
-metadata only and does not change source, tests, configs, runtime behavior or
-the ZIP implementation snapshot. The exact metadata commit head is reported in
-the final operator report after commit creation.
+metadata only and does not change source, tests, examples, configs, runtime
+behavior or the ZIP implementation snapshot. The exact metadata commit head is
+reported in the final operator report after commit creation.
 
 ## Current Review Head
 
@@ -49,23 +49,30 @@ Bei Konflikten gilt diese Reihenfolge:
 
 ## What Changed
 
-The existing deterministic Monthly Portfolio Decision Brief producer is now
-available as an optional Personal Run stage named
-`monthly_portfolio_decision_brief`.
+The patch adds tracked, reviewer-facing, synthetic and sanitized Monthly
+Portfolio Decision Brief examples under:
 
-The stage is placed after `dashboard_operator_summary` and before `history`. It
-reuses the existing producer and records generated JSON, CSV and Markdown
-artifacts through the Personal Run manifest, artifact index and used-inputs
-surfaces.
+- `examples/monthly_portfolio_decision_brief/`
 
-The integration is read-only. It does not recalculate scores, ranking,
-valuation, portfolio rules, watchlist logic or fundamentals, and it does not add
-broker/provider/API/order/trade/live-trading behavior.
+The examples cover:
+
+- `READY`: mandatory ranking evidence is available and optional review evidence
+  is clean.
+- `REVIEW`: mandatory ranking evidence is available while optional evidence
+  visibly contains `MISSING`, `STALE`, `UNKNOWN`, `REVIEW_REQUIRED`,
+  `NOT_AVAILABLE` and `NOT_APPLICABLE` states.
+
+These examples are documentation artifacts. They are not real generated
+portfolio outputs and do not alter the default generated paths:
+
+- `data/processed/monthly_portfolio_decision_brief.json`
+- `data/processed/monthly_portfolio_decision_brief.csv`
+- `reports/<as_of_date>/monthly_portfolio_decision_brief.md`
 
 ## Reviewer Instructions
 
-- Review this as a Personal Run integration patch, not as a greenfield Monthly
-  Brief MVP implementation.
+- Review this as a sanitized example-output patch, not as runtime feature
+  expansion.
 - Use repo-relative paths in findings.
 - Check ZIP-internal:
   - `HANDOFF_CONTEXT.md`
@@ -87,25 +94,18 @@ broker/provider/API/order/trade/live-trading behavior.
 Future Monthly Brief work must preserve:
 
 - read-only behavior;
-- optional Personal Run stage semantics unless a separate accepted patch changes
-  the contract;
-- hard mandatory ranking input behavior: missing, unreadable or schema-invalid
-  `personal_monthly_buy_ranking.csv` must stay `BLOCKED` or equivalent;
-- visible optional evidence gaps for cash refill, rebalance, Data Freshness,
-  Decision Quality and review queue;
-- no normalization of `STALE`, `MISSING`, `UNKNOWN`, `REVIEW_REQUIRED`,
-  `NOT_AVAILABLE` or `NOT_APPLICABLE` into clean `OK` or `READY`;
+- default generated outputs as local/generated unless a separate tracked boundary
+  is accepted;
+- no real portfolio, broker, provider, raw, credential, account, transaction or
+  private strategy data in tracked examples;
+- no score/ranking/valuation/portfolio-rule/watchlist/fundamentals changes;
+- no broker/provider/API/order/trade/live-trading behavior;
 - Decision Quality as process quality only, never investment confidence;
-- no direct reads from private/raw/broker/provider/credential/.env/user-agent or
-  private strategy files;
-- generated real outputs local/ignored unless a separate tracked-artifact
-  boundary is accepted;
-- `external_review_packet/` as the only central handoff;
 - Human Operator as final acceptance authority.
 
 ## Handoff Integrity Summary
 
-- zip_sha256: `468f2e3acac8007ba258a8eba46a2478ee7525084ee454498b77faced3d26d24`
+- zip_sha256: `ba335aab5b4364d2a96cfee1eb25aa7dbb17ce63f9010c8bda018060f5e19150`
 - sha_match: validated after packet synchronization
 - zip_testzip: `None`
 - nested_zip_count: `0`
