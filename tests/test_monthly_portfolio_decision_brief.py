@@ -222,6 +222,20 @@ def test_missing_routing_fields_do_not_infer_or_break_brief() -> None:
         assert top_rows[0]["execution_mode"] == ""
         assert top_rows[0]["execution_mode_reason"] == ""
         assert "SAVINGS_PLAN_EXISTING" not in json.dumps(brief, sort_keys=True)
+        assert "upstream_route_preserved" not in json.dumps(brief, sort_keys=True)
+
+        csv_rows = list(csv.DictReader(paths["out_csv"].read_text(encoding="utf-8").splitlines()))
+        assert not any(row["item"].endswith(".execution_mode") for row in csv_rows)
+        assert not any(row["status"] == "SAVINGS_PLAN_EXISTING" for row in csv_rows)
+        assert not any(row["notes"] == "upstream_route_preserved" for row in csv_rows)
+
+        report = paths["report"].read_text(encoding="utf-8")
+        assert (
+            "| 1 | `AAA` | `DO_NOT_BUY` | `NOT_ELIGIBLE` | 0 | `NOT_AVAILABLE` | "
+            "`NOT_AVAILABLE` | upstream rationale one |"
+        ) in report
+        assert "`SAVINGS_PLAN_EXISTING`" not in report
+        assert "`upstream_route_preserved`" not in report
     finally:
         shutil.rmtree(paths["root"], ignore_errors=True)
 
