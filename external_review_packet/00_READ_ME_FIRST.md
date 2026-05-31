@@ -1,19 +1,31 @@
-# Compound Income OS External LLM Review Packet - Monthly Brief Baseline Reconciliation
+# Compound Income OS External LLM Review Packet - Monthly Brief Personal Run Integration
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach der Baseline-Reconciliation fuer den Monthly Portfolio Decision
-Brief.
+(CIOS) nach der optionalen Integration des bestehenden Monthly Portfolio
+Decision Brief in den Personal Run.
 
-- patch_title: `MONTHLY_PORTFOLIO_DECISION_BRIEF_BASELINE_RECONCILIATION_AND_HANDOFF_UPDATE`
-- bundle_purpose: `external_review_after_monthly_portfolio_decision_brief_baseline_reconciliation`
-- local_handoff_head: `d94cd922f5a36eddfcf509763d6e827ec53e94e5`
-- remote_main_head_at_export: `d94cd922f5a36eddfcf509763d6e827ec53e94e5`
-- status: `BASELINE_RECONCILIATION_HANDOFF_READY`
+- patch_title: `MONTHLY_PORTFOLIO_DECISION_BRIEF_PERSONAL_RUN_INTEGRATION_IMPLEMENTATION`
+- bundle_purpose: `external_review_after_monthly_portfolio_decision_brief_personal_run_integration_implementation`
+- implementation_head: `9cb03c172c40307b576f165a51c6ae352db34e27`
+- central_handoff_zip_head: `9cb03c172c40307b576f165a51c6ae352db34e27`
+- current_handoff_head: `9cb03c172c40307b576f165a51c6ae352db34e27`
+- base_head: `627b186022c7fd456a07378af8333a503b1d40e3`
+- status: `PERSONAL_RUN_INTEGRATION_HANDOFF_READY`
 
-Dieses Packet ersetzt aeltere Dateien in `external_review_packet/` fuer den
+Dieses Paket ersetzt aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck. Es ist der einzige authoritative externe Handoff fuer
 diese Aufgabe; lokale Ordner unter `outputs/` sind nur Evidence-Quellen und kein
 paralleler Review-Handoff.
+
+## Metadata-Only Publication Offset
+
+The ZIP represents the implementation snapshot at
+`9cb03c172c40307b576f165a51c6ae352db34e27`. If this README, the external
+context file or checksum are committed after ZIP export, the resulting repo HEAD
+is a metadata-only publication offset. That offset affects reviewer-facing
+metadata only and does not change source, tests, configs, runtime behavior or
+the ZIP implementation snapshot. The exact metadata commit head is reported in
+the final operator report after commit creation.
 
 ## Current Review Head
 
@@ -21,18 +33,9 @@ paralleler Review-Handoff.
 - canonical_name: `Compound Income OS`
 - short_name: `CIOS`
 - branch: `main`
-- base_head: `10fc5f7ace8708502ba68c5f1068bae76a0e67f7`
-- implementation_head: `d94cd922f5a36eddfcf509763d6e827ec53e94e5`
-- central_handoff_zip_head: `d94cd922f5a36eddfcf509763d6e827ec53e94e5`
-- current_handoff_head: `d94cd922f5a36eddfcf509763d6e827ec53e94e5`
-- bundle_purpose: `external_review_after_monthly_portfolio_decision_brief_baseline_reconciliation`
 - canonical_review_bundle: `external_review_packet/HANDOFF_LATEST.zip`
 - canonical_checksum: `external_review_packet/HANDOFF_LATEST.sha256`
 - canonical_context: `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
-
-If this metadata file is committed after ZIP export, the repo HEAD may become a
-metadata-only head that is newer than `central_handoff_zip_head`. That offset is
-expected only when reported explicitly in the operator report.
 
 ## Source-of-Truth / Precedence
 
@@ -44,38 +47,27 @@ Bei Konflikten gilt diese Reihenfolge:
 4. GitHub browser URL for committed repo inspection
 5. Local-only/generated/ignored files only if explicitly included or summarized
 
-## What Changed In Review Framing
+## What Changed
 
-The Monthly Portfolio Decision Brief is not a historical greenfield MVP area
-anymore. The current committed repository already contains:
+The existing deterministic Monthly Portfolio Decision Brief producer is now
+available as an optional Personal Run stage named
+`monthly_portfolio_decision_brief`.
 
-- `src/monthly_portfolio_decision_brief.py`
-- `tests/test_monthly_portfolio_decision_brief.py`
-- `docs/contracts/MONTHLY_PORTFOLIO_DECISION_BRIEF_CONTRACT.md`
+The stage is placed after `dashboard_operator_summary` and before `history`. It
+reuses the existing producer and records generated JSON, CSV and Markdown
+artifacts through the Personal Run manifest, artifact index and used-inputs
+surfaces.
 
-The component checkpoint is accepted with findings as a current baseline. It is
-not historical pre-MVP evidence. Future work must be framed as follow-up,
-hardening, Personal Run integration, synthetic/sanitized example output or
-operator-surface extension.
-
-## Ingested Findings
-
-- MAJOR: Timing mismatch; the repo already contains Monthly Brief implementation
-  artifacts.
-- MAJOR: The report-only checkpoint under `outputs/` is local/ignored evidence,
-  not authoritative handoff by itself.
-- MINOR: Personal-Run integration remains open and must be a separate
-  deterministic patch.
-- MINOR: No committed sanitized example brief output exists; a future patch may
-  add one without committing real portfolio, broker, provider, private, raw or
-  strategy data.
-- INFO: Existing read-only, deterministic and non-claims guardrails must remain
-  regression-protected.
+The integration is read-only. It does not recalculate scores, ranking,
+valuation, portfolio rules, watchlist logic or fundamentals, and it does not add
+broker/provider/API/order/trade/live-trading behavior.
 
 ## Reviewer Instructions
 
-- Verwende volle repo-relative Pfade in Findings.
-- Pruefe ZIP-intern:
+- Review this as a Personal Run integration patch, not as a greenfield Monthly
+  Brief MVP implementation.
+- Use repo-relative paths in findings.
+- Check ZIP-internal:
   - `HANDOFF_CONTEXT.md`
   - `HANDOFF_PATCH_IDENTITY.md`
   - `HANDOFF_CHANGE_CLASSIFICATION.csv`
@@ -83,32 +75,29 @@ operator-surface extension.
   - `HANDOFF_MANIFEST.csv`
   - `HANDOFF_ARTIFACT_INDEX.csv`
   - `HANDOFF_OMITTED_ARTIFACTS.csv`
-- `HANDOFF_VALIDATION.txt` enthaelt `RECORDED_VALIDATION`-Eintraege. Diese
-  sind Befehlsprovenienz, nicht Ausfuehrungsbeweise, sofern kein separater
-  Operator- oder Reviewer-Bericht die Ausfuehrung belegt.
-- Inferiere keine ausgelassenen privaten, raw, Broker- oder Provider-Dateien.
-- Behandle `outputs/` nicht als parallelen Handoff.
-- Pruefe zukuenftige Monthly-Brief-Arbeit nur als Follow-up/Hardening/Integration,
-  nicht als Greenfield-MVP.
+- `HANDOFF_VALIDATION.txt` contains `RECORDED_VALIDATION` entries. These are
+  command provenance, not external execution proof unless a separate operator or
+  reviewer report says so.
+- Do not infer omitted private, raw, broker, provider, credential, user-agent or
+  strategy files.
+- Treat `outputs/` as local generated evidence only, not as a parallel handoff.
 
-## Required Future Guardrails
+## Required Guardrails
 
 Future Monthly Brief work must preserve:
 
 - read-only behavior;
-- consumption of existing processed/generated artifacts only;
-- no broker/provider/API/HTTP/order/trade/execution integration;
-- no score/ranking/valuation/portfolio-rule/watchlist/fundamentals recalculation;
-- hard mandatory ranking input behavior: missing/unreadable/schema-invalid
-  `personal_monthly_buy_ranking.csv` must be `BLOCKED` or equivalent;
+- optional Personal Run stage semantics unless a separate accepted patch changes
+  the contract;
+- hard mandatory ranking input behavior: missing, unreadable or schema-invalid
+  `personal_monthly_buy_ranking.csv` must stay `BLOCKED` or equivalent;
 - visible optional evidence gaps for cash refill, rebalance, Data Freshness,
   Decision Quality and review queue;
 - no normalization of `STALE`, `MISSING`, `UNKNOWN`, `REVIEW_REQUIRED`,
-  `NOT_AVAILABLE` or `NOT_APPLICABLE` into `OK` or `READY`;
+  `NOT_AVAILABLE` or `NOT_APPLICABLE` into clean `OK` or `READY`;
 - Decision Quality as process quality only, never investment confidence;
 - no direct reads from private/raw/broker/provider/credential/.env/user-agent or
   private strategy files;
-- path redaction before read attempts where relevant;
 - generated real outputs local/ignored unless a separate tracked-artifact
   boundary is accepted;
 - `external_review_packet/` as the only central handoff;
@@ -116,9 +105,8 @@ Future Monthly Brief work must preserve:
 
 ## Handoff Integrity Summary
 
-- zip_file_count: `529`
-- zip_sha256: `01d1a148bcc6e4d52319a41407de400a4ae344243d26e9a4e0d7c4ee4e5f6d15`
-- sha_match: `True`
+- zip_sha256: `468f2e3acac8007ba258a8eba46a2478ee7525084ee454498b77faced3d26d24`
+- sha_match: validated after packet synchronization
 - zip_testzip: `None`
 - nested_zip_count: `0`
 - forbidden_match_count: `0`
@@ -128,8 +116,6 @@ Future Monthly Brief work must preserve:
 
 This packet does not claim or introduce:
 
-- source implementation changes;
-- test implementation changes;
 - broker import;
 - broker/provider/API integration;
 - order execution;
@@ -142,7 +128,6 @@ This packet does not claim or introduce:
 - portfolio-rule changes;
 - watchlist logic changes;
 - fundamentals logic changes;
-- personal_run_engine stage-order changes;
 - dashboard/data-freshness/decision-quality semantic changes;
 - replay/backtesting/simulation/outcome attribution;
 - tax/legal/commercial approval;
