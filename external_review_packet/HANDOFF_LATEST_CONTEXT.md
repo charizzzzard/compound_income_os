@@ -2,9 +2,10 @@
 
 ## Reviewer-Facing Metadata Layer
 
-- patch_title: `MONTHLY_BRIEF_SCHEMA_CONTRACT_HARDENING`
-- reviewer_facing_bundle_purpose: `external_review_after_monthly_brief_schema_contract_hardening`
-- implementation_head: `a82b7d265912dd6147260cd6137d4e2609276355`
+- patch_title: `MONTHLY_BRIEF_SCHEMA_HANDOFF_COMPLETENESS_FIX`
+- reviewed_patch_title: `MONTHLY_BRIEF_SCHEMA_CONTRACT_HARDENING`
+- reviewer_facing_bundle_purpose: `external_review_after_monthly_brief_schema_handoff_completeness_fix`
+- schema_hardening_implementation_head: `a82b7d265912dd6147260cd6137d4e2609276355`
 - central_handoff_zip_head: `a82b7d265912dd6147260cd6137d4e2609276355`
 - current_handoff_head: `a82b7d265912dd6147260cd6137d4e2609276355`
 - current_repo_head_before_handoff_metadata_commit: `a82b7d265912dd6147260cd6137d4e2609276355`
@@ -22,6 +23,22 @@ behavior or the ZIP implementation snapshot.
 The generated ZIP-internal context may use the generic exporter purpose
 `external_llm_validation`; this reviewer-facing context records the specific
 patch purpose for the central `external_review_packet/` upload folder.
+
+## Handoff Completeness Fix
+
+This central packet was reassembled so the ZIP is self-contained for the Monthly
+Brief schema/example surface review. It now includes the six sanitized example
+JSON, CSV and Markdown surface files under
+`examples/monthly_portfolio_decision_brief/`.
+
+`HANDOFF_CHANGE_CLASSIFICATION.csv` remains patch-delta focused for the four
+schema-hardening changed files. The unchanged example files are reviewer-support
+snapshot evidence and are represented in `HANDOFF_ARTIFACT_INDEX.csv` and
+`HANDOFF_MANIFEST.csv`.
+
+ZIP-internal `HANDOFF_REPORT.md` now recommends
+`PUBLICATION_SYNC_PREFLIGHT_AFTER_SCHEMA_HANDOFF_COMPLETENESS_FIX` instead of
+the stale generic manual SEC next step.
 
 ## Source-of-Truth / Precedence
 

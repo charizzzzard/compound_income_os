@@ -1,16 +1,17 @@
-# Compound Income OS External LLM Review Packet - Monthly Brief Schema Contract Hardening
+# Compound Income OS External LLM Review Packet - Monthly Brief Schema Handoff Completeness Fix
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach der schema-level Reviewer-Surface-Haertung fuer den Monthly
-Portfolio Decision Brief.
+(CIOS) nach der Handoff-Completeness-Korrektur fuer die schema-level
+Reviewer-Surface-Haertung des Monthly Portfolio Decision Brief.
 
-- patch_title: `MONTHLY_BRIEF_SCHEMA_CONTRACT_HARDENING`
-- bundle_purpose: `external_review_after_monthly_brief_schema_contract_hardening`
-- implementation_head: `a82b7d265912dd6147260cd6137d4e2609276355`
+- patch_title: `MONTHLY_BRIEF_SCHEMA_HANDOFF_COMPLETENESS_FIX`
+- reviewed_patch_title: `MONTHLY_BRIEF_SCHEMA_CONTRACT_HARDENING`
+- bundle_purpose: `external_review_after_monthly_brief_schema_handoff_completeness_fix`
+- schema_hardening_implementation_head: `a82b7d265912dd6147260cd6137d4e2609276355`
 - central_handoff_zip_head: `a82b7d265912dd6147260cd6137d4e2609276355`
 - current_handoff_head: `a82b7d265912dd6147260cd6137d4e2609276355`
 - base_head: `23018bfb53877e3b35c166f2c9d8750c26c5787d`
-- status: `MONTHLY_BRIEF_SCHEMA_CONTRACT_HARDENING_HANDOFF_READY`
+- status: `MONTHLY_BRIEF_SCHEMA_HANDOFF_COMPLETENESS_FIXED`
 
 Dieses Paket ersetzt aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck. Es ist der einzige authoritative externe Handoff fuer
@@ -49,8 +50,18 @@ Bei Konflikten gilt diese Reihenfolge:
 
 ## What Changed
 
-The patch hardens the Monthly Portfolio Decision Brief reviewer surface by
-adding:
+This packet fixes the central ZIP completeness for the already implemented
+Monthly Brief schema hardening patch. The ZIP now includes the six sanitized
+example surface files that the example tests reference:
+
+- `examples/monthly_portfolio_decision_brief/monthly_portfolio_decision_brief_READY.example.json`
+- `examples/monthly_portfolio_decision_brief/monthly_portfolio_decision_brief_READY.example.csv`
+- `examples/monthly_portfolio_decision_brief/monthly_portfolio_decision_brief_READY.example.md`
+- `examples/monthly_portfolio_decision_brief/monthly_portfolio_decision_brief_REVIEW.example.json`
+- `examples/monthly_portfolio_decision_brief/monthly_portfolio_decision_brief_REVIEW.example.csv`
+- `examples/monthly_portfolio_decision_brief/monthly_portfolio_decision_brief_REVIEW.example.md`
+
+The underlying schema hardening patch adds:
 
 - `docs/contracts/MONTHLY_PORTFOLIO_DECISION_BRIEF_SURFACE_SCHEMA.md`
 - explicit `NOT_APPLICABLE` coverage in the REVIEW example tests
@@ -59,10 +70,15 @@ adding:
 - contract wording that sanitized examples now exist, while additional examples
   such as `BLOCKED` may be future work
 
+`HANDOFF_CHANGE_CLASSIFICATION.csv` still represents the four actual
+schema-hardening changed files. The six unchanged example surface files are
+included as reviewer-supporting snapshot evidence in the manifest and artifact
+index.
+
 ## Reviewer Instructions
 
-- Review this as a contract/test/docs hardening patch, not as runtime feature
-  expansion.
+- Review this as a handoff completeness fix for a contract/test/docs hardening
+  patch, not as runtime feature expansion.
 - Use repo-relative paths in findings.
 - Check ZIP-internal:
   - `HANDOFF_CONTEXT.md`
@@ -95,7 +111,7 @@ Future Monthly Brief work must preserve:
 
 ## Handoff Integrity Summary
 
-- zip_sha256: `0f2464d7f772bc28850cbcf2a94974fc8c24dfa5100e2356be1ef7c8f73145d6`
+- zip_sha256: `303e06c5dba2143bb990d59cb6f489fe10fafb3fd97bb24ef0530aa9f19e8ba9`
 - sha_match: validated after packet synchronization
 - zip_testzip: `None`
 - nested_zip_count: `0`
