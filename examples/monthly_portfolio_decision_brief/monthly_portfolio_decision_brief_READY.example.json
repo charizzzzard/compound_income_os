@@ -1,0 +1,120 @@
+{
+  "as_of_date": "2026-05-30",
+  "data_freshness_summary": {
+    "artifact_status": "AVAILABLE",
+    "degraded_state_indicators": [],
+    "overall_status": "FRESH",
+    "reason": "SYNTHETIC_EXAMPLE_READABLE",
+    "review_required": false,
+    "summary_counts": {
+      "FRESH": 3,
+      "MISSING": 0,
+      "NOT_APPLICABLE": 0,
+      "REVIEW_REQUIRED": 0,
+      "STALE": 0,
+      "UNKNOWN": 0
+    }
+  },
+  "decision_brief_status": "READY",
+  "decision_quality_summary": {
+    "artifact_status": "AVAILABLE",
+    "decision_confidence_level": "MEDIUM",
+    "process_confidence_not_investment_confidence": true,
+    "reason": "SYNTHETIC_EXAMPLE_READABLE",
+    "review_reason_codes": [],
+    "review_required": false
+  },
+  "generated_at_utc": "2026-05-30T00:00:00Z",
+  "input_artifact_status": [
+    {
+      "exists": true,
+      "expected_input_path": "examples/monthly_portfolio_decision_brief/synthetic_inputs/monthly_ranking_READY.csv",
+      "label": "monthly_ranking",
+      "mandatory": true,
+      "reason": "SYNTHETIC_EXAMPLE_AVAILABLE",
+      "source_stage": "monthly",
+      "status": "AVAILABLE"
+    },
+    {
+      "exists": true,
+      "expected_input_path": "examples/monthly_portfolio_decision_brief/synthetic_inputs/data_freshness_READY.json",
+      "label": "data_freshness_summary",
+      "mandatory": false,
+      "reason": "SYNTHETIC_EXAMPLE_AVAILABLE",
+      "source_stage": "data_freshness",
+      "status": "AVAILABLE"
+    }
+  ],
+  "non_claims": [
+    "no order execution",
+    "no buy/sell automation",
+    "no investment advice",
+    "no valuation automation",
+    "no scoring formula change",
+    "no ranking formula change",
+    "no portfolio rule change",
+    "no broker/provider/API integration",
+    "no replay/backtesting/outcome attribution"
+  ],
+  "operator_acceptance_boundary": "Human Operator review required; this synthetic example is evidence-surface documentation only.",
+  "operator_checklist": [
+    "Review missing, stale, unknown and review-required evidence states.",
+    "Review top ranking rows as upstream evidence, not recalculated recommendations.",
+    "Record the final human decision separately where required."
+  ],
+  "portfolio_decision_readiness": {
+    "conservative_rule": "Missing mandatory inputs result in BLOCKED; degraded or missing review evidence results in REVIEW.",
+    "decision_brief_status": "READY"
+  },
+  "portfolio_health_summary": {
+    "cash_refill_artifact_status": "AVAILABLE",
+    "cash_refill_status": "CASH_REFILL_NOT_REQUIRED",
+    "rebalance_actions": [
+      "HOLD"
+    ],
+    "rebalance_artifact_status": "AVAILABLE",
+    "rebalance_statuses": [
+      "WITHIN_BAND"
+    ],
+    "review_required": false
+  },
+  "ranking_summary": {
+    "artifact_status": "AVAILABLE",
+    "row_count": 2,
+    "top_rows": [
+      {
+        "allocation_status": "SELECTED_FOR_REVIEW",
+        "constraint_checks": "synthetic_constraints=PASS",
+        "mandate_fit_comment": "Synthetic mandate fit only.",
+        "rank": "1",
+        "rationale": "Synthetic upstream ranking evidence preserved for review.",
+        "suggested_buy_amount_eur": "0",
+        "target_action": "REVIEW_ONLY",
+        "ticker": "SYNTH_QUALITY_A",
+        "valuation_comment": "Synthetic valuation note; no valuation automation."
+      },
+      {
+        "allocation_status": "WATCHLIST_REVIEW",
+        "constraint_checks": "synthetic_constraints=PASS",
+        "mandate_fit_comment": "Synthetic mandate fit only.",
+        "rank": "2",
+        "rationale": "Synthetic secondary candidate for surface inspection.",
+        "suggested_buy_amount_eur": "0",
+        "target_action": "REVIEW_ONLY",
+        "ticker": "SYNTH_DIVIDEND_B",
+        "valuation_comment": "Synthetic valuation note; no valuation automation."
+      }
+    ]
+  },
+  "review_queue_summary": {
+    "artifact_status": "AVAILABLE",
+    "blocker_count": 0,
+    "high_count": 0,
+    "medium_count": 0,
+    "queue_items": 0,
+    "reason": "SYNTHETIC_EXAMPLE_READABLE",
+    "review_required": false
+  },
+  "schema_version": 1,
+  "source_module": "src.monthly_portfolio_decision_brief"
+}

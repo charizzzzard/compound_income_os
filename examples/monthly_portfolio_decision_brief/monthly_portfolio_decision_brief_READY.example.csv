@@ -1,0 +1,10 @@
+section,item,status,value,source_artifact,notes
+identity,as_of_date,AVAILABLE,2026-05-30,,Synthetic sanitized example.
+portfolio_decision_readiness,decision_brief_status,READY,READY,,Mandatory ranking evidence available; optional evidence clean.
+input_artifact_status,monthly_ranking,AVAILABLE,exists,examples/monthly_portfolio_decision_brief/synthetic_inputs/monthly_ranking_READY.csv,SYNTHETIC_EXAMPLE_AVAILABLE
+input_artifact_status,data_freshness_summary,AVAILABLE,exists,examples/monthly_portfolio_decision_brief/synthetic_inputs/data_freshness_READY.json,SYNTHETIC_EXAMPLE_AVAILABLE
+ranking_summary,1,SELECTED_FOR_REVIEW,SYNTH_QUALITY_A,examples/monthly_portfolio_decision_brief/synthetic_inputs/monthly_ranking_READY.csv,Synthetic upstream ranking evidence preserved for review.
+ranking_summary,2,WATCHLIST_REVIEW,SYNTH_DIVIDEND_B,examples/monthly_portfolio_decision_brief/synthetic_inputs/monthly_ranking_READY.csv,Synthetic secondary candidate for surface inspection.
+data_freshness_summary,overall_status,FRESH,FRESH,,Synthetic freshness evidence only.
+decision_quality_summary,decision_confidence_level,,MEDIUM,,Process confidence only; not investment confidence.
+review_queue_summary,queue_items,,0,,Synthetic queue empty.

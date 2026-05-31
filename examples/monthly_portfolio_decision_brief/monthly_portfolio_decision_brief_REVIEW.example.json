@@ -1,0 +1,115 @@
+{
+  "as_of_date": "2026-05-30",
+  "data_freshness_summary": {
+    "artifact_status": "AVAILABLE",
+    "degraded_state_indicators": [
+      "STALE",
+      "MISSING",
+      "UNKNOWN",
+      "REVIEW_REQUIRED"
+    ],
+    "overall_status": "REVIEW_REQUIRED",
+    "reason": "SYNTHETIC_EXAMPLE_DEGRADED",
+    "review_required": true,
+    "summary_counts": {
+      "FRESH": 0,
+      "MISSING": 1,
+      "NOT_APPLICABLE": 1,
+      "REVIEW_REQUIRED": 1,
+      "STALE": 1,
+      "UNKNOWN": 1
+    }
+  },
+  "decision_brief_status": "REVIEW",
+  "decision_quality_summary": {
+    "artifact_status": "MISSING",
+    "decision_confidence_level": "NOT_AVAILABLE",
+    "process_confidence_not_investment_confidence": true,
+    "reason": "SYNTHETIC_EXAMPLE_MISSING",
+    "review_required": false
+  },
+  "generated_at_utc": "2026-05-30T00:00:00Z",
+  "input_artifact_status": [
+    {
+      "exists": true,
+      "expected_input_path": "examples/monthly_portfolio_decision_brief/synthetic_inputs/monthly_ranking_REVIEW.csv",
+      "label": "monthly_ranking",
+      "mandatory": true,
+      "reason": "SYNTHETIC_EXAMPLE_AVAILABLE",
+      "source_stage": "monthly",
+      "status": "AVAILABLE"
+    },
+    {
+      "exists": false,
+      "expected_input_path": "examples/monthly_portfolio_decision_brief/synthetic_inputs/decision_quality_REVIEW.json",
+      "label": "decision_quality_state",
+      "mandatory": false,
+      "reason": "SYNTHETIC_EXAMPLE_MISSING",
+      "source_stage": "decision_quality",
+      "status": "MISSING"
+    },
+    {
+      "exists": false,
+      "expected_input_path": "examples/monthly_portfolio_decision_brief/synthetic_inputs/review_queue_REVIEW.csv",
+      "label": "decision_review_queue",
+      "mandatory": false,
+      "reason": "SYNTHETIC_EXAMPLE_NOT_AVAILABLE",
+      "source_stage": "decision_journal_validation",
+      "status": "NOT_AVAILABLE"
+    }
+  ],
+  "non_claims": [
+    "no order execution",
+    "no buy/sell automation",
+    "no investment advice",
+    "no valuation automation",
+    "no scoring formula change",
+    "no ranking formula change",
+    "no portfolio rule change",
+    "no broker/provider/API integration",
+    "no replay/backtesting/outcome attribution"
+  ],
+  "operator_acceptance_boundary": "Human Operator review required; this synthetic example is evidence-surface documentation only.",
+  "operator_checklist": [
+    "Review missing, stale, unknown and review-required evidence states.",
+    "Review top ranking rows as upstream evidence, not recalculated recommendations.",
+    "Record the final human decision separately where required."
+  ],
+  "portfolio_decision_readiness": {
+    "conservative_rule": "Missing mandatory inputs result in BLOCKED; degraded or missing review evidence results in REVIEW.",
+    "decision_brief_status": "REVIEW"
+  },
+  "portfolio_health_summary": {
+    "cash_refill_artifact_status": "MISSING",
+    "cash_refill_status": "NOT_AVAILABLE",
+    "rebalance_actions": [],
+    "rebalance_artifact_status": "MISSING",
+    "rebalance_statuses": [],
+    "review_required": true
+  },
+  "ranking_summary": {
+    "artifact_status": "AVAILABLE",
+    "row_count": 1,
+    "top_rows": [
+      {
+        "allocation_status": "REVIEW_REQUIRED",
+        "constraint_checks": "synthetic_constraints=REVIEW_REQUIRED",
+        "mandate_fit_comment": "Synthetic review state only.",
+        "rank": "1",
+        "rationale": "Synthetic upstream ranking evidence preserved while optional evidence is degraded.",
+        "suggested_buy_amount_eur": "0",
+        "target_action": "REVIEW_ONLY",
+        "ticker": "SYNTH_REVIEW_C",
+        "valuation_comment": "UNKNOWN synthetic valuation note; no valuation automation."
+      }
+    ]
+  },
+  "review_queue_summary": {
+    "artifact_status": "NOT_AVAILABLE",
+    "queue_items": 0,
+    "reason": "SYNTHETIC_EXAMPLE_NOT_AVAILABLE",
+    "review_required": false
+  },
+  "schema_version": 1,
+  "source_module": "src.monthly_portfolio_decision_brief"
+}

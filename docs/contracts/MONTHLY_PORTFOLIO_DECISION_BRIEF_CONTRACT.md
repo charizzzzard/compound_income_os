@@ -111,6 +111,10 @@ hashes, manifests, sanitized examples or omitted-artifact records. They must not
 include real private holdings, broker/provider files, private raw evidence,
 credentials, local absolute paths or private strategy material.
 
+Tracked sanitized example outputs live under
+`examples/monthly_portfolio_decision_brief/`. They are reviewer-facing
+documentation artifacts only and do not replace real generated local outputs.
+
 ## Personal Run Integration
 
 The brief is available as the optional Personal Run stage

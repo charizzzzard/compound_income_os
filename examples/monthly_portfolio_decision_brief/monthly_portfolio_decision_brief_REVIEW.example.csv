@@ -1,0 +1,10 @@
+section,item,status,value,source_artifact,notes
+identity,as_of_date,AVAILABLE,2026-05-30,,Synthetic sanitized example.
+portfolio_decision_readiness,decision_brief_status,REVIEW,REVIEW,,Mandatory ranking available; optional evidence contains visible gaps.
+input_artifact_status,monthly_ranking,AVAILABLE,exists,examples/monthly_portfolio_decision_brief/synthetic_inputs/monthly_ranking_REVIEW.csv,SYNTHETIC_EXAMPLE_AVAILABLE
+input_artifact_status,decision_quality_state,MISSING,missing,examples/monthly_portfolio_decision_brief/synthetic_inputs/decision_quality_REVIEW.json,SYNTHETIC_EXAMPLE_MISSING
+input_artifact_status,decision_review_queue,NOT_AVAILABLE,missing,examples/monthly_portfolio_decision_brief/synthetic_inputs/review_queue_REVIEW.csv,SYNTHETIC_EXAMPLE_NOT_AVAILABLE
+ranking_summary,1,REVIEW_REQUIRED,SYNTH_REVIEW_C,examples/monthly_portfolio_decision_brief/synthetic_inputs/monthly_ranking_REVIEW.csv,Synthetic upstream ranking evidence preserved while optional evidence is degraded.
+data_freshness_summary,overall_status,REVIEW_REQUIRED,REVIEW_REQUIRED,,Synthetic freshness contains STALE;MISSING;UNKNOWN;REVIEW_REQUIRED;NOT_APPLICABLE states.
+decision_quality_summary,decision_confidence_level,,NOT_AVAILABLE,,Process confidence only; not investment confidence.
+portfolio_health_summary,cash_refill_status,NOT_AVAILABLE,NOT_AVAILABLE,,Optional cash evidence missing.
