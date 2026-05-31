@@ -1,16 +1,16 @@
-# Compound Income OS External LLM Review Packet - Sanitized Monthly Brief Examples
+# Compound Income OS External LLM Review Packet - Monthly Brief Schema Contract Hardening
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach dem Hinzufuegen synthetischer, sanitizierter Monthly Portfolio
-Decision Brief Beispielausgaben.
+(CIOS) nach der schema-level Reviewer-Surface-Haertung fuer den Monthly
+Portfolio Decision Brief.
 
-- patch_title: `SANITIZED_MONTHLY_BRIEF_EXAMPLE_OUTPUT`
-- bundle_purpose: `external_review_after_sanitized_monthly_brief_example_output`
-- implementation_head: `88d931233964824abe0400a1cfc87884199f4b64`
-- central_handoff_zip_head: `88d931233964824abe0400a1cfc87884199f4b64`
-- current_handoff_head: `88d931233964824abe0400a1cfc87884199f4b64`
-- base_head: `9aceb38e12a8500237efc9ddd090919b8f8adddc`
-- status: `SANITIZED_EXAMPLE_OUTPUT_HANDOFF_READY`
+- patch_title: `MONTHLY_BRIEF_SCHEMA_CONTRACT_HARDENING`
+- bundle_purpose: `external_review_after_monthly_brief_schema_contract_hardening`
+- implementation_head: `a82b7d265912dd6147260cd6137d4e2609276355`
+- central_handoff_zip_head: `a82b7d265912dd6147260cd6137d4e2609276355`
+- current_handoff_head: `a82b7d265912dd6147260cd6137d4e2609276355`
+- base_head: `23018bfb53877e3b35c166f2c9d8750c26c5787d`
+- status: `MONTHLY_BRIEF_SCHEMA_CONTRACT_HARDENING_HANDOFF_READY`
 
 Dieses Paket ersetzt aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck. Es ist der einzige authoritative externe Handoff fuer
@@ -20,7 +20,7 @@ paralleler Review-Handoff.
 ## Metadata-Only Publication Offset
 
 The ZIP represents the implementation snapshot at
-`88d931233964824abe0400a1cfc87884199f4b64`. If this README, the external
+`a82b7d265912dd6147260cd6137d4e2609276355`. If this README, the external
 context file or checksum are committed after ZIP export, the resulting repo HEAD
 is a metadata-only publication offset. That offset affects reviewer-facing
 metadata only and does not change source, tests, examples, configs, runtime
@@ -49,29 +49,19 @@ Bei Konflikten gilt diese Reihenfolge:
 
 ## What Changed
 
-The patch adds tracked, reviewer-facing, synthetic and sanitized Monthly
-Portfolio Decision Brief examples under:
+The patch hardens the Monthly Portfolio Decision Brief reviewer surface by
+adding:
 
-- `examples/monthly_portfolio_decision_brief/`
-
-The examples cover:
-
-- `READY`: mandatory ranking evidence is available and optional review evidence
-  is clean.
-- `REVIEW`: mandatory ranking evidence is available while optional evidence
-  visibly contains `MISSING`, `STALE`, `UNKNOWN`, `REVIEW_REQUIRED`,
-  `NOT_AVAILABLE` and `NOT_APPLICABLE` states.
-
-These examples are documentation artifacts. They are not real generated
-portfolio outputs and do not alter the default generated paths:
-
-- `data/processed/monthly_portfolio_decision_brief.json`
-- `data/processed/monthly_portfolio_decision_brief.csv`
-- `reports/<as_of_date>/monthly_portfolio_decision_brief.md`
+- `docs/contracts/MONTHLY_PORTFOLIO_DECISION_BRIEF_SURFACE_SCHEMA.md`
+- explicit `NOT_APPLICABLE` coverage in the REVIEW example tests
+- README clarification that `synthetic_inputs/*` paths are illustrative
+  reviewer-surface references, not included real fixtures
+- contract wording that sanitized examples now exist, while additional examples
+  such as `BLOCKED` may be future work
 
 ## Reviewer Instructions
 
-- Review this as a sanitized example-output patch, not as runtime feature
+- Review this as a contract/test/docs hardening patch, not as runtime feature
   expansion.
 - Use repo-relative paths in findings.
 - Check ZIP-internal:
@@ -105,7 +95,7 @@ Future Monthly Brief work must preserve:
 
 ## Handoff Integrity Summary
 
-- zip_sha256: `ba335aab5b4364d2a96cfee1eb25aa7dbb17ce63f9010c8bda018060f5e19150`
+- zip_sha256: `0f2464d7f772bc28850cbcf2a94974fc8c24dfa5100e2356be1ef7c8f73145d6`
 - sha_match: validated after packet synchronization
 - zip_testzip: `None`
 - nested_zip_count: `0`

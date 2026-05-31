@@ -2,19 +2,19 @@
 
 ## Reviewer-Facing Metadata Layer
 
-- patch_title: `SANITIZED_MONTHLY_BRIEF_EXAMPLE_OUTPUT`
-- reviewer_facing_bundle_purpose: `external_review_after_sanitized_monthly_brief_example_output`
-- implementation_head: `88d931233964824abe0400a1cfc87884199f4b64`
-- central_handoff_zip_head: `88d931233964824abe0400a1cfc87884199f4b64`
-- current_handoff_head: `88d931233964824abe0400a1cfc87884199f4b64`
-- current_repo_head_before_handoff_metadata_commit: `88d931233964824abe0400a1cfc87884199f4b64`
-- remote_main_head_before_handoff_metadata_commit: `9aceb38e12a8500237efc9ddd090919b8f8adddc`
+- patch_title: `MONTHLY_BRIEF_SCHEMA_CONTRACT_HARDENING`
+- reviewer_facing_bundle_purpose: `external_review_after_monthly_brief_schema_contract_hardening`
+- implementation_head: `a82b7d265912dd6147260cd6137d4e2609276355`
+- central_handoff_zip_head: `a82b7d265912dd6147260cd6137d4e2609276355`
+- current_handoff_head: `a82b7d265912dd6147260cd6137d4e2609276355`
+- current_repo_head_before_handoff_metadata_commit: `a82b7d265912dd6147260cd6137d4e2609276355`
+- remote_main_head_before_handoff_metadata_commit: `23018bfb53877e3b35c166f2c9d8750c26c5787d`
 - handoff_metadata_commit_head: `reported in the final operator report after commit creation`
 - reviewer_facing_upload_folder: `external_review_packet`
 - no_parallel_handoff_claimed: `True`
 
 The ZIP represents the implementation snapshot at
-`88d931233964824abe0400a1cfc87884199f4b64`. If this context file and checksum
+`a82b7d265912dd6147260cd6137d4e2609276355`. If this context file and checksum
 are committed after ZIP export, the resulting repository HEAD is a metadata-only
 publication offset and does not change source, tests, examples, configs, runtime
 behavior or the ZIP implementation snapshot.
@@ -38,14 +38,14 @@ handoff and must not be treated as a parallel review packet.
 
 - project_name: `compound_income_os`
 - profile: `patch`
-- bundle_name: `sanitized_monthly_brief_example_output`
+- bundle_name: `monthly_brief_schema_contract_hardening`
 - bundle_purpose: `external_llm_validation`
-- created_at_utc: `2026-05-31T16:31:35+00:00`
+- created_at_utc: `2026-05-31T17:45:17+00:00`
 - branch: `main`
-- head: `88d931233964824abe0400a1cfc87884199f4b64`
-- base_head: `9aceb38e12a8500237efc9ddd090919b8f8adddc`
-- delta_range: `9aceb38e12a8500237efc9ddd090919b8f8adddc..88d931233964824abe0400a1cfc87884199f4b64`
-- delta_evidence_rows: `9`
+- head: `a82b7d265912dd6147260cd6137d4e2609276355`
+- base_head: `23018bfb53877e3b35c166f2c9d8750c26c5787d`
+- delta_range: `23018bfb53877e3b35c166f2c9d8750c26c5787d..a82b7d265912dd6147260cd6137d4e2609276355`
+- delta_evidence_rows: `4`
 - patch_identity_entry: `HANDOFF_PATCH_IDENTITY.md`
 - dirty_worktree_present: `False`
 - purpose: patch handoff for external LLM validation
@@ -60,7 +60,7 @@ handoff and must not be treated as a parallel review packet.
 - `OMITTED_PRIVATE`
 
 ## Validation Summary
-Executed in current repo after implementation: example tests, Monthly Brief tests, Personal Run tests, ruff, git diff check and reviewer-surface rg checks passed. Full pytest skipped because this patch only adds static examples, contract pointer and focused tests.
+Executed in current repo after implementation: git diff check, ruff, focused Monthly Brief example/schema tests, Monthly Brief tests, Personal Run tests and full pytest passed.
 
 ## External LLM Instructions
 - Use only included artifacts and explicitly documented omissions.
