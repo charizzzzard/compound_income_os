@@ -48,6 +48,8 @@ def _ranking_rows() -> list[dict[str, str]]:
             "constraint_checks": "missing_data=REVIEW",
             "valuation_comment": "REVIEW",
             "mandate_fit_comment": "Synthetic fixture.",
+            "execution_mode": "SAVINGS_PLAN_EXISTING",
+            "execution_mode_reason": "upstream_route_preserved",
         },
         {
             "rank": "2",
@@ -59,6 +61,8 @@ def _ranking_rows() -> list[dict[str, str]]:
             "constraint_checks": "portfolio_rule=hold_cash_allowed",
             "valuation_comment": "Cash.",
             "mandate_fit_comment": "Synthetic fixture.",
+            "execution_mode": "",
+            "execution_mode_reason": "not_a_buy_candidate",
         },
     ]
 
@@ -183,7 +187,41 @@ def test_top_ranking_rows_are_preserved_not_recalculated() -> None:
         assert top_rows[0]["target_action"] == "DO_NOT_BUY"
         assert top_rows[0]["suggested_buy_amount_eur"] == "0"
         assert top_rows[0]["rationale"] == "upstream rationale one"
+        assert top_rows[0]["execution_mode"] == "SAVINGS_PLAN_EXISTING"
+        assert top_rows[0]["execution_mode_reason"] == "upstream_route_preserved"
         assert top_rows[1]["ticker"] == "BBB"
+        csv_rows = list(csv.DictReader(paths["out_csv"].read_text(encoding="utf-8").splitlines()))
+        routing_row = next(row for row in csv_rows if row["item"] == "1.execution_mode")
+        assert routing_row["status"] == "SAVINGS_PLAN_EXISTING"
+        assert routing_row["notes"] == "upstream_route_preserved"
+        report = paths["report"].read_text(encoding="utf-8")
+        assert "`SAVINGS_PLAN_EXISTING`" in report
+        assert "`upstream_route_preserved`" in report
+    finally:
+        shutil.rmtree(paths["root"], ignore_errors=True)
+
+
+def test_missing_routing_fields_do_not_infer_or_break_brief() -> None:
+    paths = _fixture_paths("_tmp_monthly_brief_missing_routing_fields")
+    try:
+        _write_complete_inputs(paths)
+        rows = [
+            {
+                key: value
+                for key, value in row.items()
+                if key not in {"execution_mode", "execution_mode_reason"}
+            }
+            for row in _ranking_rows()
+        ]
+        _write_csv(paths["ranking"], list(rows[0]), rows)
+
+        brief = _run_with_paths(paths)
+
+        top_rows = brief["ranking_summary"]["top_rows"]
+        assert brief["decision_brief_status"] == "READY"
+        assert top_rows[0]["execution_mode"] == ""
+        assert top_rows[0]["execution_mode_reason"] == ""
+        assert "SAVINGS_PLAN_EXISTING" not in json.dumps(brief, sort_keys=True)
     finally:
         shutil.rmtree(paths["root"], ignore_errors=True)
 
@@ -221,7 +259,7 @@ def test_degraded_data_freshness_remains_visible_and_reviews() -> None:
                 "summary_counts": {
                     "FRESH": 0,
                     "MISSING": 1,
-                    "NOT_APPLICABLE": 0,
+                    "NOT_APPLICABLE": 1,
                     "REVIEW_REQUIRED": 1,
                     "STALE": 1,
                     "UNKNOWN": 1,
@@ -236,12 +274,27 @@ def test_degraded_data_freshness_remains_visible_and_reviews() -> None:
         assert brief["data_freshness_summary"]["summary_counts"]["MISSING"] == 1
         assert brief["data_freshness_summary"]["summary_counts"]["UNKNOWN"] == 1
         assert brief["data_freshness_summary"]["summary_counts"]["REVIEW_REQUIRED"] == 1
+        assert brief["data_freshness_summary"]["summary_counts"]["NOT_APPLICABLE"] == 1
         assert set(brief["data_freshness_summary"]["degraded_state_indicators"]) == {
             "STALE",
             "MISSING",
             "UNKNOWN",
             "REVIEW_REQUIRED",
         }
+        csv_rows = list(csv.DictReader(paths["out_csv"].read_text(encoding="utf-8").splitlines()))
+        freshness_count_rows = [row for row in csv_rows if row["section"] == "data_freshness_summary_counts"]
+        counts_by_status = {row["item"]: row["value"] for row in freshness_count_rows}
+        assert counts_by_status == {
+            "FRESH": "0",
+            "MISSING": "1",
+            "NOT_APPLICABLE": "1",
+            "REVIEW_REQUIRED": "1",
+            "STALE": "1",
+            "UNKNOWN": "1",
+        }
+        report = paths["report"].read_text(encoding="utf-8")
+        assert "| `NOT_APPLICABLE` | 1 |" in report
+        assert "| `REVIEW_REQUIRED` | 1 |" in report
     finally:
         shutil.rmtree(paths["root"], ignore_errors=True)
 

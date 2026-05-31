@@ -5,6 +5,13 @@ input_artifact_status,monthly_ranking,AVAILABLE,exists,examples/monthly_portfoli
 input_artifact_status,decision_quality_state,MISSING,missing,examples/monthly_portfolio_decision_brief/synthetic_inputs/decision_quality_REVIEW.json,SYNTHETIC_EXAMPLE_MISSING
 input_artifact_status,decision_review_queue,NOT_AVAILABLE,missing,examples/monthly_portfolio_decision_brief/synthetic_inputs/review_queue_REVIEW.csv,SYNTHETIC_EXAMPLE_NOT_AVAILABLE
 ranking_summary,1,REVIEW_REQUIRED,SYNTH_REVIEW_C,examples/monthly_portfolio_decision_brief/synthetic_inputs/monthly_ranking_REVIEW.csv,Synthetic upstream ranking evidence preserved while optional evidence is degraded.
+ranking_summary,1.execution_mode,NOT_AVAILABLE,SYNTH_REVIEW_C,examples/monthly_portfolio_decision_brief/synthetic_inputs/monthly_ranking_REVIEW.csv,synthetic_optional_evidence_gap
 data_freshness_summary,overall_status,REVIEW_REQUIRED,REVIEW_REQUIRED,,Synthetic freshness contains STALE;MISSING;UNKNOWN;REVIEW_REQUIRED;NOT_APPLICABLE states.
+data_freshness_summary_counts,FRESH,FRESH,0,,Data Freshness summary_counts preserved from synthetic upstream artifact.
+data_freshness_summary_counts,STALE,STALE,1,,Data Freshness summary_counts preserved from synthetic upstream artifact.
+data_freshness_summary_counts,MISSING,MISSING,1,,Data Freshness summary_counts preserved from synthetic upstream artifact.
+data_freshness_summary_counts,UNKNOWN,UNKNOWN,1,,Data Freshness summary_counts preserved from synthetic upstream artifact.
+data_freshness_summary_counts,REVIEW_REQUIRED,REVIEW_REQUIRED,1,,Data Freshness summary_counts preserved from synthetic upstream artifact.
+data_freshness_summary_counts,NOT_APPLICABLE,NOT_APPLICABLE,1,,Data Freshness summary_counts preserved from synthetic upstream artifact.
 decision_quality_summary,decision_confidence_level,,NOT_AVAILABLE,,Process confidence only; not investment confidence.
 portfolio_health_summary,cash_refill_status,NOT_AVAILABLE,NOT_AVAILABLE,,Optional cash evidence missing.

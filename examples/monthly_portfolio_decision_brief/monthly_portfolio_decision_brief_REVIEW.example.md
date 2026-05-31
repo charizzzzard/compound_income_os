@@ -25,9 +25,9 @@ local paths.
 
 ## Ranking Summary
 
-| Rank | Ticker | Target action | Allocation status | Amount EUR | Rationale |
-| --- | --- | --- | --- | ---: | --- |
-| 1 | `SYNTH_REVIEW_C` | `REVIEW_ONLY` | `REVIEW_REQUIRED` | 0 | Synthetic upstream ranking evidence preserved while optional evidence is degraded. |
+| Rank | Ticker | Target action | Allocation status | Amount EUR | Execution mode | Execution reason | Rationale |
+| --- | --- | --- | --- | ---: | --- | --- | --- |
+| 1 | `SYNTH_REVIEW_C` | `REVIEW_ONLY` | `REVIEW_REQUIRED` | 0 | `NOT_AVAILABLE` | `synthetic_optional_evidence_gap` | Synthetic upstream ranking evidence preserved while optional evidence is degraded. |
 
 ## Data Freshness Summary
 
@@ -36,6 +36,15 @@ local paths.
 - review_required: `true`
 - degraded_state_indicators: `STALE ;MISSING ;UNKNOWN ;REVIEW_REQUIRED`
 - visible_optional_states: `MISSING ;STALE ;UNKNOWN ;REVIEW_REQUIRED ;NOT_AVAILABLE ;NOT_APPLICABLE`
+
+| Freshness status | Count |
+| --- | ---: |
+| `FRESH` | 0 |
+| `STALE` | 1 |
+| `MISSING` | 1 |
+| `UNKNOWN` | 1 |
+| `REVIEW_REQUIRED` | 1 |
+| `NOT_APPLICABLE` | 1 |
 
 ## Decision Quality Summary
 

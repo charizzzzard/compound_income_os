@@ -42,6 +42,8 @@ RANKING_FIELDS = [
     "constraint_checks",
     "valuation_comment",
     "mandate_fit_comment",
+    "execution_mode",
+    "execution_mode_reason",
 ]
 
 CSV_FIELDS = ["section", "item", "status", "value", "source_artifact", "notes"]
@@ -59,6 +61,7 @@ NON_CLAIMS = [
 ]
 
 DEGRADED_FRESHNESS_STATUSES = {"STALE", "MISSING", "UNKNOWN", "REVIEW_REQUIRED"}
+FRESHNESS_COUNT_STATUSES = ("FRESH", "STALE", "MISSING", "UNKNOWN", "REVIEW_REQUIRED", "NOT_APPLICABLE")
 
 
 @dataclass(frozen=True)
@@ -205,10 +208,7 @@ def _data_freshness_summary(item: ArtifactRead) -> dict[str, Any]:
         }
     counts_raw = item.data.get("summary_counts")
     counts = counts_raw if isinstance(counts_raw, dict) else {}
-    summary_counts = {
-        status: _status_count(counts, status)
-        for status in ("FRESH", "STALE", "MISSING", "UNKNOWN", "REVIEW_REQUIRED", "NOT_APPLICABLE")
-    }
+    summary_counts = {status: _status_count(counts, status) for status in FRESHNESS_COUNT_STATUSES}
     degraded = [status for status in ("STALE", "MISSING", "UNKNOWN", "REVIEW_REQUIRED") if summary_counts[status] > 0]
     return {
         "artifact_status": item.status,
@@ -406,16 +406,41 @@ def _csv_rows(brief: dict[str, Any]) -> list[dict[str, str]]:
             }
         )
     for ranking_row in brief["ranking_summary"]["top_rows"]:
+        monthly_ranking_source = next(item["expected_input_path"] for item in brief["input_artifact_status"] if item["label"] == "monthly_ranking")
         rows.append(
             {
                 "section": "ranking_summary",
                 "item": str(ranking_row.get("rank") or ""),
                 "status": str(ranking_row.get("allocation_status") or ranking_row.get("target_action") or ""),
                 "value": str(ranking_row.get("ticker") or ""),
-                "source_artifact": next(item["expected_input_path"] for item in brief["input_artifact_status"] if item["label"] == "monthly_ranking"),
+                "source_artifact": monthly_ranking_source,
                 "notes": str(ranking_row.get("rationale") or ""),
             }
         )
+        if ranking_row.get("execution_mode") or ranking_row.get("execution_mode_reason"):
+            rows.append(
+                {
+                    "section": "ranking_summary",
+                    "item": f"{ranking_row.get('rank') or ''}.execution_mode",
+                    "status": str(ranking_row.get("execution_mode") or "NOT_AVAILABLE"),
+                    "value": str(ranking_row.get("ticker") or ""),
+                    "source_artifact": monthly_ranking_source,
+                    "notes": str(ranking_row.get("execution_mode_reason") or ""),
+                }
+            )
+    freshness_counts = brief["data_freshness_summary"].get("summary_counts")
+    if isinstance(freshness_counts, dict):
+        for status in FRESHNESS_COUNT_STATUSES:
+            rows.append(
+                {
+                    "section": "data_freshness_summary_counts",
+                    "item": status,
+                    "status": status,
+                    "value": str(_status_count(freshness_counts, status)),
+                    "source_artifact": "",
+                    "notes": "Data Freshness summary_counts preserved from upstream artifact.",
+                }
+            )
     for section_name in ("data_freshness_summary", "decision_quality_summary", "portfolio_health_summary", "review_queue_summary"):
         for key, value in sorted(brief[section_name].items()):
             rows.append(
@@ -470,8 +495,8 @@ def render_markdown(brief: dict[str, Any]) -> str:
             "",
             "## Ranking Summary",
             "",
-            "| Rank | Ticker | Target action | Allocation status | Amount EUR | Rationale |",
-            "| --- | --- | --- | --- | ---: | --- |",
+            "| Rank | Ticker | Target action | Allocation status | Amount EUR | Execution mode | Execution reason | Rationale |",
+            "| --- | --- | --- | --- | ---: | --- | --- | --- |",
         ]
     )
     top_rows = brief["ranking_summary"]["top_rows"]
@@ -479,10 +504,12 @@ def render_markdown(brief: dict[str, Any]) -> str:
         for row in top_rows:
             lines.append(
                 f"| {row.get('rank', '')} | `{row.get('ticker', '')}` | `{row.get('target_action', '')}` | "
-                f"`{row.get('allocation_status', '')}` | {row.get('suggested_buy_amount_eur', '')} | {row.get('rationale', '')} |"
+                f"`{row.get('allocation_status', '')}` | {row.get('suggested_buy_amount_eur', '')} | "
+                f"`{row.get('execution_mode') or 'NOT_AVAILABLE'}` | "
+                f"`{row.get('execution_mode_reason') or 'NOT_AVAILABLE'}` | {row.get('rationale', '')} |"
             )
     else:
-        lines.append("|  | `NOT_AVAILABLE` | `MISSING` | `MISSING` |  | Monthly ranking unavailable. |")
+        lines.append("|  | `NOT_AVAILABLE` | `MISSING` | `MISSING` |  | `NOT_AVAILABLE` | `NOT_AVAILABLE` | Monthly ranking unavailable. |")
     freshness = brief["data_freshness_summary"]
     quality = brief["decision_quality_summary"]
     health = brief["portfolio_health_summary"]
@@ -505,6 +532,21 @@ def render_markdown(brief: dict[str, Any]) -> str:
             f"- review_required: `{str(freshness['review_required']).lower()}`",
             f"- degraded_state_indicators: `{' ;'.join(freshness.get('degraded_state_indicators', [])) if freshness.get('degraded_state_indicators') else 'None'}`",
             "",
+            "| Freshness status | Count |",
+            "| --- | ---: |",
+            "",
+        ]
+    )
+    freshness_counts = freshness.get("summary_counts")
+    if isinstance(freshness_counts, dict):
+        for status in FRESHNESS_COUNT_STATUSES:
+            lines.append(f"| `{status}` | {_status_count(freshness_counts, status)} |")
+    else:
+        for status in FRESHNESS_COUNT_STATUSES:
+            lines.append(f"| `{status}` | 0 |")
+    lines.append("")
+    lines.extend(
+        [
             "## Decision Quality Summary",
             "",
             f"- artifact_status: `{quality['artifact_status']}`",

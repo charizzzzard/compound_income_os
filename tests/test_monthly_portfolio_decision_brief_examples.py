@@ -22,6 +22,7 @@ EXPECTED_FILES = [
 ]
 
 EXAMPLE_STATUSES = ("READY", "REVIEW", "BLOCKED")
+FRESHNESS_COUNT_STATUSES = ("FRESH", "STALE", "MISSING", "UNKNOWN", "REVIEW_REQUIRED", "NOT_APPLICABLE")
 
 CSV_FIELDS = ["section", "item", "status", "value", "source_artifact", "notes"]
 
@@ -120,6 +121,41 @@ def test_review_example_preserves_optional_evidence_gaps() -> None:
     for state in ("MISSING", "STALE", "UNKNOWN", "REVIEW_REQUIRED", "NOT_AVAILABLE", "NOT_APPLICABLE"):
         assert state in text
     assert payload["decision_quality_summary"]["process_confidence_not_investment_confidence"] is True
+
+
+def test_examples_surface_routing_and_freshness_counts() -> None:
+    ready_payload = _json_example("READY")
+    review_payload = _json_example("REVIEW")
+    ready_rows = _csv_rows("READY")
+    review_rows = _csv_rows("REVIEW")
+    ready_markdown = _read_example("monthly_portfolio_decision_brief_READY.example.md")
+    review_markdown = _read_example("monthly_portfolio_decision_brief_REVIEW.example.md")
+
+    ready_ranking = ready_payload["ranking_summary"]
+    review_ranking = review_payload["ranking_summary"]
+    assert isinstance(ready_ranking, dict)
+    assert isinstance(review_ranking, dict)
+    ready_top_rows = ready_ranking["top_rows"]
+    review_top_rows = review_ranking["top_rows"]
+    assert isinstance(ready_top_rows, list)
+    assert isinstance(review_top_rows, list)
+    ready_top_row = ready_top_rows[0]
+    review_top_row = review_top_rows[0]
+    assert isinstance(ready_top_row, dict)
+    assert isinstance(review_top_row, dict)
+    assert ready_top_row["execution_mode"] == "SAVINGS_PLAN_EXISTING"
+    assert ready_top_row["execution_mode_reason"] == "synthetic_existing_plan_review_only"
+    assert review_top_row["execution_mode"] == "NOT_AVAILABLE"
+    assert "SAVINGS_PLAN_EXISTING" in ready_markdown
+    assert "synthetic_optional_evidence_gap" in review_markdown
+    assert any(row["item"] == "1.execution_mode" for row in ready_rows)
+    assert any(row["item"] == "1.execution_mode" for row in review_rows)
+
+    for status in FRESHNESS_COUNT_STATUSES:
+        assert any(row["section"] == "data_freshness_summary_counts" and row["item"] == status for row in ready_rows)
+        assert any(row["section"] == "data_freshness_summary_counts" and row["item"] == status for row in review_rows)
+        assert f"| `{status}` |" in ready_markdown
+        assert f"| `{status}` |" in review_markdown
 
 
 def test_blocked_example_represents_missing_mandatory_ranking_surface() -> None:

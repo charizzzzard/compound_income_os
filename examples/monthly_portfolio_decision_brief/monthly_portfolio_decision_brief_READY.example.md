@@ -24,10 +24,10 @@ local paths.
 
 ## Ranking Summary
 
-| Rank | Ticker | Target action | Allocation status | Amount EUR | Rationale |
-| --- | --- | --- | --- | ---: | --- |
-| 1 | `SYNTH_QUALITY_A` | `REVIEW_ONLY` | `SELECTED_FOR_REVIEW` | 0 | Synthetic upstream ranking evidence preserved for review. |
-| 2 | `SYNTH_DIVIDEND_B` | `REVIEW_ONLY` | `WATCHLIST_REVIEW` | 0 | Synthetic secondary candidate for surface inspection. |
+| Rank | Ticker | Target action | Allocation status | Amount EUR | Execution mode | Execution reason | Rationale |
+| --- | --- | --- | --- | ---: | --- | --- | --- |
+| 1 | `SYNTH_QUALITY_A` | `REVIEW_ONLY` | `SELECTED_FOR_REVIEW` | 0 | `SAVINGS_PLAN_EXISTING` | `synthetic_existing_plan_review_only` | Synthetic upstream ranking evidence preserved for review. |
+| 2 | `SYNTH_DIVIDEND_B` | `REVIEW_ONLY` | `WATCHLIST_REVIEW` | 0 | `NOT_APPLICABLE` | `synthetic_non_actionable_watchlist_row` | Synthetic secondary candidate for surface inspection. |
 
 ## Data Freshness Summary
 
@@ -35,6 +35,15 @@ local paths.
 - overall_status: `FRESH`
 - review_required: `false`
 - degraded_state_indicators: `None`
+
+| Freshness status | Count |
+| --- | ---: |
+| `FRESH` | 3 |
+| `STALE` | 0 |
+| `MISSING` | 0 |
+| `UNKNOWN` | 0 |
+| `REVIEW_REQUIRED` | 0 |
+| `NOT_APPLICABLE` | 0 |
 
 ## Decision Quality Summary
 

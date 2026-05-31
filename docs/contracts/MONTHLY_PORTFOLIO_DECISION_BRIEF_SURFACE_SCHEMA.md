@@ -33,6 +33,11 @@ The JSON surface must preserve visible status fields instead of silently
 normalizing missing or degraded evidence. Decision Quality confidence is process
 confidence only and must not be presented as investment confidence.
 
+`ranking_summary.top_rows` may include upstream `execution_mode` and
+`execution_mode_reason` when those fields are already present in the monthly
+ranking artifact. The Monthly Brief must preserve those values only; it must not
+calculate routing or infer fallback execution modes.
+
 ## CSV Surface
 
 Monthly Brief CSV examples must use these columns, in this order:
@@ -48,6 +53,10 @@ The CSV surface is a reviewer-facing status row surface. It must not expose real
 portfolio values, broker data, provider files, credentials, local absolute paths
 or private strategy material.
 
+Where Data Freshness `summary_counts` are available, CSV rows should expose one
+deterministic `data_freshness_summary_counts` row for each of `FRESH`, `STALE`,
+`MISSING`, `UNKNOWN`, `REVIEW_REQUIRED` and `NOT_APPLICABLE`.
+
 ## Markdown Surface
 
 Monthly Brief Markdown examples must include:
@@ -55,6 +64,8 @@ Monthly Brief Markdown examples must include:
 - a synthetic/sanitized example disclaimer;
 - visible `decision_brief_status`;
 - visible evidence gaps for `REVIEW` examples;
+- visible ranking routing fields when upstream rows provide them;
+- visible Data Freshness summary counts, including `NOT_APPLICABLE`;
 - explicit non-claims;
 - the Human Operator acceptance boundary.
 

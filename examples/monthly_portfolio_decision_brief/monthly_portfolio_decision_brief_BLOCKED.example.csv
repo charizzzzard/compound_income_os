@@ -4,6 +4,12 @@ portfolio_decision_readiness,decision_brief_status,BLOCKED,BLOCKED,,Mandatory mo
 input_artifact_status,monthly_ranking,MISSING,missing,examples/monthly_portfolio_decision_brief/synthetic_inputs/monthly_ranking_BLOCKED.csv,SYNTHETIC_EXAMPLE_MANDATORY_INPUT_MISSING
 ranking_summary,top_rows,MISSING,0,examples/monthly_portfolio_decision_brief/synthetic_inputs/monthly_ranking_BLOCKED.csv,No candidate rows are available because mandatory ranking evidence is missing.
 data_freshness_summary,overall_status,NOT_AVAILABLE,NOT_AVAILABLE,,Not evaluated in this synthetic blocked surface.
+data_freshness_summary_counts,FRESH,FRESH,0,,Data Freshness summary_counts preserved as zero because the blocked synthetic surface does not evaluate freshness.
+data_freshness_summary_counts,STALE,STALE,0,,Data Freshness summary_counts preserved as zero because the blocked synthetic surface does not evaluate freshness.
+data_freshness_summary_counts,MISSING,MISSING,0,,Data Freshness summary_counts preserved as zero because the blocked synthetic surface does not evaluate freshness.
+data_freshness_summary_counts,UNKNOWN,UNKNOWN,0,,Data Freshness summary_counts preserved as zero because the blocked synthetic surface does not evaluate freshness.
+data_freshness_summary_counts,REVIEW_REQUIRED,REVIEW_REQUIRED,0,,Data Freshness summary_counts preserved as zero because the blocked synthetic surface does not evaluate freshness.
+data_freshness_summary_counts,NOT_APPLICABLE,NOT_APPLICABLE,0,,Data Freshness summary_counts preserved as zero because the blocked synthetic surface does not evaluate freshness.
 decision_quality_summary,decision_confidence_level,,NOT_AVAILABLE,,Process confidence only; not investment confidence.
 portfolio_health_summary,cash_refill_status,NOT_AVAILABLE,NOT_AVAILABLE,,Not evaluated in this synthetic blocked surface.
 review_queue_summary,queue_items,,0,,Synthetic queue not evaluated.

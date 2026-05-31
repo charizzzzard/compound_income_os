@@ -56,6 +56,11 @@ or private strategy files directly.
 The monthly ranking artifact is mandatory because the brief cannot summarize the
 monthly decision state without upstream ranking evidence.
 
+The brief may preserve `execution_mode` and `execution_mode_reason` from
+upstream monthly ranking rows when those fields are already present. It must not
+compute routing, infer fallback execution modes or call savings-plan routing
+logic.
+
 If the mandatory ranking artifact is missing, unreadable or schema-invalid,
 `decision_brief_status` must be `BLOCKED`.
 
@@ -87,7 +92,8 @@ Missing, stale or unknown evidence must remain visible.
 
 The brief must preserve Data Freshness states such as `STALE`, `MISSING`,
 `UNKNOWN`, `REVIEW_REQUIRED`, `NOT_AVAILABLE` and `NOT_APPLICABLE` where present
-in upstream evidence.
+in upstream evidence. Data Freshness `summary_counts` should remain visible in
+JSON, CSV and Markdown surfaces.
 
 The brief must not infer freshness from file existence, file names, modified
 times or unrelated successful stages.

@@ -24,9 +24,9 @@ local paths.
 
 ## Ranking Summary
 
-| Rank | Ticker | Target action | Allocation status | Amount EUR | Rationale |
-| --- | --- | --- | --- | ---: | --- |
-|  | `NOT_AVAILABLE` | `MISSING` | `MISSING` |  | Mandatory monthly ranking evidence is missing; no candidate rows are inferred. |
+| Rank | Ticker | Target action | Allocation status | Amount EUR | Execution mode | Execution reason | Rationale |
+| --- | --- | --- | --- | ---: | --- | --- | --- |
+|  | `NOT_AVAILABLE` | `MISSING` | `MISSING` |  | `NOT_AVAILABLE` | `NOT_AVAILABLE` | Mandatory monthly ranking evidence is missing; no candidate rows are inferred. |
 
 ## Data Freshness Summary
 
@@ -34,6 +34,15 @@ local paths.
 - overall_status: `NOT_AVAILABLE`
 - review_required: `false`
 - degraded_state_indicators: `None`
+
+| Freshness status | Count |
+| --- | ---: |
+| `FRESH` | 0 |
+| `STALE` | 0 |
+| `MISSING` | 0 |
+| `UNKNOWN` | 0 |
+| `REVIEW_REQUIRED` | 0 |
+| `NOT_APPLICABLE` | 0 |
 
 ## Decision Quality Summary
 

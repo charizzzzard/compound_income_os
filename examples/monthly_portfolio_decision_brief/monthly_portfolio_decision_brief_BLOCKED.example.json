@@ -6,7 +6,14 @@
     "overall_status": "NOT_AVAILABLE",
     "reason": "SYNTHETIC_EXAMPLE_NOT_EVALUATED_BECAUSE_MANDATORY_RANKING_MISSING",
     "review_required": false,
-    "summary_counts": {}
+    "summary_counts": {
+      "FRESH": 0,
+      "MISSING": 0,
+      "NOT_APPLICABLE": 0,
+      "REVIEW_REQUIRED": 0,
+      "STALE": 0,
+      "UNKNOWN": 0
+    }
   },
   "decision_brief_status": "BLOCKED",
   "decision_quality_summary": {

@@ -17,6 +17,10 @@ external review and Human Operator inspection:
   ranking evidence is missing, so the surface stays `BLOCKED` and does not infer
   candidate rows, readiness or action.
 
+When shown, `execution_mode`, `execution_mode_reason` and Data Freshness
+`summary_counts` are synthetic upstream evidence fields preserved for reviewer
+surface inspection. They are not calculated by the example files.
+
 Paths under `examples/monthly_portfolio_decision_brief/synthetic_inputs/*`, when
 shown inside example JSON, CSV or Markdown files, are illustrative
 `source_artifact` references for the reviewer surface. They are not real

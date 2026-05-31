@@ -94,6 +94,8 @@
       {
         "allocation_status": "REVIEW_REQUIRED",
         "constraint_checks": "synthetic_constraints=REVIEW_REQUIRED",
+        "execution_mode": "NOT_AVAILABLE",
+        "execution_mode_reason": "synthetic_optional_evidence_gap",
         "mandate_fit_comment": "Synthetic review state only.",
         "rank": "1",
         "rationale": "Synthetic upstream ranking evidence preserved while optional evidence is degraded.",

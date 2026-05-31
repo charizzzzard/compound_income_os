@@ -4,7 +4,15 @@ portfolio_decision_readiness,decision_brief_status,READY,READY,,Mandatory rankin
 input_artifact_status,monthly_ranking,AVAILABLE,exists,examples/monthly_portfolio_decision_brief/synthetic_inputs/monthly_ranking_READY.csv,SYNTHETIC_EXAMPLE_AVAILABLE
 input_artifact_status,data_freshness_summary,AVAILABLE,exists,examples/monthly_portfolio_decision_brief/synthetic_inputs/data_freshness_READY.json,SYNTHETIC_EXAMPLE_AVAILABLE
 ranking_summary,1,SELECTED_FOR_REVIEW,SYNTH_QUALITY_A,examples/monthly_portfolio_decision_brief/synthetic_inputs/monthly_ranking_READY.csv,Synthetic upstream ranking evidence preserved for review.
+ranking_summary,1.execution_mode,SAVINGS_PLAN_EXISTING,SYNTH_QUALITY_A,examples/monthly_portfolio_decision_brief/synthetic_inputs/monthly_ranking_READY.csv,synthetic_existing_plan_review_only
 ranking_summary,2,WATCHLIST_REVIEW,SYNTH_DIVIDEND_B,examples/monthly_portfolio_decision_brief/synthetic_inputs/monthly_ranking_READY.csv,Synthetic secondary candidate for surface inspection.
+ranking_summary,2.execution_mode,NOT_APPLICABLE,SYNTH_DIVIDEND_B,examples/monthly_portfolio_decision_brief/synthetic_inputs/monthly_ranking_READY.csv,synthetic_non_actionable_watchlist_row
 data_freshness_summary,overall_status,FRESH,FRESH,,Synthetic freshness evidence only.
+data_freshness_summary_counts,FRESH,FRESH,3,,Data Freshness summary_counts preserved from synthetic upstream artifact.
+data_freshness_summary_counts,STALE,STALE,0,,Data Freshness summary_counts preserved from synthetic upstream artifact.
+data_freshness_summary_counts,MISSING,MISSING,0,,Data Freshness summary_counts preserved from synthetic upstream artifact.
+data_freshness_summary_counts,UNKNOWN,UNKNOWN,0,,Data Freshness summary_counts preserved from synthetic upstream artifact.
+data_freshness_summary_counts,REVIEW_REQUIRED,REVIEW_REQUIRED,0,,Data Freshness summary_counts preserved from synthetic upstream artifact.
+data_freshness_summary_counts,NOT_APPLICABLE,NOT_APPLICABLE,0,,Data Freshness summary_counts preserved from synthetic upstream artifact.
 decision_quality_summary,decision_confidence_level,,MEDIUM,,Process confidence only; not investment confidence.
 review_queue_summary,queue_items,,0,,Synthetic queue empty.

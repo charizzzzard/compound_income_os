@@ -85,6 +85,8 @@
       {
         "allocation_status": "SELECTED_FOR_REVIEW",
         "constraint_checks": "synthetic_constraints=PASS",
+        "execution_mode": "SAVINGS_PLAN_EXISTING",
+        "execution_mode_reason": "synthetic_existing_plan_review_only",
         "mandate_fit_comment": "Synthetic mandate fit only.",
         "rank": "1",
         "rationale": "Synthetic upstream ranking evidence preserved for review.",
@@ -96,6 +98,8 @@
       {
         "allocation_status": "WATCHLIST_REVIEW",
         "constraint_checks": "synthetic_constraints=PASS",
+        "execution_mode": "NOT_APPLICABLE",
+        "execution_mode_reason": "synthetic_non_actionable_watchlist_row",
         "mandate_fit_comment": "Synthetic mandate fit only.",
         "rank": "2",
         "rationale": "Synthetic secondary candidate for surface inspection.",
