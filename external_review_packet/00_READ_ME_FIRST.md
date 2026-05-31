@@ -1,66 +1,43 @@
-# Compound Income OS External LLM Review Packet - Monthly Brief Missing Routing Field Surface Regression Hardening
+# External Review Packet - Full Portfolio Capability Execution Audit
 
-Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach der Testhaertung fuer fehlende `execution_mode` /
-`execution_mode_reason` Felder im Monthly Portfolio Decision Brief.
+- patch_title: `FULL_PORTFOLIO_CAPABILITY_EXECUTION_AUDIT`
+- bundle_purpose: `canonical_external_review_handoff_after_full_portfolio_capability_execution_audit`
+- branch: `main`
+- head: `b1ee048965def207f2021fcb19cb9cf3cd19105d`
+- central_handoff_path: `external_review_packet/`
+- handoff_zip: `external_review_packet/HANDOFF_LATEST.zip`
+- handoff_sha256: `06786886302F294F2BC5A35E28E3576B4BB6EB269A74522E1C6C6BA179267CDA`
 
-- patch_title: `MONTHLY_BRIEF_MISSING_ROUTING_FIELD_SURFACE_REGRESSION_HARDENING`
-- bundle_purpose: `external_review_after_monthly_brief_missing_routing_field_surface_regression_hardening`
-- implementation_head: `a2270a5d81f26f5d30a4b1786cbeccd84e7664a3`
-- central_handoff_zip_head: `a2270a5d81f26f5d30a4b1786cbeccd84e7664a3`
-- current_handoff_head: `a2270a5d81f26f5d30a4b1786cbeccd84e7664a3`
-- base_head: `c016b2634a2dbb22e72a91ba23cceb9b4f0c6a6a`
-- status: `MONTHLY_BRIEF_MISSING_ROUTING_FIELD_SURFACE_REGRESSION_HARDENED`
+## Review Scope
 
-Dieses Paket ersetzt aeltere Dateien in `external_review_packet/` fuer den
-aktuellen Review-Zweck. Es ist der einzige authoritative externe Handoff fuer
-diese Aufgabe; lokale Ordner unter `outputs/` sind nur Evidence-Quellen und kein
-paralleler Review-Handoff.
+This packet packages the already performed full portfolio capability execution audit for external review. It includes a canonical audit report, capability execution matrix, taxonomy check, artifact index, validation evidence, source capability inventory and selected governance/contracts.
 
-## What Changed
+The packet is review evidence only. It does not implement feature logic, change scoring/ranking/valuation/portfolio rules, publish private/raw/generated personal portfolio data, execute orders, create broker writes, enable auto-trading, or claim production/investment readiness.
 
-This packet represents a test-hardening patch. It closes the carried-forward P2
-finding by adding targeted regression coverage for missing `execution_mode` and
-`execution_mode_reason` columns across JSON, CSV and Markdown Monthly Portfolio
-Decision Brief surfaces. Runtime behavior is unchanged.
+This `external_review_packet/` state replaces the previous Monthly-Brief central handoff for the current review purpose. `HANDOFF_LATEST.zip` remains an ignored/untracked upload and transport artifact; it is not force-added to Git. `HANDOFF_LATEST.sha256` is the committed integrity pointer for the externally supplied ZIP. The top-level audit files are committed reviewer-facing extracted evidence.
 
-## Reviewer Instructions
-
-- Review this as regression-test hardening, not as runtime feature expansion.
-- Use repo-relative paths in findings.
-- Check ZIP-internal metadata before assuming patch-delta scope.
-- Do not infer omitted private, raw, broker, provider, credential, user-agent,
-  account, transaction or strategy files.
-- Treat `HANDOFF_VALIDATION.txt` as recorded validation provenance unless you
-  independently execute the commands.
-
-## Source-of-Truth / Precedence
-
-Bei Konflikten gilt diese Reihenfolge:
+## Primary Files
 
 1. `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
-2. ZIP-internal `HANDOFF_CONTEXT.md`
-3. ZIP-internal artifact indexes, omitted-artifact registers and patch identity
-4. GitHub browser URL for committed repo inspection
-5. Local-only/generated/ignored files only if explicitly included or summarized
+2. `external_review_packet/HANDOFF_LATEST.sha256`
+3. `external_review_packet/HANDOFF_LATEST.zip`
 
-## Handoff Integrity Summary
+Inside the ZIP, start with:
 
-- zip_sha256: `FEBB79A44AFEFD7BE86BFC6CA890611DC55056FFE17331407E06765F9E9C8C35`
-- sha_match: validated after packet synchronization
-- zip_testzip: `None`
-- zip_file_count: `17`
-- nested_zip_count: `0`
-- forbidden_match_count: `0`
-- local_path_leak_count: `0`
+1. `external_review_packet/FULL_PORTFOLIO_CAPABILITY_EXECUTION_AUDIT_REPORT.md`
+2. `external_review_packet/AUDIT_CAPABILITY_EXECUTION_MATRIX.csv`
+3. `external_review_packet/AUDIT_ARTIFACTS_INDEX.csv`
+4. `external_review_packet/AUDIT_TAXONOMY_CHECK.csv`
+5. `external_review_packet/AUDIT_VALIDATION_EVIDENCE.md`
+6. `HANDOFF_MANIFEST.csv`
+7. `HANDOFF_ARTIFACT_INDEX.csv`
+8. `HANDOFF_OMITTED_ARTIFACTS.csv`
+9. `HANDOFF_VALIDATION.txt`
 
-## Explicit Non-Scope
+## Known Review Finding
 
-This packet does not claim or introduce broker/provider/API integration, order
-execution, live trading, buy/sell automation, investment advice automation,
-scoring formula changes, ranking formula changes, valuation methodology changes,
-portfolio-rule changes, watchlist logic changes, fundamentals logic changes,
-private/generated/raw publication, runtime enforcement, production readiness or
-investment readiness.
+`docs/architecture/CIOS_FEATURE_STATUS.yaml` uses status `documented`, but `status_values` does not declare it. This is recorded as `AUDIT_TAXONOMY_FINDING`; it is not silently normalized.
 
-Human Operator remains final acceptance authority.
+## Boundary
+
+Human Operator remains final acceptance authority. External review must not infer omitted private/raw/broker/provider/local/generated data.

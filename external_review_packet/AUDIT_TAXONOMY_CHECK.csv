@@ -1,0 +1,8 @@
+status_value,declared_in_status_values,used_by_capability,handling
+deferred,True,True,do not execute; ACCEPTED_DEFERRED
+documented,False,True,AUDIT_TAXONOMY_FINDING because used but not declared; treat as doc-only and do not execute
+excluded,True,False,do not execute
+implemented,True,True,execute only with safe entrypoint and inputs; otherwise REVIEW
+partial,True,True,execute only with clear safe local entrypoint and defined inputs; otherwise REVIEW/NOT_EXECUTABLE_FROM_REPO_STATE
+planned,True,True,do not execute; NOT_IMPLEMENTED
+unknown,True,True,do not execute unless later clarified; NOT_EXECUTABLE_FROM_REPO_STATE
