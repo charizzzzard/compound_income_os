@@ -5,8 +5,11 @@ status_values:
   - partial
   - planned
   - deferred
+  - documented
   - excluded
   - unknown
+status_semantics:
+  documented: "Docs-only or contract-only capability status; not runtime executable and not runtime_enforced."
 capabilities:
   - capability_id: broker_portfolio_input
     display_name: Broker Portfolio Input

@@ -68,6 +68,21 @@ separate external context states `EXECUTED_IN_CURRENT_REPO` or
 `EXECUTED_IN_ZIP_CONTEXT`, commands listed by the exporter are
 `RECORDED_VALIDATION`.
 
+Future handoff and audit validation summaries must use explicit validation
+provenance labels where applicable:
+
+- `RECORDED_BY_CODEX`: command text or validation output was recorded by Codex
+  as provenance, but was not independently rerun in the current reviewing
+  context.
+- `EXECUTED_IN_CURRENT_RUN`: command was executed in the current local run.
+- `INDEPENDENTLY_REVIEWED`: the evidence was independently reviewed by an
+  external reviewer or the human operator.
+- `NOT_AVAILABLE`: command, dependency, artifact or execution evidence was not
+  available.
+
+Do not claim `EXECUTED_IN_CURRENT_RUN` or `INDEPENDENTLY_REVIEWED` unless that
+status is directly evidenced.
+
 `HANDOFF_PATCH_IDENTITY.md` separates snapshot evidence from patch-delta
 evidence. It records patch title, bundle purpose, base HEAD, implementation
 HEAD, current handoff HEAD, delta range, changed file count and delta evidence
@@ -151,3 +166,15 @@ eight characters of the ZIP SHA256. The upload-ready ZIP must be byte-identical 
 `outputs/handoffs/latest/HANDOFF_LATEST.zip`, the upload-ready context must match
 the internal `HANDOFF_CONTEXT.md`, and the upload-ready SHA256 file must refer to
 the unique ZIP filename rather than `HANDOFF_LATEST.zip`.
+
+## Central External Review Packet ZIP Policy
+
+For the committed central `external_review_packet/` surface,
+`external_review_packet/HANDOFF_LATEST.sha256` is the committed integrity pointer
+for `external_review_packet/HANDOFF_LATEST.zip`.
+
+`HANDOFF_LATEST.zip` may remain ignored/untracked as an external upload and
+transport artifact unless a future policy change explicitly makes ZIP tracking
+mandatory. Do not force-add ZIPs by default. Reviewers need the supplied ZIP file
+to independently verify bundled content. Top-level reviewer-facing evidence may
+be committed when intentionally extracted and reviewed.

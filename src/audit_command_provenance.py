@@ -70,6 +70,20 @@ DEGRADED_PROVENANCE_STATUSES = {
     "SKIPPED_DEFERRED",
 }
 
+SKIPPED_PROVENANCE_STATUSES = {
+    "SKIPPED_NO_ENTRYPOINT",
+    "SKIPPED_PRIVATE_INPUT_REQUIRED",
+    "SKIPPED_DEFERRED",
+}
+
+SKIPPED_RESULT_STATUSES = {"SKIPPED", "NOT_EXECUTABLE_FROM_REPO_STATE"}
+
+REPO_HEAD_RE = re.compile(r"^[0-9a-fA-F]{40}$")
+RFC3339_UTC_RE = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|\+00:00)$"
+)
+WINDOWS_DRIVE_RELATIVE_RE = re.compile(r"^[A-Za-z]:(?![\\/])")
+
 FORBIDDEN_TEXT_PATTERNS = [
     re.compile(pattern, re.IGNORECASE)
     for pattern in (
@@ -116,6 +130,12 @@ def validate_manifest(manifest: dict[str, Any]) -> ValidationResult:
         "manifest",
         result,
     )
+    _validate_repo_head(manifest.get("repo_head"), "manifest.repo_head", result)
+    _validate_utc_timestamp(
+        manifest.get("created_at_utc"),
+        "manifest.created_at_utc",
+        result,
+    )
 
     entries = manifest.get("entries")
     if not isinstance(entries, list) or not entries:
@@ -124,17 +144,26 @@ def validate_manifest(manifest: dict[str, Any]) -> ValidationResult:
 
     result.entries_total = len(entries)
     for index, entry in enumerate(entries):
-        _validate_entry(entry, index, result)
+        _validate_entry(entry, index, manifest, result)
     return result
 
 
-def _validate_entry(entry: Any, index: int, result: ValidationResult) -> None:
+def _validate_entry(
+    entry: Any,
+    index: int,
+    manifest: dict[str, Any],
+    result: ValidationResult,
+) -> None:
     label = f"entries[{index}]"
     if not isinstance(entry, dict):
         result.errors.append(f"{label} must be an object.")
         return
 
     _validate_required_fields(entry, REQUIRED_ENTRY_FIELDS, label, result)
+    _validate_entry_matches_manifest(entry, manifest, label, result)
+    _validate_repo_head(entry.get("repo_head"), f"{label}.repo_head", result)
+    _validate_utc_timestamp(entry.get("recorded_at_utc"), f"{label}.recorded_at_utc", result)
+    _validate_exit_code(entry.get("exit_code"), f"{label}.exit_code", result)
 
     command_kind = entry.get("command_kind")
     if command_kind not in ALLOWED_COMMAND_KINDS:
@@ -158,6 +187,9 @@ def _validate_entry(entry: Any, index: int, result: ValidationResult) -> None:
     _validate_path_list(entry.get("output_paths"), f"{label}.output_paths", result)
     _validate_forbidden_text_fields(entry, label, result)
     _validate_command_reproduced(entry, label, result)
+    _validate_output_observed(entry, label, result)
+    _validate_skipped_provenance(entry, label, result)
+    _validate_command_kind_consistency(entry, label, result)
 
 
 def _validate_required_fields(
@@ -192,6 +224,8 @@ def is_repo_relative_path(value: str) -> bool:
     if value == ".":
         return True
     if "\x00" in value:
+        return False
+    if WINDOWS_DRIVE_RELATIVE_RE.match(value):
         return False
     if value.startswith(("~", "/", "\\", "//")):
         return False
@@ -230,6 +264,7 @@ def _validate_command_reproduced(
     exit_code = entry.get("exit_code")
     recorded_at_utc = entry.get("recorded_at_utc")
     result_status = entry.get("result_status")
+    command_kind = entry.get("command_kind")
 
     if not isinstance(command, str) or not command.strip():
         result.errors.append(f"{label}.command is required for COMMAND_REPRODUCED.")
@@ -241,6 +276,94 @@ def _validate_command_reproduced(
         result.errors.append(
             f"{label}.result_status cannot be {result_status} for COMMAND_REPRODUCED."
         )
+    if command_kind in {"skipped", "not_executable"}:
+        result.errors.append(
+            f"{label}.command_kind cannot be {command_kind} for COMMAND_REPRODUCED."
+        )
+
+
+def _validate_entry_matches_manifest(
+    entry: dict[str, Any],
+    manifest: dict[str, Any],
+    label: str,
+    result: ValidationResult,
+) -> None:
+    if entry.get("run_id") != manifest.get("run_id"):
+        result.errors.append(f"{label}.run_id must match manifest.run_id.")
+    if entry.get("repo_head") != manifest.get("repo_head"):
+        result.errors.append(f"{label}.repo_head must match manifest.repo_head.")
+
+
+def _validate_repo_head(value: Any, label: str, result: ValidationResult) -> None:
+    if not isinstance(value, str) or not REPO_HEAD_RE.match(value):
+        result.errors.append(f"{label} must be a 40-character hexadecimal Git SHA.")
+
+
+def _validate_utc_timestamp(value: Any, label: str, result: ValidationResult) -> None:
+    if not isinstance(value, str) or not RFC3339_UTC_RE.match(value):
+        result.errors.append(f"{label} must be RFC3339 UTC-like, ending in Z or +00:00.")
+
+
+def _validate_exit_code(value: Any, label: str, result: ValidationResult) -> None:
+    if value is not None and not isinstance(value, int):
+        result.errors.append(f"{label} must be an integer or null.")
+
+
+def _validate_output_observed(
+    entry: dict[str, Any],
+    label: str,
+    result: ValidationResult,
+) -> None:
+    if entry.get("provenance_status") != "OUTPUT_OBSERVED_COMMAND_NOT_RECORDED":
+        return
+    if entry.get("command") != "":
+        result.errors.append(
+            f"{label}.command must be empty for OUTPUT_OBSERVED_COMMAND_NOT_RECORDED."
+        )
+    if entry.get("exit_code") is not None:
+        result.errors.append(
+            f"{label}.exit_code must be null for OUTPUT_OBSERVED_COMMAND_NOT_RECORDED."
+        )
+    if entry.get("result_status") == "PASS":
+        result.errors.append(
+            f"{label}.result_status cannot be PASS for OUTPUT_OBSERVED_COMMAND_NOT_RECORDED."
+        )
+
+
+def _validate_skipped_provenance(
+    entry: dict[str, Any],
+    label: str,
+    result: ValidationResult,
+) -> None:
+    if entry.get("provenance_status") not in SKIPPED_PROVENANCE_STATUSES:
+        return
+    if entry.get("command") != "":
+        result.errors.append(f"{label}.command must be empty for skipped provenance.")
+    if entry.get("exit_code") is not None:
+        result.errors.append(f"{label}.exit_code must be null for skipped provenance.")
+    if entry.get("result_status") not in SKIPPED_RESULT_STATUSES:
+        result.errors.append(
+            f"{label}.result_status must be SKIPPED or NOT_EXECUTABLE_FROM_REPO_STATE for skipped provenance."
+        )
+
+
+def _validate_command_kind_consistency(
+    entry: dict[str, Any],
+    label: str,
+    result: ValidationResult,
+) -> None:
+    command_kind = entry.get("command_kind")
+    provenance_status = entry.get("provenance_status")
+    command = entry.get("command")
+
+    if command_kind == "skipped" and provenance_status not in SKIPPED_PROVENANCE_STATUSES:
+        result.errors.append(f"{label}.command_kind skipped requires SKIPPED_* provenance.")
+    if command_kind == "not_executable" and provenance_status != "SKIPPED_NO_ENTRYPOINT":
+        result.errors.append(
+            f"{label}.command_kind not_executable requires SKIPPED_NO_ENTRYPOINT provenance."
+        )
+    if provenance_status == "COMMAND_RECORDED" and (not isinstance(command, str) or not command.strip()):
+        result.errors.append(f"{label}.command is required for COMMAND_RECORDED.")
 
 
 def main(argv: list[str] | None = None) -> int:

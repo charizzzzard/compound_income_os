@@ -49,6 +49,26 @@
     {
       "run_id": "synthetic-full-portfolio-audit-2026-01",
       "repo_head": "0000000000000000000000000000000000000000",
+      "capability_id": "feature_status_taxonomy_review",
+      "capability_status_from_feature_registry": "documented",
+      "execution_classification": "inspection_only_review",
+      "command": "rg -n \"status_values|status: documented\" docs/architecture/CIOS_FEATURE_STATUS.yaml",
+      "command_kind": "inspection_only",
+      "working_directory": ".",
+      "input_paths": [
+        "docs/architecture/CIOS_FEATURE_STATUS.yaml"
+      ],
+      "output_paths": [],
+      "exit_code": null,
+      "recorded_at_utc": "2026-01-01T00:03:00Z",
+      "result_status": "REVIEW",
+      "conservative_state": "OUTPUT_OBSERVED_READY_FOR_REVIEW",
+      "provenance_status": "COMMAND_RECORDED",
+      "notes": "Synthetic inspection-only command record; not independently reproduced by the manifest."
+    },
+    {
+      "run_id": "synthetic-full-portfolio-audit-2026-01",
+      "repo_head": "0000000000000000000000000000000000000000",
       "capability_id": "simulation_backtesting_monte_carlo",
       "capability_status_from_feature_registry": "deferred",
       "execution_classification": "deferred_scope_skipped",
@@ -58,7 +78,7 @@
       "input_paths": [],
       "output_paths": [],
       "exit_code": null,
-      "recorded_at_utc": "2026-01-01T00:03:00Z",
+      "recorded_at_utc": "2026-01-01T00:04:00Z",
       "result_status": "SKIPPED",
       "conservative_state": "ACCEPTED_DEFERRED",
       "provenance_status": "SKIPPED_DEFERRED",
