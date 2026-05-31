@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0",
+  "run_id": "synthetic-full-portfolio-audit-2026-01",
+  "repo_head": "0000000000000000000000000000000000000000",
+  "created_at_utc": "2026-01-01T00:00:00Z",
+  "entries": [
+    {
+      "run_id": "synthetic-full-portfolio-audit-2026-01",
+      "repo_head": "0000000000000000000000000000000000000000",
+      "capability_id": "monthly_portfolio_decision_brief",
+      "capability_status_from_feature_registry": "implemented",
+      "execution_classification": "executed_local_test",
+      "command": "python -m pytest tests/test_monthly_portfolio_decision_brief.py -q",
+      "command_kind": "pytest",
+      "working_directory": ".",
+      "input_paths": [
+        "tests/test_monthly_portfolio_decision_brief.py"
+      ],
+      "output_paths": [],
+      "exit_code": 0,
+      "recorded_at_utc": "2026-01-01T00:01:00Z",
+      "result_status": "PASS",
+      "conservative_state": "",
+      "provenance_status": "COMMAND_REPRODUCED",
+      "notes": "Synthetic example of a reproduced local test command."
+    },
+    {
+      "run_id": "synthetic-full-portfolio-audit-2026-01",
+      "repo_head": "0000000000000000000000000000000000000000",
+      "capability_id": "watchlist_engine",
+      "capability_status_from_feature_registry": "implemented",
+      "execution_classification": "output_observed_without_command",
+      "command": "",
+      "command_kind": "inspection_only",
+      "working_directory": ".",
+      "input_paths": [
+        "docs/architecture/CIOS_FEATURE_STATUS.yaml"
+      ],
+      "output_paths": [
+        "outputs/capability_execution_audit/processed/watchlist_ranked.csv"
+      ],
+      "exit_code": null,
+      "recorded_at_utc": "2026-01-01T00:02:00Z",
+      "result_status": "REVIEW",
+      "conservative_state": "READY_FOR_REVIEW",
+      "provenance_status": "OUTPUT_OBSERVED_COMMAND_NOT_RECORDED",
+      "notes": "Synthetic degraded provenance example; command was not reconstructed after the fact."
+    },
+    {
+      "run_id": "synthetic-full-portfolio-audit-2026-01",
+      "repo_head": "0000000000000000000000000000000000000000",
+      "capability_id": "simulation_backtesting_monte_carlo",
+      "capability_status_from_feature_registry": "deferred",
+      "execution_classification": "deferred_scope_skipped",
+      "command": "",
+      "command_kind": "skipped",
+      "working_directory": ".",
+      "input_paths": [],
+      "output_paths": [],
+      "exit_code": null,
+      "recorded_at_utc": "2026-01-01T00:03:00Z",
+      "result_status": "SKIPPED",
+      "conservative_state": "ACCEPTED_DEFERRED",
+      "provenance_status": "SKIPPED_DEFERRED",
+      "notes": "Synthetic skipped deferred capability example."
+    }
+  ]
+}
