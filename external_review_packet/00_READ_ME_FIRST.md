@@ -1,16 +1,16 @@
-# Compound Income OS External LLM Review Packet - Monthly Brief BLOCKED Example Surface Hardening
+# Compound Income OS External LLM Review Packet - Monthly Brief Operator Surface Completeness Hardening
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach der reviewer-facing BLOCKED-Beispielhaertung fuer den Monthly
-Portfolio Decision Brief.
+(CIOS) nach der Operator-Surface-Haertung fuer den Monthly Portfolio Decision
+Brief.
 
-- patch_title: `MONTHLY_BRIEF_BLOCKED_EXAMPLE_SURFACE_HARDENING`
-- bundle_purpose: `external_review_after_monthly_brief_blocked_example_surface_hardening`
-- implementation_head: `93309a0bd2cee7519414a7a19890363c53efdc85`
-- central_handoff_zip_head: `93309a0bd2cee7519414a7a19890363c53efdc85`
-- current_handoff_head: `93309a0bd2cee7519414a7a19890363c53efdc85`
-- base_head: `ceb6c300162b82d56c9019a511a9b26467fe2db7`
-- status: `MONTHLY_BRIEF_BLOCKED_EXAMPLE_SURFACE_HARDENED`
+- patch_title: `MONTHLY_BRIEF_OPERATOR_SURFACE_COMPLETENESS_HARDENING`
+- bundle_purpose: `external_review_after_monthly_brief_operator_surface_completeness_hardening`
+- implementation_head: `a0b86f410cedf303ccd3b7930eed2c9218166432`
+- central_handoff_zip_head: `a0b86f410cedf303ccd3b7930eed2c9218166432`
+- current_handoff_head: `a0b86f410cedf303ccd3b7930eed2c9218166432`
+- base_head: `78646d6a1aa6d96641bcaaab42cd6575a76e660b`
+- status: `MONTHLY_BRIEF_OPERATOR_SURFACE_COMPLETENESS_HARDENED`
 
 Dieses Paket ersetzt aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck. Es ist der einzige authoritative externe Handoff fuer
@@ -19,14 +19,16 @@ paralleler Review-Handoff.
 
 ## What Changed
 
-This packet represents a documentation/test/example-surface patch. It adds the
-synthetic sanitized BLOCKED Monthly Portfolio Decision Brief examples in JSON,
-CSV and Markdown, updates the examples README, updates the example tests and
-removes stale contract wording that treated BLOCKED examples as future-only work.
+This packet represents an operator-surface hardening patch. It preserves
+upstream `execution_mode` and `execution_mode_reason` fields in the Monthly
+Portfolio Decision Brief when present, makes Data Freshness `summary_counts`
+visible in JSON/CSV/Markdown, keeps `NOT_APPLICABLE` visible, updates the
+sanitized examples and tests, and does not recalculate routing, ranking, scores,
+valuation or portfolio rules.
 
 ## Reviewer Instructions
 
-- Review this as reviewer-surface hardening, not as runtime feature expansion.
+- Review this as operator-surface hardening, not as investment logic expansion.
 - Use repo-relative paths in findings.
 - Check ZIP-internal metadata before assuming patch-delta scope.
 - Do not infer omitted private, raw, broker, provider, credential, user-agent,
@@ -46,9 +48,10 @@ Bei Konflikten gilt diese Reihenfolge:
 
 ## Handoff Integrity Summary
 
-- zip_sha256: `C43555EF9BED9AA679F85ADEE54E44AB0500B748E208623C41B99C674DB0B25E`
+- zip_sha256: `A7B0501A83AFFCA49C3FBBD25E885EAB9B0EEDA3D0EC7575483C299A388761F0`
 - sha_match: validated after packet synchronization
 - zip_testzip: `None`
+- zip_file_count: `26`
 - nested_zip_count: `0`
 - forbidden_match_count: `0`
 - local_path_leak_count: `0`
