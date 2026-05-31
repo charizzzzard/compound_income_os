@@ -113,6 +113,13 @@ from src.fundamentals_snapshot_review import (
     run_fundamentals_snapshot_review,
 )
 from src.multi_benchmark_performance_engine import run_multi_benchmark_performance_engine
+from src.monthly_portfolio_decision_brief import (
+    DEFAULT_OUT_CSV as DEFAULT_MONTHLY_PORTFOLIO_DECISION_BRIEF_CSV_OUTPUT,
+)
+from src.monthly_portfolio_decision_brief import (
+    DEFAULT_OUT_JSON as DEFAULT_MONTHLY_PORTFOLIO_DECISION_BRIEF_JSON_OUTPUT,
+)
+from src.monthly_portfolio_decision_brief import run_monthly_portfolio_decision_brief
 from src.performance_engine import run_performance_engine
 from src.personal_decision_quality_state import run_decision_quality_state
 from src.personal_decision_journal_validation import (
@@ -157,6 +164,7 @@ STAGE_ORDER = [
     "decision_journal_validation",
     "data_freshness",
     "dashboard_operator_summary",
+    "monthly_portfolio_decision_brief",
     "history",
     "benchmark_archive",
     "performance",
@@ -250,6 +258,8 @@ DEFAULT_PATHS = {
     "data_freshness_config": DEFAULT_DATA_FRESHNESS_CONFIG,
     "data_freshness_summary_output": "data/processed/data_freshness_summary.json",
     "review_queue_summary_output": "data/processed/review_queue_summary.json",
+    "monthly_portfolio_decision_brief_json_output": DEFAULT_MONTHLY_PORTFOLIO_DECISION_BRIEF_JSON_OUTPUT,
+    "monthly_portfolio_decision_brief_csv_output": DEFAULT_MONTHLY_PORTFOLIO_DECISION_BRIEF_CSV_OUTPUT,
     "portfolio_archive": "data/processed/portfolio_snapshot_archive.csv",
     "portfolio_timeseries_output": "data/processed/portfolio_timeseries.csv",
     "portfolio_history_summary_output": "data/processed/portfolio_history_summary.csv",
@@ -419,6 +429,9 @@ class PersonalRunOptions:
     data_freshness_summary_output: str = DEFAULT_PATHS["data_freshness_summary_output"]
     data_freshness_report_output: str | None = None
     review_queue_summary_output: str = DEFAULT_PATHS["review_queue_summary_output"]
+    monthly_portfolio_decision_brief_json_output: str = DEFAULT_PATHS["monthly_portfolio_decision_brief_json_output"]
+    monthly_portfolio_decision_brief_csv_output: str = DEFAULT_PATHS["monthly_portfolio_decision_brief_csv_output"]
+    monthly_portfolio_decision_brief_report_output: str | None = None
     portfolio_archive: str = DEFAULT_PATHS["portfolio_archive"]
     portfolio_timeseries_output: str = DEFAULT_PATHS["portfolio_timeseries_output"]
     portfolio_history_summary_output: str = DEFAULT_PATHS["portfolio_history_summary_output"]
@@ -491,6 +504,9 @@ class PersonalRunOptions:
             self.cost_tax_report_output = default_dated_report_path("cost_tax_report.md")
         if self.dashboard_report_output is None:
             self.dashboard_report_output = default_dated_report_path("dashboard_report.md")
+        if self.monthly_portfolio_decision_brief_report_output is None:
+            report_date = self.portfolio_date or date.today().isoformat()
+            self.monthly_portfolio_decision_brief_report_output = f"reports/{report_date}/monthly_portfolio_decision_brief.md"
         if self.decision_journal_validation_report_output is None:
             self.decision_journal_validation_report_output = default_dated_report_path("decision_journal_validation_report.md")
         if self.data_freshness_report_output is None:
@@ -1557,6 +1573,51 @@ def run_dashboard_operator_summary_stage(options: PersonalRunOptions) -> StageRe
     )
 
 
+def run_monthly_portfolio_decision_brief_stage(options: PersonalRunOptions) -> StageResult:
+    stage = "monthly_portfolio_decision_brief"
+    result = run_monthly_portfolio_decision_brief(
+        as_of_date=options.portfolio_date or date.today().isoformat(),
+        monthly_ranking=options.monthly_ranking_output,
+        cash_refill=options.cash_refill_csv_output,
+        rebalance=options.rebalance_review_csv_output,
+        data_freshness=options.data_freshness_summary_output,
+        decision_quality=options.decision_quality_json_output,
+        decision_review_queue=options.decision_review_queue_output,
+        out_json=options.monthly_portfolio_decision_brief_json_output,
+        out_csv=options.monthly_portfolio_decision_brief_csv_output,
+        report=options.monthly_portfolio_decision_brief_report_output,
+    )
+    brief_status = str(result.brief.get("decision_brief_status") or "UNKNOWN")
+    warnings = []
+    if brief_status == "BLOCKED":
+        warnings.append("Monthly Portfolio Decision Brief is BLOCKED; mandatory evidence is missing, unreadable or schema-invalid.")
+    elif brief_status != "READY":
+        warnings.append(f"Monthly Portfolio Decision Brief status is {brief_status}; human operator review remains required.")
+    return stage_result(
+        stage,
+        SUCCESS,
+        ["monthly_ranking_output"],
+        used_inputs={
+            "monthly_ranking_output": options.monthly_ranking_output,
+            "cash_refill_review": options.cash_refill_csv_output,
+            "rebalance_review": options.rebalance_review_csv_output,
+            "data_freshness_summary": options.data_freshness_summary_output,
+            "decision_quality_state_json": options.decision_quality_json_output,
+            "decision_review_queue": options.decision_review_queue_output,
+        },
+        produced_outputs={
+            "monthly_portfolio_decision_brief_json": str(result.json_output),
+            "monthly_portfolio_decision_brief_csv": str(result.csv_output),
+            "monthly_portfolio_decision_brief_report": str(result.report_output),
+        },
+        warnings=warnings,
+        notes=(
+            f"Read-only Monthly Portfolio Decision Brief generated with decision_brief_status={brief_status}; "
+            "existing upstream evidence is consolidated without score, ranking, valuation, portfolio-rule or order logic changes."
+        ),
+    )
+
+
 def run_data_freshness_stage(options: PersonalRunOptions) -> StageResult:
     stage = "data_freshness"
     result = run_data_freshness(
@@ -1846,6 +1907,7 @@ STAGE_RUNNERS: dict[str, Callable[[PersonalRunOptions], StageResult]] = {
     "decision_journal_validation": run_decision_journal_validation_stage,
     "data_freshness": run_data_freshness_stage,
     "dashboard_operator_summary": run_dashboard_operator_summary_stage,
+    "monthly_portfolio_decision_brief": run_monthly_portfolio_decision_brief_stage,
     "history": run_history_stage,
     "benchmark_archive": run_benchmark_archive_stage,
     "performance": run_performance_stage,
@@ -2006,6 +2068,9 @@ def build_manifest(
             "data_freshness_summary_output": options.data_freshness_summary_output,
             "data_freshness_report_output": options.data_freshness_report_output or "",
             "review_queue_summary_output": options.review_queue_summary_output,
+            "monthly_portfolio_decision_brief_json_output": options.monthly_portfolio_decision_brief_json_output,
+            "monthly_portfolio_decision_brief_csv_output": options.monthly_portfolio_decision_brief_csv_output,
+            "monthly_portfolio_decision_brief_report_output": options.monthly_portfolio_decision_brief_report_output or "",
             "data_source_status_output": options.data_source_status_output,
             "data_source_resolved_output": options.data_source_resolved_output,
             "report_output": options.report_output or "",
@@ -2057,6 +2122,19 @@ def dashboard_operator_summary_from_artifacts(artifact_rows: list[dict[str, str]
             summary = read_dashboard_operator_summary(artifact_path)
             if summary:
                 return summary, artifact_path
+    return None, ""
+
+
+def monthly_portfolio_decision_brief_from_artifacts(artifact_rows: list[dict[str, str]]) -> tuple[dict[str, Any] | None, str]:
+    for row in artifact_rows:
+        if row["artifact_role"] == "monthly_portfolio_decision_brief_json" and row["produced"] == "True":
+            artifact_path = row["artifact_path"]
+            try:
+                brief = json.loads(resolve_repo_path(artifact_path).read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                return None, artifact_path
+            if isinstance(brief, dict):
+                return brief, artifact_path
     return None, ""
 
 
@@ -2115,6 +2193,25 @@ def write_run_report(path_value: str, manifest: dict[str, Any], artifact_rows: l
             include_heading=False,
         )
     )
+    monthly_brief, monthly_brief_path = monthly_portfolio_decision_brief_from_artifacts(artifact_rows)
+    lines.extend(["", "## Monthly Portfolio Decision Brief", ""])
+    if monthly_brief:
+        readiness = monthly_brief.get("portfolio_decision_readiness") if isinstance(monthly_brief.get("portfolio_decision_readiness"), dict) else {}
+        lines.extend(
+            [
+                f"- Source: `{monthly_brief_path}`",
+                f"- decision_brief_status: `{monthly_brief.get('decision_brief_status', 'UNKNOWN')}`",
+                f"- conservative_rule: `{readiness.get('conservative_rule', '')}`",
+                "- Boundary: read-only evidence consolidation; keine Order-Freigabe, keine Investment-Confidence, keine Buy/Sell-Automation.",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                "- Monthly Portfolio Decision Brief: `NOT_AVAILABLE`",
+                "- Boundary: read-only evidence consolidation; keine Order-Freigabe, keine Investment-Confidence, keine Buy/Sell-Automation.",
+            ]
+        )
     lines.extend(
         [
             "",
@@ -2363,6 +2460,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data-freshness-summary-output", default=DEFAULT_PATHS["data_freshness_summary_output"], help="Data Freshness / Staleness JSON summary output.")
     parser.add_argument("--data-freshness-report-output", help="Data Freshness / Staleness markdown report output; defaults to reports/{as_of_date}/data_freshness_summary.md.")
     parser.add_argument("--review-queue-summary-output", default=DEFAULT_PATHS["review_queue_summary_output"], help="Dashboard Operator Review Queue Summary JSON output.")
+    parser.add_argument(
+        "--monthly-portfolio-decision-brief-json-output",
+        default=DEFAULT_PATHS["monthly_portfolio_decision_brief_json_output"],
+        help="Monthly Portfolio Decision Brief JSON output.",
+    )
+    parser.add_argument(
+        "--monthly-portfolio-decision-brief-csv-output",
+        default=DEFAULT_PATHS["monthly_portfolio_decision_brief_csv_output"],
+        help="Monthly Portfolio Decision Brief CSV output.",
+    )
+    parser.add_argument("--monthly-portfolio-decision-brief-report-output", help="Monthly Portfolio Decision Brief markdown output.")
     parser.add_argument("--portfolio-archive", default=DEFAULT_PATHS["portfolio_archive"], help="Portfolio snapshot archive path.")
     parser.add_argument("--portfolio-timeseries-output", default=DEFAULT_PATHS["portfolio_timeseries_output"], help="Portfolio timeseries output.")
     parser.add_argument("--portfolio-history-summary-output", default=DEFAULT_PATHS["portfolio_history_summary_output"], help="Portfolio history summary output.")
@@ -2493,6 +2601,9 @@ def options_from_args(args: argparse.Namespace) -> PersonalRunOptions:
         data_freshness_summary_output=args.data_freshness_summary_output,
         data_freshness_report_output=args.data_freshness_report_output,
         review_queue_summary_output=args.review_queue_summary_output,
+        monthly_portfolio_decision_brief_json_output=args.monthly_portfolio_decision_brief_json_output,
+        monthly_portfolio_decision_brief_csv_output=args.monthly_portfolio_decision_brief_csv_output,
+        monthly_portfolio_decision_brief_report_output=args.monthly_portfolio_decision_brief_report_output,
         portfolio_archive=args.portfolio_archive,
         portfolio_timeseries_output=args.portfolio_timeseries_output,
         portfolio_history_summary_output=args.portfolio_history_summary_output,

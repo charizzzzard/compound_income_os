@@ -111,11 +111,28 @@ hashes, manifests, sanitized examples or omitted-artifact records. They must not
 include real private holdings, broker/provider files, private raw evidence,
 credentials, local absolute paths or private strategy material.
 
+## Personal Run Integration
+
+The brief is available as the optional Personal Run stage
+`monthly_portfolio_decision_brief`.
+
+The stage reuses the existing brief producer and must not duplicate ranking,
+scoring, valuation, portfolio-rule, evidence aggregation or Markdown rendering
+logic.
+
+The stage records generated JSON, CSV and Markdown outputs in the Personal Run
+artifact index and records the expected monthly ranking, portfolio-health, Data
+Freshness, Decision Quality and review-queue inputs in `personal_run_used_inputs`.
+
+Expected missing or degraded evidence is surfaced through the generated brief as
+`BLOCKED`, `REVIEW`, `MISSING`, `NOT_AVAILABLE`, `STALE`, `UNKNOWN`,
+`REVIEW_REQUIRED` or equivalent visible status. It must not be converted to a
+clean `READY` state.
+
 ## Future Extension Points
 
 Future patches may add:
 
-- Personal Run stage integration after upstream evidence ordering is accepted.
 - Sanitized example brief outputs.
 - Schema-level review artifacts.
 - Manifest/hash rows for local generated briefs.

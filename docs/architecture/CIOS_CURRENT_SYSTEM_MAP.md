@@ -87,6 +87,9 @@ The meta-governance baseline is defined by:
   runtime engine and not release, product, production or investment readiness.
 - Monthly Decision Report: report surface for portfolio health, decision
   quality and decision journal validation when explicit artifacts are present.
+- Monthly Portfolio Decision Brief: read-only evidence consolidation from
+  existing monthly ranking, portfolio-health, Data Freshness, Decision Quality
+  and review-queue artifacts; available as an optional Personal Run stage.
 - Personal Run Engine: explicit stage orchestration with manifest, used-inputs,
   artifact index, run report and canonical Stage-DAG review map in
   `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`.
@@ -115,12 +118,15 @@ The meta-governance baseline is defined by:
    explicit freshness signals and thresholds before the operator summary.
 10. `dashboard_operator_summary` aggregates Decision Quality, journal
    validation, review queue and Data Freshness state for operator follow-up.
-11. Report surfaces render available states and show `NOT_AVAILABLE` only when
+11. `monthly_portfolio_decision_brief` optionally consolidates already-produced
+   monthly ranking, portfolio-health, Data Freshness, Decision Quality and
+   review-queue artifacts into a generated local operator brief.
+12. Report surfaces render available states and show `NOT_AVAILABLE` only when
    an artifact is missing, unreadable or the stage did not run.
-12. External review gates classify coverage gaps and block future feature
+13. External review gates classify coverage gaps and block future feature
    classes where documentation, tests, runtime enforcement, clean-room
    reproduction or operator acceptance are not yet sufficient.
-13. Handoff export packages code, docs, tests, configs and selected review
+14. Handoff export packages code, docs, tests, configs and selected review
    context for external validation.
 
 ## Current `personal_run_engine` Stage Overview
@@ -154,12 +160,13 @@ Observed stage order:
 20. `decision_journal_validation`
 21. `data_freshness`
 22. `dashboard_operator_summary`
-23. `history`
-24. `benchmark_archive`
-25. `performance`
-26. `multi_benchmark`
-27. `cost_tax`
-28. `dashboard`
+23. `monthly_portfolio_decision_brief`
+24. `history`
+25. `benchmark_archive`
+26. `performance`
+27. `multi_benchmark`
+28. `cost_tax`
+29. `dashboard`
 
 `decision_quality` runs after the monthly and portfolio-health review stages.
 It writes:
@@ -183,6 +190,13 @@ It writes:
 `dashboard_operator_summary` runs after `data_freshness`. It writes:
 
 - `data/processed/review_queue_summary.json`
+
+`monthly_portfolio_decision_brief` runs after `dashboard_operator_summary` when
+explicitly selected. It writes:
+
+- `data/processed/monthly_portfolio_decision_brief.json`
+- `data/processed/monthly_portfolio_decision_brief.csv`
+- `reports/<as_of_date>/monthly_portfolio_decision_brief.md`
 
 The Stage-DAG document reduces the orchestration-documentation gap. It does not
 implement replay, outcome attribution, a Portfolio Event Ledger or a visual
@@ -264,7 +278,11 @@ dashboard.
 ## Report Surfaces
 
 - Personal Run Report: summarizes selected stages, produced artifacts, Decision
-  Quality and Decision Journal Validation when produced by the run.
+  Quality, Decision Journal Validation, Dashboard Operator Summary and Monthly
+  Portfolio Decision Brief state when produced by the run.
+- Monthly Portfolio Decision Brief: generated local report that consolidates
+  existing upstream monthly ranking and optional review evidence; it remains
+  decision support, not investment advice or order automation.
 - Monthly Decision Report: renders portfolio health, Decision Quality and
   Decision Journal Validation only when explicit state artifacts are supplied.
 - Decision Quality Surface: shows process/review confidence, hard blockers,

@@ -7,6 +7,7 @@ import sys
 import unittest
 from datetime import date
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from src import monthly_ranking_engine, portfolio_review, scoring_engine, watchlist_engine
@@ -640,6 +641,9 @@ class PersonalRunEngineTests(unittest.TestCase):
             data_freshness_summary_output=str(self._path(f"_tmp_{prefix}_data_freshness_summary.json")),
             data_freshness_report_output=str(self._path(f"_tmp_{prefix}_data_freshness_summary.md")),
             review_queue_summary_output=str(self._path(f"_tmp_{prefix}_review_queue_summary.json")),
+            monthly_portfolio_decision_brief_json_output=str(self._path(f"_tmp_{prefix}_monthly_portfolio_decision_brief.json")),
+            monthly_portfolio_decision_brief_csv_output=str(self._path(f"_tmp_{prefix}_monthly_portfolio_decision_brief.csv")),
+            monthly_portfolio_decision_brief_report_output=str(self._path(f"_tmp_{prefix}_monthly_portfolio_decision_brief.md")),
             portfolio_archive=str(self._path(f"_tmp_{prefix}_portfolio_archive.csv")),
             portfolio_timeseries_output=str(self._path(f"_tmp_{prefix}_portfolio_timeseries.csv")),
             portfolio_history_summary_output=str(self._path(f"_tmp_{prefix}_portfolio_history_summary.csv")),
@@ -827,6 +831,7 @@ class PersonalRunEngineTests(unittest.TestCase):
                 "decision_journal_validation",
                 "data_freshness",
                 "dashboard_operator_summary",
+                "monthly_portfolio_decision_brief",
                 "history",
                 "benchmark_archive",
                 "performance",
@@ -860,12 +865,122 @@ class PersonalRunEngineTests(unittest.TestCase):
         self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("decision_quality") + 1], "decision_journal_validation")
         self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("decision_journal_validation") + 1], "data_freshness")
         self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("data_freshness") + 1], "dashboard_operator_summary")
+        self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("dashboard_operator_summary") + 1], "monthly_portfolio_decision_brief")
+        self.assertEqual(STAGE_ORDER[STAGE_ORDER.index("monthly_portfolio_decision_brief") + 1], "history")
         self.assertIn("cash_refill_review", STAGE_RUNNERS)
         self.assertIn("rebalance_review", STAGE_RUNNERS)
         self.assertIn("decision_quality", STAGE_RUNNERS)
         self.assertIn("decision_journal_validation", STAGE_RUNNERS)
         self.assertIn("data_freshness", STAGE_RUNNERS)
         self.assertIn("dashboard_operator_summary", STAGE_RUNNERS)
+        self.assertIn("monthly_portfolio_decision_brief", STAGE_RUNNERS)
+
+    def test_monthly_portfolio_decision_brief_stage_reuses_existing_producer(self) -> None:
+        options = self._base_options("monthly_brief_reuse", ["monthly_portfolio_decision_brief"])
+        options.portfolio_date = "2026-05-19"
+        expected_brief = {"decision_brief_status": "READY"}
+        with patch("src.personal_run_engine.run_monthly_portfolio_decision_brief") as producer:
+            producer.return_value = SimpleNamespace(
+                json_output=Path(options.monthly_portfolio_decision_brief_json_output),
+                csv_output=Path(options.monthly_portfolio_decision_brief_csv_output),
+                report_output=Path(options.monthly_portfolio_decision_brief_report_output or ""),
+                brief=expected_brief,
+            )
+
+            result = STAGE_RUNNERS["monthly_portfolio_decision_brief"](options)
+
+        self.assertEqual(result.status, SUCCESS)
+        producer.assert_called_once_with(
+            as_of_date="2026-05-19",
+            monthly_ranking=options.monthly_ranking_output,
+            cash_refill=options.cash_refill_csv_output,
+            rebalance=options.rebalance_review_csv_output,
+            data_freshness=options.data_freshness_summary_output,
+            decision_quality=options.decision_quality_json_output,
+            decision_review_queue=options.decision_review_queue_output,
+            out_json=options.monthly_portfolio_decision_brief_json_output,
+            out_csv=options.monthly_portfolio_decision_brief_csv_output,
+            report=options.monthly_portfolio_decision_brief_report_output,
+        )
+
+    def test_monthly_portfolio_decision_brief_stage_blocks_missing_mandatory_ranking(self) -> None:
+        options = self._base_options("monthly_brief_missing_ranking", ["monthly_portfolio_decision_brief"])
+        options.portfolio_date = "2026-05-19"
+
+        manifest = run_personal_run_engine(options)
+
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        result = next(row for row in manifest["stage_results"] if row["stage_name"] == "monthly_portfolio_decision_brief")
+        self.assertEqual(result["status"], "SUCCESS")
+        self.assertIn("BLOCKED", " ".join(result["warnings"]))
+        brief = json.loads(Path(options.monthly_portfolio_decision_brief_json_output).read_text(encoding="utf-8"))
+        self.assertEqual(brief["decision_brief_status"], "BLOCKED")
+        self.assertNotEqual(brief["decision_brief_status"], "READY")
+        monthly_ranking = next(item for item in brief["input_artifact_status"] if item["label"] == "monthly_ranking")
+        self.assertEqual(monthly_ranking["status"], "MISSING")
+        artifact_roles = {
+            row["artifact_role"]
+            for row in read_csv_rows(options.artifacts_output)
+            if row["stage_name"] == "monthly_portfolio_decision_brief" and row["produced"] == "True"
+        }
+        self.assertEqual(
+            artifact_roles,
+            {
+                "monthly_portfolio_decision_brief_csv",
+                "monthly_portfolio_decision_brief_json",
+                "monthly_portfolio_decision_brief_report",
+            },
+        )
+        used_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "monthly_portfolio_decision_brief")
+        self.assertEqual(used_inputs["monthly_ranking_output"]["input_exists"], "False")
+        self.assertIn("data_freshness_summary", used_inputs)
+        run_report = Path(options.report_output or "").read_text(encoding="utf-8")
+        self.assertIn("## Monthly Portfolio Decision Brief", run_report)
+        self.assertIn("decision_brief_status: `BLOCKED`", run_report)
+        self.assertIn("monthly_portfolio_decision_brief_json", run_report)
+        lowered = run_report.lower()
+        for forbidden_phrase in ("buy now", "sell now", "place order", "execute order", "live trading"):
+            self.assertNotIn(forbidden_phrase, lowered)
+
+    def test_monthly_portfolio_decision_brief_stage_preserves_optional_missing_evidence(self) -> None:
+        options = self._base_options("monthly_brief_optional_missing", ["monthly_portfolio_decision_brief"])
+        options.portfolio_date = "2026-05-19"
+        self._write_csv(
+            Path(options.monthly_ranking_output),
+            monthly_ranking_engine.OUTPUT_FIELDS,
+            [
+                {
+                    "rank": "1",
+                    "ticker": "MSFT",
+                    "company_name": "Microsoft",
+                    "target_action": "BUY",
+                    "suggested_buy_amount_eur": "100.00",
+                    "allocation_status": "UNDERWEIGHT",
+                    "rationale": "Synthetic upstream ranking row.",
+                    "constraint_checks": "PASS",
+                    "valuation_comment": "Existing upstream value preserved.",
+                    "mandate_fit_comment": "Existing upstream value preserved.",
+                }
+            ],
+        )
+
+        manifest = run_personal_run_engine(options)
+
+        self.assertEqual(manifest["run_status"], "SUCCESS")
+        brief = json.loads(Path(options.monthly_portfolio_decision_brief_json_output).read_text(encoding="utf-8"))
+        self.assertEqual(brief["decision_brief_status"], "REVIEW")
+        statuses = {item["label"]: item["status"] for item in brief["input_artifact_status"]}
+        self.assertEqual(statuses["monthly_ranking"], "AVAILABLE")
+        self.assertEqual(statuses["cash_refill_review"], "MISSING")
+        self.assertEqual(statuses["rebalance_review"], "MISSING")
+        self.assertEqual(statuses["data_freshness_summary"], "MISSING")
+        self.assertEqual(brief["data_freshness_summary"]["overall_status"], "NOT_AVAILABLE")
+        self.assertEqual(brief["decision_quality_summary"]["decision_confidence_level"], "NOT_AVAILABLE")
+        used_inputs = self._used_inputs_for_stage(read_csv_rows(options.used_inputs_output), "monthly_portfolio_decision_brief")
+        self.assertEqual(used_inputs["monthly_ranking_output"]["input_exists"], "True")
+        self.assertEqual(used_inputs["cash_refill_review"]["input_exists"], "False")
+        self.assertEqual(used_inputs["rebalance_review"]["input_exists"], "False")
+        self.assertEqual(used_inputs["data_freshness_summary"]["input_exists"], "False")
 
     def test_targeted_cash_refill_review_stage_writes_outputs(self) -> None:
         options = self._base_options("cash_refill_stage", ["cash_refill_review"])
