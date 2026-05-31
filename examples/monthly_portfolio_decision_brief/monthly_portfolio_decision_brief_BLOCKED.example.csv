@@ -1,0 +1,9 @@
+section,item,status,value,source_artifact,notes
+identity,as_of_date,AVAILABLE,2026-05-30,,Synthetic sanitized example.
+portfolio_decision_readiness,decision_brief_status,BLOCKED,BLOCKED,,Mandatory monthly ranking evidence is missing; no readiness or action is inferred.
+input_artifact_status,monthly_ranking,MISSING,missing,examples/monthly_portfolio_decision_brief/synthetic_inputs/monthly_ranking_BLOCKED.csv,SYNTHETIC_EXAMPLE_MANDATORY_INPUT_MISSING
+ranking_summary,top_rows,MISSING,0,examples/monthly_portfolio_decision_brief/synthetic_inputs/monthly_ranking_BLOCKED.csv,No candidate rows are available because mandatory ranking evidence is missing.
+data_freshness_summary,overall_status,NOT_AVAILABLE,NOT_AVAILABLE,,Not evaluated in this synthetic blocked surface.
+decision_quality_summary,decision_confidence_level,,NOT_AVAILABLE,,Process confidence only; not investment confidence.
+portfolio_health_summary,cash_refill_status,NOT_AVAILABLE,NOT_AVAILABLE,,Not evaluated in this synthetic blocked surface.
+review_queue_summary,queue_items,,0,,Synthetic queue not evaluated.

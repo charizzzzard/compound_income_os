@@ -13,6 +13,9 @@ external review and Human Operator inspection:
 - `monthly_portfolio_decision_brief_REVIEW.example.*`: mandatory ranking evidence
   is available, while optional evidence contains visible `MISSING`, `STALE`,
   `UNKNOWN`, `REVIEW_REQUIRED`, `NOT_AVAILABLE` and `NOT_APPLICABLE` states.
+- `monthly_portfolio_decision_brief_BLOCKED.example.*`: mandatory monthly
+  ranking evidence is missing, so the surface stays `BLOCKED` and does not infer
+  candidate rows, readiness or action.
 
 Paths under `examples/monthly_portfolio_decision_brief/synthetic_inputs/*`, when
 shown inside example JSON, CSV or Markdown files, are illustrative

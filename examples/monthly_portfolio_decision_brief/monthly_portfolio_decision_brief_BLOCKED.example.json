@@ -1,0 +1,73 @@
+{
+  "as_of_date": "2026-05-30",
+  "data_freshness_summary": {
+    "artifact_status": "NOT_AVAILABLE",
+    "degraded_state_indicators": [],
+    "overall_status": "NOT_AVAILABLE",
+    "reason": "SYNTHETIC_EXAMPLE_NOT_EVALUATED_BECAUSE_MANDATORY_RANKING_MISSING",
+    "review_required": false,
+    "summary_counts": {}
+  },
+  "decision_brief_status": "BLOCKED",
+  "decision_quality_summary": {
+    "artifact_status": "NOT_AVAILABLE",
+    "decision_confidence_level": "NOT_AVAILABLE",
+    "process_confidence_not_investment_confidence": true,
+    "reason": "SYNTHETIC_EXAMPLE_NOT_EVALUATED_BECAUSE_MANDATORY_RANKING_MISSING",
+    "review_required": false
+  },
+  "generated_at_utc": "2026-05-30T00:00:00Z",
+  "input_artifact_status": [
+    {
+      "exists": false,
+      "expected_input_path": "examples/monthly_portfolio_decision_brief/synthetic_inputs/monthly_ranking_BLOCKED.csv",
+      "label": "monthly_ranking",
+      "mandatory": true,
+      "reason": "SYNTHETIC_EXAMPLE_MANDATORY_INPUT_MISSING",
+      "source_stage": "monthly",
+      "status": "MISSING"
+    }
+  ],
+  "non_claims": [
+    "no order execution",
+    "no buy/sell automation",
+    "no investment advice",
+    "no valuation automation",
+    "no scoring formula change",
+    "no ranking formula change",
+    "no portfolio rule change",
+    "no broker/provider/API integration",
+    "no replay/backtesting/outcome attribution"
+  ],
+  "operator_acceptance_boundary": "Human Operator review required; this synthetic example is evidence-surface documentation only.",
+  "operator_checklist": [
+    "Review the missing mandatory monthly ranking evidence before relying on the brief.",
+    "Do not infer candidate rows, readiness or operator action from missing mandatory evidence.",
+    "Record the final human decision separately where required."
+  ],
+  "portfolio_decision_readiness": {
+    "conservative_rule": "Missing mandatory inputs result in BLOCKED; degraded or missing review evidence results in REVIEW.",
+    "decision_brief_status": "BLOCKED"
+  },
+  "portfolio_health_summary": {
+    "cash_refill_artifact_status": "NOT_AVAILABLE",
+    "cash_refill_status": "NOT_AVAILABLE",
+    "rebalance_actions": [],
+    "rebalance_artifact_status": "NOT_AVAILABLE",
+    "rebalance_statuses": [],
+    "review_required": false
+  },
+  "ranking_summary": {
+    "artifact_status": "MISSING",
+    "row_count": 0,
+    "top_rows": []
+  },
+  "review_queue_summary": {
+    "artifact_status": "NOT_AVAILABLE",
+    "queue_items": 0,
+    "reason": "SYNTHETIC_EXAMPLE_NOT_EVALUATED_BECAUSE_MANDATORY_RANKING_MISSING",
+    "review_required": false
+  },
+  "schema_version": 1,
+  "source_module": "src.monthly_portfolio_decision_brief"
+}

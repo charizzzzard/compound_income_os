@@ -16,7 +16,12 @@ EXPECTED_FILES = [
     "monthly_portfolio_decision_brief_REVIEW.example.json",
     "monthly_portfolio_decision_brief_REVIEW.example.csv",
     "monthly_portfolio_decision_brief_REVIEW.example.md",
+    "monthly_portfolio_decision_brief_BLOCKED.example.json",
+    "monthly_portfolio_decision_brief_BLOCKED.example.csv",
+    "monthly_portfolio_decision_brief_BLOCKED.example.md",
 ]
+
+EXAMPLE_STATUSES = ("READY", "REVIEW", "BLOCKED")
 
 CSV_FIELDS = ["section", "item", "status", "value", "source_artifact", "notes"]
 
@@ -64,7 +69,7 @@ def test_expected_example_files_exist() -> None:
 
 
 def test_json_examples_parse_and_are_marked_synthetic() -> None:
-    for status in ("READY", "REVIEW"):
+    for status in EXAMPLE_STATUSES:
         payload = _json_example(status)
 
         assert payload["decision_brief_status"] == status
@@ -74,7 +79,7 @@ def test_json_examples_parse_and_are_marked_synthetic() -> None:
 
 
 def test_csv_examples_parse_with_core_columns_and_status() -> None:
-    for status in ("READY", "REVIEW"):
+    for status in EXAMPLE_STATUSES:
         rows = _csv_rows(status)
 
         assert rows
@@ -85,7 +90,7 @@ def test_csv_examples_parse_with_core_columns_and_status() -> None:
 
 
 def test_markdown_examples_contain_sanitized_disclaimer_and_status() -> None:
-    for status in ("READY", "REVIEW"):
+    for status in EXAMPLE_STATUSES:
         text = _read_example(f"monthly_portfolio_decision_brief_{status}.example.md")
 
         assert "synthetic and sanitized reviewer-facing example" in text
@@ -117,6 +122,27 @@ def test_review_example_preserves_optional_evidence_gaps() -> None:
     assert payload["decision_quality_summary"]["process_confidence_not_investment_confidence"] is True
 
 
+def test_blocked_example_represents_missing_mandatory_ranking_surface() -> None:
+    payload = _json_example("BLOCKED")
+    rows = _csv_rows("BLOCKED")
+    markdown = _read_example("monthly_portfolio_decision_brief_BLOCKED.example.md")
+    combined = json.dumps(payload, sort_keys=True) + _read_example("monthly_portfolio_decision_brief_BLOCKED.example.csv") + markdown
+
+    assert payload["decision_brief_status"] == "BLOCKED"
+    assert payload["portfolio_decision_readiness"]["decision_brief_status"] == "BLOCKED"
+    monthly_ranking = next(row for row in payload["input_artifact_status"] if row["label"] == "monthly_ranking")
+    assert monthly_ranking["mandatory"] is True
+    assert monthly_ranking["exists"] is False
+    assert monthly_ranking["status"] == "MISSING"
+    assert payload["ranking_summary"]["artifact_status"] == "MISSING"
+    assert payload["ranking_summary"]["row_count"] == 0
+    assert payload["ranking_summary"]["top_rows"] == []
+    assert next(row for row in rows if row["item"] == "decision_brief_status")["value"] == "BLOCKED"
+    assert "decision_brief_status: `BLOCKED`" in markdown
+    assert "Mandatory monthly ranking evidence is missing" in combined
+    assert "no candidate rows are inferred" in combined
+
+
 def test_examples_do_not_contain_forbidden_private_or_local_patterns() -> None:
     for path in sorted(EXAMPLE_DIR.iterdir()):
         if not path.is_file():
@@ -144,7 +170,7 @@ def test_contract_points_to_sanitized_examples_without_changing_generated_bounda
     assert "reviewer-facing documentation artifacts only" in compact
     assert "data/processed/monthly_portfolio_decision_brief.json" in text
     assert "reports/<as_of_date>/monthly_portfolio_decision_brief.md" in text
-    assert "Additional sanitized example brief outputs, including a `BLOCKED` example." in text
+    assert "Additional sanitized example brief outputs for other edge cases." in text
     assert "- Sanitized example brief outputs." not in text
 
 

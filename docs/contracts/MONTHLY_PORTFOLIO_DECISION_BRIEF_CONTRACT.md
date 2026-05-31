@@ -140,7 +140,7 @@ clean `READY` state.
 
 Future patches may add:
 
-- Additional sanitized example brief outputs, including a `BLOCKED` example.
+- Additional sanitized example brief outputs for other edge cases.
 - Machine-readable schema-level review artifacts, if a future patch needs them.
 - Manifest/hash rows for local generated briefs.
 - Ranking robustness and sensitivity evidence once a producer exists.
