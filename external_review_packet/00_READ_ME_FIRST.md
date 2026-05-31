@@ -1,43 +1,52 @@
-# External Review Packet - Full Portfolio Capability Execution Audit
+# External Review Packet - Audit Command Provenance Hardening
 
-- patch_title: `FULL_PORTFOLIO_CAPABILITY_EXECUTION_AUDIT`
-- bundle_purpose: `canonical_external_review_handoff_after_full_portfolio_capability_execution_audit`
+- patch_title: `AUDIT_COMMAND_PROVENANCE_HARDENING`
+- bundle_purpose: `external_review_after_audit_command_provenance_hardening`
 - branch: `main`
-- head: `b1ee048965def207f2021fcb19cb9cf3cd19105d`
+- implementation_head: `163585ed9c5b53a5520babbc8de738e75c89091b`
 - central_handoff_path: `external_review_packet/`
 - handoff_zip: `external_review_packet/HANDOFF_LATEST.zip`
-- handoff_sha256: `06786886302F294F2BC5A35E28E3576B4BB6EB269A74522E1C6C6BA179267CDA`
+- handoff_sha256: `7FB20A829210D74BA549F56BC2589C152554CAB9DDF2C82A228DCD72B40C60D6`
 
 ## Review Scope
 
-This packet packages the already performed full portfolio capability execution audit for external review. It includes a canonical audit report, capability execution matrix, taxonomy check, artifact index, validation evidence, source capability inventory and selected governance/contracts.
+This packet packages the `AUDIT_COMMAND_PROVENANCE_HARDENING` patch for external
+review. The patch creates a forward-looking command provenance standard for
+future Full Portfolio Capability Execution Audits.
 
-The packet is review evidence only. It does not implement feature logic, change scoring/ranking/valuation/portfolio rules, publish private/raw/generated personal portfolio data, execute orders, create broker writes, enable auto-trading, or claim production/investment readiness.
+The patch does not reconstruct previous audit commands and does not claim that
+old audit artifacts are now fully reproduced. It defines how future audits must
+record command provenance deterministically at execution or inspection time.
 
-This `external_review_packet/` state replaces the previous Monthly-Brief central handoff for the current review purpose. `HANDOFF_LATEST.zip` remains an ignored/untracked upload and transport artifact; it is not force-added to Git. `HANDOFF_LATEST.sha256` is the committed integrity pointer for the externally supplied ZIP. The top-level audit files are committed reviewer-facing extracted evidence.
-
-## Primary Files
-
-1. `external_review_packet/HANDOFF_LATEST_CONTEXT.md`
-2. `external_review_packet/HANDOFF_LATEST.sha256`
-3. `external_review_packet/HANDOFF_LATEST.zip`
+## Primary Review Files
 
 Inside the ZIP, start with:
 
-1. `external_review_packet/FULL_PORTFOLIO_CAPABILITY_EXECUTION_AUDIT_REPORT.md`
-2. `external_review_packet/AUDIT_CAPABILITY_EXECUTION_MATRIX.csv`
-3. `external_review_packet/AUDIT_ARTIFACTS_INDEX.csv`
-4. `external_review_packet/AUDIT_TAXONOMY_CHECK.csv`
-5. `external_review_packet/AUDIT_VALIDATION_EVIDENCE.md`
-6. `HANDOFF_MANIFEST.csv`
-7. `HANDOFF_ARTIFACT_INDEX.csv`
-8. `HANDOFF_OMITTED_ARTIFACTS.csv`
-9. `HANDOFF_VALIDATION.txt`
+1. `docs/contracts/AUDIT_COMMAND_PROVENANCE_CONTRACT.md`
+2. `examples/audit_command_provenance/audit_run_manifest.example.json`
+3. `src/audit_command_provenance.py`
+4. `tests/test_audit_command_provenance.py`
+5. `docs/governance/FULL_PORTFOLIO_CAPABILITY_EXECUTION_AUDIT_ACCEPTANCE.md`
+6. `external_review_packet/FULL_PORTFOLIO_CAPABILITY_EXECUTION_AUDIT_REPORT.md`
+7. `external_review_packet/AUDIT_CAPABILITY_EXECUTION_MATRIX.csv`
+8. `external_review_packet/AUDIT_VALIDATION_EVIDENCE.md`
+9. `HANDOFF_MANIFEST.csv`
+10. `HANDOFF_ARTIFACT_INDEX.csv`
+11. `HANDOFF_CHANGE_CLASSIFICATION.csv`
+12. `HANDOFF_VALIDATION.txt`
 
-## Known Review Finding
+## ZIP Policy
 
-`docs/architecture/CIOS_FEATURE_STATUS.yaml` uses status `documented`, but `status_values` does not declare it. This is recorded as `AUDIT_TAXONOMY_FINDING`; it is not silently normalized.
+`HANDOFF_LATEST.zip` remains an ignored/untracked upload and transport artifact.
+It is not force-added to Git. `HANDOFF_LATEST.sha256` is the committed integrity
+pointer for the externally supplied ZIP.
 
 ## Boundary
 
-Human Operator remains final acceptance authority. External review must not infer omitted private/raw/broker/provider/local/generated data.
+This packet is governance and audit provenance evidence only. It does not
+implement feature logic, change scoring/ranking/valuation/portfolio rules,
+publish private/raw/generated personal portfolio data, execute orders, create
+broker writes, enable auto-trading, or claim production/investment readiness.
+
+Human Operator remains final acceptance authority. External review must not
+infer omitted private/raw/broker/provider/local/generated data.
