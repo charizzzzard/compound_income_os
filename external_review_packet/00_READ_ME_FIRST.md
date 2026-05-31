@@ -1,16 +1,16 @@
-# Compound Income OS External LLM Review Packet - Monthly Brief Operator Surface Completeness Hardening
+# Compound Income OS External LLM Review Packet - Monthly Brief Missing Routing Field Surface Regression Hardening
 
 Dies ist der Einstiegspunkt fuer die externe Review von Compound Income OS
-(CIOS) nach der Operator-Surface-Haertung fuer den Monthly Portfolio Decision
-Brief.
+(CIOS) nach der Testhaertung fuer fehlende `execution_mode` /
+`execution_mode_reason` Felder im Monthly Portfolio Decision Brief.
 
-- patch_title: `MONTHLY_BRIEF_OPERATOR_SURFACE_COMPLETENESS_HARDENING`
-- bundle_purpose: `external_review_after_monthly_brief_operator_surface_completeness_hardening`
-- implementation_head: `a0b86f410cedf303ccd3b7930eed2c9218166432`
-- central_handoff_zip_head: `a0b86f410cedf303ccd3b7930eed2c9218166432`
-- current_handoff_head: `a0b86f410cedf303ccd3b7930eed2c9218166432`
-- base_head: `78646d6a1aa6d96641bcaaab42cd6575a76e660b`
-- status: `MONTHLY_BRIEF_OPERATOR_SURFACE_COMPLETENESS_HARDENED`
+- patch_title: `MONTHLY_BRIEF_MISSING_ROUTING_FIELD_SURFACE_REGRESSION_HARDENING`
+- bundle_purpose: `external_review_after_monthly_brief_missing_routing_field_surface_regression_hardening`
+- implementation_head: `a2270a5d81f26f5d30a4b1786cbeccd84e7664a3`
+- central_handoff_zip_head: `a2270a5d81f26f5d30a4b1786cbeccd84e7664a3`
+- current_handoff_head: `a2270a5d81f26f5d30a4b1786cbeccd84e7664a3`
+- base_head: `c016b2634a2dbb22e72a91ba23cceb9b4f0c6a6a`
+- status: `MONTHLY_BRIEF_MISSING_ROUTING_FIELD_SURFACE_REGRESSION_HARDENED`
 
 Dieses Paket ersetzt aeltere Dateien in `external_review_packet/` fuer den
 aktuellen Review-Zweck. Es ist der einzige authoritative externe Handoff fuer
@@ -19,16 +19,14 @@ paralleler Review-Handoff.
 
 ## What Changed
 
-This packet represents an operator-surface hardening patch. It preserves
-upstream `execution_mode` and `execution_mode_reason` fields in the Monthly
-Portfolio Decision Brief when present, makes Data Freshness `summary_counts`
-visible in JSON/CSV/Markdown, keeps `NOT_APPLICABLE` visible, updates the
-sanitized examples and tests, and does not recalculate routing, ranking, scores,
-valuation or portfolio rules.
+This packet represents a test-hardening patch. It closes the carried-forward P2
+finding by adding targeted regression coverage for missing `execution_mode` and
+`execution_mode_reason` columns across JSON, CSV and Markdown Monthly Portfolio
+Decision Brief surfaces. Runtime behavior is unchanged.
 
 ## Reviewer Instructions
 
-- Review this as operator-surface hardening, not as investment logic expansion.
+- Review this as regression-test hardening, not as runtime feature expansion.
 - Use repo-relative paths in findings.
 - Check ZIP-internal metadata before assuming patch-delta scope.
 - Do not infer omitted private, raw, broker, provider, credential, user-agent,
@@ -48,10 +46,10 @@ Bei Konflikten gilt diese Reihenfolge:
 
 ## Handoff Integrity Summary
 
-- zip_sha256: `A7B0501A83AFFCA49C3FBBD25E885EAB9B0EEDA3D0EC7575483C299A388761F0`
+- zip_sha256: `FEBB79A44AFEFD7BE86BFC6CA890611DC55056FFE17331407E06765F9E9C8C35`
 - sha_match: validated after packet synchronization
 - zip_testzip: `None`
-- zip_file_count: `26`
+- zip_file_count: `17`
 - nested_zip_count: `0`
 - forbidden_match_count: `0`
 - local_path_leak_count: `0`
