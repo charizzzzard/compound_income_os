@@ -1,34 +1,34 @@
-# External Review Packet - Operational Backbone Stage 0 Identity And Staging Preflight
+# External Review Packet - Stage 0 Validator And ZIP Reproduction Hardening
 
-- patch_title: `OPERATIONAL_BACKBONE_STAGE_0_IDENTITY_AND_STAGING_PREFLIGHT`
-- bundle_purpose: `external_review_after_operational_backbone_stage_0_identity_and_staging_preflight`
+- patch_title: `STAGE_0_VALIDATOR_AND_ZIP_REPRO_HARDENING`
+- bundle_purpose: `external_review_after_stage_0_validator_and_zip_repro_hardening`
 - branch: `main`
-- implementation_head: `926dbc75337030602629d4e369855e2fe72ebd54`
-- base_head: `a7683b4c36bc3973d9019420d0e47a280abccec5`
+- implementation_head: `46097b7f1040a9b3f022f3d9708217e6250b4c7f`
+- base_head: `a12f2dba92d545c067e605bf5b34b4d0b12c670b`
+- handoff_metadata_commit: assigned by Git after this handoff metadata commit
+- current_origin_main_after_publish: verified through Git after push
 - central_handoff_path: `external_review_packet/`
 - handoff_zip: `external_review_packet/HANDOFF_LATEST.zip`
-- handoff_sha256: `F97E1603E88D02B63663427B06B84FB614D22CC409956568A7F82622902B8D37`
+- handoff_sha256: `EB860E505DD1F1F523532CFB2B17250FA9288A8D3DC008695EE94AE7A7E96F9F`
 
 ## Review Scope
 
-This packet packages the Stage-0 operational backbone preflight patch for
-external review. The patch adds validation-only groundwork before any future
-production Portfolio Event Ledger runtime, broker import runtime, replay,
-derived positions projection or outcome attribution work.
+This packet packages the Stage-0 validator and ZIP reproducibility hardening
+patch for external review. The patch closes carried-forward findings from
+`OPERATIONAL_BACKBONE_STAGE_0_IDENTITY_AND_STAGING_PREFLIGHT` without expanding
+scope into runtime broker import, Portfolio Event Ledger runtime, projections,
+replay, outcome attribution, portfolio-state mutation or investment logic.
 
-The patch introduces or hardens:
+The patch hardens:
 
-1. Instrument Master validation preflight.
-2. Broker Import Staging contract.
-3. Broker Import Staging template.
-4. Broker Import Staging validation preflight.
-5. Architecture/status documentation for pre-runtime validation-only scope.
-
-The intended sequence remains:
-
-Instrument Master and Broker Import Staging preflight before any future
-staging-to-ledger promotion contract, Portfolio Event Ledger runtime, derived
-positions projection, replay or outcome attribution.
+1. Instrument Master `asset_class` allowed-values and entry validation.
+2. Broker Import Staging `PASS` / instrument-match invariants for synthetic
+   instrument-bearing template rows.
+3. Patch-profile ZIP dependency inclusion for validator modules that import
+   `src.common`.
+4. Reviewer wording that distinguishes `implementation_head`,
+   `handoff_metadata_commit` / `publication_head`, and
+   `current_origin_main_after_publish`.
 
 ## Primary Review Files
 
@@ -42,11 +42,11 @@ Inside the ZIP, start with:
 6. `tests/test_broker_import_staging_validation.py`
 7. `docs/contracts/BROKER_IMPORT_STAGING_CONTRACT.md`
 8. `docs/architecture/CIOS_BROKER_IMPORT_STAGING_TEMPLATE.yaml`
-9. `docs/architecture/CIOS_FEATURE_STATUS.yaml`
-10. `docs/architecture/CURRENT_KNOWN_GAPS.md`
-11. `docs/architecture/CIOS_CURRENT_SYSTEM_MAP.md`
-12. `docs/contracts/PORTFOLIO_EVENT_LEDGER_CONTRACT.md`
-13. `src/portfolio_event_ledger_validation.py`
+9. `src/handoff_zip_export.py`
+10. `tests/test_handoff_zip_export.py`
+11. `tests/test_handoff_bundle.py`
+12. `src/common.py`
+13. `docs/governance/EXTERNAL_REPRODUCTION.md`
 14. `HANDOFF_MANIFEST.csv`
 15. `HANDOFF_ARTIFACT_INDEX.csv`
 16. `HANDOFF_CHANGE_CLASSIFICATION.csv`
@@ -61,17 +61,22 @@ Recorded local validation for this patch includes:
 - `python -m unittest tests.test_broker_import_staging_validation -v`
 - `python -m unittest tests.test_portfolio_event_ledger_validation -v`
 - `python -m unittest tests.test_data_source_registry_validation -v`
-- `python -m pytest tests/test_instrument_master_validation.py tests/test_broker_import_staging_validation.py tests/test_portfolio_event_ledger_validation.py tests/test_data_source_registry_validation.py -q`
+- `python -m pytest tests/test_instrument_master_validation.py tests/test_broker_import_staging_validation.py -q`
+- `python -m pytest tests/test_handoff_bundle.py tests/test_handoff_zip_export.py -q`
 - `python -m ruff check src tests docs`
 - `python -m pytest -q`
 
-The full local pytest run reported `1042 passed, 440 subtests passed`.
+The full local pytest run reported `1048 passed, 443 subtests passed`.
 
 ## ZIP Policy
 
 `HANDOFF_LATEST.zip` remains an ignored/untracked upload and transport artifact.
 It is not force-added to Git. `HANDOFF_LATEST.sha256` is the committed integrity
 pointer for the externally supplied ZIP.
+
+For ZIP-safe Python validation, direct repo-local Python dependencies required
+by included validator modules must also be present in the ZIP. This packet
+includes `src/common.py` when Stage-0 validator modules are included.
 
 ## Boundary
 
