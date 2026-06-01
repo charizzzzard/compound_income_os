@@ -24,6 +24,19 @@ ALLOWED_INSTRUMENT_TYPES = {
     "UNKNOWN_REVIEW_REQUIRED",
 }
 
+ALLOWED_ASSET_CLASSES = {
+    "EQUITY",
+    "FIXED_INCOME",
+    "CASH_OR_CURRENCY",
+    "CRYPTO",
+    "MULTI_ASSET",
+    "COMMODITY",
+    "REAL_ESTATE",
+    "DERIVATIVE",
+    "OTHER_REVIEW_REQUIRED",
+    "UNKNOWN_REVIEW_REQUIRED",
+}
+
 ALLOWED_LIFECYCLE_STATUSES = {
     "ACTIVE",
     "INACTIVE",
@@ -195,6 +208,7 @@ def _validate_allowed_values(data: dict[str, Any], errors: list[str]) -> None:
 
     expected = {
         "instrument_type": ALLOWED_INSTRUMENT_TYPES,
+        "asset_class": ALLOWED_ASSET_CLASSES,
         "lifecycle_status": ALLOWED_LIFECYCLE_STATUSES,
         "identity_confidence": ALLOWED_IDENTITY_CONFIDENCE,
         "review_status": ALLOWED_REVIEW_STATUSES,
@@ -230,6 +244,7 @@ def _validate_entry(entry: dict[str, Any], index: int, errors: list[str]) -> tup
         _add_error(errors, label, "template canonical_instrument_id must use IM_TEMPLATE_ placeholder")
 
     instrument_type = _string(entry.get("instrument_type"))
+    asset_class = _string(entry.get("asset_class"))
     lifecycle_status = _string(entry.get("lifecycle_status"))
     identity_confidence = _string(entry.get("identity_confidence"))
     review_status = _string(entry.get("review_status"))
@@ -238,6 +253,10 @@ def _validate_entry(entry: dict[str, Any], index: int, errors: list[str]) -> tup
 
     if instrument_type and instrument_type not in ALLOWED_INSTRUMENT_TYPES:
         _add_error(errors, label, f"invalid instrument_type: {instrument_type}")
+    if not asset_class:
+        _add_error(errors, label, "asset_class is required")
+    elif asset_class not in ALLOWED_ASSET_CLASSES:
+        _add_error(errors, label, f"invalid asset_class: {asset_class}")
     if lifecycle_status and lifecycle_status not in ALLOWED_LIFECYCLE_STATUSES:
         _add_error(errors, label, f"invalid lifecycle_status: {lifecycle_status}")
     if identity_confidence and identity_confidence not in ALLOWED_IDENTITY_CONFIDENCE:

@@ -152,6 +152,13 @@ PATCH_FILE_LISTS = {
     ),
 }
 
+PYTHON_INCLUDE_DEPENDENCIES = {
+    "src/instrument_master_validation.py": ("src/common.py",),
+    "src/broker_import_staging_validation.py": ("src/common.py",),
+    "src/portfolio_event_ledger_validation.py": ("src/common.py",),
+    "src/data_source_registry_validation.py": ("src/common.py",),
+}
+
 
 @dataclass(frozen=True)
 class HandoffExportResult:
@@ -215,6 +222,17 @@ def paths_from_globs(repo_root: Path, globs: list[str] | tuple[str, ...]) -> lis
     return paths
 
 
+def expand_python_include_dependencies(include_paths: list[str] | tuple[str, ...]) -> list[str]:
+    selected = [normalize_entry_name(path) for path in include_paths]
+    selected_set = set(selected)
+    for path in tuple(selected):
+        for dependency in PYTHON_INCLUDE_DEPENDENCIES.get(path, ()):
+            if dependency not in selected_set:
+                selected.append(dependency)
+                selected_set.add(dependency)
+    return selected
+
+
 def recursive_profile_paths(repo_root: Path, dirs: tuple[str, ...]) -> list[str]:
     paths: list[str] = []
     for rel_dir in dirs:
@@ -235,7 +253,7 @@ def recursive_profile_paths(repo_root: Path, dirs: tuple[str, ...]) -> list[str]
 def profile_include_paths(profile: str, name: str, repo_root: Path, explicit_includes: list[str] | None = None) -> list[str]:
     explicit = list(explicit_includes or [])
     if profile == "patch":
-        return sorted(set(explicit or PATCH_FILE_LISTS.get(name, ())))
+        return sorted(set(expand_python_include_dependencies(explicit or PATCH_FILE_LISTS.get(name, ()))))
     if profile == "manifest_only":
         return []
     if profile == "data_closure":

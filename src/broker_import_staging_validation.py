@@ -102,6 +102,13 @@ REVIEW_REQUIRED_MATCH_STATUSES = {
     "NO_MATCH_REVIEW_REQUIRED",
 }
 
+INSTRUMENT_BEARING_EVENT_TYPES = {
+    "BUY",
+    "SELL",
+    "DIVIDEND",
+    "CORPORATE_ACTION_REVIEW_REQUIRED",
+}
+
 FORBIDDEN_PATH_RE = re.compile(r"(^[a-zA-Z]:)|(^\\\\)|(^/)|(^~)|(^|/)\.\.(/|$)")
 REAL_ACCOUNT_RE = re.compile(r"(^DE\d{20}$)|(\d{8,})|(^[A-Z]{2}\d{10,})")
 
@@ -234,8 +241,21 @@ def _validate_row(row: dict[str, Any], index: int, errors: list[str]) -> str:
     if review_status and review_status not in ALLOWED_REVIEW_STATUSES:
         _add_error(errors, label, f"invalid review_status: {review_status}")
 
+    proposed_id = _string(row.get("proposed_canonical_instrument_id"))
+
     if validation_status == "PASS" and instrument_match_status in REVIEW_REQUIRED_MATCH_STATUSES:
         _add_error(errors, label, "ambiguous or missing instrument match cannot use validation_status PASS")
+    if validation_status == "PASS" and instrument_match_status == "NOT_APPLICABLE":
+        _add_error(errors, label, "validation_status PASS cannot use instrument_match_status NOT_APPLICABLE")
+    if raw_event_type in INSTRUMENT_BEARING_EVENT_TYPES and validation_status == "PASS":
+        if instrument_match_status != "MATCHED_SYNTHETIC":
+            _add_error(errors, label, "PASS instrument-bearing rows require MATCHED_SYNTHETIC instrument_match_status")
+        if (
+            not proposed_id
+            or proposed_id in {"TO_BE_REVIEWED", "NOT_APPLICABLE"}
+            or not proposed_id.startswith("IM_TEMPLATE_")
+        ):
+            _add_error(errors, label, "PASS instrument-bearing rows require IM_TEMPLATE_ proposed_canonical_instrument_id")
     if instrument_match_status in REVIEW_REQUIRED_MATCH_STATUSES and review_status not in {
         "OPERATOR_REVIEW_REQUIRED",
         "INSTRUMENT_REVIEW_REQUIRED",
@@ -245,7 +265,6 @@ def _validate_row(row: dict[str, Any], index: int, errors: list[str]) -> str:
     }:
         _add_error(errors, label, "ambiguous or missing instrument match requires explicit review status")
 
-    proposed_id = _string(row.get("proposed_canonical_instrument_id"))
     if proposed_id and proposed_id not in {"TO_BE_REVIEWED", "NOT_APPLICABLE"} and not proposed_id.startswith("IM_TEMPLATE_"):
         _add_error(errors, label, "proposed_canonical_instrument_id must remain a template placeholder")
     if instrument_match_status in REVIEW_REQUIRED_MATCH_STATUSES and proposed_id.startswith("IM_TEMPLATE_") and review_status == "READY_FOR_REVIEW":

@@ -61,6 +61,20 @@ class InstrumentMasterValidationTests(unittest.TestCase):
         self.assertIn("ticker alone is never sufficient", errors)
         self.assertIn("ticker identifiers are aliases", errors)
 
+    def test_invalid_entry_asset_class_is_rejected(self) -> None:
+        template = self._first_instrument(asset_class="PRODUCTION_GRADE_ASSET")
+        self.assertIn("invalid asset_class", self._errors_for(template))
+
+    def test_invalid_allowed_asset_class_is_rejected(self) -> None:
+        template = self._template()
+        template["allowed_values"]["asset_class"].append("PRODUCTION_GRADE_ASSET")
+        self.assertIn("allowed_values.asset_class contains invalid values", self._errors_for(template))
+
+    def test_missing_expected_allowed_asset_class_is_rejected(self) -> None:
+        template = self._template()
+        template["allowed_values"]["asset_class"].remove("UNKNOWN_REVIEW_REQUIRED")
+        self.assertIn("allowed_values.asset_class is missing contract values", self._errors_for(template))
+
     def test_production_readiness_overclaims_are_rejected(self) -> None:
         template = self._template()
         template["registry_status"] = "ACTIVE_PRODUCTION"

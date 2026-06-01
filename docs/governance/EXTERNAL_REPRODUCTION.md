@@ -34,6 +34,16 @@ should inspect `HANDOFF_PATCH_IDENTITY.md` and
 `HANDOFF_CHANGE_CLASSIFICATION.csv` before accepting that a bundle proves the
 actual patch delta between base and implementation head.
 
+For handoffs that use a separate metadata commit, distinguish these Git heads:
+
+- `implementation_head`: the source/docs/tests commit whose patch delta is
+  represented inside the ZIP.
+- `handoff_metadata_commit` or `publication_head`: the later commit that updates
+  `external_review_packet/` metadata and the committed SHA pointer.
+- `current_origin_main_after_publish`: the remote branch head verified after
+  publication. This is Git publication evidence and is not required to appear
+  inside the implementation ZIP, because doing so would create self-reference.
+
 Use these validation result labels when reporting handoff evidence:
 
 | label | meaning |

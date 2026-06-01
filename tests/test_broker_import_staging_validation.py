@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import subprocess
 import unittest
 from copy import deepcopy
@@ -64,6 +65,60 @@ class BrokerImportStagingValidationTests(unittest.TestCase):
         errors = self._errors_for(template)
         self.assertIn("cannot use validation_status PASS", errors)
         self.assertIn("requires explicit review status", errors)
+
+    def test_pass_instrument_bearing_rows_require_synthetic_match_id(self) -> None:
+        cases = [
+            (
+                {
+                    "raw_event_type": "BUY",
+                    "validation_status": "PASS",
+                    "instrument_match_status": "MATCHED_SYNTHETIC",
+                    "proposed_canonical_instrument_id": "TO_BE_REVIEWED",
+                },
+                "require IM_TEMPLATE_ proposed_canonical_instrument_id",
+            ),
+            (
+                {
+                    "raw_event_type": "BUY",
+                    "validation_status": "PASS",
+                    "instrument_match_status": "NOT_APPLICABLE",
+                    "proposed_canonical_instrument_id": "NOT_APPLICABLE",
+                },
+                "cannot use instrument_match_status NOT_APPLICABLE",
+            ),
+            (
+                {
+                    "raw_event_type": "BUY",
+                    "validation_status": "PASS",
+                    "instrument_match_status": "MATCHED_SYNTHETIC",
+                    "proposed_canonical_instrument_id": "",
+                },
+                "require IM_TEMPLATE_ proposed_canonical_instrument_id",
+            ),
+        ]
+        for updates, expected in cases:
+            with self.subTest(updates=updates):
+                self.assertIn(expected, self._errors_for(self._first_row(**updates)))
+
+    def test_cli_returns_nonzero_for_weak_pass_match(self) -> None:
+        template = self._first_row(
+            validation_status="PASS",
+            instrument_match_status="MATCHED_SYNTHETIC",
+            proposed_canonical_instrument_id="TO_BE_REVIEWED",
+        )
+        fixture_path = Path("tests") / "broker_import_staging_invalid_fixture.json"
+        fixture_path.write_text(json.dumps(template), encoding="utf-8")
+        try:
+            result = subprocess.run(
+                ["python", "-m", "src.broker_import_staging_validation", str(fixture_path)],
+                cwd=Path.cwd(),
+                capture_output=True,
+                text=True,
+            )
+        finally:
+            fixture_path.unlink(missing_ok=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('"status": "ERROR"', result.stdout)
 
     def test_path_boundaries_are_rejected(self) -> None:
         cases = [

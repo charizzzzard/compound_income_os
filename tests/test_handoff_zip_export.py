@@ -86,6 +86,28 @@ class HandoffZipExportTests(unittest.TestCase):
         self.assertIn("<private_raw_file>", omitted_text)
         self.assertEqual(scan_forbidden_entries(result.zip_path), ())
 
+    def test_patch_profile_includes_stage_0_validator_common_dependency(self) -> None:
+        result = export_profile_handoff_zip(
+            profile="patch",
+            name="stage_0_validator_dependency_closure",
+            output_dir=self.tmp,
+            include_paths=[
+                "src/instrument_master_validation.py",
+                "src/broker_import_staging_validation.py",
+                "tests/test_instrument_master_validation.py",
+                "tests/test_broker_import_staging_validation.py",
+            ],
+            validation_summary="unit validation",
+        )
+
+        with zipfile.ZipFile(result.zip_path, "r") as archive:
+            names = set(archive.namelist())
+
+        self.assertIn("src/instrument_master_validation.py", names)
+        self.assertIn("src/broker_import_staging_validation.py", names)
+        self.assertIn("src/common.py", names)
+        self.assertEqual(scan_forbidden_entries(result.zip_path), ())
+
     def test_profile_export_passes_patch_identity_overrides(self) -> None:
         result = export_profile_handoff_zip(
             profile="full_review",
