@@ -2,14 +2,14 @@
 
 - project_name: `compound_income_os`
 - profile: `patch`
-- bundle_name: `final_audit_governance_carried_forward_closure`
+- bundle_name: `operational_backbone_stage_0_identity_and_staging_preflight`
 - bundle_purpose: `external_llm_validation`
-- created_at_utc: `2026-05-31T23:43:03+00:00`
+- created_at_utc: `2026-06-01T07:41:21+00:00`
 - branch: `main`
-- head: `4afad452327e35d4146d108e819fdfd7393a697d`
-- base_head: `8aa2a65595e95aa3fdfa68a3315379b6128e8fde`
-- delta_range: `8aa2a65595e95aa3fdfa68a3315379b6128e8fde..4afad452327e35d4146d108e819fdfd7393a697d`
-- delta_evidence_rows: `7`
+- head: `926dbc75337030602629d4e369855e2fe72ebd54`
+- base_head: `a7683b4c36bc3973d9019420d0e47a280abccec5`
+- delta_range: `a7683b4c36bc3973d9019420d0e47a280abccec5..926dbc75337030602629d4e369855e2fe72ebd54`
+- delta_evidence_rows: `18`
 - patch_identity_entry: `HANDOFF_PATCH_IDENTITY.md`
 - dirty_worktree_present: `False`
 - purpose: patch handoff for external LLM validation
@@ -25,7 +25,7 @@
 - `OMITTED_PRIVATE`
 
 ## Validation Summary
-Final audit governance carried-forward closure: command provenance semantic validation, JSON schema, documented status taxonomy, validation provenance language and ZIP transport policy hardened. No portfolio, scoring, ranking, valuation, broker/provider/API, order or trading logic changed.
+See HANDOFF_VALIDATION.txt.
 
 ## External LLM Instructions
 - Use only included artifacts and explicitly documented omissions.
