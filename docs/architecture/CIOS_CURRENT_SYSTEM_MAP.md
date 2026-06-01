@@ -52,9 +52,15 @@ The meta-governance baseline is defined by:
   typology, provider-agnostic adapters, provenance, usage scopes, handoff
   boundaries, template validation preflight and commercial/license review gates
   before future integrations.
-- Instrument Master Contract: governance kernel for canonical instrument
-  identity, alias/provider/broker mapping boundaries, lifecycle status and
-  collision rules before production broker import or event-ledger work.
+- Instrument Master Contract and Template Validation Preflight: governance
+  kernel for canonical instrument identity, alias/provider/broker mapping
+  boundaries, lifecycle status, collision rules and neutral template validation
+  before production broker import or event-ledger work.
+- Broker Import Staging Contract and Template Validation Preflight:
+  pre-runtime boundary between raw broker/document parsing and any future
+  accepted Portfolio Event Ledger event. Staging rows are review candidates
+  only; they do not update portfolio state, feed scoring/ranking or instruct
+  orders.
 - Portfolio Event Ledger Contract and Template Validation Preflight: governance
   kernel for future portfolio-event identity, append-only correction/reversal
   semantics, broker/source boundaries, neutral template validation and
@@ -106,27 +112,31 @@ The meta-governance baseline is defined by:
    integration.
 5. Instrument Master defines how future holdings, broker aliases and provider
    identifiers must map to canonical instrument identity before production
-   broker import or Event Ledger implementation.
-6. Portfolio Event Ledger defines how future portfolio events must reference
+   broker import or Event Ledger implementation; the current validator checks
+   only the template surface.
+6. Broker Import Staging defines the review boundary between raw parsing and
+   future ledger promotion; no staging row is accepted event history or a
+   portfolio-state update.
+7. Portfolio Event Ledger defines how future portfolio events must reference
    instrument identity, source evidence, accounts, currency and correction
    chains before broker-import staging, replay or attribution work; the current
    validator checks only the template surface.
-7. `decision_quality` evaluates process/readiness state from existing outputs.
-8. `decision_journal_validation` evaluates the append-only journal and produces
+8. `decision_quality` evaluates process/readiness state from existing outputs.
+9. `decision_journal_validation` evaluates the append-only journal and produces
    review queue artifacts.
-9. `data_freshness` evaluates configured repo-evidenced artifacts against
+10. `data_freshness` evaluates configured repo-evidenced artifacts against
    explicit freshness signals and thresholds before the operator summary.
-10. `dashboard_operator_summary` aggregates Decision Quality, journal
+11. `dashboard_operator_summary` aggregates Decision Quality, journal
    validation, review queue and Data Freshness state for operator follow-up.
-11. `monthly_portfolio_decision_brief` optionally consolidates already-produced
+12. `monthly_portfolio_decision_brief` optionally consolidates already-produced
    monthly ranking, portfolio-health, Data Freshness, Decision Quality and
    review-queue artifacts into a generated local operator brief.
-12. Report surfaces render available states and show `NOT_AVAILABLE` only when
+13. Report surfaces render available states and show `NOT_AVAILABLE` only when
    an artifact is missing, unreadable or the stage did not run.
-13. External review gates classify coverage gaps and block future feature
+14. External review gates classify coverage gaps and block future feature
    classes where documentation, tests, runtime enforcement, clean-room
    reproduction or operator acceptance are not yet sufficient.
-14. Handoff export packages code, docs, tests, configs and selected review
+15. Handoff export packages code, docs, tests, configs and selected review
    context for external validation.
 
 ## Current `personal_run_engine` Stage Overview
@@ -220,6 +230,10 @@ dashboard.
   - `docs/architecture/PERSONAL_RUN_STAGE_DAG.md`
   - `docs/architecture/CIOS_INSTRUMENT_MASTER.md`
   - `docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml`
+  - `src/instrument_master_validation.py`
+  - `docs/contracts/BROKER_IMPORT_STAGING_CONTRACT.md`
+  - `docs/architecture/CIOS_BROKER_IMPORT_STAGING_TEMPLATE.yaml`
+  - `src/broker_import_staging_validation.py`
   - `docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER.md`
   - `docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml`
   - `src/portfolio_event_ledger_validation.py`
@@ -306,11 +320,14 @@ with zero counts.
 - There is no outcome attribution.
 - The Portfolio Event Ledger Contract, template and read-only template
   validator exist, but there is no production Event Ledger database, runtime,
-  broker-import staging, runtime correction/reversal validator, FX engine,
-  replay or attribution module.
-- The Instrument Master Contract and template exist, but there is no production
-  Instrument Master registry, validator, broker/provider mapping enforcement or
-  corporate-action processing.
+  broker-import promotion path, runtime correction/reversal validator, FX
+  engine, replay or attribution module.
+- The Instrument Master Contract, template and read-only template validator
+  exist, but there is no production Instrument Master registry, broker/provider
+  mapping enforcement or corporate-action processing.
+- Broker Import Staging Contract, template and read-only template validator
+  exist, but there is no broker-import runtime, parser integration, promotion
+  workflow, accepted event creation or Personal Run stage integration.
 - There is no Ranking Robustness or Sensitivity producer yet.
 - The dashboard operator surface contract and minimal operator summary producer
   exist, but no full visual dashboard surface has been hardened yet.
@@ -352,6 +369,6 @@ with zero counts.
 
 1. External Review of the Release CI Environment Parity producer.
 2. Technical operationalization of RUNTIME_ENFORCEMENT_BOUNDARY_REVIEW.
-3. Broker Import Staging Contract.
+3. Broker Import Staging to Event Ledger Promotion Contract.
 4. Corporate Actions Contract later.
 5. Time-Aware Replay / Outcome contracts later.

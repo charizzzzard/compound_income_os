@@ -383,17 +383,24 @@ ADR required for:
 
 ## Future Validation Expectations
 
-Future validators should check:
+`src.instrument_master_validation` is the current read-only template preflight.
+It validates only the local
+`docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml` structure and does not
+create or approve real instruments, broker/provider mappings, event-ledger
+readiness, trading approval, production readiness or investment readiness.
+
+The current preflight checks:
 
 - required fields,
 - enum values,
 - duplicate canonical IDs,
 - ticker-only rejection,
 - identifier conflicts,
-- alias collisions,
-- listing/currency mismatches,
-- broker/provider mapping conflicts,
-- lifecycle/effective-date consistency,
-- evidence/provenance presence,
+- duplicate ISIN or primary identifier values,
+- production/readiness overclaims,
 - handoff/private-data boundaries.
 
+Future runtime validators should still add alias collisions,
+listing/currency mismatches, broker/provider mapping conflicts,
+lifecycle/effective-date consistency and evidence/provenance checks against
+accepted registry fixtures before any production registry exists.

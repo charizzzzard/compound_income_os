@@ -57,6 +57,10 @@ Recommended examples:
 - `python -m unittest tests.test_zip_safe_operator_journey -v`
 - `python -m unittest tests.test_data_source_registry_validation -v`
 - `python -m src.data_source_registry_validation docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml`
+- `python -m unittest tests.test_instrument_master_validation -v`
+- `python -m src.instrument_master_validation docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml`
+- `python -m unittest tests.test_broker_import_staging_validation -v`
+- `python -m src.broker_import_staging_validation docs/architecture/CIOS_BROKER_IMPORT_STAGING_TEMPLATE.yaml`
 - `python -m unittest tests.test_portfolio_event_ledger_validation -v`
 - `python -m src.portfolio_event_ledger_validation docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml`
 - `python -m unittest tests.test_personal_decision_journal_validation -v`
@@ -68,6 +72,12 @@ Recommended examples:
 The registry-template validator is `ZIP_SAFE_WITH_PYTHON`: it reads only the
 template and contract-shaped local YAML data and must not contact providers,
 networks or private inputs.
+
+The Instrument Master and Broker Import Staging template validators are also
+`ZIP_SAFE_WITH_PYTHON`: they read only committed template/contract files and
+must not infer private broker/provider data, event-ledger acceptance, broker
+import production readiness, replay readiness, outcome attribution readiness,
+production readiness or investment readiness.
 
 The Portfolio Event Ledger template validator is also `ZIP_SAFE_WITH_PYTHON`:
 it reads only the extracted template and local Python source, checks neutral
@@ -176,6 +186,12 @@ Architecture review artifacts that are ZIP-review relevant include:
 - `docs/contracts/INSTRUMENT_MASTER_CONTRACT.md`
 - `docs/architecture/CIOS_INSTRUMENT_MASTER.md`
 - `docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml`
+- `src/instrument_master_validation.py`
+- `tests/test_instrument_master_validation.py`
+- `docs/contracts/BROKER_IMPORT_STAGING_CONTRACT.md`
+- `docs/architecture/CIOS_BROKER_IMPORT_STAGING_TEMPLATE.yaml`
+- `src/broker_import_staging_validation.py`
+- `tests/test_broker_import_staging_validation.py`
 - `docs/contracts/PORTFOLIO_EVENT_LEDGER_CONTRACT.md`
 - `docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER.md`
 - `docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml`
@@ -251,9 +267,15 @@ source/license metadata is present, review it against
 `docs/contracts/DATA_SOURCE_LICENSE_BOUNDARY_CONTRACT.md`; absence of an active
 source registry does not imply approval for redistribution or commercial use.
 If Instrument Master artifacts are present, treat them as contract/template
-evidence only. Do not infer real instrument approval, broker/provider mapping,
-ISIN/ticker lookup, event-ledger readiness or replay readiness from the
-template.
+evidence and validation-preflight evidence only. Do not infer real instrument
+approval, broker/provider mapping, ISIN/ticker lookup, event-ledger readiness or
+replay readiness from the template.
+
+If Broker Import Staging artifacts are present, treat them as contract/template
+and validation-preflight evidence only. Do not infer production broker import,
+accepted ledger events, portfolio-state updates, scoring/ranking inputs,
+Monthly Brief inputs, order instructions, replay readiness or outcome
+attribution readiness from staging rows.
 
 If Portfolio Event Ledger artifacts are present, treat them as
 contract/template evidence only. Do not infer real broker-event import, event

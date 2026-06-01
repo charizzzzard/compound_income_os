@@ -83,7 +83,7 @@ Website-Code und Website-Tests liegen seit Patch 1 separat unter `website/src/` 
 - Externes Delta-Review fuer die Portfolio Event Ledger Template Validation vor produktiver Event-Store-, Broker-Import- oder Replay-Arbeit.
 - Externes Review des Runtime Gate Definition Template vor konkreter Runtime-Gate-Definition; keine Runtime-Enforcement-Engine ohne separaten expliziten Scope, Tests, Evidence-Artefakte und Human-Operator-Akzeptanz.
 - Instrument Master Registry Validation erst nach Contract-Review; bis dahin bleiben bestehende Portfolio-/Watchlist-/Scoring-Konfigurationen operative Inputs und kein kanonischer Instrument Master.
-- Broker Import Staging Contract erst nach akzeptierter Event-Ledger-Template-Validation; Cost-/Tax- und Broker-Dokumentartefakte bleiben operative Spezialmodule, kein kanonischer Portfolio Event Ledger.
+- Broker Import Staging ist jetzt contract/template/preflight-definiert; Cost-/Tax- und Broker-Dokumentartefakte bleiben operative Spezialmodule, kein kanonischer Portfolio Event Ledger. Der naechste sichere Backbone-Schritt ist ein Promotion Contract von Staging zu zukuenftigem Ledger, keine Ledger-Runtime.
 - Dashboard-Operator-Surfaces erst gegen `docs/contracts/DASHBOARD_OPERATOR_SURFACE_CONTRACT.md` und `docs/contracts/REVIEW_QUEUE_SUMMARY_CONTRACT.md` materialisieren; kein visuelles Dashboard-Neudesign ohne Contract-Abnahme.
 - Performance- und Cost-/Tax-Abdeckung nur dort vertiefen, wo passende Zeitreihen- oder Event-Evidenz vorhanden ist.
 - SEC-Alias-Map oder Period-Selection nur nach separatem Re-Use-Design aus dem Archiv integrieren.

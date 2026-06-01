@@ -77,7 +77,7 @@ The following remain intentionally open:
 - production event-store backend,
 - event ID generation algorithm,
 - event duplicate detection,
-- broker import staging schema,
+- staging-to-ledger promotion schema,
 - runtime correction/reversal validator,
 - FX-rate source policy,
 - Corporate Actions Contract,
@@ -89,8 +89,8 @@ Each hard-to-reverse choice requires ADR plus risk review.
 ## Sequencing
 
 - No production broker import before Instrument Master Contract, Portfolio
-  Event Ledger Contract, broker-import staging contract, validators, review
-  workflow and tests.
+  Event Ledger Contract, Broker Import Staging preflight, staging-to-ledger
+  promotion contract, review workflow, accepted fixtures and runtime tests.
 - No replay before Event Ledger plus snapshot/`as_of` rules.
 - No performance attribution before Event Ledger plus Time-Aware Replay.
 - No outcome attribution before decision journal, Event Ledger and Time-Aware
@@ -100,9 +100,9 @@ Each hard-to-reverse choice requires ADR plus risk review.
 
 ## Next Patches
 
-The current implementation-oriented follow-up is the read-only Event Ledger
-Template Validation Preflight. Later follow-ups should remain contract-first:
+The current implementation-oriented follow-up is the Broker Import Staging to
+Event Ledger Promotion Contract. Later follow-ups should remain contract-first:
 
-- Broker Import Staging Contract,
+- Broker Import Staging to Event Ledger Promotion Contract,
 - Time-Aware Replay Contract,
 - Corporate Actions Contract.

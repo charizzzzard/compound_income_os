@@ -110,16 +110,75 @@ capabilities:
       - docs/contracts/INSTRUMENT_MASTER_CONTRACT.md
       - docs/architecture/CIOS_INSTRUMENT_MASTER.md
       - docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml
+      - src/instrument_master_validation.py
+      - tests/test_instrument_master_validation.py
     input_artifacts:
       - docs/contracts/INSTRUMENT_MASTER_CONTRACT.md
+      - docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml
     output_artifacts: []
     report_surface: []
     tests:
       - tests/test_readme_and_reports.py
+      - tests/test_instrument_master_validation.py
     limitations:
-      - "Contract and template-only architecture exist, but there is no production Instrument Master registry, runtime matching engine, automatic ISIN/ticker lookup or broker/provider mapping enforcement."
-      - "No broker import staging pipeline, Portfolio Event Ledger, corporate actions processing, FX conversion, replay, outcome attribution or dashboard expansion is implemented."
-    next_action: "Portfolio Event Ledger Contract or Instrument Master Registry Template / Validation."
+      - "Contract, template-only architecture and read-only validation preflight exist, but there is no production Instrument Master registry, runtime matching engine, automatic ISIN/ticker lookup or broker/provider mapping enforcement."
+      - "No broker import runtime, Portfolio Event Ledger runtime, corporate actions processing, FX conversion, replay, outcome attribution or dashboard expansion is implemented."
+    next_action: "Instrument Master registry acceptance fixtures or Broker Import Staging to Event Ledger Promotion Contract."
+  - capability_id: instrument_master_validation_preflight
+    display_name: Instrument Master Validation Preflight
+    status: implemented
+    evidence_files:
+      - src/instrument_master_validation.py
+      - tests/test_instrument_master_validation.py
+      - docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml
+      - docs/contracts/INSTRUMENT_MASTER_CONTRACT.md
+    input_artifacts:
+      - docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml
+    output_artifacts: []
+    report_surface: []
+    tests:
+      - tests/test_instrument_master_validation.py
+    limitations:
+      - "Validates only the template and conservative boundaries; it does not approve real instruments, create a production registry, perform broker/provider lookup, enforce runtime identity or approve trading."
+      - "A passing preflight is not broker import readiness, Event Ledger readiness, replay readiness, production readiness or investment readiness."
+    next_action: "Add sanitized acceptance fixtures before any runtime Instrument Master registry."
+  - capability_id: broker_import_staging_contract
+    display_name: Broker Import Staging Contract
+    status: partial
+    evidence_files:
+      - docs/contracts/BROKER_IMPORT_STAGING_CONTRACT.md
+      - docs/architecture/CIOS_BROKER_IMPORT_STAGING_TEMPLATE.yaml
+      - src/broker_import_staging_validation.py
+      - tests/test_broker_import_staging_validation.py
+    input_artifacts:
+      - docs/contracts/BROKER_IMPORT_STAGING_CONTRACT.md
+      - docs/architecture/CIOS_BROKER_IMPORT_STAGING_TEMPLATE.yaml
+    output_artifacts: []
+    report_surface: []
+    tests:
+      - tests/test_broker_import_staging_validation.py
+    limitations:
+      - "Contract and template validation define the staging boundary only; no production broker import runtime, parser integration, staging-to-ledger promotion or accepted portfolio event creation is implemented."
+      - "Staging rows are review candidates, not order instructions, not accepted ledger events, not portfolio-state updates and not scoring/ranking/monthly-brief inputs."
+    next_action: "Broker Import Staging to Event Ledger Promotion Contract."
+  - capability_id: broker_import_staging_validation_preflight
+    display_name: Broker Import Staging Validation Preflight
+    status: implemented
+    evidence_files:
+      - src/broker_import_staging_validation.py
+      - tests/test_broker_import_staging_validation.py
+      - docs/architecture/CIOS_BROKER_IMPORT_STAGING_TEMPLATE.yaml
+      - docs/contracts/BROKER_IMPORT_STAGING_CONTRACT.md
+    input_artifacts:
+      - docs/architecture/CIOS_BROKER_IMPORT_STAGING_TEMPLATE.yaml
+    output_artifacts: []
+    report_surface: []
+    tests:
+      - tests/test_broker_import_staging_validation.py
+    limitations:
+      - "Validates only the synthetic template and conservative boundaries; it does not read private broker files, call broker/provider APIs, parse production exports, promote events or mutate portfolio state."
+      - "A passing preflight is not production broker import readiness, Event Ledger runtime readiness, replay readiness, outcome attribution readiness, production readiness or investment readiness."
+    next_action: "Broker Import Staging to Event Ledger Promotion Contract."
   - capability_id: portfolio_rules
     display_name: Portfolio Rules
     status: implemented
@@ -620,10 +679,10 @@ capabilities:
       - tests/test_readme_and_reports.py
       - tests/test_portfolio_event_ledger_validation.py
     limitations:
-      - "Contract, architecture note, template-only placeholder and read-only template validation preflight exist, but there is no production event ledger database, runtime, broker import staging pipeline or automatic transaction classification."
+      - "Contract, architecture note, template-only placeholder, read-only template validation preflight and Broker Import Staging preflight exist, but there is no production event ledger database, runtime, staging-to-ledger promotion path or automatic transaction classification."
       - "No corporate-actions processing, FX engine, replay, performance attribution, outcome attribution, dashboard expansion, tax calculation or investment logic is implemented."
       - "Existing cost/tax and broker-document modules remain specialized operational modules, not the canonical Portfolio Event Ledger."
-    next_action: "External review packet refresh or Broker Import Staging Contract."
+    next_action: "Broker Import Staging to Event Ledger Promotion Contract."
   - capability_id: portfolio_event_ledger_validation_preflight
     display_name: Portfolio Event Ledger Template Validation Preflight
     status: implemented
@@ -642,7 +701,7 @@ capabilities:
       - "Validates only the template and conservative boundaries; it does not create a production Event Ledger, accept events, parse broker files, classify transactions or enforce Personal Run runtime behavior."
       - "Blocks accepted/validated template entries, real-looking broker/account/source IDs, real numeric amounts, missing event-type matrix fields, correction/reversal/supersession gaps, FX direction gaps and transfer boundary gaps."
       - "A passing template is not legal, tax, commercial, investment, public-handoff or broker-import approval."
-    next_action: "Broker Import Staging Contract or external review packet refresh before the next external delta review."
+    next_action: "Broker Import Staging to Event Ledger Promotion Contract before runtime work."
   - capability_id: time_aware_replay
     display_name: Time-Aware Replay
     status: planned

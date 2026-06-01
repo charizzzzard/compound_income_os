@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "template_only": true,
+  "maturity": "PREFLIGHT_ONLY",
+  "contract": "docs/contracts/BROKER_IMPORT_STAGING_CONTRACT.md",
+  "template_purpose": "Template-only structure for future Broker Import Staging candidates. No raw broker file, account identifier, accepted ledger event, portfolio-state update or trading action is included.",
+  "boundary_notes": [
+    "Broker Import Staging rows are not accepted Portfolio Event Ledger events.",
+    "Broker Import Staging rows are not order instructions and do not update portfolio state.",
+    "Broker Import Staging rows do not feed scoring, ranking or Monthly Portfolio Decision Brief directly.",
+    "Only a future reviewed promotion contract may create accepted portfolio events."
+  ],
+  "allowed_values": {
+    "raw_event_type": [
+      "BUY",
+      "SELL",
+      "DIVIDEND",
+      "INTEREST",
+      "DEPOSIT",
+      "WITHDRAWAL",
+      "FEE",
+      "TAX",
+      "TRANSFER",
+      "FX_CONVERSION",
+      "CORPORATE_ACTION_REVIEW_REQUIRED",
+      "UNKNOWN_REVIEW_REQUIRED"
+    ],
+    "instrument_match_status": [
+      "MATCHED_SYNTHETIC",
+      "MATCH_REVIEW_REQUIRED",
+      "AMBIGUOUS_REVIEW_REQUIRED",
+      "NO_MATCH_REVIEW_REQUIRED",
+      "NOT_APPLICABLE"
+    ],
+    "parse_status": [
+      "PARSED_SYNTHETIC",
+      "PARSE_REVIEW_REQUIRED",
+      "PARSE_FAILED",
+      "NOT_PARSED"
+    ],
+    "validation_status": [
+      "PASS",
+      "REVIEW",
+      "FAIL",
+      "NOT_EVALUATED"
+    ],
+    "review_status": [
+      "READY_FOR_REVIEW",
+      "OPERATOR_REVIEW_REQUIRED",
+      "INSTRUMENT_REVIEW_REQUIRED",
+      "BROKER_MAPPING_REVIEW_REQUIRED",
+      "SOURCE_EVIDENCE_REQUIRED",
+      "BLOCKED"
+    ]
+  },
+  "field_definitions": {
+    "staging_row_id": "Stable staging-row identifier inside a staging batch.",
+    "source_id": "Source registry or parser source identifier.",
+    "source_document_ref": "Redacted or synthetic reference to the source document.",
+    "source_row_ref": "Redacted or synthetic source row reference.",
+    "broker_account_ref": "Redacted or synthetic broker account reference.",
+    "raw_event_type": "Raw event class as parsed before ledger normalization.",
+    "raw_asset_name": "Raw asset name from source, not canonical identity.",
+    "raw_ticker": "Raw ticker or symbol from source, not canonical identity.",
+    "raw_isin": "Raw ISIN from source when present.",
+    "raw_wkn": "Raw WKN from source when present.",
+    "raw_currency": "Raw transaction or cash currency.",
+    "raw_quantity": "Raw quantity as source text or review placeholder.",
+    "raw_gross_amount": "Raw gross amount as source text or review placeholder.",
+    "raw_fee_amount": "Raw fee amount as source text or review placeholder.",
+    "raw_tax_amount": "Raw tax amount as source text or review placeholder.",
+    "trade_date": "Trade date as source text or review placeholder.",
+    "settlement_date": "Settlement date as source text or review placeholder.",
+    "effective_date": "Economic effective date as source text or review placeholder.",
+    "proposed_canonical_instrument_id": "Instrument Master candidate only; not authoritative.",
+    "instrument_match_status": "Instrument matching review status.",
+    "parse_status": "Parser result status.",
+    "validation_status": "Template/staging validation status.",
+    "review_status": "Operator review status.",
+    "review_reason_codes": "List of review reasons.",
+    "source_provenance": "List of source/provenance notes.",
+    "created_at": "Creation timestamp or template placeholder."
+  },
+  "staging_rows": [
+    {
+      "staging_row_id": "BIS_TEMPLATE_BUY_SYNTHETIC",
+      "source_id": "SYNTHETIC_BROKER_FIXTURE",
+      "source_document_ref": "SYNTHETIC_DOCUMENT_REF",
+      "source_row_ref": "SYNTHETIC_ROW_001",
+      "broker_account_ref": "SYNTHETIC_ACCOUNT_REF",
+      "raw_event_type": "BUY",
+      "raw_asset_name": "Synthetic Equity A",
+      "raw_ticker": "SYN-A",
+      "raw_isin": "XS0000000001",
+      "raw_wkn": "SYN001",
+      "raw_currency": "EUR",
+      "raw_quantity": "TO_BE_REVIEWED",
+      "raw_gross_amount": "TO_BE_REVIEWED",
+      "raw_fee_amount": "TO_BE_REVIEWED",
+      "raw_tax_amount": "TO_BE_REVIEWED",
+      "trade_date": "TO_BE_REVIEWED",
+      "settlement_date": "TO_BE_REVIEWED",
+      "effective_date": "TO_BE_REVIEWED",
+      "proposed_canonical_instrument_id": "IM_TEMPLATE_STOCK",
+      "instrument_match_status": "MATCHED_SYNTHETIC",
+      "parse_status": "PARSED_SYNTHETIC",
+      "validation_status": "PASS",
+      "review_status": "READY_FOR_REVIEW",
+      "review_reason_codes": [],
+      "source_provenance": [
+        "synthetic template row"
+      ],
+      "created_at": "TEMPLATE_ONLY"
+    },
+    {
+      "staging_row_id": "BIS_TEMPLATE_DIVIDEND_REVIEW",
+      "source_id": "SYNTHETIC_BROKER_FIXTURE",
+      "source_document_ref": "SYNTHETIC_DOCUMENT_REF",
+      "source_row_ref": "SYNTHETIC_ROW_002",
+      "broker_account_ref": "SYNTHETIC_ACCOUNT_REF",
+      "raw_event_type": "DIVIDEND",
+      "raw_asset_name": "Synthetic Income Instrument",
+      "raw_ticker": "SYN-I",
+      "raw_isin": "TO_BE_REVIEWED",
+      "raw_wkn": "TO_BE_REVIEWED",
+      "raw_currency": "EUR",
+      "raw_quantity": "NOT_APPLICABLE",
+      "raw_gross_amount": "TO_BE_REVIEWED",
+      "raw_fee_amount": "NOT_APPLICABLE",
+      "raw_tax_amount": "TO_BE_REVIEWED",
+      "trade_date": "NOT_APPLICABLE",
+      "settlement_date": "TO_BE_REVIEWED",
+      "effective_date": "TO_BE_REVIEWED",
+      "proposed_canonical_instrument_id": "TO_BE_REVIEWED",
+      "instrument_match_status": "AMBIGUOUS_REVIEW_REQUIRED",
+      "parse_status": "PARSE_REVIEW_REQUIRED",
+      "validation_status": "REVIEW",
+      "review_status": "INSTRUMENT_REVIEW_REQUIRED",
+      "review_reason_codes": [
+        "INSTRUMENT_IDENTITY_AMBIGUOUS"
+      ],
+      "source_provenance": [
+        "synthetic template row"
+      ],
+      "created_at": "TEMPLATE_ONLY"
+    },
+    {
+      "staging_row_id": "BIS_TEMPLATE_UNKNOWN_BLOCKED",
+      "source_id": "SYNTHETIC_BROKER_FIXTURE",
+      "source_document_ref": "SYNTHETIC_DOCUMENT_REF",
+      "source_row_ref": "SYNTHETIC_ROW_003",
+      "broker_account_ref": "SYNTHETIC_ACCOUNT_REF",
+      "raw_event_type": "UNKNOWN_REVIEW_REQUIRED",
+      "raw_asset_name": "TO_BE_REVIEWED",
+      "raw_ticker": "TO_BE_REVIEWED",
+      "raw_isin": "TO_BE_REVIEWED",
+      "raw_wkn": "TO_BE_REVIEWED",
+      "raw_currency": "TO_BE_REVIEWED",
+      "raw_quantity": "TO_BE_REVIEWED",
+      "raw_gross_amount": "TO_BE_REVIEWED",
+      "raw_fee_amount": "TO_BE_REVIEWED",
+      "raw_tax_amount": "TO_BE_REVIEWED",
+      "trade_date": "TO_BE_REVIEWED",
+      "settlement_date": "TO_BE_REVIEWED",
+      "effective_date": "TO_BE_REVIEWED",
+      "proposed_canonical_instrument_id": "TO_BE_REVIEWED",
+      "instrument_match_status": "NO_MATCH_REVIEW_REQUIRED",
+      "parse_status": "PARSE_REVIEW_REQUIRED",
+      "validation_status": "REVIEW",
+      "review_status": "SOURCE_EVIDENCE_REQUIRED",
+      "review_reason_codes": [
+        "UNKNOWN_EVENT_TYPE",
+        "SOURCE_EVIDENCE_REQUIRED"
+      ],
+      "source_provenance": [
+        "synthetic template row"
+      ],
+      "created_at": "TEMPLATE_ONLY"
+    }
+  ],
+  "non_claims": [
+    "not broker import production readiness",
+    "not event ledger runtime readiness",
+    "not replay readiness",
+    "not outcome attribution readiness",
+    "not investment readiness",
+    "not production readiness",
+    "not order execution"
+  ]
+}

@@ -310,8 +310,9 @@ Nullable and `NOT_APPLICABLE` rules:
 - Corporate actions must not be automatically processed by this contract.
 - Production broker import must not start before Instrument Master and Event
   Ledger contracts exist.
-- Even with those contracts, production broker import remains blocked until a
-  broker-import staging contract, validators, review workflow and tests exist.
+- Even with those contracts and the current Broker Import Staging preflight,
+  production broker import remains blocked until a staging-to-ledger promotion
+  contract, review workflow, accepted fixtures and runtime tests exist.
 - Performance attribution must not occur before Event Ledger and Time-Aware
   Replay.
 - Replay must not occur before Event Ledger and snapshot/`as_of` rules.

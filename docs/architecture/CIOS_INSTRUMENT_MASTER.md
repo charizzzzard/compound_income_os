@@ -47,8 +47,9 @@ Current patch state:
 - Data Source Strategy and License Boundary exist.
 - Instrument Master Contract exists.
 - Instrument Master Template exists as template-only.
-- No production registry, validator, broker mapping, event ledger, replay or
-  outcome pipeline exists.
+- Instrument Master template validation preflight exists.
+- No production registry, broker mapping runtime, event ledger runtime, replay
+  or outcome pipeline exists.
 
 ## Why This Precedes Broker Import And Event Ledger
 
@@ -98,7 +99,7 @@ this patch.
 
 - final `canonical_instrument_id` generation policy,
 - production registry storage format,
-- instrument-registry validator implementation,
+- production instrument-registry validator and runtime enforcement policy,
 - broker/provider mapping record format,
 - corporate-action event model,
 - FX/multi-currency identity treatment,
@@ -112,4 +113,3 @@ Each hard-to-reverse decision needs ADR plus risk review.
 - Portfolio Event Ledger Contract,
 - Broker Import Staging Contract,
 - Corporate Actions Contract.
-

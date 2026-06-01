@@ -55,6 +55,8 @@ Canonical architecture baseline:
 - [docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml](docs/architecture/CIOS_DATA_SOURCE_REGISTRY_TEMPLATE.yaml): nicht-aktive Template-Struktur fuer kuenftige Source-/License-Metadaten
 - [docs/architecture/CIOS_INSTRUMENT_MASTER.md](docs/architecture/CIOS_INSTRUMENT_MASTER.md): Architekturrolle des kuenftigen Instrument-Master-Kernels
 - [docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml](docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml): template-only Platzhalter fuer kuenftige Instrument-Master-Eintraege ohne echte Instrumentfreigaben
+- [docs/contracts/BROKER_IMPORT_STAGING_CONTRACT.md](docs/contracts/BROKER_IMPORT_STAGING_CONTRACT.md): pre-runtime Broker-Import-Staging-Grenze zwischen Raw-Parsing und kuenftigen Ledger-Events
+- [docs/architecture/CIOS_BROKER_IMPORT_STAGING_TEMPLATE.yaml](docs/architecture/CIOS_BROKER_IMPORT_STAGING_TEMPLATE.yaml): template-only Broker-Import-Staging-Struktur ohne echte Brokerdaten oder Event-Acceptance
 - [docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER.md](docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER.md): Architekturrolle des kuenftigen Portfolio-Event-Ledger-Kernels
 - [docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml](docs/architecture/CIOS_PORTFOLIO_EVENT_LEDGER_TEMPLATE.yaml): template-only Platzhalter fuer kuenftige Ledger-Events ohne echte Broker-/Portfolio-Events
 - [docs/architecture/CIOS_FEATURE_STATUS.yaml](docs/architecture/CIOS_FEATURE_STATUS.yaml): maschinenlesbarer Feature-Status
@@ -904,6 +906,22 @@ Die Portfolio-Event-Ledger-Vorlage liegt in
 template-only Platzhalter und erzeugt keine produktive Event-Ledger-Runtime,
 keinen Broker-Import, keine Event-Acceptance, keine Tax-/Legal-/Commercial-
 Freigabe und keine Replay-/Attribution-Funktionalitaet.
+
+Die Instrument-Master-Vorlage liegt in
+`docs/architecture/CIOS_INSTRUMENT_MASTER_TEMPLATE.yaml`.
+`src.instrument_master_validation` validiert sie read-only gegen
+`docs/contracts/INSTRUMENT_MASTER_CONTRACT.md`; der Check erzeugt keine
+produktive Instrument-Master-Registry, keine Broker-/Provider-Mapping-
+Freigabe, keine Event-Ledger-Readiness und keine Investment-/Production-
+Readiness.
+
+Die Broker-Import-Staging-Vorlage liegt in
+`docs/architecture/CIOS_BROKER_IMPORT_STAGING_TEMPLATE.yaml`.
+`src.broker_import_staging_validation` validiert sie read-only gegen
+`docs/contracts/BROKER_IMPORT_STAGING_CONTRACT.md`; Staging-Zeilen bleiben
+Review-Kandidaten, keine akzeptierten Ledger-Events, keine Order-Anweisungen,
+keine Portfolio-State-Mutation und kein Input fuer Scoring, Ranking oder den
+Monthly Portfolio Decision Brief.
 
 `src.external_review_cross_patch_regression` erzeugt einen read-only
 Governance-Regression-Check fuer externe Review-Gates, Known Gaps, Feature
