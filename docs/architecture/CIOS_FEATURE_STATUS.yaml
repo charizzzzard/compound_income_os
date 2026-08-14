@@ -1133,3 +1133,26 @@ capabilities:
       - "Only an explicit human-operated confirm command appends a final resolution."
       - "The current local Decision Capture journal is header-only, so no real trigger or resolution was created."
     next_action: "Capture a first real human Decision before any real trigger lock or resolution workflow."
+  - capability_id: personal_forward_validation
+    display_name: Personal Forward Validation Diagnostics
+    status: implemented
+    evidence_files:
+      - src/personal_forward_validation.py
+      - configs/forward_validation_policy.yaml
+      - docs/architecture/CIOS_FORWARD_VALIDATION_V1.md
+    input_artifacts:
+      - data/processed/personal_decision_state_capture.csv
+      - data/processed/personal_decision_triggers.csv
+      - data/processed/personal_trigger_resolutions.csv
+    output_artifacts:
+      - data/processed/personal_forward_validation_summary.json
+      - reports/<as_of_date>/personal_forward_validation_report.md
+    report_surface:
+      - reports/<as_of_date>/personal_forward_validation_report.md
+    tests:
+      - tests/test_personal_forward_validation.py
+    limitations:
+      - "Outputs are EXPLORATORY and DESCRIPTIVE_ONLY; confirmatory registration remains disabled."
+      - "Unresolvable outcomes do not enter Brier or binary calibration; no ICC or effective n is guessed."
+      - "The current local Decision Capture journal is header-only; no real forward observations exist."
+    next_action: "Collect real human Decisions and locked forward observations before interpreting diagnostics."

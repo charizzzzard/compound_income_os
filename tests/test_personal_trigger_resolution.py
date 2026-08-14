@@ -172,6 +172,33 @@ class PersonalTriggerResolutionTests(unittest.TestCase):
             rows = list(csv.DictReader(handle))
         self.assertEqual([row["trigger_id"] for row in rows], ["TRIGGER_002"])
 
+    def test_superseded_trigger_history_is_not_an_open_due_item(self) -> None:
+        correction = self.proposal("TRIGGER_003", "2026-12-20", "2026-12-31")
+        correction["supersedes_trigger_id"] = "TRIGGER_001"
+        write_trigger_proposals(
+            [correction],
+            decision_journal=str(self.journal),
+            output=str(self.proposals),
+        )
+        lock_trigger_proposals(
+            decision_id="DECISION_20260814_0001",
+            trigger_ids=["TRIGGER_003"],
+            locked_at="2026-08-15T12:00:00Z",
+            proposal_path=str(self.proposals),
+            decision_journal=str(self.journal),
+            ledger=str(self.triggers),
+        )
+        scan_due_triggers(
+            as_of_date="2027-01-01",
+            trigger_ledger=str(self.triggers),
+            resolution_ledger=str(self.resolutions),
+            output=str(self.due),
+        )
+        with self.due.open("r", encoding="utf-8", newline="") as handle:
+            ids = [row["trigger_id"] for row in csv.DictReader(handle)]
+        self.assertEqual(ids, ["TRIGGER_002", "TRIGGER_003"])
+        self.assertNotIn("TRIGGER_001", ids)
+
     def test_same_due_scan_inputs_produce_identical_output(self) -> None:
         kwargs = {
             "as_of_date": "2026-12-20",

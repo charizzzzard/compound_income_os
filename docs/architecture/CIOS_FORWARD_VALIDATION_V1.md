@@ -117,6 +117,14 @@ Unresolvable cases are reported separately and never coerced to a binary
 outcome. Binomial intervals use Wilson intervals and always show `n`, estimate,
 lower bound, and upper bound.
 
+The deterministic report also exposes final and binary resolution counts,
+distinct resolved decisions, raw active trigger/decision/decision-month cluster
+counts, open and overdue rates, unresolvable rate, probability-bin counts,
+observed and predicted bin rates, triggers-per-decision distribution, claim-type
+distribution, and probability-mix diagnostics. Superseded rows remain in ledger
+history but are not treated as active open/due claims. No guessed ICC or
+effective sample size is emitted.
+
 Small samples are labeled:
 
 ```text

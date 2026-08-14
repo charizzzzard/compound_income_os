@@ -255,6 +255,45 @@ Decision Capture is the basis for later replay and outcome review. Outcome
 attribution, Portfolio Event Ledger integration and policy feedback remain
 deferred.
 
+## Forward Validation v1
+
+`src.personal_decision_trigger_capture` adds replaceable forward-claim
+proposals and an explicit Human Lock for two to five deterministically
+resolvable triggers linked to an existing `decision_id`. The canonical trigger
+ledger is append-only. Codex/LLMs may prepare proposal JSON, but they do not
+lock triggers. The exact schema and resolution rules are defined in
+`docs/contracts/DECISION_FALSIFICATION_TRIGGER_CONTRACT_V1.md`.
+
+```powershell
+python -m src.personal_decision_trigger_capture propose --proposal-input <reviewed-proposal-input.json>
+python -m src.personal_decision_trigger_capture lock --decision-id <existing-decision-id> --trigger-id <trigger-id-1> --trigger-id <trigger-id-2> --locked-at <ISO-timestamp-with-timezone>
+```
+
+The weekly-safe due scan only refreshes a review queue. `OVERDUE` is derived and
+is not a final resolution. A final row is appended only by the explicit
+human-operated `confirm` command; selling or watchlist removal cannot censor an
+open company/thesis trigger.
+
+```powershell
+python -m src.personal_trigger_resolution scan-due --as-of-date YYYY-MM-DD
+python -m src.personal_trigger_resolution confirm --trigger-id <trigger-id> --resolution-status <final-status> --resolved-value <value-or-NOT_APPLICABLE> --resolution-date YYYY-MM-DD --resolution-source <source-label> --resolution-evidence-path <repo-relative-path-or-NOT_APPLICABLE> --resolution-reason <human-reviewed-reason> --created-at <ISO-timestamp-with-timezone>
+```
+
+Descriptive calibration, Brier, Wilson intervals, attrition, clustering counts,
+and trigger-design diagnostics are generated only from processed locked and
+confirmed ledgers:
+
+```powershell
+python -m src.personal_forward_validation report --as-of-date YYYY-MM-DD
+```
+
+V1 remains `EXPLORATORY`, `DESCRIPTIVE_ONLY`, and
+`INSUFFICIENT_FOR_CONFIRMATORY_INFERENCE`; confirmatory registration is
+disabled. The current header-only local Decision Capture state remains
+`READY_FOR_FIRST_REAL_DECISION`. No real Decision, trigger, or resolution is
+created by these commands unless the operator explicitly performs the relevant
+human action.
+
 ## Archived SEC workflow
 
 Der fruehere SEC-CompanyFacts-/SEC-derived-KPI-Code ist in Patch 1 nach

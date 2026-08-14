@@ -149,3 +149,7 @@ scan neither calls an LLM nor changes a trigger or resolution ledger. Its input
 does not include holdings or watchlist state, so a sale, removal, or later
 decision change cannot censor an open trigger. Only an explicit human-operated
 `confirm` command appends a canonical resolution.
+
+A superseded trigger row remains in the immutable audit history but is no longer
+an active due item. Descriptive reporting retains ledger-row and supersession
+counts so this correction history is not silently discarded.

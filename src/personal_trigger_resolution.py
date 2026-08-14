@@ -18,6 +18,7 @@ from src.personal_decision_state_capture import repo_relative_stored_path
 from src.personal_decision_trigger_capture import (
     DECIMAL_FIELDS as TRIGGER_DECIMAL_FIELDS,
     DEFAULT_LEDGER as DEFAULT_TRIGGER_LEDGER,
+    active_trigger_rows,
     load_trigger_ledger,
 )
 
@@ -245,7 +246,7 @@ def build_due_review_rows(
     as_of = _parse_date(as_of_date, "as_of_date")
     resolved_ids = {row["trigger_id"] for row in resolution_rows}
     due_rows: list[dict[str, str]] = []
-    for trigger in trigger_rows:
+    for trigger in active_trigger_rows(trigger_rows):
         if trigger["trigger_id"] in resolved_ids:
             continue
         expected = _parse_date(trigger["expected_resolution_date"], "expected_resolution_date")

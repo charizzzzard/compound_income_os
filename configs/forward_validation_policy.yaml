@@ -40,7 +40,10 @@
     "inference_mode": "EXPLORATORY",
     "small_sample_label": "DESCRIPTIVE_ONLY",
     "confirmatory_warning": "INSUFFICIENT_FOR_CONFIRMATORY_INFERENCE",
+    "confidence_level": "0.95",
     "trigger_design_review_status": "TRIGGER_DESIGN_REVIEW",
+    "trigger_design_review_min_n": 10,
+    "trigger_design_review_share_p_above_0_90": "0.80",
     "forbidden_result_terms_without_gate": ["validated", "proven", "statistically confirmed", "alpha", "predictive edge"]
   },
   "out_of_scope_v1": [
