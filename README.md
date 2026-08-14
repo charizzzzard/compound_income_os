@@ -294,6 +294,20 @@ disabled. The current header-only local Decision Capture state remains
 created by these commands unless the operator explicitly performs the relevant
 human action.
 
+Hash chains and the deliberately tracked, initially empty
+`audit/forward_validation/ledger_anchors.jsonl` can be verified without writing
+an anchor:
+
+```powershell
+python -m src.forward_validation_audit verify
+```
+
+Appending a content-free checkpoint is an explicit operator action via the
+`anchor` subcommand. Re-anchoring the same ledger head is idempotent. The index
+stores only ledger name, row count, head hash, hash schema, Git HEAD, and
+timestamps; it is tamper-evident rather than tamper-proof. No signing key or Git
+tag is created automatically.
+
 ## Archived SEC workflow
 
 Der fruehere SEC-CompanyFacts-/SEC-derived-KPI-Code ist in Patch 1 nach

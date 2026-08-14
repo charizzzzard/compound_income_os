@@ -144,6 +144,13 @@ tamper-proof. Because `data/processed/` is git-ignored, a tracked anchor index m
 contain only ledger name, row count, head hash, schema version, Git HEAD, and
 timestamps—never personal decision content.
 
+The selected index is `audit/forward_validation/ledger_anchors.jsonl`. It starts
+empty and is appended only by an explicit operator command after ledger-chain
+verification. The same ledger head is not duplicated. `data/processed/` is
+rejected as an anchor location. A later valid append is distinguished from an
+anchor mismatch by verifying that the anchored head is still the current
+ledger prefix.
+
 Signed Git tags are optional human-operated history checkpoints only when local
 signing is already configured. They are a cryptographically signed history
 checkpoint, not an immutable external timestamp. External notary/timestamp

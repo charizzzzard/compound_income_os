@@ -1156,3 +1156,25 @@ capabilities:
       - "Unresolvable outcomes do not enter Brier or binary calibration; no ICC or effective n is guessed."
       - "The current local Decision Capture journal is header-only; no real forward observations exist."
     next_action: "Collect real human Decisions and locked forward observations before interpreting diagnostics."
+  - capability_id: forward_validation_tamper_evidence
+    display_name: Forward Validation Tamper Evidence
+    status: implemented
+    evidence_files:
+      - src/canonical_record.py
+      - src/forward_validation_audit.py
+      - audit/forward_validation/ledger_anchors.jsonl
+    input_artifacts:
+      - data/processed/personal_decision_triggers.csv
+      - data/processed/personal_trigger_resolutions.csv
+      - audit/forward_validation/ledger_anchors.jsonl
+    output_artifacts:
+      - audit/forward_validation/ledger_anchors.jsonl
+    report_surface: []
+    tests:
+      - tests/test_forward_validation_audit.py
+      - tests/test_personal_decision_trigger_capture.py
+    limitations:
+      - "Hash chains and Git-tracked anchors are tamper-evident, not tamper-proof."
+      - "The tracked anchor index is initially empty; anchor creation remains an explicit operator action."
+      - "No signing key, signed tag or external timestamp/notary integration is created."
+    next_action: "Create the first content-free anchor only after an operator has locked a real trigger ledger head."

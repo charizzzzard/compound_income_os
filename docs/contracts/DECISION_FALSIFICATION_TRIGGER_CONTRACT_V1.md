@@ -121,6 +121,13 @@ The chain stores `previous_record_hash`; the first row uses the contract-defined
 genesis marker. The chain is tamper-evident, not tamper-proof. Changing
 canonicalization rules requires a new hash schema version.
 
+The content-free tracked anchor index is
+`audit/forward_validation/ledger_anchors.jsonl`, never a generated path under
+`data/processed/`. Anchor rows contain only `anchor_date`, `ledger_name`,
+`row_count`, `head_hash`, `hash_schema_version`, `git_head`, and `created_at`.
+An identical ledger head is idempotent and personal Decision/claim content is
+not permitted in the anchor schema.
+
 ## Selection-bias diagnostics
 
 The 2-5 rule does not impose a probability mix per decision. Dataset reports
