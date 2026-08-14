@@ -127,3 +127,25 @@ The 2-5 rule does not impose a probability mix per decision. Dataset reports
 monitor probability bins, share above 0.90, share between 0.35 and 0.75, and
 claim-type distribution. `TRIGGER_DESIGN_REVIEW` requests human review; it never
 creates artificial 50% counterclaims.
+
+## Resolution and due-review contract
+
+Confirmed resolutions are appended to
+`data/processed/personal_trigger_resolutions.csv`. Every row contains
+`trigger_id`, `resolution_status`, `resolved_value`, `resolution_date`,
+`resolution_source`, `resolution_evidence_path`, `resolution_reason`,
+`created_at`, `hash_schema_version`, `record_hash`, and
+`previous_record_hash`.
+
+Only `RESOLVED_TRUE`, `RESOLVED_FALSE`, `UNRESOLVABLE_DEFINITION`, and
+`UNRESOLVABLE_CORPORATE` are final states. `OVERDUE` is never persisted as a
+resolution. It is derived when the scan date is later than the locked deadline
+and no final resolution exists. Binary resolutions require a repo-relative
+evidence path; unresolvable states store `resolved_value=NOT_APPLICABLE`.
+
+`python -m src.personal_trigger_resolution scan-due --as-of-date YYYY-MM-DD`
+writes the replaceable `data/processed/personal_due_trigger_review.csv`. The
+scan neither calls an LLM nor changes a trigger or resolution ledger. Its input
+does not include holdings or watchlist state, so a sale, removal, or later
+decision change cannot censor an open trigger. Only an explicit human-operated
+`confirm` command appends a canonical resolution.

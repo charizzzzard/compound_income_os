@@ -1113,3 +1113,23 @@ capabilities:
       - "The current local Decision Capture journal is header-only; operational status is READY_FOR_FIRST_REAL_DECISION."
       - "Hash chains are tamper-evident, not tamper-proof."
     next_action: "Capture a first real human Decision before locking real triggers."
+  - capability_id: personal_trigger_resolution
+    display_name: Personal Trigger Resolution And Due Review
+    status: implemented
+    evidence_files:
+      - src/personal_trigger_resolution.py
+      - docs/contracts/DECISION_FALSIFICATION_TRIGGER_CONTRACT_V1.md
+    input_artifacts:
+      - data/processed/personal_decision_triggers.csv
+      - data/processed/personal_trigger_resolutions.csv
+    output_artifacts:
+      - data/processed/personal_due_trigger_review.csv
+      - data/processed/personal_trigger_resolutions.csv
+    report_surface: []
+    tests:
+      - tests/test_personal_trigger_resolution.py
+    limitations:
+      - "Due scans are deterministic review queues; they do not create final resolutions."
+      - "Only an explicit human-operated confirm command appends a final resolution."
+      - "The current local Decision Capture journal is header-only, so no real trigger or resolution was created."
+    next_action: "Capture a first real human Decision before any real trigger lock or resolution workflow."
