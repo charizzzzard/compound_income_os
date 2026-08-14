@@ -1075,3 +1075,41 @@ capabilities:
     limitations:
       - "Journal and review queue exist; behavioral analytics are not implemented."
     next_action: "Review Queue fatigue and operator-summary design after dashboard contract."
+  - capability_id: forward_validation_contracts_power
+    display_name: Forward Validation Contracts And Power Gate
+    status: implemented
+    evidence_files:
+      - docs/architecture/CIOS_FORWARD_VALIDATION_V1.md
+      - docs/contracts/DECISION_FALSIFICATION_TRIGGER_CONTRACT_V1.md
+      - docs/contracts/FORWARD_EXPERIMENT_CONTRACT_V1.md
+      - configs/forward_validation_policy.yaml
+      - src/validation_power.py
+    input_artifacts: []
+    output_artifacts: []
+    report_surface: []
+    tests:
+      - tests/test_validation_power.py
+    limitations:
+      - "Power outputs are planning approximations; no confirmatory experiment registry or result exists."
+      - "confirmatory_registration_enabled remains false and ICC has no default."
+    next_action: "Collect real human Decisions and forward triggers before any confirmatory activation review."
+  - capability_id: decision_falsification_trigger_capture
+    display_name: Decision Falsification Trigger Capture
+    status: implemented
+    evidence_files:
+      - src/personal_decision_trigger_capture.py
+      - src/canonical_record.py
+      - docs/contracts/DECISION_FALSIFICATION_TRIGGER_CONTRACT_V1.md
+    input_artifacts:
+      - data/processed/personal_decision_state_capture.csv
+      - data/processed/personal_decision_trigger_proposals.json
+    output_artifacts:
+      - data/processed/personal_decision_triggers.csv
+    report_surface: []
+    tests:
+      - tests/test_personal_decision_trigger_capture.py
+    limitations:
+      - "Codex/LLMs may prepare replaceable proposals, but only an explicit human-operated CLI lock appends canonical rows."
+      - "The current local Decision Capture journal is header-only; operational status is READY_FOR_FIRST_REAL_DECISION."
+      - "Hash chains are tamper-evident, not tamper-proof."
+    next_action: "Capture a first real human Decision before locking real triggers."

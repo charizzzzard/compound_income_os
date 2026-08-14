@@ -36,6 +36,14 @@ Every locked row contains:
 - `decision_id`
 - `claim`
 - `claim_type`
+- `material`
+- `decision_relevant`
+- `future_facing`
+- `falsifiable`
+- `deterministically_resolvable`
+- `tautological`
+- `already_known`
+- `purely_narrative_without_resolution_rule`
 - `metric_name`
 - `metric_definition_version`
 - `source_document_type`
