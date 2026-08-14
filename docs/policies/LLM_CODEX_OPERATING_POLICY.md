@@ -5,6 +5,12 @@
 Deterministic Python remains the source of truth for Compound Income OS. LLMs and
 Codex assist the repo; they do not decide.
 
+Historical LLM/Codex investment-skill evaluation must not be presented as
+evidence of future LLM forecast ability because later events may already be
+present in model parameters. Incremental LLM research value is measured
+primarily forward-only against human-locked, contemporaneous claims. Historical
+data may still support suitable deterministic quantitative research.
+
 ## Allowed LLM Uses
 
 LLMs may:
@@ -17,6 +23,7 @@ LLMs may:
 - help shape scoped Codex tasks
 - compare handoff metadata against included repo evidence
 - identify missing-data and provenance risks without filling the gaps
+- propose falsifiable forward claims and resolution candidates for human review
 
 LLMs must not:
 
@@ -55,6 +62,8 @@ Codex must not:
 - apply KPI values unless the task explicitly requests a reviewed apply step
 - add runtime LLM dependencies to the deterministic core pipeline
 - make or record final investment decisions on behalf of the operator
+- lock falsification triggers, confirm trigger resolutions or promote policy on
+  behalf of the operator
 
 ## Cost-Aware Use
 

@@ -80,8 +80,12 @@ Exists today:
 Not built yet:
 
 - operationalized monthly Decision Capture workflow with real populated history
-- append-only decision journal beyond the current processed/report artifact
-- review-date queue
+- real populated forward-validation history
+
+Built after the original baseline:
+
+- append-only human-operated Decision Capture CLI with duplicate-ID protection
+- read-only Decision Journal Validation and review-date queue in Personal Run
 
 This is the first producer sequence after the architecture baseline.
 

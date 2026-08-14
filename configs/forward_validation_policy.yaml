@@ -1,0 +1,73 @@
+{
+  "schema_version": "1",
+  "policy_version": "FORWARD_VALIDATION_V1",
+  "confirmatory_registration_enabled": false,
+  "operational_forward_validation_status": "READY_FOR_FIRST_REAL_DECISION",
+  "trigger_policy": {
+    "min_triggers_per_decision": 2,
+    "max_triggers_per_decision": 5,
+    "required_properties": ["material", "decision_relevant", "future_facing", "falsifiable", "deterministically_resolvable"],
+    "forbidden_properties": ["tautological", "unfalsifiable", "already_known", "purely_narrative_without_resolution_rule"],
+    "probability_storage": "VALIDATED_DECIMAL_STRING",
+    "human_lock_required": true,
+    "human_resolution_confirmation_required": true
+  },
+  "calibration_bins": [
+    {"label": "0.00_to_0.20", "lower": "0.00", "upper": "0.20", "include_upper": false},
+    {"label": "0.20_to_0.35", "lower": "0.20", "upper": "0.35", "include_upper": false},
+    {"label": "0.35_to_0.50", "lower": "0.35", "upper": "0.50", "include_upper": false},
+    {"label": "0.50_to_0.75", "lower": "0.50", "upper": "0.75", "include_upper": false},
+    {"label": "0.75_to_0.90", "lower": "0.75", "upper": "0.90", "include_upper": false},
+    {"label": "0.90_to_1.00", "lower": "0.90", "upper": "1.00", "include_upper": true}
+  ],
+  "power_defaults": {
+    "alpha": 0.05,
+    "power": 0.80,
+    "alternative": "two_sided",
+    "correlation_method": "pearson",
+    "planning_status": "POWER_PLANNING_APPROXIMATION",
+    "icc_default": null,
+    "icc_sensitivity_scenarios": [0.1, 0.3, 0.5, 0.7],
+    "icc_sensitivity_label": "SENSITIVITY_SCENARIO"
+  },
+  "analysis": {
+    "unit": "trigger",
+    "cluster_keys": ["decision_month", "decision_id"],
+    "raw_counts": ["raw_trigger_n", "decision_count", "decision_month_count", "triggers_per_decision"],
+    "empirical_icc_status": "NOT_ESTIMATED"
+  },
+  "reporting_rules": {
+    "inference_mode": "EXPLORATORY",
+    "small_sample_label": "DESCRIPTIVE_ONLY",
+    "confirmatory_warning": "INSUFFICIENT_FOR_CONFIRMATORY_INFERENCE",
+    "trigger_design_review_status": "TRIGGER_DESIGN_REVIEW",
+    "forbidden_result_terms_without_gate": ["validated", "proven", "statistically confirmed", "alpha", "predictive edge"]
+  },
+  "out_of_scope_v1": [
+    "historical_llm_backtesting",
+    "historical_codex_skill_validation",
+    "walk_forward_optimization",
+    "pit_historical_fundamentals_database",
+    "strategy_backtesting",
+    "alpha_claims",
+    "sharpe_optimization",
+    "automated_policy_optimization",
+    "regime_switching",
+    "hmm",
+    "gradient_boosted_trees",
+    "random_forest",
+    "neural_networks",
+    "bayesian_ensemble",
+    "dynamic_factor_weights",
+    "ensemble_learning",
+    "champion_challenger_runtime",
+    "automatic_investment_decisions",
+    "automatic_trigger_approval",
+    "automatic_trigger_resolution",
+    "automatic_policy_promotion",
+    "broker_order_integration",
+    "paper_portfolio_simulation",
+    "benchmark_return_attribution",
+    "external_timestamp_notary"
+  ]
+}

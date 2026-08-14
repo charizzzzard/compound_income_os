@@ -15,7 +15,7 @@ Dieses Repository ist ein lokales Portfolio-Research-System. Es darf keine Order
 - [docs/architecture/04_META_REVIEW_LOOP_PROTOCOL.md](docs/architecture/04_META_REVIEW_LOOP_PROTOCOL.md): Architektur-Review- und Codex-Ausfuehrungsgate
 - [docs/architecture/05_ARCHITECTURE_BACKLOG.csv](docs/architecture/05_ARCHITECTURE_BACKLOG.csv): priorisierte Architektur-Backlogfolge
 - [docs/architecture/06_ADOPTED_DECISIONS.yaml](docs/architecture/06_ADOPTED_DECISIONS.yaml): akzeptierte Architekturentscheidungen
-- [docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md](docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md): naechster Producer-Vertrag, noch nicht implementiert
+- [docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md](docs/contracts/DECISION_STATE_CAPTURE_CONTRACT_V2.md): implementierter Human-Capture- und Append-only-Vertrag
 - [docs/policies/LLM_CODEX_OPERATING_POLICY.md](docs/policies/LLM_CODEX_OPERATING_POLICY.md): LLM-/Codex-Operating-Policy
 - [docs/CODEX_TASK_TEMPLATE.md](docs/CODEX_TASK_TEMPLATE.md): wiederverwendbares Codex-Task-Template
 - [docs/CODEX_TASKS/POST_ITERATION_QA.md](docs/CODEX_TASKS/POST_ITERATION_QA.md): Pflicht-QA nach jedem Patch
@@ -33,7 +33,7 @@ Dieses Repository ist ein lokales Portfolio-Research-System. Es darf keine Order
 - Reports nur aus bereits verarbeiteten Artefakten bauen
 - Das Dashboard konsolidiert verarbeitete Artefakte und fuehrt keine neue Fachlogik ein
 - Sechs-Kernel-OS-Modell, Human-Final-Decision und deterministic Python als Source of Truth respektieren
-- Decision Capture ist die erste geplante Producer-Sequenz; Simulation/Backtesting warten auf Decision Capture und Accounting-/Replay-Fundamente
+- Decision Capture und Journal Validation sind implementiert; reale Forward-Daten, Simulation und Backtesting warten weiterhin auf echte Decisions sowie Accounting-/Replay-Fundamente
 
 ## Coding-Konventionen
 
