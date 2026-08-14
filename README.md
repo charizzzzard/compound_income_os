@@ -308,6 +308,16 @@ stores only ledger name, row count, head hash, hash schema, Git HEAD, and
 timestamps; it is tamper-evident rather than tamper-proof. No signing key or Git
 tag is created automatically.
 
+Optional local weekly and quarterly wrappers are documented in
+`docs/operations/FORWARD_VALIDATION_LOCAL_AUTOMATION.md`:
+
+```powershell
+powershell -NoProfile -File scripts/run_forward_validation_jobs.ps1 -Job weekly -AsOfDate YYYY-MM-DD
+powershell -NoProfile -File scripts/run_forward_validation_jobs.ps1 -Job quarterly -AsOfDate YYYY-MM-DD
+```
+
+The repository does not register these jobs automatically.
+
 ## Archived SEC workflow
 
 Der fruehere SEC-CompanyFacts-/SEC-derived-KPI-Code ist in Patch 1 nach

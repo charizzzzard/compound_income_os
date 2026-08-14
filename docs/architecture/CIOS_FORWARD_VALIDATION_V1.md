@@ -160,6 +160,10 @@ Automation is limited to deterministic, idempotent due scans, descriptive
 reports, and tests. Trigger approval, resolution confirmation, investment
 decisions, and policy promotion remain human actions.
 
+The optional `scripts/run_forward_validation_jobs.ps1` exposes only `weekly`
+Due Scan and `quarterly` descriptive report modes. It requires an explicit
+as-of date and does not register Task Scheduler jobs or GitHub Actions.
+
 ## OUT_OF_SCOPE_V1
 
 - historical LLM backtesting or historical Codex investment-skill validation

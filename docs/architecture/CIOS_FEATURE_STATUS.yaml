@@ -1178,3 +1178,26 @@ capabilities:
       - "The tracked anchor index is initially empty; anchor creation remains an explicit operator action."
       - "No signing key, signed tag or external timestamp/notary integration is created."
     next_action: "Create the first content-free anchor only after an operator has locked a real trigger ledger head."
+  - capability_id: forward_validation_local_jobs
+    display_name: Forward Validation Local Jobs
+    status: implemented
+    evidence_files:
+      - scripts/run_forward_validation_jobs.ps1
+      - docs/operations/FORWARD_VALIDATION_LOCAL_AUTOMATION.md
+    input_artifacts:
+      - data/processed/personal_decision_state_capture.csv
+      - data/processed/personal_decision_triggers.csv
+      - data/processed/personal_trigger_resolutions.csv
+    output_artifacts:
+      - data/processed/personal_due_trigger_review.csv
+      - data/processed/personal_forward_validation_summary.json
+      - reports/<as_of_date>/personal_forward_validation_report.md
+    report_surface:
+      - reports/<as_of_date>/personal_forward_validation_report.md
+    tests:
+      - tests/test_forward_validation_jobs.py
+    limitations:
+      - "The wrapper exposes weekly Due Scan and quarterly descriptive report modes only."
+      - "It does not register Task Scheduler jobs or GitHub Actions; activation is a Human Operator action."
+      - "It cannot lock triggers, confirm resolutions, create Decisions, append anchors or promote policy."
+    next_action: "Optionally schedule locally only after Human Operator review of paths and cadence."
